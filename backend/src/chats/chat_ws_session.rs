@@ -304,14 +304,14 @@ impl ChatWsSession {
                 self.assistant.decode_and_verify_token(access).map_err(|err| get_err401(&err))?;
             // Start an additional asynchronous task.
             actix_web::rt::spawn(async move {
-                // Check the token for correctness and get the user profile.
-                let result = assistant.check_num_token_and_get_profile(user_id, num_token).await;
+                // Check the correctness of the numeric token and get the user data.
+                let result = assistant.check_num_token_and_get_user(user_id, num_token);
                 if let Err(err) = result {
                     return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
                 }
-                let profile = result.unwrap();
-                let user_id = profile.user_id.clone();
-                let nickname = profile.nickname.clone();
+                let user = result.unwrap();
+                let user_id = user.id.clone();
+                let nickname = user.nickname.clone();
                 let user_name = nickname.clone();
 
                 // Get chat access information.
@@ -332,7 +332,7 @@ impl ChatWsSession {
                     return addr.do_send(AsyncResultError(409, code_to_str(StatusCode::CONFLICT), message));
                 }
                 // Determine if a user is the owner of a chat.
-                let is_owner = profile.user_id == chat_access.stream_owner;
+                let is_owner = user.id == chat_access.stream_owner;
                 // Get the "block" value for the given user.
                 let is_blocked = chat_access.is_blocked;
 

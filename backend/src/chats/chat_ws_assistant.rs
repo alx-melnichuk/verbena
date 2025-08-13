@@ -1,6 +1,13 @@
 use actix_web::http::StatusCode;
 use log::error;
 use vrb_common::api_error::{code_to_str, ApiError};
+#[cfg(not(all(test, feature = "mockdata")))]
+use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
+#[cfg(all(test, feature = "mockdata"))]
+use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
+use vrb_dbase::{
+    user_auth::{config_jwt, user_auth_models::User, user_auth_orm::UserAuthOrm},
+};
 use vrb_tools::{err, token_coding}; 
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -13,12 +20,8 @@ use crate::chats::{
     },
     chat_message_orm::ChatMessageOrm,
 };
-#[cfg(not(all(test, feature = "mockdata")))]
-use crate::profiles::profile_orm::impls::ProfileOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::profiles::profile_orm::tests::ProfileOrmApp;
-use crate::profiles::{config_jwt, profile_models::Profile /*profile_orm::ProfileOrm*/};
-use crate::utils::token_verification::check_token_and_get_profile;
+use crate::extractors::authentication2::{is_session_not_found, is_unacceptable_token_num, is_unacceptable_token_id};
+
 
 #[derive(Debug, Clone)]
 pub struct ChatStream {
@@ -33,7 +36,7 @@ pub struct ChatStream {
 pub struct ChatWsAssistant {
     config_jwt: config_jwt::ConfigJwt,
     chat_message_orm: ChatMessageOrmApp,
-    profile_orm: ProfileOrmApp,
+    user_auth_orm: UserAuthOrmApp,
 }
 
 // ** ChatWsAssistant implementation **
@@ -42,12 +45,12 @@ impl ChatWsAssistant {
     pub fn new(
         config_jwt: config_jwt::ConfigJwt,
         chat_message_orm: ChatMessageOrmApp,
-        profile_orm: ProfileOrmApp,
+        user_auth_orm: UserAuthOrmApp,
     ) -> Self {
         ChatWsAssistant {
             config_jwt,
             chat_message_orm,
-            profile_orm,
+            user_auth_orm,
         }
     }
     /** Decode the token. And unpack the two parameters from the token. */
@@ -56,11 +59,28 @@ impl ChatWsAssistant {
         // Decode the token. Unpack two parameters from the token.
         token_coding::decode_token(token, jwt_secret).map_err(|e| format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e))
     }
-    /** Check the number token for correctness and get the user profile. */
-    pub async fn check_num_token_and_get_profile(&self, user_id: i32, num_token: i32) -> Result<Profile, ApiError> {
-        let profile_orm: ProfileOrmApp = self.profile_orm.clone();
-        // Check the token for correctness and get the user profile.
-        check_token_and_get_profile(user_id, num_token, &profile_orm).await
+    /** Check the correctness of the numeric token and get the user data. */
+    pub fn check_num_token_and_get_user(&self, user_id: i32, num_token: i32) -> Result<User, ApiError> {
+        let user_auth_orm: UserAuthOrmApp = self.user_auth_orm.clone();
+
+        // Find user session by "id" from token.
+        let opt_session = user_auth_orm.get_session_by_id(user_id).map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            return ApiError::create(507, err::MSG_DATABASE, &e); // 507
+        })?;
+        // If the session is missing, then return an error406("NotAcceptable", "session_not_found; user_id: {}").
+        let session = is_session_not_found(opt_session, user_id)?;
+        // Each session contains an additional numeric value "num_token".
+        // If "num_token" is not equal to "session.num_token", return error401(c)("Unauthorized","unacceptable_token_num; user_id: {}").
+        let _ = is_unacceptable_token_num(&session, num_token, user_id)?;
+        // Find user by "id" from token.
+        let opt_user = user_auth_orm.get_user_by_id(user_id, false).map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
+        // If the user is missing, then return an error401(d)("Unauthorized", "unacceptable_token_id; user_id: {}").
+        let user = is_unacceptable_token_id(opt_user, user_id)?;
+        Ok(user)
     }
     /** Create a new user message in the chat. */
     pub async fn execute_create_chat_message(&self, stream_id: i32, user_id: i32, msg: &str) -> Result<Option<ChatMessage>, ApiError> {
