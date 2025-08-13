@@ -4,7 +4,8 @@ pub mod tests {
 
     use actix_web::web;
 
-    use crate::profiles::profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1};
+    use vrb_dbase::user_auth::user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1};
+
     use crate::streams::{
         config_strm,
         stream_controller::ALIAS_LOGO_FILES_DIR,
@@ -22,15 +23,15 @@ pub mod tests {
     #[actix_web::test]
     async fn test_get_stream_logo_files_another_user() {
         let name0_file = "test_get_stream_logo_files_another_user.png";
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile0_id = data_p.0.get(0).unwrap().user_id.clone();
+        let data_u = User_Test::users(&[USER]);
+        let user0_id = data_u.0.get(0).unwrap().id;
 
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file));
 
         let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
-        let result = get_stream_logo_files(data_stream_orm, profile0_id + 1).await;
+        let result = get_stream_logo_files(data_stream_orm, user0_id + 1).await;
 
         assert!(result.is_ok());
         let path_files = result.unwrap();
@@ -38,12 +39,12 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_logo_files_without_files() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile0_id = data_p.0.get(0).unwrap().user_id.clone();
+        let data_u = User_Test::users(&[USER]);
+        let user0_id = data_u.0.get(0).unwrap().id;
         let streams = Strm_Test::streams(&[USER1]);
 
         let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
-        let result = get_stream_logo_files(data_stream_orm, profile0_id).await;
+        let result = get_stream_logo_files(data_stream_orm, user0_id).await;
 
         assert!(result.is_ok());
         let path_files = result.unwrap();
@@ -54,15 +55,15 @@ pub mod tests {
         let name0_file = "test_get_stream_logo_files_with_files.png";
         let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile0_id = data_p.0.get(0).unwrap().user_id.clone();
+        let data_u = User_Test::users(&[USER]);
+        let user0_id = data_u.0.get(0).unwrap().id;
 
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias.clone());
 
         let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
-        let result = get_stream_logo_files(data_stream_orm, profile0_id).await;
+        let result = get_stream_logo_files(data_stream_orm, user0_id).await;
 
         assert!(result.is_ok());
         let path_files = result.unwrap();
