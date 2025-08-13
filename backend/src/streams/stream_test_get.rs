@@ -9,7 +9,7 @@ mod tests {
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
     use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_dbase::{
+    use vrb_dbase::user_auth::{
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
     };
