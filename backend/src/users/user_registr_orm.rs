@@ -44,7 +44,10 @@ pub mod impls {
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
     use log::{info, log_enabled, Level::Info};
-    use vrb_dbase::{dbase, schema::{self, user_registration::dsl}};
+    use vrb_dbase::{
+        dbase,
+        schema::{self, user_registration::dsl},
+    };
 
     use crate::users::user_registr_orm::DURATION_IN_DAYS;
 
@@ -351,18 +354,17 @@ pub mod tests {
     pub struct UserRegistrOrmTest {}
 
     impl UserRegistrOrmTest {
-
         pub fn registrs(is_exist: bool) -> Vec<UserRegistr> {
             let user_registr_vec: Vec<UserRegistr> = match is_exist {
                 true => {
                     let id: i32 = USER_REGISTR_ID;
-                let nickname = "robert_brown";
-                let email = format!("{}@gmail.com", nickname);
-                let final_date: DateTime<Utc> = Utc::now() + Duration::minutes(20);
-                let user_registr = UserRegistrOrmApp::new_user_registr(id, nickname, &email, "passwdR2B2", final_date);
-                UserRegistrOrmApp::create(&[user_registr]).user_registr_vec
-                },
-                false => vec![]
+                    let nickname = "robert_brown";
+                    let email = format!("{}@gmail.com", nickname);
+                    let final_date: DateTime<Utc> = Utc::now() + Duration::minutes(20);
+                    let user_registr = UserRegistrOrmApp::new_user_registr(id, nickname, &email, "passwdR2B2", final_date);
+                    UserRegistrOrmApp::create(&[user_registr]).user_registr_vec
+                }
+                false => vec![],
             };
             user_registr_vec
         }
