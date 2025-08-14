@@ -50,6 +50,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// Returns the current user's profile (`ProfileDto`) and open session token (`ProfileTokensDto`) with status 200.
 ///
 #[utoipa::path(
+    request_body(content = LoginProfileDto,
+        description = "Credentials to log in to your account `LoginProfileDto`",
+        example = json!({"nickname": "james_miller","password": "Pswr1234="})
+    ),
     responses(
         ( status = 200, description = "The current user's profile and the open session token.",
             body = LoginProfileResponseDto),
@@ -273,6 +277,10 @@ pub async fn logout(authenticated: Authenticated, profile_orm: web::Data<Profile
 /// Return the new session token (`ProfileTokensDto`) with a status of 200.
 ///
 #[utoipa::path(
+    request_body(content = TokenDto,
+        description = "The value of the \"refreshToken\" field that was received during login. `TokenDto`",
+        example = json!({"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyLjQ1MiIsImlhdCI6MTY5NjYwODExOCwiZXhwIjoxNzMyODk2MTE4fQ.NMxMEzQa2IOc_yCI0drJE89lZmGSruKghGNX80Czliw"})
+    ),
     responses(
         (status = 200, description = "The new session token.", body = ProfileTokensDto),
         (status = 401, description = "Authorization required.", body = ApiError, examples(
