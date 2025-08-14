@@ -293,11 +293,14 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::Utc;
-    use vrb_dbase::db_enums::UserRole;
+    use vrb_dbase::{
+        db_enums::UserRole,
+        user_auth::{config_jwt, user_auth_models::User},
+    };
     use vrb_tools::{consts, token_coding};
 
     use crate::profiles::{
-        config_jwt, config_prfl,
+        /*config_jwt,*/ config_prfl,
         profile_models::{self, Profile, Session},
         profile_orm::ProfileOrm,
     };
@@ -565,6 +568,26 @@ pub mod tests {
             let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
             let num_token = Self::get_num_token(user_id);
             token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap()
+        }
+        #[rustfmt::skip]
+        pub fn get_profile(
+            user: User, avatar: Option<String>, descript: Option<String>, theme: Option<String>, locale: Option<String>
+        ) -> Profile {
+            Profile::new2(
+                user.id,
+                &user.nickname,
+                &user.email,
+                &user.password,
+                user.role,
+                avatar.as_deref(),
+                descript.as_deref(),
+                theme.as_deref(),
+                locale.as_deref(),
+            )
+        }
+        #[rustfmt::skip]
+        pub fn get_profiles(users: &[User]) -> Vec<Profile> {
+            users.iter().map(|user| Self::get_profile(user.clone(), None, None, None, None)).collect()
         }
         pub fn profiles(roles: &[u8]) -> (Vec<Profile>, Vec<Session>) {
             let mut profile_vec: Vec<Profile> = Vec::new();
