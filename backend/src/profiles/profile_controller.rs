@@ -16,6 +16,7 @@ use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{cdis::coding, consts, err, hash_tools, loading::dynamic_image};
 
 use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::extractors::authentication2::{Authenticated2, RequireAuth2};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -169,7 +170,7 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
+#[get("/api/profiles/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::admin_role())" )]
 pub async fn get_profile_by_id(
     profile_orm: web::Data<ProfileOrmApp>,
     request: actix_web::HttpRequest,
@@ -252,7 +253,7 @@ pub async fn get_profile_by_id(
     ),
     security(("bearer_auth" = []))
 )]
-#[get("/api/profiles_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/profiles_config", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web::Result<HttpResponse, ApiError> {
     let cfg_prfl = config_prfl;
     #[rustfmt::skip]
@@ -309,13 +310,36 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
     security(("bearer_auth" = []))
 )]
 #[rustfmt::skip]
-#[get("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/profiles_current", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn get_profile_current(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
+    profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
-    let profile = authenticated.deref();
-    let profile_dto = ProfileDto::from(profile.clone());
-    Ok(HttpResponse::Ok().json(profile_dto)) // 200
+    let user = authenticated.deref();
+    let user_id = user.id;
+
+    let opt_profile = web::block(move || {
+        // Find profile by user id.
+        let profile =
+            profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            }).ok()?;
+
+        profile
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
+
+    if let Some(profile_user) = opt_profile {
+        let profile_dto = ProfileDto::from(profile_user);
+        Ok(HttpResponse::Ok().json(profile_dto)) // 200
+    } else {
+        Ok(HttpResponse::NoContent().finish()) // 204
+    }
 }
 
 // ** Section: uniqueness_check **
