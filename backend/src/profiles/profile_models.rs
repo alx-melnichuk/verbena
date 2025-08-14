@@ -206,6 +206,32 @@ impl Profile {
             updated_at: now.clone(),
         }
     }
+    pub fn new2(
+        user_id: i32,
+        nickname: &str,
+        email: &str,
+        password: &str,
+        role: UserRole,
+        avatar: Option<&str>,
+        descript: Option<&str>,
+        theme: Option<&str>,
+        locale: Option<&str>,
+    ) -> Profile {
+        let now = Utc::now();
+        Profile {
+            user_id,
+            nickname: nickname.to_owned(),
+            email: email.to_owned(),
+            password: password.to_owned(),
+            role,
+            avatar: avatar.map(|v| v.to_owned()),
+            descript: descript.map(|v| v.to_owned()),
+            theme: theme.map(|v| v.to_owned()),
+            locale: locale.map(|v| v.to_owned()),
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        }
+    }
 }
 
 // ** Model: "CreateProfile". Used: ProfileOrm::create_profile_user() **
@@ -256,7 +282,7 @@ pub struct ModifyProfile {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::sessions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Session {
+pub struct Session { // TODO remove
     pub user_id: i32,
     pub num_token: Option<i32>,
 }
