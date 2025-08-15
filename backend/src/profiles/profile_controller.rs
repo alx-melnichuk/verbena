@@ -15,7 +15,6 @@ use vrb_common::{
 use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{cdis::coding, consts, err, hash_tools, loading::dynamic_image};
 
-use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::extractors::authentication2::{Authenticated2, RequireAuth2};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -524,18 +523,18 @@ impl ModifyProfileForm {
 )]
 // PUT /api/profiles
 #[rustfmt::skip]
-#[put("/api/profiles", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[put("/api/profiles", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn put_profile(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     MultipartForm(modify_profile_form): MultipartForm<ModifyProfileForm>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get the current user's profile.
-    let profile = authenticated.deref();
-    let curr_user_id = profile.user_id;
-    let opt_curr_avatar = profile.avatar.clone();
+    let user = authenticated.deref();
+    let curr_user_id = user.id;
+    // #let opt_curr_avatar = user.avatar.clone();
 
     // Get data from MultipartForm.
     let (modify_profile_dto, avatar_file) = ModifyProfileForm::convert(modify_profile_form);
@@ -654,6 +653,32 @@ pub async fn put_profile(
     let mut modify_profile: ModifyProfile = modify_profile_dto.into();
     modify_profile.avatar = avatar;
 
+    let mut opt_curr_avatar: Option<String> = None;
+    if modify_profile.avatar.is_some() {
+        let profile_orm2 = profile_orm.get_ref().clone();
+        // Get the current value of the 'avatar' field.
+        let res_curr_profile = web::block(move || {
+            // Modify an entity (profile).
+            let res_data_curr_profile = profile_orm2.get_profile_user_by_id(curr_user_id, false)
+            //  modify_profile(curr_user_id, modify_profile)
+            .map_err(|e| {
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)
+            });
+    
+            res_data_curr_profile
+        })
+        .await
+        .map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
+        })?;
+    
+        if let Ok(Some(curr_profile)) = res_curr_profile {
+            opt_curr_avatar = curr_profile.avatar;
+        }
+    }
+
     let path_old_avatar_file = if modify_profile.avatar.is_some() { 
         opt_curr_avatar.unwrap_or("".to_string())
     } else {
@@ -745,15 +770,14 @@ pub async fn put_profile(
     security(("bearer_auth" = []))
 )]
 #[rustfmt::skip]
-#[put("/api/profiles_new_password", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[put("/api/profiles_new_password", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn put_profile_new_password(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     profile_orm: web::Data<ProfileOrmApp>,
     json_body: web::Json<NewPasswordProfileDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
-    // 1.308634s
-    let profile = authenticated.deref();
-    let profile_id = profile.user_id;
+    let user = authenticated.deref();
+    let user_id = user.id;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -774,7 +798,7 @@ pub async fn put_profile_new_password(
     let profile_orm2 = profile_orm.clone();
     let opt_profile_pwd = web::block(move || {
         // Find user by nickname or email.
-        let existing_profile = profile_orm2.get_profile_user_by_id(profile_id, true)
+        let existing_profile = profile_orm2.get_profile_user_by_id(user_id, true)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
@@ -816,7 +840,7 @@ pub async fn put_profile_new_password(
     };
     // Update the password hash for the user profile.
     let opt_profile = web::block(move || {
-        let opt_profile1 = profile_orm.modify_profile(profile_id, modify_profile)
+        let opt_profile1 = profile_orm.modify_profile(user_id, modify_profile)
         .map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
@@ -885,7 +909,7 @@ pub async fn put_profile_new_password(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+#[delete("/api/profiles/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::admin_role())")]
 pub async fn delete_profile(
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
@@ -985,21 +1009,21 @@ pub async fn delete_profile(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[delete("/api/profiles_current", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn delete_profile_current(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
-    let profile = authenticated.deref();
-    let id = profile.user_id;
+    let user = authenticated.deref();
+    let user_id = user.id;
     
     let profile_orm2 = profile_orm.clone();
     // Get a list of logo file names for streams of the user with the specified user_id.
     let path_file_img_list = web::block(move || {
         // Filter for the list of stream logos by user ID.
-        profile_orm2.filter_stream_logos(id)
+        profile_orm2.filter_stream_logos(user_id)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
@@ -1013,7 +1037,7 @@ pub async fn delete_profile_current(
 
     let opt_profile = web::block(move || {
         // Delete an entity (profile).
-        let res_profile = profile_orm.delete_profile(id)
+        let res_profile = profile_orm.delete_profile(user_id)
         .map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
