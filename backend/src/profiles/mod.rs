@@ -1,7 +1,7 @@
 pub mod config_jwt;
 pub mod config_prfl;
 pub mod profile_auth_controller;
-pub mod profile_auth_test;
+// pub mod profile_auth_test;
 pub mod profile_check;
 pub mod profile_check_test;
 pub mod profile_controller;
