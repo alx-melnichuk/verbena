@@ -9,6 +9,7 @@ pub trait UserAuthOrm {
 
     /// Modify the entity (session).
     fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
+    // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
 }
 
 pub mod impls {
