@@ -22,10 +22,6 @@ pub trait ProfileOrm {
     /// Get an entity (session) by ID.
     fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
 
-    /// Modify the entity (session).
-    fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
-
-    // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
 
     /// Filter for the list of stream logos by user ID.
     fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String>;
@@ -247,25 +243,6 @@ pub mod impls {
             Ok(opt_session)
         }
 
-        /// Perform a full or partial change to a session record.
-        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
-            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to full or partially modify the session entry.
-            let result = diesel::update(schema::sessions::dsl::sessions.find(user_id))
-                .set(schema::sessions::dsl::num_token.eq(num_token))
-                .returning(Session::as_returning())
-                .get_result(&mut conn)
-                .optional()
-                .map_err(|e| format!("modify_session: {}", e.to_string()))?;
-
-            if let Some(timer) = timer {
-                info!("modify_session() time: {}", format!("{:.2?}", timer.elapsed()));
-            }
-            Ok(result)
-        }
-
         /// Filter for the list of stream logos by user ID.
         fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -380,6 +357,11 @@ pub mod tests {
             }
 
             ProfileOrmApp { profile_vec, session_vec }
+        }
+        /// Create a new instance with the specified profile list.
+        /// Sessions are taken from "sessions", if it is empty, they are created automatically.
+        pub fn create2(profiles: &[Profile]) -> Self {
+            ProfileOrmApp { profile_vec: profiles.to_vec(), session_vec: Vec::new() }
         }
         /// Create a new instance of the Profile entity.
         pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
@@ -520,19 +502,6 @@ pub mod tests {
             Ok(opt_session)
         }
 
-        /// Modify the entity (session).
-        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
-            let opt_session: Option<Session> = self.get_session_by_id(user_id)?;
-            if opt_session.is_none() {
-                return Ok(None);
-            }
-            let mut res_session = opt_session.unwrap();
-            let new_session = Session { user_id, num_token };
-            res_session.num_token = new_session.num_token;
-
-            Ok(Some(res_session))
-        }
-
         /// Filter for the list of stream logos by user ID.
         fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
             let mut result: Vec<String> = vec![];
@@ -569,25 +538,9 @@ pub mod tests {
             let num_token = Self::get_num_token(user_id);
             token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap()
         }
-        #[rustfmt::skip]
-        pub fn get_profile(
-            user: User, avatar: Option<String>, descript: Option<String>, theme: Option<String>, locale: Option<String>
-        ) -> Profile {
-            Profile::new2(
-                user.id,
-                &user.nickname,
-                &user.email,
-                &user.password,
-                user.role,
-                avatar.as_deref(),
-                descript.as_deref(),
-                theme.as_deref(),
-                locale.as_deref(),
-            )
-        }
-        #[rustfmt::skip]
-        pub fn get_profiles(users: &[User]) -> Vec<Profile> {
-            users.iter().map(|user| Self::get_profile(user.clone(), None, None, None, None)).collect()
+        pub fn profiles2(users: &[User]) -> Vec<Profile> {
+            let profile_vec: Vec<Profile> = users.iter().map(|u| Profile::from(u.clone())).collect();
+            profile_vec
         }
         pub fn profiles(roles: &[u8]) -> (Vec<Profile>, Vec<Session>) {
             let mut profile_vec: Vec<Profile> = Vec::new();
@@ -625,6 +578,13 @@ pub mod tests {
         pub fn cfg_profile_orm(data_p: (Vec<Profile>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
                 let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p.0, &data_p.1));
+
+                config.app_data(web::Data::clone(&data_profile_orm));
+            }
+        }
+        pub fn cfg_profile_orm2(data_p: Vec<Profile>) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_profile_orm = web::Data::new(ProfileOrmApp::create2(&data_p));
 
                 config.app_data(web::Data::clone(&data_profile_orm));
             }
