@@ -6,20 +6,20 @@ use vrb_common::{
     api_error::{code_to_str, ApiError},
     validators::{msg_validation, Validator},
 };
-use vrb_dbase::db_enums::UserRole;
+use vrb_dbase::{db_enums::UserRole, user_auth::config_jwt};
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]
 use vrb_tools::send_email::mailer::tests::MailerApp;
 use vrb_tools::{config_app, err, hash_tools, send_email::mailer::Mailer, token_coding};
 
-use crate::extractors::authentication::RequireAuth;
+use crate::extractors::authentication2::RequireAuth2;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    config_jwt, profile_check,
+    profile_check,
     profile_models::{
         self, ClearForExpiredResponseDto, Profile, ProfileDto, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
         RegistrProfileDto, RegistrProfileResponseDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
@@ -722,7 +722,7 @@ pub async fn confirm_recovery(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+#[get("/api/clear_for_expired", wrap = "RequireAuth2::allowed_roles(RequireAuth2::admin_role())")]
 pub async fn clear_for_expired(
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
