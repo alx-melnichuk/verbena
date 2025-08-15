@@ -751,7 +751,6 @@ CREATE OR REPLACE FUNCTION find_user_by_id(
 AS $$
 DECLARE
   rec1 RECORD;
-  sql_text TEXT;
 BEGIN
   IF _id IS NULL THEN
     RETURN;
@@ -773,3 +772,68 @@ END;
 $$;
 
 -- **
+
+/* Stored function for retrieving data from the "profiles", "password" and "users" tables by nickname or email. */
+CREATE OR REPLACE FUNCTION find_profile_user(
+  IN _id INTEGER,
+  IN _nickname VARCHAR,
+  IN _email VARCHAR,
+  IN _is_password BOOLEAN, 
+  OUT user_id INTEGER,
+  OUT nickname VARCHAR,
+  OUT email VARCHAR,
+  OUT "password" VARCHAR,
+  OUT "role" user_role,
+  OUT avatar VARCHAR,
+  OUT descript TEXT,
+  OUT theme VARCHAR,
+  OUT locale VARCHAR,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  rec1 RECORD;
+BEGIN
+  IF _id IS NOT NULL THEN
+    SELECT u.id, u.nickname, u.email, u."password", u."role", u.created_at, u.updated_at
+    FROM "users" u
+    WHERE u.id = _id
+    INTO rec1;
+  END IF;
+
+  IF rec1 IS NULL AND LENGTH(coalesce(_nickname, '')) > 0 THEN
+    SELECT u.id, u.nickname, u.email, u."password", u."role", u.created_at, u.updated_at
+    FROM users u
+    WHERE u.nickname = _nickname
+    LIMIT 1
+    INTO rec1;
+  END IF;
+
+  IF rec1 IS NULL AND LENGTH(coalesce(_email, '')) > 0 THEN
+    SELECT u.id, u.nickname, u.email, u."password", u."role", u.created_at, u.updated_at
+    FROM "users" u
+    WHERE u.email = _email
+    LIMIT 1
+    INTO rec1;
+  END IF;
+
+  IF rec1 IS NOT NULL AND rec1.id IS NOT NULL THEN
+    RETURN QUERY 
+      SELECT
+        rec1.id AS user_id,
+        rec1.nickname,
+        rec1.email,
+        CASE WHEN _is_password THEN rec1."password" ELSE ''::VARCHAR END AS "password",
+        rec1."role",
+        p.avatar,
+        p.descript,
+        p.theme,
+        p.locale,
+        rec1.created_at,
+        CASE WHEN rec1.updated_at > p.updated_at THEN rec1.updated_at ELSE p.updated_at END as updated_at
+      FROM profiles p
+      WHERE p.user_id = rec1.id;
+  END IF;
+END;
+$$;
