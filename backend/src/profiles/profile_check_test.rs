@@ -11,11 +11,10 @@ pub mod tests {
     use crate::users::{user_models::UserRegistr, user_registr_orm::tests::UserRegistrOrmApp};
 
     fn get_data() -> (Vec<Profile>, Vec<UserRegistr>) {
-        let nickname = "Oliver_Taylor";
-        let email = format!("{}@gmail.com", nickname);
+        let nickname = "Oliver_Taylor".to_lowercase();
+        let email = format!("{}@gmail.com", nickname).to_lowercase();
         let role = UserRole::User;
-        let profile = ProfileOrmApp::new_profile(1, nickname, &email, role);
-
+        let profile = Profile::new2(1, &nickname, &email, "", role, None, None, None,None);
         let now = Utc::now();
         let final_date: DateTime<Utc> = now + Duration::minutes(20);
         let nickname = "Robert_Brown";
