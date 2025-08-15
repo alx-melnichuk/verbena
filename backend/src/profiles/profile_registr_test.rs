@@ -9,16 +9,21 @@ mod tests {
     use chrono::{Duration, Utc};
     use serde_json::json;
     use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_dbase::db_enums::UserRole;
+    use vrb_dbase::{
+        db_enums::UserRole,
+        user_auth::{
+            config_jwt,
+            user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
+        },
+    };
     use vrb_tools::{config_app, err, send_email::config_smtp, token_coding};
 
     use crate::profiles::{
-        config_jwt,
         profile_models::{
-            self, ClearForExpiredResponseDto, ProfileDto, ProfileTest, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
-            RegistrProfileDto, RegistrProfileResponseDto,
+            self, ClearForExpiredResponseDto, Profile, ProfileDto, ProfileTest, RecoveryDataDto, RecoveryProfileDto,
+            RecoveryProfileResponseDto, RegistrProfileDto, RegistrProfileResponseDto,
         },
-        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER, USER1_ID},
+        profile_orm::tests::ProfileOrmTest as ProflTest,
         profile_registr_controller::{
             clear_for_expired, confirm_recovery, confirm_registration, recovery, registration, tests as RegCtTest, MSG_RECOVERY_NOT_FOUND,
             MSG_REGISTR_NOT_FOUND, MSG_USER_NOT_FOUND,
@@ -30,17 +35,26 @@ mod tests {
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
+    fn get_profiles(role_idx: u8) -> Vec<Profile> {
+        let nickname = "Oliver_Taylor".to_lowercase();
+        let email = format!("{}@gmail.com", nickname).to_lowercase();
+        #[rustfmt::skip]
+        let role = if role_idx == ADMIN { UserRole::Admin } else { UserRole::User };
+        let profile = Profile::new2(USER1_ID, &nickname, &email, "", role, None, None, None, None);
+        vec![profile]
+    }
+
     // ** registration **
 
     #[actix_web::test]
     async fn test_registration_no_data() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -56,13 +70,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_empty_json_object() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -79,13 +93,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_empty() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -109,13 +123,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_min() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -139,13 +153,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_max() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -169,13 +183,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_wrong() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -199,13 +213,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_empty() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -229,13 +243,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_min() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -259,13 +273,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_max() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -289,13 +303,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_wrong() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -319,13 +333,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_empty() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -349,13 +363,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_min() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -379,13 +393,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_max() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -409,13 +423,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_wrong() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -439,15 +453,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let nickname1 = data_p.0.get(0).unwrap().nickname.clone();
-        let email1 = data_p.0.get(0).unwrap().email.clone();
+        let profiles = get_profiles(USER);
+        let nickname1 = profiles.get(0).unwrap().nickname.clone();
+        let email1 = profiles.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -469,15 +483,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let nickname1 = data_p.0.get(0).unwrap().nickname.clone();
-        let email1 = data_p.0.get(0).unwrap().email.clone();
+        let profiles = get_profiles(USER);
+        let nickname1 = profiles.get(0).unwrap().nickname.clone();
+        let email1 = profiles.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -499,7 +513,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         let registrs = RegisTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
         let email1 = registrs.get(0).unwrap().email.clone();
@@ -507,8 +521,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
@@ -530,7 +544,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         let registrs = RegisTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
         let email1 = registrs.get(0).unwrap().email.clone();
@@ -538,8 +552,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
@@ -561,7 +575,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_err_jsonwebtoken_encode() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
         let nickname = "Mary_Williams".to_string();
@@ -569,8 +583,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -594,13 +608,13 @@ mod tests {
     async fn test_registration_new_user() {
         let registrs = RegisTest::registrs(true);
         let user_registr1 = registrs.get(0).unwrap().clone();
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -630,14 +644,15 @@ mod tests {
     }
 
     // ** confirm_registration **
+
     #[actix_web::test]
     async fn test_confirm_registration_invalid_registr_token() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -655,24 +670,24 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_final_date_has_expired() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         let registrs = RegisTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token = data_p.1.get(0).unwrap().clone().num_token.unwrap();
+        let num_token1 = User_Test::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let registr_token = token_coding::encode_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
+        let registr_token = token_coding::encode_token(user_reg1_id, num_token1, jwt_secret, -reg_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
@@ -691,25 +706,25 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_no_exists_in_user_regist() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         let registrs = RegisTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token = data_p.1.get(0).unwrap().clone().num_token.unwrap();
+        let num_token1 = User_Test::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let user_reg_id = user_reg1_id + 1;
-        let registr_token = token_coding::encode_token(user_reg_id, num_token, jwt_secret, reg_duration).unwrap();
+        let registr_token = token_coding::encode_token(user_reg_id, num_token1, jwt_secret, reg_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
@@ -728,26 +743,26 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_exists_in_user_regist() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         let registrs = RegisTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let nickname = user_reg1.nickname.to_string();
         let email = user_reg1.email.to_string();
-        let last_user_id = data_p.0.last().unwrap().user_id;
+        let last_user_id = profiles.last().unwrap().user_id;
 
-        let num_token = data_p.1.get(0).unwrap().clone().num_token.unwrap();
+        let num_token1 = User_Test::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let registr_token = token_coding::encode_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
+        let registr_token = token_coding::encode_token(user_reg1.id, num_token1, jwt_secret, reg_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
@@ -771,13 +786,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_recovery_no_data() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -796,13 +811,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_empty_json_object() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -820,13 +835,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_empty() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -846,13 +861,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_min() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -872,13 +887,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_max() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -898,13 +913,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_wrong() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -924,14 +939,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_if_user_with_email_not_exist() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let email = format!("A{}", data_p.0.get(0).unwrap().email.clone());
+        let profiles = get_profiles(USER);
+        let email = format!("A{}", profiles.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -951,17 +966,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_not_exist() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let user1_id = data_p.0.get(0).unwrap().user_id;
-        let user1_email = data_p.0.get(0).unwrap().email.clone();
+        let profiles = get_profiles(USER);
+        let user1_id = profiles.get(0).unwrap().user_id;
+        let user1_email = profiles.get(0).unwrap().email.clone();
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let user_recovery1_id = recoveries.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
@@ -989,17 +1004,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_already_exists() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let user1_id = data_p.0.get(0).unwrap().user_id;
-        let user1_email = data_p.0.get(0).unwrap().email.clone();
+        let profiles = get_profiles(USER);
+        let user1_id = profiles.get(0).unwrap().user_id;
+        let user1_email = profiles.get(0).unwrap().email.clone();
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let user_recovery1_id = recoveries.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
@@ -1027,16 +1042,16 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_err_jsonwebtoken_encode() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let user1_email = data_p.0.get(0).unwrap().email.clone();
+        let profiles = get_profiles(USER);
+        let user1_email = profiles.get(0).unwrap().email.clone();
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
             .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
-            .configure(ProflTest::cfg_config_jwt(config_jwt))
-            .configure(ProflTest::cfg_profile_orm(data_p))
+            .configure(User_Test::cfg_config_jwt(config_jwt))
+            .configure(ProflTest::cfg_profile_orm2(profiles))
             .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
             .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -1059,12 +1074,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_empty() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1083,12 +1098,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_min() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1107,12 +1122,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_max() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1131,12 +1146,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_wrong() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1155,12 +1170,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_recovery_token() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let profiles = get_profiles(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1179,12 +1194,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_final_date_has_expired() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let user1_id = data_p.0.get(0).unwrap().user_id;
+        let profiles = get_profiles(USER);
+        let user1_id = profiles.get(0).unwrap().user_id;
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
 
-        let num_token1 = data_p.1.get(0).unwrap().num_token.unwrap();
+        let num_token1 = User_Test::get_num_token(USER1_ID);
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
@@ -1194,8 +1209,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
@@ -1215,12 +1230,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user_recovery() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let user1_id = data_p.0.get(0).unwrap().user_id;
+        let profiles = get_profiles(USER);
+        let user1_id = profiles.get(0).unwrap().user_id;
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone() + 1;
 
-        let num_token1 = data_p.1.get(0).unwrap().num_token.unwrap();
+        let num_token1 = User_Test::get_num_token(USER1_ID);
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
@@ -1230,8 +1245,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
@@ -1251,8 +1266,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let user1_id = data_p.0.get(0).unwrap().user_id + 1;
+        let profiles = get_profiles(USER);
+        let user1_id = profiles.get(0).unwrap().user_id + 1;
         let mut recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1 = recoveries.get_mut(0).unwrap();
 
@@ -1261,15 +1276,15 @@ mod tests {
         let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
         recovery1.final_date = final_date_utc;
 
-        let num_token1 = data_p.1.get(0).unwrap().num_token.unwrap();
+        let num_token1 = User_Test::get_num_token(USER1_ID);
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = token_coding::encode_token(recovery1.id, num_token1, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
@@ -1288,8 +1303,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_success() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1 = data_p.0.get(0).unwrap().clone();
+        let profiles = get_profiles(USER);
+        let profile1 = profiles.get(0).unwrap().clone();
         let profile1_id = profile1.user_id;
         let profile1_dto = ProfileDto::from(profile1);
 
@@ -1298,15 +1313,15 @@ mod tests {
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
 
-        let num_token1 = data_p.1.get(0).unwrap().num_token.unwrap();
+        let num_token1 = User_Test::get_num_token(USER1_ID);
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = token_coding::encode_token(recovery1_id, num_token1, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
@@ -1335,13 +1350,12 @@ mod tests {
     }
 
     // ** clear_for_expired **
+
     #[actix_web::test]
     async fn test_clear_for_expired_user_recovery() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[ADMIN]);
-
-        let profile1 = data_p.0.get(0).unwrap().clone();
-        let profile1_id = profile1.user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[ADMIN]);
+        let user1_id = data_u.0.get(0).unwrap().id;
 
         let config_app = config_app::get_test_config();
 
@@ -1351,14 +1365,14 @@ mod tests {
         registr1.final_date = Utc::now() - Duration::seconds(registr_duration);
 
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let mut recoveries = RecovTest::recoveries(Some(profile1_id));
+        let mut recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1 = recoveries.get_mut(0).unwrap();
         recovery1.final_date = Utc::now() - Duration::seconds(recovery_duration);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(clear_for_expired)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(registrs))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
