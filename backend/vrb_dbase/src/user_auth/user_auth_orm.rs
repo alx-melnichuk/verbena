@@ -6,6 +6,9 @@ pub trait UserAuthOrm {
 
     /// Get an entity (session) by ID.
     fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
+
+    /// Modify the entity (session).
+    fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
 }
 
 pub mod impls {
@@ -82,6 +85,26 @@ pub mod impls {
             }
             Ok(opt_session)
         }
+
+        /// Perform a full or partial change to a session record.
+        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            // Run query using Diesel to full or partially modify the session entry.
+            let result = diesel::update(schema::sessions::dsl::sessions.find(user_id))
+                .set(schema::sessions::dsl::num_token.eq(num_token))
+                .returning(Session::as_returning())
+                .get_result(&mut conn)
+                .optional()
+                .map_err(|e| format!("modify_session: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("modify_session() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(result)
+        }
+
     }
 }
 
@@ -206,6 +229,20 @@ pub mod tests {
 
             Ok(opt_session)
         }
+
+        /// Modify the entity (session).
+        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
+            let opt_session: Option<Session> = self.get_session_by_id(user_id)?;
+            if opt_session.is_none() {
+                return Ok(None);
+            }
+            let mut res_session = opt_session.unwrap();
+            let new_session = Session { user_id, num_token };
+            res_session.num_token = new_session.num_token;
+
+            Ok(Some(res_session))
+        }
+
     }
 
     pub struct UserAuthOrmTest {}
