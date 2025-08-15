@@ -6,7 +6,7 @@ mod tests {
     use serde_json::to_string;
     use vrb_dbase::user_auth::{
         config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER},
     };
     use vrb_tools::err;
 
