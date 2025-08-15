@@ -8,7 +8,7 @@ use vrb_common::{
     serial_datetime,
     validators::{ValidationChecks, ValidationError, Validator},
 };
-use vrb_dbase::{db_enums::UserRole, schema};
+use vrb_dbase::{db_enums::UserRole, schema, user_auth::user_auth_models::User};
 use vrb_tools::err;
 
 pub const NICKNAME_MIN: u8 = 3;
@@ -234,6 +234,24 @@ impl Profile {
     }
 }
 
+impl From<User> for Profile {
+    fn from(user: User) -> Self {
+        Profile {
+            user_id: user.id,
+            nickname: user.nickname,
+            email: user.email,
+            password: user.password,
+            role: user.role,
+            avatar: None,
+            descript: None,
+            theme: None,
+            locale: None,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+        }
+    }
+}
+
 // ** Model: "CreateProfile". Used: ProfileOrm::create_profile_user() **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -282,7 +300,8 @@ pub struct ModifyProfile {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::sessions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Session { // TODO remove
+pub struct Session {
+    // TODO remove
     pub user_id: i32,
     pub num_token: Option<i32>,
 }
