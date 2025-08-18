@@ -144,7 +144,6 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token_session_non_exist() {
-        // !
         let data_u = User_Test::users(&[USER]);
         let user2_id = USER1_ID + 1;
         let token2 = User_Test::get_token(user2_id);
