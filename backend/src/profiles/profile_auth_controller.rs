@@ -14,7 +14,7 @@ use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
 use vrb_dbase::user_auth::{config_jwt, user_auth_orm::UserAuthOrm};
 use vrb_tools::{err, hash_tools, token_coding};
 
-use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::extractors::authentication2::{Authenticated2, RequireAuth2};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -226,20 +226,20 @@ pub async fn login(
     ),
     security(("bearer_auth" = []))
 )]
-#[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[post("/api/logout", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn logout(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     user_auth_orm: web::Data<UserAuthOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     #[rustfmt::skip]
     let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
     // Get user ID.
-    let profile_user = authenticated.deref().clone();
+    let user = authenticated.deref().clone();
 
     // Clear "num_token" value.
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = user_auth_orm.modify_session(profile_user.user_id, None).map_err(|e| {
+        let res_session = user_auth_orm.modify_session(user.id, None).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
@@ -252,7 +252,7 @@ pub async fn logout(
     })??;
 
     if opt_session.is_none() {
-        let msg = format!("user_id: {}", profile_user.user_id);
+        let msg = format!("user_id: {}", user.id);
         error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg);
         return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg)); // 406
     }
