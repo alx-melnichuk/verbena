@@ -10,27 +10,35 @@ mod tests {
     };
     use serde_json::json;
     use vrb_common::api_error::{code_to_str, ApiError};
+    use vrb_dbase::user_auth::{
+        config_jwt,
+        user_auth_models::Session,
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
+    };
     use vrb_tools::{err, hash_tools, token_coding, token_data::TOKEN_NAME};
 
     use crate::profiles::{
-        config_jwt,
         profile_auth_controller::{login, logout, tests as AthCtTest, update_token},
         profile_models::{self, LoginProfileDto, LoginProfileResponseDto, ProfileDto, ProfileTest, TokenDto},
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1_ID},
+        profile_orm::tests::ProfileOrmTest as ProflTest,
     };
 
+    const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
+    const MSG_FAILED_TO_DESER: &str = "Failed to deserialize JSON string";
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     // ** login **
 
     #[actix_web::test]
     async fn test_login_no_data() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))               
         ).await;
         let req = test::TestRequest::post().uri("/api/login").to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -44,12 +52,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_empty_json_object() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         let req = test::TestRequest::post().uri("/api/login").set_json(json!({})).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -63,12 +73,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_empty() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -85,12 +97,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_min() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -107,12 +121,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_max() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -129,12 +145,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_wrong() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -151,12 +169,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_min() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -173,12 +193,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_max() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -195,12 +217,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_wrong() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -217,12 +241,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_empty() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -239,12 +265,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_min() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -261,12 +289,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_max() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -283,12 +313,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_wrong() {
-        let data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -305,13 +337,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_nickname_not_exist() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let nickname = data_p.0.get(0).unwrap().nickname.clone();
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
+        let nickname = profiles.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -328,13 +362,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_email_not_exist() {
-        let data_p = ProflTest::profiles(&[USER]);
-        let email = data_p.0.get(0).unwrap().email.clone();
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
+        let email = profiles.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -351,16 +387,18 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_password_invalid_hash() {
-        let mut data_p = ProflTest::profiles(&[USER]);
-        let profile1 = data_p.0.get_mut(0).unwrap();
+        let data_u = User_Test::users(&[USER]);
+        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let profile1 = profiles.get_mut(0).unwrap();
         let password = "hash_password_R2B2";
         profile1.password = password.to_string();
         let nickname = profile1.nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -377,17 +415,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_password_incorrect() {
-        let mut data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let mut profiles = ProflTest::profiles2(&data_u.0);
         let nickname = "Robert_Brown".to_string();
         let password = "passwdR2B2";
-        let profile1 = data_p.0.get_mut(0).unwrap();
+        let profile1 = profiles.get_mut(0).unwrap();
         profile1.nickname = nickname.clone().to_lowercase();
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -404,10 +444,11 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_err_jsonwebtoken_encode() {
-        let mut data_p = ProflTest::profiles(&[USER]);
+        let data_u = User_Test::users(&[USER]);
+        let mut profiles = ProflTest::profiles2(&data_u.0);
         let nickname = "Robert_Brown".to_string();
         let password = "passwdR2B2";
-        let profile1 = data_p.0.get_mut(0).unwrap();
+        let profile1 = profiles.get_mut(0).unwrap();
         profile1.nickname = nickname.clone().to_lowercase();
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
         let mut config_jwt = config_jwt::get_test_config();
@@ -415,8 +456,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -433,21 +475,23 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_session_not_exist() {
-        let mut data_p = ProflTest::profiles(&[USER]);
-        let profile1 = data_p.0.last_mut().unwrap();
+        let mut data_u = User_Test::users(&[USER]);
+        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let profile1 = profiles.last_mut().unwrap();
         // Change ID, reset connection with session.
         let nickname = profile1.nickname.clone();
         let password = "passwdR2B2";
         let profile1_id = profile1.user_id;
         // profile1.user_id = profile1_id;
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
-        let session1 = data_p.1.get_mut(0).unwrap();
+        let session1 = data_u.1.get_mut(0).unwrap();
         session1.user_id = session1.user_id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -464,8 +508,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_valid_credentials() {
-        let mut data_p = ProflTest::profiles(&[USER]);
-        let profile1 = data_p.0.get_mut(0).unwrap();
+        let data_u = User_Test::users(&[USER]);
+        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let profile1 = profiles.get_mut(0).unwrap();
         let nickname = profile1.nickname.clone();
         let password = "passwdR2B2";
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
@@ -474,8 +519,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -513,14 +559,132 @@ mod tests {
     // ** logout **
 
     #[actix_web::test]
-    async fn test_logout_valid_token() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+    async fn test_logout_missing_token() {
+        let data_u = User_Test::users(&[]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/logout").to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(a)
+
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.message, err::MSG_MISSING_TOKEN);
+    }
+    #[actix_web::test]
+    async fn test_logout_invalid_token() {
+        let data_u = User_Test::users(&[]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(logout)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/logout")
+            .insert_header(AthCtTest::header_auth("invalid_token123"))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401b
+
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert!(api_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
+    }
+    #[actix_web::test]
+    async fn test_logout_valid_token_session_non_exist() {
+        let data_u = User_Test::users(&[USER]);
+        let user2_id = USER1_ID + 1;
+        let token2 = User_Test::get_token(user2_id);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(logout)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/logout")
+            .insert_header(AthCtTest::header_auth(&token2))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, StatusCode::NOT_ACCEPTABLE); // 406
+
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user2_id));
+    }
+    #[actix_web::test]
+    async fn test_logout_valid_token_non_existent_user() {
+        let mut data_u = User_Test::users(&[USER]);
+        let user2_id = USER1_ID + 1;
+        data_u.1 = vec![Session::new(user2_id, Some(User_Test::get_num_token(user2_id)))];
+        let token2 = User_Test::get_token(user2_id);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(logout)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/logout")
+            .insert_header(AthCtTest::header_auth(&token2))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(d)
+
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user2_id));
+    }
+    #[actix_web::test]
+    async fn test_logout_valid_token_non_existent_num() {
+        let mut data_u = User_Test::users(&[USER]);
+        let user2_id = USER1_ID + 1;
+        data_u.1 = vec![Session::new(user2_id, Some(User_Test::get_num_token(USER1_ID)))];
+        let token2 = User_Test::get_token(user2_id);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(logout)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/logout")
+            .insert_header(AthCtTest::header_auth(&token2))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(c)
+
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user2_id));
+    }
+    #[actix_web::test]
+    async fn test_logout_valid_token() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(logout)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
@@ -546,15 +710,18 @@ mod tests {
     }
 
     // ** update_token **
+
     #[actix_web::test]
     async fn test_update_token_no_data() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -571,13 +738,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_empty_json_object() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -595,13 +764,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_empty() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -619,13 +790,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_invalid() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -643,19 +816,21 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
+        let profile1_id = profiles.get(0).unwrap().user_id;
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret = config_jwt.jwt_secret.as_bytes();
         let profile_id_bad = profile1_id + 1;
-        let num_token = data_p.1.get(0).unwrap().num_token.unwrap();
+        let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
         let token_bad = token_coding::encode_token(profile_id_bad, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -673,18 +848,20 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_num() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
+        let profile1_id = profiles.get(0).unwrap().user_id;
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret = config_jwt.jwt_secret.as_bytes();
-        let num_token = data_p.1.get(0).unwrap().num_token.unwrap();
+        let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
         let token_bad = token_coding::encode_token(profile1_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -702,19 +879,21 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_valid_dto_token() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let profiles = ProflTest::profiles2(&data_u.0);
+        let profile1_id = profiles.get(0).unwrap().user_id;
         let config_jwt = config_jwt::get_test_config();
         let jwt_access = config_jwt.jwt_access;
         let jwt_secret = config_jwt.jwt_secret.as_bytes();
-        let num_token = data_p.1.get(0).unwrap().num_token.unwrap();
+        let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
         let token_refresh = token_coding::encode_token(profile1_id, num_token, &jwt_secret, config_jwt.jwt_refresh).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(ProflTest::cfg_profile_orm2(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
