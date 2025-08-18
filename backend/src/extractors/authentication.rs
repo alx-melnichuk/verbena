@@ -24,23 +24,23 @@ use vrb_tools::{err, token_coding, token_data};
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
 pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
 
-pub struct Authenticated2(User);
+pub struct Authenticated(User);
 
-impl FromRequest for Authenticated2 {
+impl FromRequest for Authenticated {
     type Error = actix_web::Error;
     type Future = Ready<Result<Self, Self::Error>>;
 
     fn from_request(req: &actix_web::HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
         let value = req.extensions().get::<User>().cloned();
         let result = match value {
-            Some(user) => Ok(Authenticated2(user)),
+            Some(user) => Ok(Authenticated(user)),
             None => Err(error::ErrorInternalServerError(ApiError::new(500, MSG_USER_NOT_RECEIVED_FROM_REQUEST))),
         };
         ready(result)
     }
 }
 
-impl std::ops::Deref for Authenticated2 {
+impl std::ops::Deref for Authenticated {
     type Target = User;
     /// Implement the deref method to access the inner "User" value of Authenticated.
     fn deref(&self) -> &Self::Target {
@@ -48,14 +48,14 @@ impl std::ops::Deref for Authenticated2 {
     }
 }
 
-pub struct RequireAuth2 {
+pub struct RequireAuth {
     pub allowed_roles: Rc<Vec<UserRole>>,
 }
 
-impl RequireAuth2 {
+impl RequireAuth {
     #[allow(dead_code)]
     pub fn allowed_roles(allowed_roles: Vec<UserRole>) -> Self {
-        RequireAuth2 {
+        RequireAuth {
             allowed_roles: Rc::new(allowed_roles),
         }
     }
@@ -67,7 +67,7 @@ impl RequireAuth2 {
     }
 }
 
-impl<S> dev::Transform<S, dev::ServiceRequest> for RequireAuth2
+impl<S> dev::Transform<S, dev::ServiceRequest> for RequireAuth
 where
     S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<actix_web::body::BoxBody>, Error = actix_web::Error> + 'static,
 {

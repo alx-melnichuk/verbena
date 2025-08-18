@@ -9,7 +9,7 @@ mod tests {
     use vrb_common::api_error::{code_to_str, ApiError};
     use vrb_tools::{err, token_coding, token_data};
 
-    use crate::extractors::authentication2::RequireAuth2;
+    use crate::extractors::authentication::RequireAuth;
     use vrb_dbase::user_auth::{
         config_jwt,
         user_auth_models::Session,
@@ -19,11 +19,11 @@ mod tests {
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
     const MSG_FAILED_TO_DESER: &str = "Failed to deserialize JSON string";
 
-    #[get("/", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+    #[get("/", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
     async fn handler_with_auth() -> HttpResponse {
         HttpResponse::Ok().into()
     }
-    #[get("/", wrap = "RequireAuth2::allowed_roles(RequireAuth2::admin_role())")]
+    #[get("/", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
     async fn handler_with_require_only_admin() -> HttpResponse {
         HttpResponse::Ok().into()
     }
