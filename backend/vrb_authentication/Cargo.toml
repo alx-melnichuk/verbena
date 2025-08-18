@@ -1,0 +1,17 @@
+[package]
+name = "vrb-authentication"
+version = "0.1.0"
+edition = "2021"
+description = "Library for authorization functions."
+rust-version = "1.87.0"
+keywords = ["vrb-authentication"]
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+
+
+[profile.dev]
+debug = 1
