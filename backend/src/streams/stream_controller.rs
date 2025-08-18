@@ -15,7 +15,7 @@ use vrb_common::{
 use vrb_dbase::db_enums::{StreamState, UserRole};
 use vrb_tools::{cdis::coding, err, loading::dynamic_image};
 
-use crate::extractors::authentication2::{Authenticated2, RequireAuth2};
+use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -134,9 +134,9 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
     params(("id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
 )]#[rustfmt::skip]
-#[get("/api/streams/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_stream_by_id(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -275,9 +275,9 @@ pub async fn get_stream_by_id(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/streams", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<SearchStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -370,7 +370,7 @@ pub async fn get_streams(
     ),
     security(("bearer_auth" = []))
 )]
-#[get("/api/streams_config", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/streams_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 #[rustfmt::skip]
 pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web::Result<HttpResponse, ApiError> {
     let cfg_strm = config_strm;
@@ -456,9 +456,9 @@ pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web:
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/streams_events", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/streams_events", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_events(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<SearchStreamEventDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -567,9 +567,9 @@ pub async fn get_streams_events(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/streams_period", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/streams_period", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_period(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<SearchStreamPeriodDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -802,9 +802,9 @@ impl CreateStreamForm {
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[post("/api/streams", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[post("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_stream(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
@@ -1047,9 +1047,9 @@ impl ModifyStreamForm {
 )]
 // PUT /api/streams/{id}
 #[rustfmt::skip]
-#[put("/api/streams/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[put("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_stream(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
@@ -1284,9 +1284,9 @@ pub async fn put_stream(
 )]
 // PUT /api/streams/toggle/{id}
 #[rustfmt::skip]
-#[put("/api/streams/toggle/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[put("/api/streams/toggle/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_toggle_state(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<ToggleStreamStateDto>,
@@ -1451,9 +1451,9 @@ pub async fn put_toggle_state(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/streams/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[delete("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_stream(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,

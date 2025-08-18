@@ -18,7 +18,7 @@ use crate::chats::{
     },
     chat_message_orm::ChatMessageOrm,
 };
-use crate::extractors::authentication2::{is_session_not_found, is_unacceptable_token_id, is_unacceptable_token_num};
+use crate::extractors::authentication::{is_session_not_found, is_unacceptable_token_id, is_unacceptable_token_num};
 
 #[derive(Debug, Clone)]
 pub struct ChatStream {

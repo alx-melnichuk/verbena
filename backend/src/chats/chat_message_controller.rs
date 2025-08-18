@@ -31,7 +31,7 @@ use crate::chats::{
     },
     chat_message_orm::ChatMessageOrm,
 };
-use crate::extractors::authentication2::{Authenticated2, RequireAuth2};
+use crate::extractors::authentication::{Authenticated, RequireAuth};
 
 // 403 Access denied - insufficient user rights.
 pub const MSG_MODIFY_ANOTHER_USERS_CHAT_MESSAGE: &str = "modify_another_users_chat_message";
@@ -191,7 +191,7 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/chat_messages", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_chat_message(
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     query_params: web::Query<SearchChatMessageDto>,
@@ -290,9 +290,9 @@ pub async fn get_chat_message(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[post("/api/chat_messages", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[post("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_chat_message(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<CreateChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -444,9 +444,9 @@ fn message_max() -> String {
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[put("/api/chat_messages/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[put("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_chat_message(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<ModifyChatMessageDto>,
@@ -598,9 +598,9 @@ pub async fn put_chat_message(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/chat_messages/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[delete("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_chat_message(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -715,9 +715,9 @@ pub async fn delete_chat_message(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/blocked_users", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_blocked_users(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -830,9 +830,9 @@ pub async fn get_blocked_users(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[post("/api/blocked_users", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[post("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_blocked_user(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<CreateBlockedUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -959,9 +959,9 @@ pub async fn post_blocked_user(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/blocked_users", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[delete("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_blocked_user(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<DeleteBlockedUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {

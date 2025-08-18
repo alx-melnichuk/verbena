@@ -15,7 +15,7 @@ use vrb_common::{
 use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{cdis::coding, consts, err, hash_tools, loading::dynamic_image};
 
-use crate::extractors::authentication2::{Authenticated2, RequireAuth2};
+use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -169,7 +169,7 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/profiles/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::admin_role())" )]
+#[get("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_profile_by_id(
     profile_orm: web::Data<ProfileOrmApp>,
     request: actix_web::HttpRequest,
@@ -252,7 +252,7 @@ pub async fn get_profile_by_id(
     ),
     security(("bearer_auth" = []))
 )]
-#[get("/api/profiles_config", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/profiles_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web::Result<HttpResponse, ApiError> {
     let cfg_prfl = config_prfl;
     #[rustfmt::skip]
@@ -309,9 +309,9 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
     security(("bearer_auth" = []))
 )]
 #[rustfmt::skip]
-#[get("/api/profiles_current", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[get("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_current(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let user = authenticated.deref();
@@ -523,9 +523,9 @@ impl ModifyProfileForm {
 )]
 // PUT /api/profiles
 #[rustfmt::skip]
-#[put("/api/profiles", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[put("/api/profiles", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_profile(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
@@ -770,9 +770,9 @@ pub async fn put_profile(
     security(("bearer_auth" = []))
 )]
 #[rustfmt::skip]
-#[put("/api/profiles_new_password", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[put("/api/profiles_new_password", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_profile_new_password(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     profile_orm: web::Data<ProfileOrmApp>,
     json_body: web::Json<NewPasswordProfileDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -909,7 +909,7 @@ pub async fn put_profile_new_password(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/profiles/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::admin_role())")]
+#[delete("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_profile(
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
@@ -1009,9 +1009,9 @@ pub async fn delete_profile(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/profiles_current", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
+#[delete("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_profile_current(
-    authenticated: Authenticated2,
+    authenticated: Authenticated,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
