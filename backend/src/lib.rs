@@ -30,7 +30,6 @@ use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm:
 use utoipa::OpenApi;
 
 pub mod chats;
-pub(crate) mod extractors;
 pub mod profiles;
 pub(crate) mod static_controller;
 pub mod streams;
