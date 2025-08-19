@@ -7,19 +7,18 @@ use futures_util::{
 };
 use log::{debug, error, log_enabled, Level::Info};
 use vrb_common::api_error::{code_to_str, ApiError};
-#[cfg(not(any(test, feature = "mockdata")))]
-use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
-#[cfg(any(test, feature = "mockdata"))]
-use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
-use vrb_dbase::{
-    db_enums::UserRole,
-    user_auth::{
-        config_jwt,
-        user_auth_models::{Session, User},
-        user_auth_orm::UserAuthOrm,
-    },
-};
+use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{err, token_coding, token_data};
+
+#[cfg(not(any(test, feature = "mockdata")))]
+use crate::user_auth_orm::impls::UserAuthOrmApp;
+#[cfg(any(test, feature = "mockdata"))]
+use crate::user_auth_orm::tests::UserAuthOrmApp;
+use crate::{
+    config_jwt,
+    user_auth_models::{Session, User},
+    user_auth_orm::UserAuthOrm,
+};
 
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
 pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
@@ -148,7 +147,6 @@ where
 
         // Handle user extraction and request processing
         async move {
-
             let user_auth_orm = req.app_data::<web::Data<UserAuthOrmApp>>().unwrap().get_ref();
 
             // Find user session by "id" from token.

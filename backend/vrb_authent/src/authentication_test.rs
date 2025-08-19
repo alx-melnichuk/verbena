@@ -7,16 +7,13 @@ mod tests {
         test, App, HttpResponse,
     };
     use serde_json;
-    
     use vrb_common::api_error::{code_to_str, ApiError};
     use vrb_tools::{err, token_coding, token_data};
 
     use crate::authentication::RequireAuth;
-    use vrb_dbase::user_auth::{
-        config_jwt,
-        user_auth_models::Session,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
-    };
+    use crate::config_jwt;
+    use crate::user_auth_models::Session;
+    use crate::user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID};
 
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
     const MSG_FAILED_TO_DESER: &str = "Failed to deserialize JSON string";
