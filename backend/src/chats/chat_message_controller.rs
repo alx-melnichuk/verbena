@@ -11,6 +11,7 @@ use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
 use serde_json::json;
 use utoipa;
+use vrb_authentication::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     parser,
@@ -31,7 +32,6 @@ use crate::chats::{
     },
     chat_message_orm::ChatMessageOrm,
 };
-use crate::extractors::authentication::{Authenticated, RequireAuth};
 
 // 403 Access denied - insufficient user rights.
 pub const MSG_MODIFY_ANOTHER_USERS_CHAT_MESSAGE: &str = "modify_another_users_chat_message";
