@@ -1,4 +1,4 @@
-use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile, Session};
+use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile};
 use vrb_dbase::dbase::DbPool;
 
 pub trait ProfileOrm {
@@ -19,9 +19,6 @@ pub trait ProfileOrm {
 
     /// Delete an entity (profile).
     fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String>;
-
-    /// Get an entity (session) by ID.
-    fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
 
     /// Filter for the list of stream logos by user ID.
     fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String>;
@@ -214,24 +211,6 @@ pub mod impls {
                 info!("delete_profile() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             Ok(opt_profile)
-        }
-
-        /// Get an entity (session) by ID.
-        fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
-            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to find user by id and return it.
-            let opt_session: Option<Session> = schema::sessions::table
-                .filter(schema::sessions::dsl::user_id.eq(user_id))
-                .first::<Session>(&mut conn)
-                .optional()
-                .map_err(|e| format!("get_session_by_id: {}", e.to_string()))?;
-
-            if let Some(timer) = timer {
-                info!("get_session_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
-            }
-            Ok(opt_session)
         }
 
         /// Filter for the list of stream logos by user ID.
@@ -439,17 +418,6 @@ pub mod tests {
             let opt_profile = self.profile_vec.iter().find(|profile| profile.user_id == user_id);
 
             Ok(opt_profile.map(|u| u.clone()))
-        }
-
-        /// Get an entity (session) by ID.
-        fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
-            let opt_session: Option<Session> = self
-                .session_vec
-                .iter()
-                .find(|session| session.user_id == user_id)
-                .map(|session| session.clone());
-
-            Ok(opt_session)
         }
 
         /// Filter for the list of stream logos by user ID.
