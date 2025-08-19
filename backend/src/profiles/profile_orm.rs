@@ -1,4 +1,5 @@
 use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile, Session};
+use vrb_dbase::dbase::DbPool;
 
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
@@ -26,22 +27,13 @@ pub trait ProfileOrm {
     fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String>;
 }
 
-pub mod cfg {
-    use vrb_dbase::dbase::DbPool;
-
-    #[cfg(not(all(test, feature = "mockdata")))]
-    use super::impls::ProfileOrmApp;
-    #[cfg(not(all(test, feature = "mockdata")))]
-    pub fn get_profile_orm_app(pool: DbPool) -> ProfileOrmApp {
-        ProfileOrmApp::new(pool)
-    }
-
-    #[cfg(all(test, feature = "mockdata"))]
-    use super::tests::ProfileOrmApp;
-    #[cfg(all(test, feature = "mockdata"))]
-    pub fn get_profile_orm_app(_: DbPool) -> ProfileOrmApp {
-        ProfileOrmApp::new()
-    }
+#[cfg(not(all(test, feature = "mockdata")))]
+pub fn get_profile_orm_app(pool: DbPool) -> impls::ProfileOrmApp {
+    impls::ProfileOrmApp::new(pool)
+}
+#[cfg(all(test, feature = "mockdata"))]
+pub fn get_profile_orm_app(_: DbPool) -> tests::ProfileOrmApp {
+    tests::ProfileOrmApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
