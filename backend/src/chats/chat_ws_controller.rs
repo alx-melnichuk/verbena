@@ -1,11 +1,11 @@
 use actix_web::{get, web, HttpResponse};
 use actix_web_actors::ws;
 use utoipa;
-use vrb_dbase::user_auth::config_jwt;
+use vrb_authent::config_jwt;
 #[cfg(not(all(test, feature = "mockdata")))]
-use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
+use vrb_authent::user_auth_orm::impls::UserAuthOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
-use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
+use vrb_authent::user_auth_orm::tests::UserAuthOrmApp;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;

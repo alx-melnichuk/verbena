@@ -4,7 +4,7 @@ mod tests {
     use actix_web_actors::ws::{Frame::Text as FrameText, Message::Text as MessageText};
     use futures_util::{SinkExt, StreamExt}; // this is needed for "send" method in Framed
     use serde_json::to_string;
-    use vrb_dbase::user_auth::{
+    use vrb_authent::{
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER},
     };

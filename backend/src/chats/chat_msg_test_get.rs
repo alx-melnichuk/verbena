@@ -8,15 +8,15 @@ mod tests {
     };
     use chrono::SecondsFormat;
     use serde_json;
+    use vrb_authent::{
+        config_jwt,
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
+    };
 
     use crate::chats::{
         chat_message_controller::{get_chat_message, tests as ChtCtTest},
         chat_message_models::ChatMessageDto,
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
-    };
-    use vrb_dbase::user_auth::{
-        config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";

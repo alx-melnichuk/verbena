@@ -8,6 +8,11 @@ mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json::json;
+    use vrb_authent::{
+        config_jwt,
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
+    };
+
     use vrb_common::api_error::{code_to_str, ApiError};
     use vrb_tools::err;
 
@@ -15,10 +20,6 @@ mod tests {
         chat_message_controller::{post_chat_message, put_chat_message, tests as ChtCtTest},
         chat_message_models::{self, ChatMessageDto, ChatMessageTest as MessgTest, CreateChatMessageDto, ModifyChatMessageDto},
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
-    };
-    use vrb_dbase::user_auth::{
-        config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";

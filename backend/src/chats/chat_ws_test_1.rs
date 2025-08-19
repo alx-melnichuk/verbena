@@ -4,12 +4,12 @@ mod tests {
     use actix_web_actors::ws::{Frame::Text as FrameText, Message::Text as MessageText};
     use futures_util::{SinkExt, StreamExt}; // this is needed for "send" method in Framed.
     use serde_json::to_string;
-    use vrb_common::crypto::CRT_WRONG_STRING_BASE64URL;
-    use vrb_dbase::user_auth::{
+    use vrb_authent::{
         config_jwt,
         user_auth_models::Session,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
     };
+    use vrb_common::crypto::CRT_WRONG_STRING_BASE64URL;
     use vrb_tools::{err, token_coding};
 
     use crate::chats::chat_event_ws::LeaveEWS;

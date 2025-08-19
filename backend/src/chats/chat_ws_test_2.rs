@@ -5,7 +5,7 @@ mod tests {
     use chrono::{SecondsFormat, Utc};
     use futures_util::{SinkExt, StreamExt}; // this is needed for "send" method in Framed
     use serde_json::{from_slice, to_string};
-    use vrb_dbase::user_auth::{
+    use vrb_authent::{
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER},
     };
