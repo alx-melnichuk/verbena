@@ -26,7 +26,6 @@ impl ConfigJwt {
     }
 }
 
-#[cfg(any(test, feature = "mockdata"))]
 pub fn get_test_config() -> ConfigJwt {
     ConfigJwt {
         jwt_secret: "my-jwt-secret".to_string(),
