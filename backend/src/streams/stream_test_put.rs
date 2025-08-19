@@ -15,7 +15,6 @@ mod tests {
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
     };
-
     use vrb_common::{
         api_error::{code_to_str, ApiError},
         validators,
