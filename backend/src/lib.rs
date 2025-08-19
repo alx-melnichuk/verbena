@@ -9,11 +9,8 @@ use log::{info, log_enabled, Level::Info};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
-#[cfg(not(all(test, feature = "mockdata")))]
-use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
-use vrb_dbase::{dbase, user_auth::config_jwt};
+use vrb_authent::{self, config_jwt, user_auth_orm};
+use vrb_dbase::dbase;
 #[cfg(not(feature = "mockdata"))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
@@ -130,12 +127,9 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         // Adding various entities.
         // used: profile_registr_controller
         let mailer = web::Data::new(MailerApp::new(config_smtp0));
-        #[cfg(not(all(test, feature = "mockdata")))]
-        let user_auth_orm0 = UserAuthOrmApp::new(pool.clone());
-        #[cfg(all(test, feature = "mockdata"))]
-        let user_auth_orm0 = UserAuthOrmApp::new();
+        // Create "UserAuthOrmApp".
+        let user_auth_orm0 = user_auth_orm::get_user_auth_orm_app(pool.clone());
         let user_auth_orm = web::Data::new(user_auth_orm0);
-
         // used: profile_registr_controller
         let user_registr_orm = web::Data::new(get_user_registr_orm_app(pool.clone()));
         // used: profile_registr_controller
