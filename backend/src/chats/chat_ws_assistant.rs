@@ -1,5 +1,6 @@
 use actix_web::http::StatusCode;
 use log::error;
+use vrb_authentication::authentication::{is_session_not_found, is_unacceptable_token_id, is_unacceptable_token_num};
 use vrb_common::api_error::{code_to_str, ApiError};
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
@@ -18,7 +19,6 @@ use crate::chats::{
     },
     chat_message_orm::ChatMessageOrm,
 };
-use crate::extractors::authentication::{is_session_not_found, is_unacceptable_token_id, is_unacceptable_token_num};
 
 #[derive(Debug, Clone)]
 pub struct ChatStream {
