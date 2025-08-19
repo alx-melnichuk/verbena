@@ -3,8 +3,7 @@ pub mod tests {
     use std::{fs, path};
 
     use actix_web::web;
-
-    use vrb_dbase::user_auth::user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1};
+    use vrb_authent::user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1};
 
     use crate::streams::{
         config_strm,

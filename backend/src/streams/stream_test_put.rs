@@ -11,17 +11,16 @@ mod tests {
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
+    use vrb_authent::{
+        config_jwt,
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
+    };
+
     use vrb_common::{
         api_error::{code_to_str, ApiError},
         validators,
     };
-    use vrb_dbase::{
-        db_enums::StreamState,
-        user_auth::{
-            config_jwt,
-            user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
-        },
-    };
+    use vrb_dbase::db_enums::StreamState;
     use vrb_tools::{cdis::coding, err, png_files};
 
     use crate::streams::{
