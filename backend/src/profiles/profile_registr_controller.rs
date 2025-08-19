@@ -2,6 +2,7 @@ use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
+use vrb_authentication::authentication::RequireAuth;
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     validators::{msg_validation, Validator},
@@ -13,7 +14,6 @@ use vrb_tools::send_email::mailer::impls::MailerApp;
 use vrb_tools::send_email::mailer::tests::MailerApp;
 use vrb_tools::{config_app, err, hash_tools, send_email::mailer::Mailer, token_coding};
 
-use crate::extractors::authentication::RequireAuth;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
