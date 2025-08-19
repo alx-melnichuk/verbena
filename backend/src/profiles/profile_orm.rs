@@ -525,7 +525,7 @@ pub mod tests {
                 config.app_data(web::Data::clone(&data_config_prfl));
             }
         }
-        pub fn cfg_profile_orm2(data_p: Vec<Profile>) -> impl FnOnce(&mut web::ServiceConfig) {
+        pub fn cfg_profile_orm(data_p: Vec<Profile>) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
                 let data_profile_orm = web::Data::new(ProfileOrmApp::create2(&data_p));
 

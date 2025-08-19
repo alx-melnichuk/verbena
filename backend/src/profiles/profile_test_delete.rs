@@ -44,7 +44,7 @@ pub mod tests {
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -73,7 +73,7 @@ pub mod tests {
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -95,7 +95,7 @@ pub mod tests {
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -134,7 +134,7 @@ pub mod tests {
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -177,7 +177,7 @@ pub mod tests {
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -214,7 +214,7 @@ pub mod tests {
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -252,7 +252,7 @@ pub mod tests {
             App::new().service(delete_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -290,7 +290,7 @@ pub mod tests {
             App::new().service(delete_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -332,7 +332,7 @@ pub mod tests {
             App::new().service(delete_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
@@ -369,7 +369,7 @@ pub mod tests {
             App::new().service(delete_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]

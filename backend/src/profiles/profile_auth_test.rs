@@ -38,7 +38,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))               
+                .configure(ProflTest::cfg_profile_orm(profiles))               
         ).await;
         let req = test::TestRequest::post().uri("/api/login").to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -59,7 +59,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         let req = test::TestRequest::post().uri("/api/login").set_json(json!({})).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -80,7 +80,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -104,7 +104,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -128,7 +128,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -152,7 +152,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -176,7 +176,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -200,7 +200,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -224,7 +224,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -248,7 +248,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -272,7 +272,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -296,7 +296,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -320,7 +320,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -345,7 +345,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -370,7 +370,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -398,7 +398,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -427,7 +427,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -458,7 +458,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -491,7 +491,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -521,7 +521,7 @@ mod tests {
             App::new().service(login)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -721,7 +721,7 @@ mod tests {
             App::new().service(update_token)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -746,7 +746,7 @@ mod tests {
             App::new().service(update_token)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -772,7 +772,7 @@ mod tests {
             App::new().service(update_token)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -798,7 +798,7 @@ mod tests {
             App::new().service(update_token)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -830,7 +830,7 @@ mod tests {
             App::new().service(update_token)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -861,7 +861,7 @@ mod tests {
             App::new().service(update_token)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -893,7 +893,7 @@ mod tests {
             App::new().service(update_token)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")

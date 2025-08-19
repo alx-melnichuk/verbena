@@ -52,7 +52,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -74,7 +74,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -97,7 +97,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -127,7 +127,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -157,7 +157,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -187,7 +187,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -217,7 +217,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -247,7 +247,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -277,7 +277,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -307,7 +307,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -337,7 +337,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -367,7 +367,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -397,7 +397,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -427,7 +427,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -459,7 +459,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -489,7 +489,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -520,7 +520,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
@@ -551,7 +551,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
@@ -582,7 +582,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -612,7 +612,7 @@ mod tests {
             App::new().service(registration)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -650,7 +650,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_registration)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -685,7 +685,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_registration)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
@@ -722,7 +722,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_registration)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
@@ -760,7 +760,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_registration)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
@@ -790,7 +790,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -815,7 +815,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -839,7 +839,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -865,7 +865,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -891,7 +891,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -917,7 +917,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -944,7 +944,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -974,7 +974,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
@@ -1012,7 +1012,7 @@ mod tests {
             App::new().service(recovery)
                 .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
@@ -1049,7 +1049,7 @@ mod tests {
             App::new().service(recovery)
             .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
             .configure(User_Test::cfg_config_jwt(config_jwt))
-            .configure(ProflTest::cfg_profile_orm2(profiles))
+            .configure(ProflTest::cfg_profile_orm(profiles))
             .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
             .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -1077,7 +1077,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1101,7 +1101,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1125,7 +1125,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1149,7 +1149,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1173,7 +1173,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
@@ -1208,7 +1208,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
@@ -1244,7 +1244,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
@@ -1282,7 +1282,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
@@ -1319,7 +1319,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_recovery)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]

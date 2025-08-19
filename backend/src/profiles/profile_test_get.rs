@@ -38,7 +38,7 @@ mod tests {
             App::new().service(get_profile_by_id)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
@@ -67,7 +67,7 @@ mod tests {
             App::new().service(get_profile_by_id)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", &profile2_id))
@@ -95,7 +95,7 @@ mod tests {
             App::new().service(get_profile_by_id)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", profile2_id + 1))
@@ -153,7 +153,7 @@ mod tests {
             App::new().service(get_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_current")
@@ -183,7 +183,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -210,7 +210,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -238,7 +238,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -267,7 +267,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -292,7 +292,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -318,7 +318,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(registr))
         ).await;
         #[rustfmt::skip]
@@ -344,7 +344,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(registr))
         ).await;
         #[rustfmt::skip]
@@ -369,7 +369,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -394,7 +394,7 @@ mod tests {
             App::new().service(uniqueness_check)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
         #[rustfmt::skip]

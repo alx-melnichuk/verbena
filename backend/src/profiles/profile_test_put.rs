@@ -46,7 +46,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -74,7 +74,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -107,7 +107,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -143,7 +143,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -172,7 +172,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -203,7 +203,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -231,7 +231,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -260,7 +260,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -289,7 +289,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -318,7 +318,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -347,7 +347,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -376,7 +376,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -405,7 +405,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -434,7 +434,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -463,7 +463,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -492,7 +492,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -523,7 +523,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -553,7 +553,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(true)))
         ).await;
@@ -584,7 +584,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(registr))
         ).await;
@@ -615,7 +615,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(registr))
         ).await;
@@ -652,7 +652,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -691,7 +691,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -739,7 +739,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -788,7 +788,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -850,7 +850,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -917,7 +917,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -978,7 +978,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -1027,7 +1027,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -1065,7 +1065,7 @@ pub mod tests {
             App::new().service(put_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -1095,7 +1095,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1121,7 +1121,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1148,7 +1148,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1177,7 +1177,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1206,7 +1206,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1235,7 +1235,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1267,7 +1267,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1299,7 +1299,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1331,7 +1331,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1363,7 +1363,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1395,7 +1395,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1427,7 +1427,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1459,7 +1459,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
@@ -1492,7 +1492,7 @@ pub mod tests {
             App::new().service(put_profile_new_password)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_auth_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm2(profiles))
+                .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
