@@ -315,48 +315,6 @@ pub mod tests {
         }
         /// Create a new instance with the specified profile list.
         /// Sessions are taken from "sessions", if it is empty, they are created automatically.
-        pub fn create(profiles: &[Profile], sessions: &[Session]) -> Self {
-            let mut profile_vec: Vec<Profile> = Vec::new();
-            let mut session_vec: Vec<Session> = Vec::new();
-            let mut sessions2: Vec<Session> = sessions.to_vec();
-            for (idx, profile) in profiles.iter().enumerate() {
-                let delta: i32 = idx.try_into().unwrap();
-                let user_id = USER1_ID + delta;
-                let mut profile2 = Profile::new(
-                    user_id,
-                    &profile.nickname.to_lowercase(),
-                    &profile.email.to_lowercase(),
-                    profile.role.clone(),
-                    profile.avatar.as_deref(),
-                    profile.descript.as_deref(),
-                    profile.theme.as_deref(),
-                    profile.locale.as_deref(),
-                );
-                profile2.password = profile.password.clone();
-                profile2.created_at = profile.created_at;
-                profile2.updated_at = profile.updated_at;
-                profile_vec.push(profile2);
-
-                if sessions2.len() > 0 {
-                    let opt_session = sessions2.iter_mut().find(|v| (*v).user_id == profile.user_id);
-                    if let Some(session) = opt_session {
-                        session_vec.push(Session::new(user_id, session.num_token));
-                        session.user_id = 0;
-                    }
-                } else {
-                    session_vec.push(Session::new(user_id, None));
-                }
-            }
-            for session in sessions2.iter() {
-                if USER1_ID <= session.user_id {
-                    session_vec.push(Session::new(session.user_id, session.num_token));
-                }
-            }
-
-            ProfileOrmApp { profile_vec, session_vec }
-        }
-        /// Create a new instance with the specified profile list.
-        /// Sessions are taken from "sessions", if it is empty, they are created automatically.
         pub fn create2(profiles: &[Profile]) -> Self {
             ProfileOrmApp {
                 profile_vec: profiles.to_vec(),
@@ -573,13 +531,6 @@ pub mod tests {
             move |config: &mut web::ServiceConfig| {
                 let data_config_prfl = web::Data::new(config_prfl);
                 config.app_data(web::Data::clone(&data_config_prfl));
-            }
-        }
-        pub fn cfg_profile_orm(data_p: (Vec<Profile>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p.0, &data_p.1));
-
-                config.app_data(web::Data::clone(&data_profile_orm));
             }
         }
         pub fn cfg_profile_orm2(data_p: Vec<Profile>) -> impl FnOnce(&mut web::ServiceConfig) {
