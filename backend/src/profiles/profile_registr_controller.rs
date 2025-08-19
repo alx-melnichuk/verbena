@@ -2,7 +2,7 @@ use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
-use vrb_authentication::authentication::RequireAuth;
+use vrb_authent::authentication::RequireAuth;
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     validators::{msg_validation, Validator},

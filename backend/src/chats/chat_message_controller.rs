@@ -11,7 +11,7 @@ use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
 use serde_json::json;
 use utoipa;
-use vrb_authentication::authentication::{Authenticated, RequireAuth};
+use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     parser,

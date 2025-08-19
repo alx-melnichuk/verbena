@@ -7,7 +7,7 @@ use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
-use vrb_authentication::authentication::{Authenticated, RequireAuth};
+use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     parser,
