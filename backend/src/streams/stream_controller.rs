@@ -7,6 +7,7 @@ use log::error;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
+use vrb_authentication::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     parser,
@@ -15,7 +16,6 @@ use vrb_common::{
 use vrb_dbase::db_enums::{StreamState, UserRole};
 use vrb_tools::{cdis::coding, err, loading::dynamic_image};
 
-use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
