@@ -307,7 +307,7 @@ pub mod tests {
         }
         /// Create a new instance with the specified profile list.
         /// Sessions are taken from "sessions", if it is empty, they are created automatically.
-        pub fn create2(profiles: &[Profile]) -> Self {
+        pub fn create(profiles: &[Profile]) -> Self {
             ProfileOrmApp {
                 profile_vec: profiles.to_vec(),
                 session_vec: Vec::new(),
@@ -527,7 +527,7 @@ pub mod tests {
         }
         pub fn cfg_profile_orm(data_p: Vec<Profile>) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
-                let data_profile_orm = web::Data::new(ProfileOrmApp::create2(&data_p));
+                let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p));
 
                 config.app_data(web::Data::clone(&data_profile_orm));
             }
