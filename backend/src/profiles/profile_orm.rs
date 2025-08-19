@@ -22,7 +22,6 @@ pub trait ProfileOrm {
     /// Get an entity (session) by ID.
     fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
 
-
     /// Filter for the list of stream logos by user ID.
     fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String>;
 }
@@ -270,14 +269,12 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::Utc;
-    use vrb_dbase::{
-        db_enums::UserRole,
-        user_auth::{config_jwt, user_auth_models::User},
-    };
+    use vrb_authent::{config_jwt, user_auth_models::User};
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{consts, token_coding};
 
     use crate::profiles::{
-        /*config_jwt,*/ config_prfl,
+        config_prfl,
         profile_models::{self, Profile, Session},
         profile_orm::ProfileOrm,
     };
@@ -361,7 +358,10 @@ pub mod tests {
         /// Create a new instance with the specified profile list.
         /// Sessions are taken from "sessions", if it is empty, they are created automatically.
         pub fn create2(profiles: &[Profile]) -> Self {
-            ProfileOrmApp { profile_vec: profiles.to_vec(), session_vec: Vec::new() }
+            ProfileOrmApp {
+                profile_vec: profiles.to_vec(),
+                session_vec: Vec::new(),
+            }
         }
         /// Create a new instance of the Profile entity.
         pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {

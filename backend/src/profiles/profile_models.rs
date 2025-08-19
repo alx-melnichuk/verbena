@@ -4,11 +4,12 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use vrb_authent::user_auth_models::User;
 use vrb_common::{
     serial_datetime,
     validators::{ValidationChecks, ValidationError, Validator},
 };
-use vrb_dbase::{db_enums::UserRole, schema, user_auth::user_auth_models::User};
+use vrb_dbase::{db_enums::UserRole, schema};
 use vrb_tools::err;
 
 pub const NICKNAME_MIN: u8 = 3;

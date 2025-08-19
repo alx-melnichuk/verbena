@@ -11,17 +11,15 @@ pub mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json;
+    use vrb_authent::{
+        config_jwt,
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
+    };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
         validators,
     };
-    use vrb_dbase::{
-        db_enums::UserRole,
-        user_auth::{
-            config_jwt,
-            user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
-        },
-    };
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{cdis::coding, err, hash_tools, png_files};
 
     use crate::profiles::{

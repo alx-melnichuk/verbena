@@ -2,12 +2,12 @@ use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
-use vrb_authent::authentication::RequireAuth;
+use vrb_authent::{authentication::RequireAuth, config_jwt};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     validators::{msg_validation, Validator},
 };
-use vrb_dbase::{db_enums::UserRole, user_auth::config_jwt};
+use vrb_dbase::db_enums::UserRole;
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]

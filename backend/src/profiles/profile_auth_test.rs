@@ -9,12 +9,12 @@ mod tests {
         test, App,
     };
     use serde_json::json;
-    use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_dbase::user_auth::{
+    use vrb_authent::{
         config_jwt,
         user_auth_models::Session,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
     };
+    use vrb_common::api_error::{code_to_str, ApiError};
     use vrb_tools::{err, hash_tools, token_coding, token_data::TOKEN_NAME};
 
     use crate::profiles::{

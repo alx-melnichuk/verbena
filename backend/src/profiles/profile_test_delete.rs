@@ -9,11 +9,11 @@ pub mod tests {
         test, App,
     };
     use serde_json;
-    use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_dbase::user_auth::{
+    use vrb_authent::{
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
     };
+    use vrb_common::api_error::{code_to_str, ApiError};
     use vrb_tools::{consts, err, png_files};
 
     use crate::profiles::{
