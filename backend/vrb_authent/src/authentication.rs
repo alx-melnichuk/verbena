@@ -7,9 +7,9 @@ use futures_util::{
 };
 use log::{debug, error, log_enabled, Level::Info};
 use vrb_common::api_error::{code_to_str, ApiError};
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(any(test, feature = "mockdata")))]
 use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(any(test, feature = "mockdata"))]
 use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
 use vrb_dbase::{
     db_enums::UserRole,
