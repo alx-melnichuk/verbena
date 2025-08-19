@@ -1,4 +1,5 @@
 use crate::user_auth_models::{Session, User};
+use vrb_dbase::dbase::DbPool;
 
 pub trait UserAuthOrm {
     /// Get an entity (user) by ID.
@@ -12,6 +13,16 @@ pub trait UserAuthOrm {
     // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
 }
 
+#[cfg(not(all(test, feature = "mockdata")))]
+pub fn get_user_auth_orm_app(pool: DbPool) -> impls::UserAuthOrmApp {
+    impls::UserAuthOrmApp::new(pool)
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub fn get_user_auth_orm_app(_: DbPool) -> tests::UserAuthOrmApp {
+    tests::UserAuthOrmApp::new()
+}
+
 pub mod impls {
     use std::time::Instant as tm;
 
@@ -23,10 +34,6 @@ pub mod impls {
     use crate::user_auth_orm::UserAuthOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-
-    // pub fn get_user_auth_orm_app(pool: DbPool) -> UserAuthApp {
-    //     UserAuthApp::new(pool)
-    // }
 
     #[derive(Debug, Clone)]
     pub struct UserAuthOrmApp {
@@ -133,10 +140,6 @@ pub mod tests {
     pub const USER4_NAME: &str = "ava_wilson";
 
     pub const USER1_NUM_TOKEN: i32 = 20000 + USER1_ID; //  1234;
-
-    // pub fn get_user_auth_orm_app(_: DbPool) -> UserAuthApp {
-    //     UserAuthApp::new()
-    // }
 
     #[derive(Debug, Clone)]
     pub struct UserAuthOrmApp {
