@@ -17,7 +17,6 @@ pub trait UserAuthOrm {
 pub fn get_user_auth_orm_app(pool: DbPool) -> impls::UserAuthOrmApp {
     impls::UserAuthOrmApp::new(pool)
 }
-
 #[cfg(all(test, feature = "mockdata"))]
 pub fn get_user_auth_orm_app(_: DbPool) -> tests::UserAuthOrmApp {
     tests::UserAuthOrmApp::new()
