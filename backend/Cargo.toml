@@ -47,7 +47,6 @@ utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] } # use in "
 utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web"] }
 utoipa-redoc = { version = "6.0.0", features = ["actix-web"] }
 utoipa-rapidoc = { version = "6.0.0", features = ["actix-web"] }
-vrb-authentication = { version = "0.1", path="./vrb_authentication" }
 vrb-authent = { version = "0.1", path="./vrb_authent" }
 vrb-common = { version = "0.1", path="./vrb_common" }
 vrb-dbase = { version = "0.1", path="./vrb_dbase" }
