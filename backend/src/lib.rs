@@ -32,7 +32,6 @@ pub(crate) mod static_controller;
 pub mod streams;
 pub mod swagger_docs;
 pub(crate) mod users;
-pub mod utils;
 
 pub async fn server_run() -> std::io::Result<()> {
     #[cfg(feature = "mockdata")]
