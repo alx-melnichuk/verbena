@@ -488,30 +488,9 @@ pub mod tests {
             let num_token = Self::get_num_token(user_id);
             token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap()
         }
-        pub fn profiles2(users: &[User]) -> Vec<Profile> {
+        pub fn profiles(users: &[User]) -> Vec<Profile> {
             let profile_vec: Vec<Profile> = users.iter().map(|u| Profile::from(u.clone())).collect();
             profile_vec
-        }
-        pub fn profiles(roles: &[u8]) -> (Vec<Profile>, Vec<Session>) {
-            let mut profile_vec: Vec<Profile> = Vec::new();
-            let mut session_vec: Vec<Session> = Vec::new();
-            let user_ids = ProfileOrmTest::user_ids();
-            let len = if roles.len() > user_ids.len() { user_ids.len() } else { roles.len() };
-            for index in 0..len {
-                let user_id = user_ids.get(index).unwrap().clone();
-                let nickname = Self::get_user_name(user_id).clone().to_lowercase();
-                let email = format!("{}@gmail.com", nickname);
-                #[rustfmt::skip]
-                let role = if roles.get(index).unwrap().clone() == ADMIN { UserRole::Admin } else { UserRole::User };
-
-                let profile = Profile::new(user_id, &nickname, &email, role, None, None, None, None);
-                profile_vec.push(profile);
-                let num_token = if user_id == USER1_ID { Some(Self::get_num_token(user_id)) } else { None };
-                session_vec.push(Session { user_id, num_token });
-            }
-            let profile_orm_app = ProfileOrmApp { profile_vec, session_vec };
-
-            (profile_orm_app.profile_vec, profile_orm_app.session_vec)
         }
         pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {

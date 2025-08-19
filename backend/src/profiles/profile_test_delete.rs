@@ -37,7 +37,7 @@ pub mod tests {
     async fn test_delete_profile_invalid_id() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let profile_id_bad = format!("{}a", data_u.0.get(0).unwrap().id);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -66,7 +66,7 @@ pub mod tests {
     async fn test_delete_profile_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -86,7 +86,7 @@ pub mod tests {
     async fn test_delete_profile_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_id = profile1.user_id;
         let profile1_dto = ProfileDto::from(profile1);
@@ -124,7 +124,7 @@ pub mod tests {
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
@@ -167,7 +167,7 @@ pub mod tests {
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
@@ -202,7 +202,7 @@ pub mod tests {
     async fn test_delete_profile_with_stream_img() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = ProfileDto::from(profile1.clone());
@@ -244,7 +244,7 @@ pub mod tests {
     async fn test_delete_profile_current_without_img() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
@@ -281,7 +281,7 @@ pub mod tests {
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile_dto = ProfileDto::from(profile1.clone());
@@ -323,7 +323,7 @@ pub mod tests {
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile_dto = ProfileDto::from(profile1.clone());
@@ -357,7 +357,7 @@ pub mod tests {
     async fn test_delete_profile_current_with_stream_img() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles2(&data_u.0);
+        let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = ProfileDto::from(profile1.clone());

@@ -30,7 +30,7 @@ mod tests {
     async fn test_get_profile_by_id_invalid_id() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         let user_id_bad = format!("{}a", user_id);
         #[rustfmt::skip]
@@ -59,7 +59,7 @@ mod tests {
     async fn test_get_profile_by_id_valid_id() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN, USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
         #[rustfmt::skip]
@@ -87,7 +87,7 @@ mod tests {
     async fn test_get_profile_by_id_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN, USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
         #[rustfmt::skip]
@@ -146,7 +146,7 @@ mod tests {
     async fn test_get_profile_current_valid_token() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let profile1_dto = ProfileDto::from(profiles.get(0).unwrap().clone());
         #[rustfmt::skip]
         let app = test::init_service(
@@ -177,7 +177,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_non_params() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
@@ -204,7 +204,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_nickname_empty() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
@@ -232,7 +232,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_email_empty() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
@@ -260,7 +260,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_nickname_profile() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let nickname = profiles.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -285,7 +285,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_email_profile() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let email = profiles.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -310,7 +310,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_nickname_registr() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let registr = RegisTest::registrs(true);
         let nickname = registr.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
@@ -336,7 +336,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_email_registr() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let registr = RegisTest::registrs(true);
         let email = registr.get(0).unwrap().email.clone();
         #[rustfmt::skip]
@@ -362,7 +362,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_new_nickname() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let nickname = format!("a{}", profiles.get(0).unwrap().nickname.clone());
         #[rustfmt::skip]
         let app = test::init_service(
@@ -387,7 +387,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_by_new_email() {
         let data_u = User_Test::users(&[USER]);
-        let profiles = ProflTest::profiles2(&data_u.0);
+        let profiles = ProflTest::profiles(&data_u.0);
         let email = format!("a{}", profiles.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
