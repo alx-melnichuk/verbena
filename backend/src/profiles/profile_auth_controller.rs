@@ -3,11 +3,11 @@ use std::ops::Deref;
 use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, http::StatusCode, post, web, HttpResponse};
 use log::{debug, error, log_enabled, Level::Debug};
 use utoipa;
+use vrb_authentication::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     validators::{msg_validation, Validator},
 };
-use vrb_authentication::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -227,10 +227,7 @@ pub async fn login(
     security(("bearer_auth" = []))
 )]
 #[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn logout(
-    authenticated: Authenticated,
-    user_auth_orm: web::Data<UserAuthOrmApp>,
-) -> actix_web::Result<HttpResponse, ApiError> {
+pub async fn logout(authenticated: Authenticated, user_auth_orm: web::Data<UserAuthOrmApp>) -> actix_web::Result<HttpResponse, ApiError> {
     #[rustfmt::skip]
     let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
     // Get user ID.
