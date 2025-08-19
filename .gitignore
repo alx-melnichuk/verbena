@@ -29,6 +29,9 @@ backend/tmp/
 # The result of building the library is "vrb-authentication".
 backend/vrb_authentication/target/
 backend/vrb_authentication/Cargo.lock
+# The result of building the library is "vrb-authent".
+backend/vrb_authent/target/
+backend/vrb_authent/Cargo.lock
 
 # The result of building the library is "vrb-common".
 backend/vrb_common/target/
