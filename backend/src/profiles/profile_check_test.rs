@@ -14,7 +14,7 @@ pub mod tests {
         let nickname = "Oliver_Taylor".to_lowercase();
         let email = format!("{}@gmail.com", nickname).to_lowercase();
         let role = UserRole::User;
-        let profile = Profile::new2(1, &nickname, &email, "", role, None, None, None,None);
+        let profile = Profile::new2(1, &nickname, &email, "", role, None, None, None, None);
         let now = Utc::now();
         let final_date: DateTime<Utc> = now + Duration::minutes(20);
         let nickname = "Robert_Brown";
