@@ -7,6 +7,7 @@ use vrb_common::{
     api_error::{code_to_str, ApiError},
     validators::{msg_validation, Validator},
 };
+use vrb_authentication::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -14,7 +15,6 @@ use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
 use vrb_dbase::user_auth::{config_jwt, user_auth_orm::UserAuthOrm};
 use vrb_tools::{err, hash_tools, token_coding};
 
-use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
