@@ -10,11 +10,12 @@ use utoipa;
 use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
+    consts,
     parser,
     validators::{self, msg_validation, ValidationChecks, Validator},
 };
 use vrb_dbase::db_enums::UserRole;
-use vrb_tools::{cdis::coding, consts, err, hash_tools, loading::dynamic_image};
+use vrb_tools::{cdis::coding, err, hash_tools, loading::dynamic_image};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -33,9 +34,6 @@ use crate::profiles::{
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-
-pub const ALIAS_AVATAR_FILES_DIR: &str = consts::ALIAS_AVATAR_FILES_DIR;
-pub const ALIAS_LOGO_FILES_DIR2: &str = consts::ALIAS_LOGO_FILES_DIR;
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -90,7 +88,7 @@ fn remove_stream_logo_files(path_file_img_list: Vec<String>, img_file_dir: Strin
     // Remove files from the resulting list of stream logo files.
     for path_file_img in path_file_img_list {
         // Delete a file if its path starts with the specified alias.
-        remove_image_file(&path_file_img, ALIAS_LOGO_FILES_DIR2, &img_file_dir, &"remove_stream_logo_files()");
+        remove_image_file(&path_file_img, consts::ALIAS_LOGO_FILES_DIR, &img_file_dir, &"remove_stream_logo_files()");
     }
     result
 }
@@ -645,7 +643,7 @@ pub async fn put_profile(
             path_new_avatar_file = new_path_file;
         }
     
-        let alias_avatar_file = path_new_avatar_file.replace(&config_prfl.prfl_avatar_files_dir, ALIAS_AVATAR_FILES_DIR);
+        let alias_avatar_file = path_new_avatar_file.replace(&config_prfl.prfl_avatar_files_dir, consts::ALIAS_AVATAR_FILES_DIR);
         avatar = Some(Some(alias_avatar_file));
 
         break;
@@ -709,7 +707,7 @@ pub async fn put_profile(
 
     if let Some(profile) = opt_profile {
         // If the image file name starts with the specified alias, then delete the file.
-        remove_image_file(&path_old_avatar_file, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"put_profile()");
+        remove_image_file(&path_old_avatar_file, consts::ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"put_profile()");
         let profile_dto = ProfileDto::from(profile);
         Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
@@ -959,7 +957,7 @@ pub async fn delete_profile(
         // Get the path to the "avatar" file.
         let path_file_img = profile.avatar.clone().unwrap_or("".to_string());
         // If the image file name starts with the specified alias, then delete the file.
-        remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile()");
+        remove_image_file(&path_file_img, consts::ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile()");
         // Delete all specified logo files in the given list.
         let _ = remove_stream_logo_files(path_file_img_list, get_logo_files_dir());
 
@@ -1055,7 +1053,7 @@ pub async fn delete_profile_current(
         // Get the path to the "avatar" file.
         let path_file_img = profile.avatar.clone().unwrap_or("".to_string());
         // If the image file name starts with the specified alias, then delete the file.
-        remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile_current()");
+        remove_image_file(&path_file_img, consts::ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile_current()");
         // Delete all specified logo files in the given list.
         let _ = remove_stream_logo_files(path_file_img_list, get_logo_files_dir());
 

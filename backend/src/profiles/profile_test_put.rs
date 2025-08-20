@@ -17,6 +17,7 @@ pub mod tests {
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
+        consts,
         validators,
     };
     use vrb_dbase::db_enums::UserRole;
@@ -24,7 +25,7 @@ pub mod tests {
 
     use crate::profiles::{
         config_prfl,
-        profile_controller::{put_profile, put_profile_new_password, tests as RrfCtTest, ALIAS_AVATAR_FILES_DIR},
+        profile_controller::{put_profile, put_profile_new_password, tests as RrfCtTest},
         profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileTest},
         profile_orm::tests::ProfileOrmTest as ProflTest,
     };
@@ -806,11 +807,11 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let profile_dto_res_img = profile_dto_res.avatar.unwrap_or("".to_string());
-        let img_name_full_path = profile_dto_res_img.replacen(ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
+        let img_name_full_path = profile_dto_res_img.replacen(consts::ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
         let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
         let _ = fs::remove_file(&img_name_full_path);
         assert!(profile_dto_res_img.len() > 0);
-        assert!(profile_dto_res_img.starts_with(ALIAS_AVATAR_FILES_DIR));
+        assert!(profile_dto_res_img.starts_with(consts::ALIAS_AVATAR_FILES_DIR));
         assert!(is_exists_img_new);
 
         let path_img = path::PathBuf::from(profile_dto_res_img);
@@ -868,14 +869,14 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let profile_dto_res_img = profile_dto_res.avatar.unwrap_or("".to_string());
-        let img_name_full_path = profile_dto_res_img.replacen(ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
+        let img_name_full_path = profile_dto_res_img.replacen(consts::ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
         let path = path::Path::new(&img_name_full_path);
         let receiver_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
         let is_exists_img_new = path.exists();
         let _ = fs::remove_file(&img_name_full_path);
         assert_eq!(file_ext, receiver_ext);
         assert!(profile_dto_res_img.len() > 0);
-        assert!(profile_dto_res_img.starts_with(ALIAS_AVATAR_FILES_DIR));
+        assert!(profile_dto_res_img.starts_with(consts::ALIAS_AVATAR_FILES_DIR));
         assert!(is_exists_img_new);
 
         let path_img = path::PathBuf::from(profile_dto_res_img);
@@ -897,7 +898,7 @@ pub mod tests {
         let name0_file = "test_put_profile_c_with_old1_new1.png";
         let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let name1_file = "test_put_profile_c_with_old1_new1_new.png";
         let path_name1_file = format!("./{}", name1_file);
@@ -938,11 +939,11 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let profile_dto_res_img = profile_dto_res.avatar.unwrap_or("".to_string());
-        let img_name_full_path = profile_dto_res_img.replacen(ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
+        let img_name_full_path = profile_dto_res_img.replacen(consts::ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
         let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
         let _ = fs::remove_file(&img_name_full_path);
         assert!(profile_dto_res_img.len() > 0);
-        assert!(profile_dto_res_img.starts_with(ALIAS_AVATAR_FILES_DIR));
+        assert!(profile_dto_res_img.starts_with(consts::ALIAS_AVATAR_FILES_DIR));
         assert!(is_exists_img_new);
 
         let path_img = path::PathBuf::from(profile_dto_res_img);
@@ -965,7 +966,7 @@ pub mod tests {
         let name0_file = "test_put_profile_d_with_old1_new0.png";
         let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
         png_files::save_file_png(&path_name0_file, 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", "descript1".to_string()).build();
         let token1 = User_Test::get_token(USER1_ID);
@@ -998,7 +999,7 @@ pub mod tests {
         let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let profile_dto_res_img = profile_dto_res.avatar.unwrap_or("".to_string());
         assert!(profile_dto_res_img.len() > 0);
-        assert!(profile_dto_res_img.starts_with(ALIAS_AVATAR_FILES_DIR));
+        assert!(profile_dto_res_img.starts_with(consts::ALIAS_AVATAR_FILES_DIR));
         assert_eq!(&path_name0_alias, &profile_dto_res_img);
     }
     #[actix_web::test]
@@ -1008,7 +1009,7 @@ pub mod tests {
         let name0_file = "test_put_profile_e_with_old_1_new_size0.png";
         let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let name1_file = "test_put_profile_e_with_old_1_new_size0_new.png";
         let path_name1_file = format!("./{}", name1_file);

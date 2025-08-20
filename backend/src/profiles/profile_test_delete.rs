@@ -13,12 +13,12 @@ pub mod tests {
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
     };
-    use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_tools::{consts, err, png_files};
+    use vrb_common::{api_error::{code_to_str, ApiError}, consts};
+    use vrb_tools::{err, png_files};
 
     use crate::profiles::{
         config_prfl,
-        profile_controller::{delete_profile, delete_profile_current, tests as RrfCtTest, ALIAS_AVATAR_FILES_DIR},
+        profile_controller::{delete_profile, delete_profile_current, tests as RrfCtTest},
         profile_models::ProfileDto,
         profile_orm::tests::ProfileOrmTest as ProflTest,
     };
@@ -120,7 +120,7 @@ pub mod tests {
         let name0_file = "test_delete_profile_with_img.png";
         let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
@@ -163,7 +163,7 @@ pub mod tests {
         let name0_file = "test_delete_profile_with_img_not_alias.png";
         let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("/1{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+        let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
@@ -277,7 +277,7 @@ pub mod tests {
         let name0_file = "test_delete_profile_current_with_img.png";
         let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
@@ -319,7 +319,7 @@ pub mod tests {
         let name0_file = "test_delete_profile_current_with_img_not_alias.png";
         let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("/1{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+        let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);

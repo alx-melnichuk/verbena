@@ -6,7 +6,7 @@ use std::{io::Error, path};
 use vrb_common::{consts, file_path};
 use vrb_tools::config_app;
 
-use crate::profiles::{config_prfl, profile_controller};
+use crate::profiles::config_prfl;
 
 const NAME_LOGO: &str = "name_logo";
 const NAME_AVATAR: &str = "name_avatar";
@@ -14,7 +14,7 @@ const NAME_AVATAR: &str = "name_avatar";
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         #[rustfmt::skip]
-        let alias_avatar = format!("{}/{{{}:.*}}", profile_controller::ALIAS_AVATAR_FILES_DIR,  NAME_AVATAR);
+        let alias_avatar = format!("{}/{{{}:.*}}", consts::ALIAS_AVATAR_FILES_DIR,  NAME_AVATAR);
         #[rustfmt::skip]
         let alias_logo = format!("{}/{{{}:.*}}", consts::ALIAS_LOGO_FILES_DIR, NAME_LOGO);
 

@@ -241,8 +241,9 @@ pub mod tests {
     use actix_web::web;
     use chrono::Utc;
     use vrb_authent::{config_jwt, user_auth_models::User};
+    use vrb_common::consts;
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{consts, token_coding};
+    use vrb_tools::token_coding;
 
     use crate::profiles::{
         config_prfl,

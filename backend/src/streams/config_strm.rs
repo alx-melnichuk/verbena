@@ -1,8 +1,8 @@
 use std::{env, io, path::PathBuf};
 
 use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
+use vrb_common::consts;
 
-pub const LOGO_FILES_DIR: &str = "./imgs/logo";
 pub const LOGO_MAX_SIZE: &str = "0";
 pub const LOGO_VALID_TYPES: &str = "image/jpeg,image/gif,image/png,image/bmp";
 pub const LOGO_MAX_WIDTH: &str = "0";
@@ -29,7 +29,7 @@ pub struct ConfigStrm {
 
 impl ConfigStrm {
     pub fn init_by_env() -> Self {
-        let logo_files_dir = env::var("STRM_LOGO_FILES_DIR").unwrap_or(LOGO_FILES_DIR.to_string());
+        let logo_files_dir = env::var("STRM_LOGO_FILES_DIR").unwrap_or(consts::LOGO_FILES_DIR.to_string());
         let path_dir: PathBuf = PathBuf::from(logo_files_dir).iter().collect();
         let strm_logo_files_dir = path_dir.to_str().unwrap().to_string();
 
