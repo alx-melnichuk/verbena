@@ -1,10 +1,12 @@
+use std::env;
+
 use actix_files::Files;
 use actix_web::{get, http, web, HttpRequest, HttpResponse};
 use std::{io::Error, path};
+use vrb_common::{consts, file_path};
 use vrb_tools::config_app;
 
 use crate::profiles::{config_prfl, profile_controller};
-use crate::streams::{config_strm, stream_controller};
 
 const NAME_LOGO: &str = "name_logo";
 const NAME_AVATAR: &str = "name_avatar";
@@ -14,7 +16,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         #[rustfmt::skip]
         let alias_avatar = format!("{}/{{{}:.*}}", profile_controller::ALIAS_AVATAR_FILES_DIR,  NAME_AVATAR);
         #[rustfmt::skip]
-        let alias_logo = format!("{}/{{{}:.*}}", stream_controller::ALIAS_LOGO_FILES_DIR, NAME_LOGO);
+        let alias_logo = format!("{}/{{{}:.*}}", consts::ALIAS_LOGO_FILES_DIR, NAME_LOGO);
 
         config
             .service(Files::new("/static", "static").show_files_listing())
@@ -91,9 +93,10 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
 }
 
 pub async fn load_files_logo(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let config_strm = config_strm::ConfigStrm::init_by_env();
+    let logo_files_dir = env::var(consts::STRM_LOGO_FILES_DIR).unwrap_or(consts::LOGO_FILES_DIR.to_string());
+    let strm_logo_files_dir = file_path::path_directory(logo_files_dir);
     let file_name = get_param(request, NAME_LOGO);
-    load_file_from_dir(&config_strm.strm_logo_files_dir, &file_name).await
+    load_file_from_dir(&strm_logo_files_dir, &file_name).await
 }
 
 pub async fn load_files_avatar(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
