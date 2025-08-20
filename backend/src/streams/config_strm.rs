@@ -29,28 +29,28 @@ pub struct ConfigStrm {
 
 impl ConfigStrm {
     pub fn init_by_env() -> Self {
-        let logo_files_dir = env::var("STRM_LOGO_FILES_DIR").unwrap_or(consts::LOGO_FILES_DIR.to_string());
+        let logo_files_dir = env::var(consts::STRM_LOGO_FILES_DIR).unwrap_or(consts::LOGO_FILES_DIR.to_string());
         let path_dir: PathBuf = PathBuf::from(logo_files_dir).iter().collect();
         let strm_logo_files_dir = path_dir.to_str().unwrap().to_string();
 
         let max_size = LOGO_MAX_SIZE.to_string();
-        let logo_max_size = env::var("STRM_LOGO_MAX_SIZE").unwrap_or(max_size).trim().parse().unwrap();
+        let logo_max_size = env::var(consts::STRM_LOGO_MAX_SIZE).unwrap_or(max_size).trim().parse().unwrap();
 
         #[rustfmt::skip]
-        let valid_types = env::var("STRM_LOGO_VALID_TYPES").unwrap_or(LOGO_VALID_TYPES.to_string()).to_lowercase();
+        let valid_types = env::var(consts::STRM_LOGO_VALID_TYPES).unwrap_or(LOGO_VALID_TYPES.to_string()).to_lowercase();
         let logo_valid_types: Vec<String> = Self::get_logo_valid_types_by_str(&valid_types).unwrap();
 
-        let logo_ext = env::var("STRM_LOGO_EXT").unwrap_or("".to_string());
+        let logo_ext = env::var(consts::STRM_LOGO_EXT).unwrap_or("".to_string());
         #[rustfmt::skip]
         let strm_logo_ext = if Self::logo_ext_validate(&logo_ext) { Some(logo_ext) } else { None };
 
         let max_width = LOGO_MAX_WIDTH.to_string();
         #[rustfmt::skip]
-        let logo_max_width: u32 = env::var("STRM_LOGO_MAX_WIDTH").unwrap_or(max_width).trim().parse().unwrap();
+        let logo_max_width: u32 = env::var(consts::STRM_LOGO_MAX_WIDTH).unwrap_or(max_width).trim().parse().unwrap();
 
         let max_height = LOGO_MAX_HEIGHT.to_string();
         #[rustfmt::skip]
-        let logo_max_height: u32 = env::var("STRM_LOGO_MAX_HEIGHT").unwrap_or(max_height).trim().parse().unwrap();
+        let logo_max_height: u32 = env::var(consts::STRM_LOGO_MAX_HEIGHT).unwrap_or(max_height).trim().parse().unwrap();
 
         ConfigStrm {
             strm_logo_files_dir,

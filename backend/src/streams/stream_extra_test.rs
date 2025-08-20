@@ -4,10 +4,10 @@ pub mod tests {
 
     use actix_web::web;
     use vrb_authent::user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1};
+    use vrb_common::consts;
 
     use crate::streams::{
         config_strm,
-        stream_controller::ALIAS_LOGO_FILES_DIR,
         stream_extra::{get_stream_logo_files, remove_stream_logo_files},
         stream_orm::tests::{StreamOrmApp, StreamOrmTest as Strm_Test},
     };
@@ -27,7 +27,7 @@ pub mod tests {
 
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
-        stream.logo = Some(format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file));
+        stream.logo = Some(format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file));
 
         let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
         let result = get_stream_logo_files(data_stream_orm, user0_id + 1).await;
@@ -52,7 +52,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_get_stream_logo_files_with_files() {
         let name0_file = "test_get_stream_logo_files_with_files.png";
-        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let data_u = User_Test::users(&[USER]);
         let user0_id = data_u.0.get(0).unwrap().id;
@@ -88,7 +88,7 @@ pub mod tests {
         let path_name0_file = format!("{}/{}", &config_strm.strm_logo_files_dir, name0_file);
         save_empty_file(&path_name0_file).unwrap();
 
-        let path_name0_alias = path_name0_file.replace(&config_strm.strm_logo_files_dir, ALIAS_LOGO_FILES_DIR);
+        let path_name0_alias = path_name0_file.replace(&config_strm.strm_logo_files_dir, consts::ALIAS_LOGO_FILES_DIR);
 
         let path_file_img_list: Vec<String> = vec![path_name0_alias];
 

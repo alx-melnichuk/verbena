@@ -1,6 +1,6 @@
 use actix_web::{http::StatusCode, web};
 use log::error;
-use vrb_common::api_error::{code_to_str, ApiError};
+use vrb_common::{api_error::{code_to_str, ApiError}, consts};
 use vrb_tools::err;
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -9,7 +9,7 @@ use crate::streams::stream_orm::impls::StreamOrmApp;
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
     config_strm,
-    stream_controller::{remove_image_file, ALIAS_LOGO_FILES_DIR},
+    stream_controller::remove_image_file,
     stream_orm::StreamOrm,
 };
 
@@ -60,7 +60,7 @@ pub fn remove_stream_logo_files(path_file_img_list: Vec<String>, config_strm: co
     for path_file_img in path_file_img_list {
         // Delete a file if its path starts with the specified alias.
         #[rustfmt::skip]
-        remove_image_file(&path_file_img, ALIAS_LOGO_FILES_DIR, &img_file_dir, &"remove_stream_logo_files()");
+        remove_image_file(&path_file_img, consts::ALIAS_LOGO_FILES_DIR, &img_file_dir, &"remove_stream_logo_files()");
     }
     result
 }

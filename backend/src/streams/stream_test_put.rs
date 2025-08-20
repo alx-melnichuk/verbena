@@ -17,6 +17,7 @@ mod tests {
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
+        consts,
         validators,
     };
     use vrb_dbase::db_enums::StreamState;
@@ -25,7 +26,7 @@ mod tests {
     use crate::streams::{
         config_strm,
         stream_controller::{
-            put_stream, put_toggle_state, tests as StrCtTest, ALIAS_LOGO_FILES_DIR, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG,
+            put_stream, put_toggle_state, tests as StrCtTest, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG,
             MSG_INVALID_STREAM_STATE,
         },
         stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamModelsTest, ToggleStreamStateDto},
@@ -826,11 +827,11 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
-        let img_name_full_path = stream_dto_res_img.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
+        let img_name_full_path = stream_dto_res_img.replacen(consts::ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
         let _ = fs::remove_file(&img_name_full_path);
         assert!(stream_dto_res_img.len() > 0);
-        assert!(stream_dto_res_img.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(stream_dto_res_img.starts_with(consts::ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_img_new);
 
         let path_img = path::PathBuf::from(stream_dto_res_img);
@@ -889,14 +890,14 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
-        let img_name_full_path = stream_dto_res_img.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
+        let img_name_full_path = stream_dto_res_img.replacen(consts::ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let path = path::Path::new(&img_name_full_path);
         let receiver_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
         let is_exists_img_new = path.exists();
         let _ = fs::remove_file(&img_name_full_path);
         assert_eq!(file_ext, receiver_ext);
         assert!(stream_dto_res_img.len() > 0);
-        assert!(stream_dto_res_img.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(stream_dto_res_img.starts_with(consts::ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_img_new);
 
         let path_img = path::PathBuf::from(stream_dto_res_img);
@@ -918,7 +919,7 @@ mod tests {
         let name0_file = "test_put_stream_c_with_old1_new1.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let name1_file = "test_put_stream_c_with_old1_new1_new.png";
         let path_name1_file = format!("./{}", name1_file);
@@ -960,11 +961,11 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
-        let img_name_full_path = stream_dto_res_img.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
+        let img_name_full_path = stream_dto_res_img.replacen(consts::ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
         let _ = fs::remove_file(&img_name_full_path);
         assert!(stream_dto_res_img.len() > 0);
-        assert!(stream_dto_res_img.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(stream_dto_res_img.starts_with(consts::ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_img_new);
 
         let path_img = path::PathBuf::from(stream_dto_res_img);
@@ -987,7 +988,7 @@ mod tests {
         let name0_file = "test_put_stream_d_with_old1_new0.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         png_files::save_file_png(&path_name0_file, 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -1023,7 +1024,7 @@ mod tests {
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
         assert!(stream_dto_res_img.len() > 0);
-        assert!(stream_dto_res_img.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(stream_dto_res_img.starts_with(consts::ALIAS_LOGO_FILES_DIR));
         assert_eq!(&path_name0_alias, &stream_dto_res_img);
     }
     #[actix_web::test]
@@ -1033,7 +1034,7 @@ mod tests {
         let name0_file = "test_put_stream_e_with_old1_new_size0.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let name1_file = "test_put_stream_e_with_old1_new_size0_new.png";
         let path_name1_file = format!("./{}", name1_file);

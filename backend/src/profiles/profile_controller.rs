@@ -78,7 +78,7 @@ fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
 }
 fn get_logo_files_dir() -> String {
     // Directory for storing logo files.
-    let logo_files_dir = env::var("STRM_LOGO_FILES_DIR").unwrap_or(consts::LOGO_FILES_DIR.to_string());
+    let logo_files_dir = env::var(consts::STRM_LOGO_FILES_DIR).unwrap_or(consts::LOGO_FILES_DIR.to_string());
     let path_dir: path::PathBuf = path::PathBuf::from(logo_files_dir).iter().collect();
     path_dir.to_str().unwrap().to_string()
 }

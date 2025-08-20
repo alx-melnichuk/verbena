@@ -15,12 +15,12 @@ mod tests {
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1, USER1_ID},
     };
-    use vrb_common::api_error::{code_to_str, ApiError};
+    use vrb_common::{api_error::{code_to_str, ApiError}, consts};
     use vrb_tools::{cdis::coding, err, png_files};
 
     use crate::streams::{
         config_strm,
-        stream_controller::{delete_stream, post_stream, tests as StrCtTest, ALIAS_LOGO_FILES_DIR, MSG_INVALID_FIELD_TAG},
+        stream_controller::{delete_stream, post_stream, tests as StrCtTest, MSG_INVALID_FIELD_TAG},
         stream_models::{self, StreamInfoDto, StreamModelsTest},
         stream_orm::tests::StreamOrmTest as Strm_Test,
     };
@@ -683,12 +683,12 @@ mod tests {
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(consts::ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
         let _ = fs::remove_file(&logo_name_full_path);
 
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(stream_dto_res_logo.starts_with(consts::ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -801,7 +801,7 @@ mod tests {
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(consts::ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let path = path::Path::new(&logo_name_full_path);
         let receiver_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
         let is_exists_logo_new = path.exists();
@@ -809,7 +809,7 @@ mod tests {
 
         assert_eq!(file_ext, receiver_ext);
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(stream_dto_res_logo.starts_with(consts::ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -912,7 +912,7 @@ mod tests {
         let name0_file = "test_delete_stream_with_img.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[USER]);
@@ -954,7 +954,7 @@ mod tests {
         let name0_file = "test_delete_stream_with_img_not_alias.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_logo = format!("/1{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_logo = format!("/1{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[USER]);
