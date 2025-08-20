@@ -954,7 +954,7 @@ mod tests {
         let name0_file = "test_delete_stream_with_img_not_alias.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_logo = format!("/1{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_logo = format!("/not_alias{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[USER]);
