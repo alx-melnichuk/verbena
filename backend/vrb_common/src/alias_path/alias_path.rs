@@ -14,6 +14,7 @@ impl AliasPath {
         let path2 = file_path::path_complete(path);
         AliasPath { alias: path1, path: path2 }
     }
+    /// Replace file path prefix with alias.
     pub fn path_to_alias(&self, full_path_file: &str) -> String {
         let path = Path::new(full_path_file);
         if path.starts_with(&self.path) {
@@ -24,6 +25,7 @@ impl AliasPath {
             full_path_file.into()
         }
     }
+    /// Return file path prefix instead of alias.
     pub fn alias_to_path(&self, full_path_file: &str) -> String {
         let path = Path::new(full_path_file);
         if path.starts_with(&self.alias) {
