@@ -1151,9 +1151,10 @@ pub async fn put_stream(
 
     if path_new_logo_file.len() > 0 {
         // Replace file path prefix with alias.
-        let alias_logo_file= alias_strm.path_to_alias(&path_new_logo_file);
+        let alias_logo_file = alias_strm.path_to_alias(&path_new_logo_file);
         logo = Some(Some(alias_logo_file));
     }
+
     let tags = modify_stream_info_dto.tags.clone();
     let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
     modify_stream.logo = logo;
@@ -1208,9 +1209,9 @@ pub async fn put_stream(
         // And only then can the file be deleted.
         if alias_strm.starts_with_alias(&path_old_logo_file) {
             // Return file path prefix instead of alias.
-            let full_path_logo = alias_strm.alias_to_path(&path_old_logo_file);
-            if let Err(err) = fs::remove_file(&full_path_logo) {
-                error!("put_stream() remove_file({}): error: {:?}", &full_path_logo, err);
+            let full_path_file_img = alias_strm.alias_to_path(&path_old_logo_file);
+            if let Err(err) = fs::remove_file(&full_path_file_img) {
+                error!("put_stream() remove_file({}): error: {:?}", &full_path_file_img, err);
             }
         }
 
@@ -1503,19 +1504,20 @@ pub async fn delete_stream(
     let opt_stream = res_stream?;
 
     if let Some((stream, stream_tags)) = opt_stream {
+        // Get the path to the "logo" file.
+        let path_file_img: String = stream.logo.clone().unwrap_or("".to_string());
+
         let config_strm = config_strm.get_ref().clone();
         let alias_path_strm = alias_path_stream::AliasStrm::new(&config_strm.strm_logo_files_dir);
         let alias_strm = alias_path_strm.as_ref();
-        // Get the path to the "logo" file.
-        let path_file_img: String = stream.logo.clone().unwrap_or("".to_string());
 
         // If the file path starts with alice, then the file corresponds to the entity type.
         // And only then can the file be deleted.
         if alias_strm.starts_with_alias(&path_file_img) {
             // Return file path prefix instead of alias.
-            let full_path_logo = alias_strm.alias_to_path(&path_file_img);
-            if let Err(err) = fs::remove_file(&full_path_logo) {
-                error!("delete_stream() remove_file({}): error: {:?}", &full_path_logo, err);
+            let full_path_file_img = alias_strm.alias_to_path(&path_file_img);
+            if let Err(err) = fs::remove_file(&full_path_file_img) {
+                error!("delete_stream() remove_file({}): error: {:?}", &full_path_file_img, err);
             }
         }
         // Merge a "stream" and a corresponding list of "tags".
