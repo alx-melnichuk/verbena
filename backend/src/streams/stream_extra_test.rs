@@ -75,7 +75,7 @@ pub mod tests {
     async fn test_remove_stream_logo_files_empty_list() {
         let config_strm = config_strm::get_test_config();
 
-        let res = stream_extra::remove_stream_logo_files2(&[], &config_strm.strm_logo_files_dir);
+        let res = stream_extra::remove_stream_logo_files(&[], &config_strm.strm_logo_files_dir);
         assert_eq!(res, 0);
     }
     #[actix_web::test]
@@ -88,7 +88,7 @@ pub mod tests {
 
         let path_name0_alias = path_name0_file.replace(&config_strm.strm_logo_files_dir, consts::ALIAS_LOGO_FILES_DIR);
 
-        let res = stream_extra::remove_stream_logo_files2(&[path_name0_alias], &config_strm.strm_logo_files_dir);
+        let res = stream_extra::remove_stream_logo_files(&[path_name0_alias], &config_strm.strm_logo_files_dir);
         assert_eq!(res, 1);
         let is_exists_logo_file = path::Path::new(&path_name0_file).exists();
         assert!(!is_exists_logo_file);

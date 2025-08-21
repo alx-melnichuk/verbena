@@ -51,7 +51,7 @@ pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id:
 }
 
 /** Delete all specified logo files in the given list. */
-pub fn remove_stream_logo_files2(path_file_img_list: &[String], strm_logo_files_dir: &str) -> usize {
+pub fn remove_stream_logo_files(path_file_img_list: &[String], strm_logo_files_dir: &str) -> usize {
     let mut result = 0;
     let alias_path_strm = alias_path_stream::AliasStrm::new(strm_logo_files_dir);
     let alias_strm = alias_path_strm.as_ref();
@@ -65,10 +65,10 @@ pub fn remove_stream_logo_files2(path_file_img_list: &[String], strm_logo_files_
         }
         // If the image file name starts with the specified alias, then delete the file.
         // Return file path prefix instead of alias.
-        let full_path_logo = alias_strm.alias_to_path(&path_file_img);
-        let res_remove = std::fs::remove_file(&full_path_logo);
+        let full_path_file_img = alias_strm.alias_to_path(&path_file_img);
+        let res_remove = std::fs::remove_file(&full_path_file_img);
         if let Err(err) = res_remove {
-            error!("{} remove_file({}): error: {:?}", "remove_stream_logo_files()", &full_path_logo, err);
+            error!("remove_stream_logo_files() remove_file({}): error: {:?}", &full_path_file_img, err);
         } else {
             result += 1;
         }
