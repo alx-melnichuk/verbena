@@ -9,8 +9,10 @@ use serde_json::{self, json};
 use utoipa;
 use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
-    alias_path::alias_path_stream, api_error::{code_to_str, ApiError},
-    consts, parser, validators::{self, msg_validation, ValidationChecks, Validator}
+    alias_path::alias_path_stream,
+    api_error::{code_to_str, ApiError},
+    parser,
+    validators::{self, msg_validation, ValidationChecks, Validator},
 };
 use vrb_dbase::db_enums::{StreamState, UserRole};
 use vrb_tools::{cdis::coding, err, loading::dynamic_image};
@@ -80,22 +82,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(delete_stream);
     }
 }
-/** Delete a file if its path starts with the specified alias. */
-pub fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
-    // If the image file name starts with the specified alias, then delete the file.
-    if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
-        let avatar_name_full_path = path_file_img.replace(alias_file_img, img_file_dir);
-        remove_file_and_log(&avatar_name_full_path, err_msg);
-    }
-}
-pub fn remove_file_and_log(file_name: &str, msg: &str) {
-    if file_name.len() > 0 {
-        let res_remove = std::fs::remove_file(file_name);
-        if let Err(err) = res_remove {
-            error!("{} remove_file({}): error: {:?}", msg, file_name, err);
-        }
-    }
-}
+
 pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
     format!("{}_{}", user_id, coding::encode(date_time, 1))
 }
@@ -649,8 +636,11 @@ pub fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigS
             config_strm.strm_logo_max_width,
             config_strm.strm_logo_max_height,
         )?;
-        if !path_file.eq(&path_logo_file) {
-            remove_file_and_log(&path_logo_file, name);
+        if !path_file.eq(&path_logo_file) && path_logo_file.len() > 0 {
+            let res_remove = fs::remove_file(path_logo_file);
+            if let Err(err) = res_remove {
+                error!("{} remove_file({}): error: {:?}", name, path_logo_file, err);
+            }
         }
         Ok(Some(path_file))
     } else {
@@ -880,8 +870,12 @@ pub async fn post_stream(
     let tags = create_stream_info_dto.tags.clone();
     let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
     
+    let alias_path_strm = alias_path_stream::AliasStrm::new(&config_strm.strm_logo_files_dir);
+    let alias_strm = alias_path_strm.as_ref();
+
     if path_new_logo_file.len() > 0 {
-        let alias_logo_file = path_new_logo_file.replace(&config_strm.strm_logo_files_dir, consts::ALIAS_LOGO_FILES_DIR);
+        // Replace file path prefix with alias.
+        let alias_logo_file= alias_strm.path_to_alias(&path_new_logo_file);
         create_stream.logo = Some(alias_logo_file);
     }
 
@@ -901,7 +895,11 @@ pub async fn post_stream(
     })?;
 
     if res_data.is_err() {
-        remove_file_and_log(&path_new_logo_file, &"post_stream()");
+        if path_new_logo_file.len() > 0 {
+            if let Err(err) = fs::remove_file(&path_new_logo_file) {
+                error!("{} remove_file({}): error: {:?}", "post_stream()", &path_new_logo_file, err);
+            }
+        }
     }
     let (stream, stream_tags) = res_data?;
     // Merge a "stream" and a corresponding list of "tags".
@@ -1092,7 +1090,6 @@ pub async fn put_stream(
 
     let mut logo: Option<Option<String>> = None;
     let config_strm = config_strm.get_ref().clone();
-    let alias_strm = alias_path_stream::AliasStrm::new(&config_strm.strm_logo_files_dir);
     let mut path_new_logo_file = "".to_string();
 
     while let Some(temp_file) = logo_file {
@@ -1146,12 +1143,16 @@ pub async fn put_stream(
         if let Some(new_path_file) = res_convert_logo_file {
             path_new_logo_file = new_path_file;
         }
+        break;
+    }
+
+    let alias_path_strm = alias_path_stream::AliasStrm::new(&config_strm.strm_logo_files_dir);
+    let alias_strm = alias_path_strm.as_ref();
+
+    if path_new_logo_file.len() > 0 {
         // Replace file path prefix with alias.
         let alias_logo_file= alias_strm.path_to_alias(&path_new_logo_file);
-
         logo = Some(Some(alias_logo_file));
-
-        break;
     }
     let tags = modify_stream_info_dto.tags.clone();
     let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
@@ -1190,7 +1191,11 @@ pub async fn put_stream(
 
     let opt_data_stream = res_data_stream
     .map_err(|err| {
-        remove_file_and_log(&path_new_logo_file, &"put_stream()");
+        if path_new_logo_file.len() > 0 {
+            if let Err(err) = fs::remove_file(&path_new_logo_file) {
+                error!("put_stream() remove_file({}): error: {:?}", &path_new_logo_file, err);
+            }
+        }
         err
     })?;
 
@@ -1198,18 +1203,24 @@ pub async fn put_stream(
         // Merge a "stream" and a corresponding list of "tags".
         let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, user.id);
         let stream_info_dto: StreamInfoDto = list[0].clone();
-        // If the image file name starts with the specified alias, then delete the file.
-        if path_old_logo_file.len() > 0 {
+
+        // If the file path starts with alice, then the file corresponds to the entity type.
+        // And only then can the file be deleted.
+        if alias_strm.starts_with_alias(&path_old_logo_file) {
             // Return file path prefix instead of alias.
-            let avatar_name_full_path= alias_strm.alias_to_path(&path_old_logo_file);
-            if let Err(err) = fs::remove_file(&avatar_name_full_path) {
-                error!("{} remove_file({}): error: {:?}", "put_stream()", &avatar_name_full_path, err);
+            let full_path_logo = alias_strm.alias_to_path(&path_old_logo_file);
+            if let Err(err) = fs::remove_file(&full_path_logo) {
+                error!("put_stream() remove_file({}): error: {:?}", &full_path_logo, err);
             }
         }
 
         Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
-        remove_file_and_log(&path_new_logo_file, &"put_stream()");
+        if path_new_logo_file.len() > 0 {
+            if let Err(err) = fs::remove_file(&path_new_logo_file) {
+                error!("put_stream() remove_file({}): error: {:?}", &path_new_logo_file, err);
+            }
+        }
         Ok(HttpResponse::NoContent().finish()) // 204        
     }
 }
@@ -1493,18 +1504,20 @@ pub async fn delete_stream(
 
     if let Some((stream, stream_tags)) = opt_stream {
         let config_strm = config_strm.get_ref().clone();
-        let alias_strm = alias_path_stream::AliasStrm::new(&config_strm.strm_logo_files_dir);
+        let alias_path_strm = alias_path_stream::AliasStrm::new(&config_strm.strm_logo_files_dir);
+        let alias_strm = alias_path_strm.as_ref();
         // Get the path to the "logo" file.
         let path_file_img: String = stream.logo.clone().unwrap_or("".to_string());
-        // If the image file name starts with the specified alias, then delete the file.
-        if path_file_img.len() > 0 {
+
+        // If the file path starts with alice, then the file corresponds to the entity type.
+        // And only then can the file be deleted.
+        if alias_strm.starts_with_alias(&path_file_img) {
             // Return file path prefix instead of alias.
-            let avatar_name_full_path = alias_strm.alias_to_path(&path_file_img);
-            if let Err(err) = fs::remove_file(&avatar_name_full_path) {
-                error!("{} remove_file({}): error: {:?}", "delete_stream()", &avatar_name_full_path, err);
+            let full_path_logo = alias_strm.alias_to_path(&path_file_img);
+            if let Err(err) = fs::remove_file(&full_path_logo) {
+                error!("delete_stream() remove_file({}): error: {:?}", &full_path_logo, err);
             }
         }
-
         // Merge a "stream" and a corresponding list of "tags".
         let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, user.id);
         let stream_info_dto = list[0].clone();
