@@ -1,8 +1,8 @@
 use std::{env, io, path::PathBuf};
 
 use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
+use vrb_common::consts;
 
-pub const AVATAR_FILES_DIR: &str = "./imgs/avatar";
 pub const AVATAR_MAX_SIZE: &str = "0";
 pub const AVATAR_VALID_TYPES: &str = "image/jpeg,image/gif,image/png,image/bmp";
 pub const AVATAR_MAX_WIDTH: &str = "0";
@@ -29,29 +29,29 @@ pub struct ConfigPrfl {
 
 impl ConfigPrfl {
     pub fn init_by_env() -> Self {
-        let avatar_files_dir = env::var("PRFL_AVATAR_FILES_DIR").unwrap_or(AVATAR_FILES_DIR.to_owned());
+        let avatar_files_dir = env::var(consts::PRFL_AVATAR_FILES_DIR).unwrap_or(consts::AVATAR_FILES_DIR.to_owned());
         let path_dir: PathBuf = PathBuf::from(avatar_files_dir).iter().collect();
         let prfl_avatar_files_dir = path_dir.to_str().unwrap().to_owned();
 
         let max_size = AVATAR_MAX_SIZE.to_owned();
-        let avatar_max_size = env::var("PRFL_AVATAR_MAX_SIZE").unwrap_or(max_size).trim().parse().unwrap();
+        let avatar_max_size = env::var(consts::PRFL_AVATAR_MAX_SIZE).unwrap_or(max_size).trim().parse().unwrap();
 
         #[rustfmt::skip]
-        let valid_types = env::var("PRFL_AVATAR_VALID_TYPES").unwrap_or(AVATAR_VALID_TYPES.to_owned())
+        let valid_types = env::var(consts::PRFL_AVATAR_VALID_TYPES).unwrap_or(AVATAR_VALID_TYPES.to_owned())
             .to_lowercase();
         let avatar_valid_types: Vec<String> = Self::get_avatar_valid_types_by_str(&valid_types).unwrap();
 
-        let avatar_ext = env::var("PRFL_AVATAR_EXT").unwrap_or("".to_owned());
+        let avatar_ext = env::var(consts::PRFL_AVATAR_EXT).unwrap_or("".to_owned());
         #[rustfmt::skip]
         let prfl_avatar_ext = if Self::avatar_ext_validate(&avatar_ext) { Some(avatar_ext) } else { None };
 
         let max_width = AVATAR_MAX_WIDTH.to_owned();
         #[rustfmt::skip]
-        let avatar_max_width: u32 = env::var("PRFL_AVATAR_MAX_WIDTH").unwrap_or(max_width).trim().parse().unwrap();
+        let avatar_max_width: u32 = env::var(consts::PRFL_AVATAR_MAX_WIDTH).unwrap_or(max_width).trim().parse().unwrap();
 
         let max_height = AVATAR_MAX_HEIGHT.to_owned();
         #[rustfmt::skip]
-        let avatar_max_height: u32 = env::var("PRFL_AVATAR_MAX_HEIGHT").unwrap_or(max_height).trim().parse().unwrap();
+        let avatar_max_height: u32 = env::var(consts::PRFL_AVATAR_MAX_HEIGHT).unwrap_or(max_height).trim().parse().unwrap();
 
         ConfigPrfl {
             prfl_avatar_files_dir,
