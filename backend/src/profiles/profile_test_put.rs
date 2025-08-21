@@ -1,6 +1,6 @@
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
-    use std::{borrow::Cow, fs, path};
+    use std::{borrow::Cow, fs, path, thread::sleep, time::Duration};
 
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
@@ -35,6 +35,12 @@ pub mod tests {
     const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
     const MSG_CONTENT_TYPE_ERROR: &str = "Could not find Content-Type header";
 
+    const DELAY_IN_MILLISECS: u64 = 30;
+
+    fn sleep_by_milli_secs(milli_secs: u64) {
+        let three_secs = Duration::from_millis(milli_secs);
+        sleep(three_secs);        
+    }
     // ** put_profile **
 
     #[actix_web::test]
@@ -97,6 +103,7 @@ pub mod tests {
         let name1_file = "test_put_profile_form_with_invalid_name.png";
         let path_name1_file = format!("./{}", &name1_file);
         png_files::save_file_png(&path_name1_file, 2).unwrap();
+        sleep_by_milli_secs(DELAY_IN_MILLISECS);
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile1", "image/png", name1_file)
             .build();
@@ -639,6 +646,7 @@ pub mod tests {
         let name1_file = "test_put_profile_invalid_file_size.png";
         let path_name1_file = format!("./{}", &name1_file);
         let (size, _name) = png_files::save_file_png(&path_name1_file, 2).unwrap();
+        sleep_by_milli_secs(DELAY_IN_MILLISECS);
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
@@ -680,7 +688,6 @@ pub mod tests {
         let name1_file = "test_put_profile_invalid_file_type.png";
         let path_name1_file = format!("./{}", &name1_file);
         png_files::save_file_png(&path_name1_file, 1).unwrap();
-
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/bmp", name1_file)
             .build();
@@ -775,7 +782,7 @@ pub mod tests {
         let name1_file = "test_put_profile_a_with_old0_new1.png";
         let path_name1_file = format!("./{}", &name1_file);
         png_files::save_file_png(&path_name1_file, 1).unwrap();
-
+        sleep_by_milli_secs(DELAY_IN_MILLISECS);
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
@@ -831,7 +838,6 @@ pub mod tests {
         let name1_file = "test_put_profile_b_with_old0_new1_convert.png";
         let path_name1_file = format!("./{}", name1_file);
         png_files::save_file_png(&path_name1_file, 3).unwrap();
-
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
@@ -903,6 +909,7 @@ pub mod tests {
         let name1_file = "test_put_profile_c_with_old1_new1_new.png";
         let path_name1_file = format!("./{}", name1_file);
         png_files::save_file_png(&path_name1_file, 1).unwrap();
+        sleep_by_milli_secs(DELAY_IN_MILLISECS);
 
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
@@ -1014,6 +1021,7 @@ pub mod tests {
         let name1_file = "test_put_profile_e_with_old_1_new_size0_new.png";
         let path_name1_file = format!("./{}", name1_file);
         png_files::save_empty_file(&path_name1_file).unwrap();
+        sleep_by_milli_secs(DELAY_IN_MILLISECS);
 
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
@@ -1054,6 +1062,7 @@ pub mod tests {
         let name1_file = "test_put_profile_f_with_old0_new_size0.png";
         let path_name1_file = format!("./{}", name1_file);
         png_files::save_empty_file(&path_name1_file).unwrap();
+        sleep_by_milli_secs(DELAY_IN_MILLISECS);
 
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
