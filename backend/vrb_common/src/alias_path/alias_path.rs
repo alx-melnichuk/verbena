@@ -36,6 +36,10 @@ impl AliasPath {
             full_path_file.into()
         }
     }
+    /// Returns true if the string prefix matches the value of the alias.
+    pub fn starts_with_alias(&self, full_path_file: &str) -> bool {
+        full_path_file.starts_with(&self.alias)
+    }
 }
 
 #[cfg(test)]
