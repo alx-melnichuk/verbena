@@ -7,8 +7,7 @@ pub mod tests {
     use vrb_common::consts;
 
     use crate::streams::{
-        config_strm,
-        stream_extra::{get_stream_logo_files, remove_stream_logo_files},
+        config_strm, stream_extra,
         stream_orm::tests::{StreamOrmApp, StreamOrmTest as Strm_Test},
     };
 
@@ -30,7 +29,7 @@ pub mod tests {
         stream.logo = Some(format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file));
 
         let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
-        let result = get_stream_logo_files(data_stream_orm, user0_id + 1).await;
+        let result = stream_extra::get_stream_logo_files(data_stream_orm, user0_id + 1).await;
 
         assert!(result.is_ok());
         let path_files = result.unwrap();
@@ -43,7 +42,7 @@ pub mod tests {
         let streams = Strm_Test::streams(&[USER1]);
 
         let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
-        let result = get_stream_logo_files(data_stream_orm, user0_id).await;
+        let result = stream_extra::get_stream_logo_files(data_stream_orm, user0_id).await;
 
         assert!(result.is_ok());
         let path_files = result.unwrap();
@@ -62,7 +61,7 @@ pub mod tests {
         stream.logo = Some(path_name0_alias.clone());
 
         let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
-        let result = get_stream_logo_files(data_stream_orm, user0_id).await;
+        let result = stream_extra::get_stream_logo_files(data_stream_orm, user0_id).await;
 
         assert!(result.is_ok());
         let path_files = result.unwrap();
@@ -75,9 +74,8 @@ pub mod tests {
     #[actix_web::test]
     async fn test_remove_stream_logo_files_empty_list() {
         let config_strm = config_strm::get_test_config();
-        let path_file_img_list: Vec<String> = vec![];
 
-        let res = remove_stream_logo_files(path_file_img_list, config_strm);
+        let res = stream_extra::remove_stream_logo_files2(&[], &config_strm.strm_logo_files_dir);
         assert_eq!(res, 0);
     }
     #[actix_web::test]
@@ -90,9 +88,7 @@ pub mod tests {
 
         let path_name0_alias = path_name0_file.replace(&config_strm.strm_logo_files_dir, consts::ALIAS_LOGO_FILES_DIR);
 
-        let path_file_img_list: Vec<String> = vec![path_name0_alias];
-
-        let res = remove_stream_logo_files(path_file_img_list, config_strm);
+        let res = stream_extra::remove_stream_logo_files2(&[path_name0_alias], &config_strm.strm_logo_files_dir);
         assert_eq!(res, 1);
         let is_exists_logo_file = path::Path::new(&path_name0_file).exists();
         assert!(!is_exists_logo_file);

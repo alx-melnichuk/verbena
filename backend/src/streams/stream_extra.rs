@@ -1,6 +1,6 @@
 use actix_web::{http::StatusCode, web};
 use log::error;
-use vrb_common::{api_error::{code_to_str, ApiError}, consts};
+use vrb_common::{alias_path::alias_path_stream, api_error::{code_to_str, ApiError}};
 use vrb_tools::err;
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -8,8 +8,6 @@ use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
-    config_strm,
-    stream_controller::remove_image_file,
     stream_orm::StreamOrm,
 };
 
@@ -53,14 +51,27 @@ pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id:
 }
 
 /** Delete all specified logo files in the given list. */
-pub fn remove_stream_logo_files(path_file_img_list: Vec<String>, config_strm: config_strm::ConfigStrm) -> usize {
-    let result = path_file_img_list.len();
-    let img_file_dir = config_strm.strm_logo_files_dir;
+pub fn remove_stream_logo_files2(path_file_img_list: &[String], strm_logo_files_dir: &str) -> usize {
+    let mut result = 0;
+    let alias_path_strm = alias_path_stream::AliasStrm::new(strm_logo_files_dir);
+    let alias_strm = alias_path_strm.as_ref();
+
     // Remove files from the resulting list of stream logo files.
     for path_file_img in path_file_img_list {
-        // Delete a file if its path starts with the specified alias.
-        #[rustfmt::skip]
-        remove_image_file(&path_file_img, consts::ALIAS_LOGO_FILES_DIR, &img_file_dir, &"remove_stream_logo_files()");
+        // If the file path starts with alice, then the file corresponds to the entity type.
+        // And only then can the file be deleted.
+        if !alias_strm.starts_with_alias(path_file_img) {
+            continue;
+        }
+        // If the image file name starts with the specified alias, then delete the file.
+        // Return file path prefix instead of alias.
+        let full_path_logo = alias_strm.alias_to_path(&path_file_img);
+        let res_remove = std::fs::remove_file(&full_path_logo);
+        if let Err(err) = res_remove {
+            error!("{} remove_file({}): error: {:?}", "remove_stream_logo_files()", &full_path_logo, err);
+        } else {
+            result += 1;
+        }
     }
     result
 }
