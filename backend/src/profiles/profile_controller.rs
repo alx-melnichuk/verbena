@@ -1,4 +1,4 @@
-use std::{borrow::Cow, env, ops::Deref, path};
+use std::{borrow::Cow, env, fs, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, http::StatusCode, put, web, HttpResponse};
@@ -9,6 +9,7 @@ use serde_json::json;
 use utoipa;
 use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
+    alias_path::{alias_path_profile, alias_path_stream},
     api_error::{code_to_str, ApiError},
     consts,
     parser,
@@ -58,21 +59,27 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 }
 
 /** Delete a file if its path starts with the specified alias. */
-fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
-    // If the image file name starts with the specified alias, then delete the file.
-    if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
-        let avatar_name_full_path = path_file_img.replace(alias_file_img, img_file_dir);
-        remove_file_and_log(&avatar_name_full_path, err_msg);
-    }
-}
-fn remove_file_and_log(file_name: &str, msg: &str) {
-    if file_name.len() > 0 {
-        let res_remove = std::fs::remove_file(file_name);
+pub fn remove_profile_avatar_file(path_file_img: &str, prfl_avatar_files_dir: &str) -> bool {
+    let mut result = false;
+    let alias_path_prfl = alias_path_profile::AliasPrfl::new(prfl_avatar_files_dir);
+    let alias_prfl = alias_path_prfl.as_ref();
+
+    // If the file path starts with alice, then the file corresponds to the entity type.
+    // And only then can the file be deleted.
+    if alias_prfl.starts_with_alias(path_file_img) {
+        // If the image file name starts with the specified alias, then delete the file.
+        // Return file path prefix instead of alias.
+        let full_path_file_img = alias_prfl.alias_to_path(&path_file_img);
+        let res_remove = std::fs::remove_file(&full_path_file_img);
         if let Err(err) = res_remove {
-            error!("{} remove_file({}): error: {:?}", msg, file_name, err);
+            error!("remove_profile_avatar_file() remove_file({}): error: {:?}", &full_path_file_img, err);
+        } else {
+            result = true;
         }
     }
+    result
 }
+
 fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
     format!("{}_{}", user_id, coding::encode(date_time, 1))
 }
@@ -83,12 +90,27 @@ fn get_logo_files_dir() -> String {
     path_dir.to_str().unwrap().to_string()
 }
 /** Delete all specified logo files in the given list. */
-fn remove_stream_logo_files(path_file_img_list: Vec<String>, img_file_dir: String) -> usize {
-    let result = path_file_img_list.len();
+pub fn remove_stream_logo_files1(path_file_img_list: &[String], strm_logo_files_dir: &str) -> usize {
+    let mut result = 0;
+    let alias_path_strm = alias_path_stream::AliasStrm::new(strm_logo_files_dir);
+    let alias_strm = alias_path_strm.as_ref();
+
     // Remove files from the resulting list of stream logo files.
     for path_file_img in path_file_img_list {
-        // Delete a file if its path starts with the specified alias.
-        remove_image_file(&path_file_img, consts::ALIAS_LOGO_FILES_DIR, &img_file_dir, &"remove_stream_logo_files()");
+        // If the file path starts with alice, then the file corresponds to the entity type.
+        // And only then can the file be deleted.
+        if !alias_strm.starts_with_alias(path_file_img) {
+            continue;
+        }
+        // If the image file name starts with the specified alias, then delete the file.
+        // Return file path prefix instead of alias.
+        let full_path_logo = alias_strm.alias_to_path(&path_file_img);
+        let res_remove = std::fs::remove_file(&full_path_logo);
+        if let Err(err) = res_remove {
+            error!("{} remove_file({}): error: {:?}", "remove_stream_logo_files1()", &full_path_logo, err);
+        } else {
+            result += 1;
+        }
     }
     result
 }
@@ -112,7 +134,9 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
             config_prfl.prfl_avatar_max_height,
         )?;
         if !path_file.eq(&file_img_path) {
-            remove_file_and_log(&file_img_path, name);
+            if let Err(err) = std::fs::remove_file(file_img_path) {
+                error!("{} remove_file({}): error: {:?}", name, file_img_path, err);
+            }    
         }
         Ok(Some(path_file))
     } else {
@@ -532,7 +556,6 @@ pub async fn put_profile(
     // Get the current user's profile.
     let user = authenticated.deref();
     let curr_user_id = user.id;
-    // #let opt_curr_avatar = user.avatar.clone();
 
     // Get data from MultipartForm.
     let (modify_profile_dto, avatar_file) = ModifyProfileForm::convert(modify_profile_form);
@@ -584,7 +607,6 @@ pub async fn put_profile(
     }
 
     let mut avatar: Option<Option<String>> = None;
-
     let config_prfl = config_prfl.get_ref().clone();
     let mut path_new_avatar_file = "".to_string();
 
@@ -643,11 +665,18 @@ pub async fn put_profile(
             path_new_avatar_file = new_path_file;
         }
     
-        let alias_avatar_file = path_new_avatar_file.replace(&config_prfl.prfl_avatar_files_dir, consts::ALIAS_AVATAR_FILES_DIR);
-        avatar = Some(Some(alias_avatar_file));
-
         break;
     }
+
+    let alias_path_prfl = alias_path_profile::AliasPrfl::new(&config_prfl.prfl_avatar_files_dir);
+    let alias_prfl = alias_path_prfl.as_ref();
+
+    if path_new_avatar_file.len() > 0 {
+        // Replace file path prefix with alias.
+        let alias_avatar_file = alias_prfl.path_to_alias(&path_new_avatar_file);
+        avatar = Some(Some(alias_avatar_file));
+    }
+
     let mut modify_profile: ModifyProfile = modify_profile_dto.into();
     modify_profile.avatar = avatar;
 
@@ -701,17 +730,34 @@ pub async fn put_profile(
 
     let opt_profile = res_profile
     .map_err(|err| {
-        remove_file_and_log(&path_new_avatar_file, &"put_profile()");
+        if path_new_avatar_file.len() > 0 {
+            if let Err(err) = fs::remove_file(&path_new_avatar_file) {
+                error!("put_profile() remove_file({}): error: {:?}", &path_new_avatar_file, err);
+            }
+        }
         err
     })?;
 
     if let Some(profile) = opt_profile {
-        // If the image file name starts with the specified alias, then delete the file.
-        remove_image_file(&path_old_avatar_file, consts::ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"put_profile()");
         let profile_dto = ProfileDto::from(profile);
+
+        // If the file path starts with alice, then the file corresponds to the entity type.
+        // And only then can the file be deleted.
+        if alias_prfl.starts_with_alias(&path_old_avatar_file) {
+            // Return file path prefix instead of alias.
+            let full_path_file_img = alias_prfl.alias_to_path(&path_old_avatar_file);
+            if let Err(err) = fs::remove_file(&full_path_file_img) {
+                error!("put_profile() remove_file({}): error: {:?}", &full_path_file_img, err);
+            }
+        }
+
         Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
-        remove_file_and_log(&path_new_avatar_file, &"put_profile()");
+        if path_new_avatar_file.len() > 0 {
+            if let Err(err) = fs::remove_file(&path_new_avatar_file) {
+                error!("put_profile() remove_file({}): error: {:?}", &path_new_avatar_file, err);
+            }
+        }
         Ok(HttpResponse::NoContent().finish()) // 204        
     }
 }
@@ -953,13 +999,25 @@ pub async fn delete_profile(
     })??;
 
     if let Some(profile) = opt_profile {
-        let config_prfl = config_prfl.get_ref().clone();
         // Get the path to the "avatar" file.
         let path_file_img = profile.avatar.clone().unwrap_or("".to_string());
-        // If the image file name starts with the specified alias, then delete the file.
-        remove_image_file(&path_file_img, consts::ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile()");
+
+        let config_prfl = config_prfl.get_ref().clone();
+        let alias_path_prfl = alias_path_profile::AliasPrfl::new(&config_prfl.prfl_avatar_files_dir);
+        let alias_prfl = alias_path_prfl.as_ref();
+    
+        // If the file path starts with alice, then the file corresponds to the entity type.
+        // And only then can the file be deleted.
+        if alias_prfl.starts_with_alias(&path_file_img) {
+            // Return file path prefix instead of alias.
+            let full_path_file_img = alias_prfl.alias_to_path(&path_file_img);
+            if let Err(err) = fs::remove_file(&full_path_file_img) {
+                error!("delete_profile() remove_file({}): error: {:?}", &full_path_file_img, err);
+            }
+        }
+
         // Delete all specified logo files in the given list.
-        let _ = remove_stream_logo_files(path_file_img_list, get_logo_files_dir());
+        let _ = remove_stream_logo_files1(&path_file_img_list, &get_logo_files_dir());
 
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
@@ -1049,13 +1107,25 @@ pub async fn delete_profile_current(
     })??;
 
     if let Some(profile) = opt_profile {
-        let config_prfl = config_prfl.get_ref().clone();
         // Get the path to the "avatar" file.
         let path_file_img = profile.avatar.clone().unwrap_or("".to_string());
-        // If the image file name starts with the specified alias, then delete the file.
-        remove_image_file(&path_file_img, consts::ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile_current()");
+
+        let config_prfl = config_prfl.get_ref().clone();
+        let alias_path_prfl = alias_path_profile::AliasPrfl::new(&config_prfl.prfl_avatar_files_dir);
+        let alias_prfl = alias_path_prfl.as_ref();
+
+        // If the file path starts with alice, then the file corresponds to the entity type.
+        // And only then can the file be deleted.
+        if alias_prfl.starts_with_alias(&path_file_img) {
+            // Return file path prefix instead of alias.
+            let full_path_file_img = alias_prfl.alias_to_path(&path_file_img);
+            if let Err(err) = fs::remove_file(&full_path_file_img) {
+                error!("delete_profile_current() remove_file({}): error: {:?}", &full_path_file_img, err);
+            }
+        }
+
         // Delete all specified logo files in the given list.
-        let _ = remove_stream_logo_files(path_file_img_list, get_logo_files_dir());
+        let _ = remove_stream_logo_files1(&path_file_img_list, &get_logo_files_dir());
 
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
