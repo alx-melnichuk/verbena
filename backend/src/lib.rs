@@ -125,8 +125,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         // used: profile_registr_controller
         let mailer = web::Data::new(MailerApp::new(config_smtp0));
         // Create "UserAuthOrmApp".
-        let user_auth_orm0 = user_auth_orm::get_user_auth_orm_app(pool.clone());
-        let user_auth_orm = web::Data::new(user_auth_orm0);
+        let user_auth_orm = web::Data::new(user_auth_orm::get_user_auth_orm_app(pool.clone()));
         // used: profile_registr_controller
         let user_registr_orm = web::Data::new(user_registr_orm::get_user_registr_orm_app(pool.clone()));
         // used: profile_registr_controller
