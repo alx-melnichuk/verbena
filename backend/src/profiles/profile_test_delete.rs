@@ -13,7 +13,10 @@ pub mod tests {
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
     };
-    use vrb_common::{api_error::{code_to_str, ApiError}, consts};
+    use vrb_common::{
+        api_error::{code_to_str, ApiError},
+        consts,
+    };
     use vrb_tools::{err, png_files};
 
     use crate::profiles::{

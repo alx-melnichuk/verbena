@@ -17,8 +17,7 @@ pub mod tests {
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts,
-        validators,
+        consts, validators,
     };
     use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{cdis::coding, err, hash_tools, png_files};
@@ -39,7 +38,7 @@ pub mod tests {
 
     fn sleep_by_milli_secs(milli_secs: u64) {
         let three_secs = Duration::from_millis(milli_secs);
-        sleep(three_secs);        
+        sleep(three_secs);
     }
     // ** put_profile **
 

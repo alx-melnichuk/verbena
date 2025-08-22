@@ -11,8 +11,7 @@ use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     alias_path::{alias_path_profile, alias_path_stream},
     api_error::{code_to_str, ApiError},
-    consts,
-    parser,
+    consts, parser,
     validators::{self, msg_validation, ValidationChecks, Validator},
 };
 use vrb_dbase::db_enums::UserRole;
