@@ -1,5 +1,6 @@
-use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile};
 use vrb_dbase::dbase::DbPool;
+
+use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile};
 
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
