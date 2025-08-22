@@ -1,3 +1,5 @@
+use vrb_dbase::dbase::DbPool;
+
 use crate::users::user_models::{CreateUserRegistr, UserRegistr};
 
 pub const DURATION_IN_DAYS: u16 = 90;
@@ -19,22 +21,13 @@ pub trait UserRegistrOrm {
     fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String>;
 }
 
-pub mod cfg {
-    use vrb_dbase::dbase::DbPool;
-
-    #[cfg(not(all(test, feature = "mockdata")))]
-    use super::impls::UserRegistrOrmApp;
-    #[cfg(not(all(test, feature = "mockdata")))]
-    pub fn get_user_registr_orm_app(pool: DbPool) -> UserRegistrOrmApp {
-        UserRegistrOrmApp::new(pool)
-    }
-
-    #[cfg(all(test, feature = "mockdata"))]
-    use super::tests::UserRegistrOrmApp;
-    #[cfg(all(test, feature = "mockdata"))]
-    pub fn get_user_registr_orm_app(_: DbPool) -> UserRegistrOrmApp {
-        UserRegistrOrmApp::new()
-    }
+#[cfg(not(all(test, feature = "mockdata")))]
+pub fn get_user_registr_orm_app(pool: DbPool) -> impls::UserRegistrOrmApp {
+    impls::UserRegistrOrmApp::new(pool)
+}
+#[cfg(all(test, feature = "mockdata"))]
+pub fn get_user_registr_orm_app(_: DbPool) -> tests::UserRegistrOrmApp {
+    tests::UserRegistrOrmApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
