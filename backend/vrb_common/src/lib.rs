@@ -1,5 +1,7 @@
 pub mod alias_path;
 pub mod api_error;
+#[cfg(any(test, feature = "mockdata"))]
+pub mod consts_test;
 pub mod consts;
 pub mod crypto;
 pub mod file_path;
