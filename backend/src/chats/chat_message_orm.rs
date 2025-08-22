@@ -1,3 +1,5 @@
+use vrb_dbase::dbase::DbPool;
+
 use crate::chats::chat_message_models::{
     BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage,
     SearchChatMessage,
@@ -35,22 +37,13 @@ pub trait ChatMessageOrm {
     fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUser>, String>;
 }
 
-pub mod cfg {
-    use vrb_dbase::dbase::DbPool;
-
-    #[cfg(not(all(test, feature = "mockdata")))]
-    use super::impls::ChatMessageOrmApp;
-    #[cfg(not(all(test, feature = "mockdata")))]
-    pub fn get_chat_message_orm_app(pool: DbPool) -> ChatMessageOrmApp {
-        ChatMessageOrmApp::new(pool)
-    }
-
-    #[cfg(all(test, feature = "mockdata"))]
-    use super::tests::ChatMessageOrmApp;
-    #[cfg(all(test, feature = "mockdata"))]
-    pub fn get_chat_message_orm_app(_: DbPool) -> ChatMessageOrmApp {
-        ChatMessageOrmApp::new()
-    }
+#[cfg(not(all(test, feature = "mockdata")))]
+pub fn get_chat_message_orm_app(pool: DbPool) -> impls::ChatMessageOrmApp {
+    impls::ChatMessageOrmApp::new(pool)
+}
+#[cfg(all(test, feature = "mockdata"))]
+pub fn get_chat_message_orm_app(_: DbPool) -> tests::ChatMessageOrmApp {
+    tests::ChatMessageOrmApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]

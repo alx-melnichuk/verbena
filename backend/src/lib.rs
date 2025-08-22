@@ -18,10 +18,8 @@ use vrb_tools::send_email::mailer::tests::MailerApp;
 use vrb_tools::ssl_acceptor;
 use vrb_tools::{config_app, send_email::config_smtp};
 
-use chats::{chat_message_controller, chat_message_orm::cfg::get_chat_message_orm_app, chat_ws_controller};
-use profiles::{
-    config_prfl, profile_auth_controller, profile_controller, profile_orm, profile_registr_controller,
-};
+use chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
+use profiles::{config_prfl, profile_auth_controller, profile_controller, profile_orm, profile_registr_controller};
 use streams::{config_strm, stream_controller, stream_orm};
 use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm::cfg::get_user_registr_orm_app};
 use utoipa::OpenApi;
@@ -138,7 +136,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         // used: profile_controller
         let profile_orm = web::Data::new(profile_orm::get_profile_orm_app(pool.clone()));
         // used: chat_message_controller, chat_ws_controller
-        let chat_message_orm = web::Data::new(get_chat_message_orm_app(pool.clone()));
+        let chat_message_orm = web::Data::new(chat_message_orm::get_chat_message_orm_app(pool.clone()));
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
         let openapi = swagger_docs::ApiDoc::openapi();
