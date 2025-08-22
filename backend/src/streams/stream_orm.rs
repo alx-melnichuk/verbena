@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use vrb_dbase::dbase::DbPool;
 
 use super::stream_models::{CreateStream, ModifyStream, SearchStream, SearchStreamEvent, SearchStreamPeriod, Stream, StreamTagStreamId};
 
@@ -38,22 +39,13 @@ pub trait StreamOrm {
     fn delete_stream(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
 }
 
-pub mod cfg {
-    use vrb_dbase::dbase::DbPool;
-
-    #[cfg(not(all(test, feature = "mockdata")))]
-    use super::impls::StreamOrmApp;
-    #[cfg(not(all(test, feature = "mockdata")))]
-    pub fn get_stream_orm_app(pool: DbPool) -> StreamOrmApp {
-        StreamOrmApp::new(pool)
-    }
-
-    #[cfg(all(test, feature = "mockdata"))]
-    use super::tests::StreamOrmApp;
-    #[cfg(all(test, feature = "mockdata"))]
-    pub fn get_stream_orm_app(_: DbPool) -> StreamOrmApp {
-        StreamOrmApp::new()
-    }
+#[cfg(not(all(test, feature = "mockdata")))]
+pub fn get_stream_orm_app(pool: DbPool) -> impls::StreamOrmApp {
+    impls::StreamOrmApp::new(pool)
+}
+#[cfg(all(test, feature = "mockdata"))]
+pub fn get_stream_orm_app(_: DbPool) -> tests::StreamOrmApp {
+    tests::StreamOrmApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
