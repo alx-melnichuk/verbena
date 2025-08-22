@@ -1,4 +1,6 @@
-use super::user_models::{CreateUserRecovery, UserRecovery};
+use vrb_dbase::dbase::DbPool;
+
+use crate::users::user_models::{CreateUserRecovery, UserRecovery};
 
 pub const DURATION_IN_DAYS: u16 = 90;
 
@@ -17,22 +19,13 @@ pub trait UserRecoveryOrm {
     fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String>;
 }
 
-pub mod cfg {
-    use vrb_dbase::dbase::DbPool;
-
-    #[cfg(not(all(test, feature = "mockdata")))]
-    use super::impls::UserRecoveryOrmApp;
-    #[cfg(not(all(test, feature = "mockdata")))]
-    pub fn get_user_recovery_orm_app(pool: DbPool) -> UserRecoveryOrmApp {
-        UserRecoveryOrmApp::new(pool)
-    }
-
-    #[cfg(all(test, feature = "mockdata"))]
-    use super::tests::UserRecoveryOrmApp;
-    #[cfg(all(test, feature = "mockdata"))]
-    pub fn get_user_recovery_orm_app(_: DbPool) -> UserRecoveryOrmApp {
-        UserRecoveryOrmApp::new()
-    }
+#[cfg(not(all(test, feature = "mockdata")))]
+pub fn get_user_recovery_orm_app(pool: DbPool) -> impls::UserRecoveryOrmApp {
+    impls::UserRecoveryOrmApp::new(pool)
+}
+#[cfg(all(test, feature = "mockdata"))]
+pub fn get_user_recovery_orm_app(_: DbPool) -> tests::UserRecoveryOrmApp {
+    tests::UserRecoveryOrmApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
