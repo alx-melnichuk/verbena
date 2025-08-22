@@ -1,14 +1,7 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod config_strm;
+pub mod stream_controller;
+pub mod stream_models;
+pub mod stream_orm;
+pub mod stream_test_get;
+pub mod stream_test_post_delete;
+pub mod stream_test_put;
