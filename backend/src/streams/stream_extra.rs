@@ -1,15 +1,16 @@
 use actix_web::{http::StatusCode, web};
 use log::error;
-use vrb_common::{alias_path::alias_path_stream, api_error::{code_to_str, ApiError}};
+use vrb_common::{
+    alias_path::alias_path_stream,
+    api_error::{code_to_str, ApiError},
+};
 use vrb_tools::err;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::{
-    stream_orm::StreamOrm,
-};
+use crate::streams::stream_orm::StreamOrm;
 
 /** Get a list of logo file names for streams of the user with the specified user_id. */
 pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id: i32) -> Result<Vec<String>, ApiError> {

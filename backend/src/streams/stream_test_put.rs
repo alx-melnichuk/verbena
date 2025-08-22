@@ -17,8 +17,7 @@ mod tests {
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts,
-        validators,
+        consts, validators,
     };
     use vrb_dbase::db_enums::StreamState;
     use vrb_tools::{cdis::coding, err, png_files};
@@ -26,8 +25,7 @@ mod tests {
     use crate::streams::{
         config_strm,
         stream_controller::{
-            put_stream, put_toggle_state, tests as StrCtTest, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG,
-            MSG_INVALID_STREAM_STATE,
+            put_stream, put_toggle_state, tests as StrCtTest, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG, MSG_INVALID_STREAM_STATE,
         },
         stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamModelsTest, ToggleStreamStateDto},
         stream_orm::tests::StreamOrmTest as Strm_Test,

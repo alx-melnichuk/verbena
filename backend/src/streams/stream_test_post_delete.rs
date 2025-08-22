@@ -15,7 +15,10 @@ mod tests {
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1, USER1_ID},
     };
-    use vrb_common::{api_error::{code_to_str, ApiError}, consts};
+    use vrb_common::{
+        api_error::{code_to_str, ApiError},
+        consts,
+    };
     use vrb_tools::{cdis::coding, err, png_files};
 
     use crate::streams::{
