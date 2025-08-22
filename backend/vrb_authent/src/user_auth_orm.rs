@@ -22,6 +22,7 @@ pub fn get_user_auth_orm_app(_: DbPool) -> tests::UserAuthOrmApp {
     tests::UserAuthOrmApp::new()
 }
 
+#[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
     use std::time::Instant as tm;
 
@@ -111,6 +112,7 @@ pub mod impls {
     }
 }
 
+#[cfg(any(test, feature = "mockdata"))]
 pub mod tests {
     use actix_web::web;
     use vrb_dbase::db_enums::UserRole;
