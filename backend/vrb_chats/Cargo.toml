@@ -1,0 +1,25 @@
+[package]
+name = "vrb-chats"
+version = "0.1.0"
+edition = "2021"
+description = "Library for chat functions."
+rust-version = "1.87.0"
+keywords = ["vrb-chats"]
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+
+[features]
+default = ["test", "mockdata"]
+test=[]
+mockdata = []
+
+[dev-dependencies]
+# vrb-authent = { version = "0.1", path="../vrb_authent", features = ["mockdata"] }
+# vrb-common = { version = "0.1", path="../vrb_common", features = ["mockdata"] }
+
+[profile.dev]
+debug = 1
