@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Library for authorization functions."
 rust-version = "1.87.0"
-keywords = ["profiles", "vrb-profiles"]
+keywords = ["vrb-authent", "authorization"]
 license = "MIT"
 
 [lib]
