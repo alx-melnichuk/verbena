@@ -10,6 +10,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 use vrb_authent::{self, config_jwt, user_auth_orm};
+use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
 use vrb_dbase::dbase;
 use vrb_streams::{config_strm, stream_controller, stream_orm};
 #[cfg(not(feature = "mockdata"))]
@@ -19,12 +20,10 @@ use vrb_tools::send_email::mailer::tests::MailerApp;
 use vrb_tools::ssl_acceptor;
 use vrb_tools::{config_app, send_email::config_smtp};
 
-use chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
 use profiles::{config_prfl, profile_auth_controller, profile_controller, profile_orm, profile_registr_controller};
 use users::{user_recovery_orm, user_registr_orm};
 use utoipa::OpenApi;
 
-pub mod chats;
 pub mod profiles;
 pub(crate) mod static_controller;
 pub mod swagger_docs;
