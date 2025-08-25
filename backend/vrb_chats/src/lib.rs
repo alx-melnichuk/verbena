@@ -1,14 +1,16 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod chat_event_ws;
+pub mod chat_message;
+pub mod chat_message_controller;
+pub mod chat_message_models;
+pub mod chat_message_orm;
+pub mod chat_msg_blocked_test;
+pub mod chat_msg_test_delete;
+pub mod chat_msg_test_get;
+pub mod chat_msg_test_post_put;
+pub mod chat_ws_assistant;
+pub mod chat_ws_controller;
+pub mod chat_ws_server;
+pub mod chat_ws_session;
+pub mod chat_ws_test_1;
+pub mod chat_ws_test_2;
+pub mod chat_ws_test_3;
