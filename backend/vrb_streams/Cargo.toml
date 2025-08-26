@@ -1,10 +1,10 @@
 [package]
-name = "vrb-streams"
+name = "vrb_streams"
 version = "0.1.0"
 edition = "2021"
 description = "The library stores modules for working with streams."
 rust-version = "1.87.0"
-keywords = ["vrb-streams"]
+keywords = ["vrb_streams"]
 license = "MIT"
 
 [lib]

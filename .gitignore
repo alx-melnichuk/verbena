@@ -46,7 +46,7 @@ backend/vrb_dbase/Cargo.lock
 backend/vrb_profiles/target/
 backend/vrb_profiles/Cargo.lock
 
-# The result of building the library is "vrb-streams".
+# The result of building the library is "vrb_streams".
 backend/vrb_streams/target/
 backend/vrb_streams/Cargo.lock
 
