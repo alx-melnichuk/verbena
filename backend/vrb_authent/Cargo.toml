@@ -1,10 +1,10 @@
 [package]
-name = "vrb-authent"
+name = "vrb_authent"
 version = "0.1.0"
 edition = "2021"
 description = "Library for authorization functions."
 rust-version = "1.87.0"
-keywords = ["vrb-authent", "authorization"]
+keywords = ["vrb_authent", "authorization"]
 license = "MIT"
 
 [lib]

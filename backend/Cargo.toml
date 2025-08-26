@@ -47,7 +47,7 @@ utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] } # use in "
 utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web"] }
 utoipa-redoc = { version = "6.0.0", features = ["actix-web"] }
 utoipa-rapidoc = { version = "6.0.0", features = ["actix-web"] }
-vrb-authent = { version = "0.1", path="./vrb_authent" }
+vrb_authent = { version = "0.1", path="./vrb_authent" }
 vrb-chats = { version = "0.1", path="./vrb_chats" }
 vrb-common = { version = "0.1", path="./vrb_common" }
 vrb-dbase = { version = "0.1", path="./vrb_dbase" }
@@ -65,7 +65,7 @@ mockdata = []
 actix-multipart-test = "0.0.3"
 # To perform testing of websocket interaction.
 actix-test = "0.1"
-vrb-authent = { version = "0.1", path="./vrb_authent", features = ["mockdata"] }
+vrb_authent = { version = "0.1", path="./vrb_authent", features = ["mockdata"] }
 
 [profile.dev]
 debug = 1

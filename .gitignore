@@ -26,7 +26,7 @@ backend/imgs/
 # temporary upload directory
 backend/tmp/
 
-# The result of building the library is "vrb-authent".
+# The result of building the library is "vrb_authent".
 backend/vrb_authent/target/
 backend/vrb_authent/Cargo.lock
 
