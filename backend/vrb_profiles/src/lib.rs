@@ -1,14 +1,13 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod config_prfl;
+pub mod profile_auth_controller;
+pub mod profile_auth_test;
+pub mod profile_check;
+pub mod profile_check_test;
+pub mod profile_controller;
+pub mod profile_models;
+pub mod profile_orm;
+pub mod profile_registr_controller;
+pub mod profile_registr_test;
+pub mod profile_test_delete;
+pub mod profile_test_get;
+pub mod profile_test_put;
