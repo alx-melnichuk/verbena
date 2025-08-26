@@ -121,8 +121,8 @@ pub mod impls {
             params.insert("registr_duration", &registr_duration_val);
 
             let tpl_vec = [
-                ("verification_code", Path::new("./templates/verification_code.hbs")),
-                ("base", Path::new("./templates/basic_layout.hbs")),
+                ("verification_code", Path::new("../templates/verification_code.hbs")),
+                ("base", Path::new("../templates/basic_layout.hbs")),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -161,8 +161,8 @@ pub mod impls {
             params.insert("recovery_duration", &recovery_duration_val);
 
             let tpl_vec = [
-                ("password_recovery", Path::new("./templates/password_recovery.hbs")),
-                ("base", Path::new("./templates/basic_layout.hbs")),
+                ("password_recovery", Path::new("../templates/password_recovery.hbs")),
+                ("base", Path::new("../templates/basic_layout.hbs")),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -234,8 +234,8 @@ pub mod tests {
             params.insert("registr_duration", &registr_duration_val);
 
             let tpl_vec = [
-                ("verification_code", Path::new("./templates/verification_code.hbs")),
-                ("base", Path::new("./templates/basic_layout.hbs")),
+                ("verification_code", Path::new("../templates/verification_code.hbs")),
+                ("base", Path::new("../templates/basic_layout.hbs")),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -281,8 +281,8 @@ pub mod tests {
             params.insert("recovery_duration", &recovery_duration_val);
 
             let tpl_vec = [
-                ("password_recovery", Path::new("./templates/password_recovery.hbs")),
-                ("base", Path::new("./templates/basic_layout.hbs")),
+                ("password_recovery", Path::new("../templates/password_recovery.hbs")),
+                ("base", Path::new("../templates/basic_layout.hbs")),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
