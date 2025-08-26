@@ -53,7 +53,7 @@ vrb_common = { version = "0.1", path="./vrb_common" }
 vrb_dbase = { version = "0.1", path="./vrb_dbase" }
 vrb_profiles = { version = "0.1", path="./vrb_profiles" }
 vrb_streams = { version = "0.1", path="./vrb_streams" }
-vrb-tools = { version = "0.1", path="./vrb_tools" }
+vrb_tools = { version = "0.1", path="./vrb_tools" }
 
 [features]
 # default = ["test", "mockdata"]

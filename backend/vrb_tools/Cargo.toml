@@ -1,10 +1,10 @@
 [package]
-name = "vrb-tools"
+name = "vrb_tools"
 version = "0.1.0"
 edition = "2021"
 description = "Tool library for the Verbena project."
 rust-version = "1.87.0"
-keywords = ["vrb-tools", "send_email", "consts", "err"]
+keywords = ["vrb_tools", "send_email", "consts", "err"]
 license = "MIT"
 
 [lib]
