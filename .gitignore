@@ -30,7 +30,7 @@ backend/tmp/
 backend/vrb_authent/target/
 backend/vrb_authent/Cargo.lock
 
-# The result of building the library is "vrb-chats".
+# The result of building the library is "vrb_chats".
 backend/vrb_chats/target/
 backend/vrb_chats/Cargo.lock
 

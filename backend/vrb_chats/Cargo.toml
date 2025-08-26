@@ -1,10 +1,10 @@
 [package]
-name = "vrb-chats"
+name = "vrb_chats"
 version = "0.1.0"
 edition = "2021"
 description = "Library for chat functions."
 rust-version = "1.87.0"
-keywords = ["vrb-chats"]
+keywords = ["vrb_chats"]
 license = "MIT"
 
 [lib]
