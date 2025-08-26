@@ -9,4 +9,5 @@ pub mod file_path;
 pub mod parser;
 pub mod serial_datetime_option;
 pub mod serial_datetime;
+pub mod user_validations;
 pub mod validators;
