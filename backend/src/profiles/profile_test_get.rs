@@ -11,8 +11,10 @@ mod tests {
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
     };
-    use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_tools::err;
+    use vrb_common::{
+        api_error::{code_to_str, ApiError},
+        err,
+    };
 
     use crate::profiles::{
         config_prfl,

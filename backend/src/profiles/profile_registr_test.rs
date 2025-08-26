@@ -12,9 +12,9 @@ mod tests {
         config_jwt,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
     };
-    use vrb_common::api_error::{code_to_str, ApiError};
+    use vrb_common::{api_error::{code_to_str, ApiError}, err};
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{config_app, err, send_email::config_smtp, token_coding};
+    use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
     use crate::profiles::{
         profile_models::{

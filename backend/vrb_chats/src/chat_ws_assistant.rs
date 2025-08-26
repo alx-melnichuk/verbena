@@ -10,8 +10,11 @@ use vrb_authent::{
     user_auth_models::User,
     user_auth_orm::UserAuthOrm,
 };
-use vrb_common::api_error::{code_to_str, ApiError};
-use vrb_tools::{err, token_coding};
+use vrb_common::{
+    api_error::{code_to_str, ApiError},
+    err,
+};
+use vrb_tools::token_coding;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chat_message_orm::impls::ChatMessageOrmApp;

@@ -3,9 +3,8 @@ pub mod tests {
     use actix_web::http::StatusCode;
     use chrono::{DateTime, Duration, Utc};
     use serde_json;
-    use vrb_common::api_error::code_to_str;
+    use vrb_common::{api_error::code_to_str, err};
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::err;
 
     use crate::profiles::{profile_check::uniqueness_nickname_or_email, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::users::{user_models::UserRegistr, user_registr_orm::tests::UserRegistrOrmApp};

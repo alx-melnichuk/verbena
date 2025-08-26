@@ -15,9 +15,9 @@ pub mod tests {
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts,
+        consts, err,
     };
-    use vrb_tools::{err, png_files};
+    use vrb_tools::png_files;
 
     use crate::profiles::{
         config_prfl,

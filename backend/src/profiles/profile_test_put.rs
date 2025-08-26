@@ -17,10 +17,10 @@ pub mod tests {
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts, validators,
+        consts, err, validators,
     };
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{cdis::coding, err, hash_tools, png_files};
+    use vrb_tools::{cdis::coding, hash_tools, png_files};
 
     use crate::profiles::{
         config_prfl,

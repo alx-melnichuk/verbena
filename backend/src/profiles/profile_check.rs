@@ -1,8 +1,7 @@
 use std::borrow::Cow;
 
 use actix_web::web;
-use vrb_common::api_error::ApiError;
-use vrb_tools::err;
+use vrb_common::{api_error::ApiError, err};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;

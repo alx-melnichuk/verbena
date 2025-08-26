@@ -14,8 +14,11 @@ mod tests {
         user_auth_models::Session,
         user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
     };
-    use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_tools::{err, hash_tools, token_coding, token_data::TOKEN_NAME};
+    use vrb_common::{
+        api_error::{code_to_str, ApiError},
+        err,
+    };
+    use vrb_tools::{hash_tools, token_coding, token_data::TOKEN_NAME};
 
     use crate::profiles::{
         profile_auth_controller::{login, logout, tests as AthCtTest, update_token},

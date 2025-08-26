@@ -6,9 +6,12 @@ use futures_util::{
     FutureExt,
 };
 use log::{debug, error, log_enabled, Level::Info};
-use vrb_common::api_error::{code_to_str, ApiError};
+use vrb_common::{
+    api_error::{code_to_str, ApiError},
+    err,
+};
 use vrb_dbase::db_enums::UserRole;
-use vrb_tools::{err, token_coding, token_data};
+use vrb_tools::{token_coding, token_data};
 
 #[cfg(not(any(test, feature = "mockdata")))]
 use crate::user_auth_orm::impls::UserAuthOrmApp;

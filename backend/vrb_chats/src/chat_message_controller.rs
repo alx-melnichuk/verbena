@@ -14,11 +14,10 @@ use utoipa;
 use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
-    parser,
+    err, parser,
     validators::{msg_validation, Validator},
 };
 use vrb_dbase::db_enums::UserRole;
-use vrb_tools::err;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chat_message_orm::impls::ChatMessageOrmApp;

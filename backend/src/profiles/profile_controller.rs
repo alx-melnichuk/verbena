@@ -11,11 +11,11 @@ use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     alias_path::{alias_path_profile, alias_path_stream},
     api_error::{code_to_str, ApiError},
-    consts, parser,
+    consts, err, parser,
     validators::{self, msg_validation, ValidationChecks, Validator},
 };
 use vrb_dbase::db_enums::UserRole;
-use vrb_tools::{cdis::coding, err, hash_tools, loading::dynamic_image};
+use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;

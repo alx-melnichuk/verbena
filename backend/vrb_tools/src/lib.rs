@@ -1,6 +1,5 @@
 pub mod config_app;
 pub mod cdis;
-pub mod err;
 pub mod hash_tools;
 pub mod loading;
 pub mod send_email;

@@ -14,9 +14,10 @@ use vrb_authent::{
 };
 use vrb_common::{
     api_error::{code_to_str, ApiError},
+    err,
     validators::{msg_validation, Validator},
 };
-use vrb_tools::{err, hash_tools, token_coding};
+use vrb_tools::{hash_tools, token_coding};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;

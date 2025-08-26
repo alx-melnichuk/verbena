@@ -5,6 +5,7 @@ use utoipa;
 use vrb_authent::{authentication::RequireAuth, config_jwt};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
+    err,
     validators::{msg_validation, Validator},
 };
 use vrb_dbase::db_enums::UserRole;
@@ -12,7 +13,7 @@ use vrb_dbase::db_enums::UserRole;
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]
 use vrb_tools::send_email::mailer::tests::MailerApp;
-use vrb_tools::{config_app, err, hash_tools, send_email::mailer::Mailer, token_coding};
+use vrb_tools::{config_app, hash_tools, send_email::mailer::Mailer, token_coding};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;

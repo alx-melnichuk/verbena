@@ -6,11 +6,10 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use utoipa::ToSchema;
 use vrb_common::{
-    serial_datetime, serial_datetime_option,
+    err, serial_datetime, serial_datetime_option,
     validators::{ValidationChecks, ValidationError, Validator},
 };
 use vrb_dbase::{db_enums::StreamState, schema};
-use vrb_tools::err;
 
 pub const MSG_TITLE_REQUIRED: &str = "title:required";
 pub const TITLE_MIN: u8 = 2;
