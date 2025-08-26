@@ -1,10 +1,10 @@
 [package]
-name = "vrb-profiles"
+name = "vrb_profiles"
 version = "0.1.0"
 edition = "2021"
 description = "Library for working with the 'profile' entity (user)."
 rust-version = "1.87.0"
-keywords = ["profiles", "vrb-profiles"]
+keywords = ["profiles", "vrb_profiles"]
 license = "MIT"
 
 [lib]

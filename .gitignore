@@ -42,7 +42,7 @@ backend/vrb_common/Cargo.lock
 backend/vrb_dbase/target/
 backend/vrb_dbase/Cargo.lock
 
-# The result of building the library is "vrb-profiles".
+# The result of building the library is "vrb_profiles".
 backend/vrb_profiles/target/
 backend/vrb_profiles/Cargo.lock
 

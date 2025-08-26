@@ -51,7 +51,7 @@ vrb_authent = { version = "0.1", path="./vrb_authent" }
 vrb_chats = { version = "0.1", path="./vrb_chats" }
 vrb_common = { version = "0.1", path="./vrb_common" }
 vrb_dbase = { version = "0.1", path="./vrb_dbase" }
-vrb-profiles = { version = "0.1", path="./vrb_profiles" }
+vrb_profiles = { version = "0.1", path="./vrb_profiles" }
 vrb-streams = { version = "0.1", path="./vrb_streams" }
 vrb-tools = { version = "0.1", path="./vrb_tools" }
 
