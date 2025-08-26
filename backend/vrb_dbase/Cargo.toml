@@ -1,10 +1,10 @@
 [package]
-name = "vrb-dbase"
+name = "vrb_dbase"
 version = "0.1.0"
 edition = "2021"
 description = "Library for the entire database structure of the Verbena project."
 rust-version = "1.87.0"
-keywords = ["vrb-dbase", "dbase", "db_enums"]
+keywords = ["vrb_dbase", "dbase", "db_enums"]
 license = "MIT"
 
 [lib]

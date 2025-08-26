@@ -1,10 +1,10 @@
 [package]
-name = "vrb-common"
+name = "vrb_common"
 version = "0.1.0"
 edition = "2021"
 description = "A library for commonly used elements."
 rust-version = "1.87.0"
-keywords = ["common", "vrb-common", "ApiError", "crypto", "parser", "serial-datetime", "validators"]
+keywords = ["common", "vrb_common", "ApiError", "crypto", "parser", "serial-datetime", "validators"]
 license = "MIT"
 
 [lib]

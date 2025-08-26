@@ -34,11 +34,11 @@ backend/vrb_authent/Cargo.lock
 backend/vrb_chats/target/
 backend/vrb_chats/Cargo.lock
 
-# The result of building the library is "vrb-common".
+# The result of building the library is "vrb_common".
 backend/vrb_common/target/
 backend/vrb_common/Cargo.lock
 
-# The result of building the library is "vrb-dbase".
+# The result of building the library is "vrb_dbase".
 backend/vrb_dbase/target/
 backend/vrb_dbase/Cargo.lock
 
