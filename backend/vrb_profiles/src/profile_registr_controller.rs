@@ -509,7 +509,6 @@ pub async fn recovery(
     if result.is_err() {
         let msg = result.unwrap_err();
         error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), MSG_ERROR_SENDING_EMAIL, &msg);
-        eprintln!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), MSG_ERROR_SENDING_EMAIL, &msg); // #
         return Err(ApiError::create(510, MSG_ERROR_SENDING_EMAIL, &msg)); // 510
     }
 
