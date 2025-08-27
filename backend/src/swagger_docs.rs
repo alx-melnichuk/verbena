@@ -8,7 +8,6 @@ use vrb_dbase::db_enums;
 use vrb_profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller};
 use vrb_streams::{stream_controller, stream_models};
 
-
 #[derive(OpenApi)]
 #[openapi(
     paths(
