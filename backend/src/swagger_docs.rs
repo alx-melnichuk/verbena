@@ -4,7 +4,7 @@ use utoipa::{
 };
 use vrb_chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use vrb_common::api_error;
-use vrb_dbase::{enm_user_role, db_enums};
+use vrb_dbase::{enm_stream_state, enm_user_role};
 use vrb_profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller};
 use vrb_streams::{stream_controller, stream_models};
 
@@ -84,7 +84,7 @@ use vrb_streams::{stream_controller, stream_models};
             stream_models::StreamEventDto, stream_models::StreamEventPageDto, // ::get_streams_events
             stream_models::SearchStreamPeriodDto, // ::get_streams_period
             // stream_controller
-            db_enums::StreamState,
+            enm_stream_state::StreamState,
             stream_models::CreateStreamInfoDto, // ::post_stream
             stream_models::ModifyStreamInfoDto, // ::put_stream
             stream_models::ToggleStreamStateDto, // ::put_toggle_state

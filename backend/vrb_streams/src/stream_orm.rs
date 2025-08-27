@@ -607,7 +607,7 @@ pub mod tests {
     use actix_web::web;
     use chrono::{Duration, DateTime, Timelike, Utc};
     use vrb_common::consts_test::UserOrmTest;
-    use vrb_dbase::db_enums::StreamState;
+    use vrb_dbase::enm_stream_state::StreamState;
 
     use crate::config_strm;
     use crate::stream_models::{self, CreateStream, ModifyStream, SearchStream, SearchStreamEvent, SearchStreamPeriod, Stream, StreamTagStreamId, StreamInfoDto};

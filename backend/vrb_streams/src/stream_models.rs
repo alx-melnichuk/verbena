@@ -9,7 +9,7 @@ use vrb_common::{
     err, serial_datetime, serial_datetime_option,
     validators::{ValidationChecks, ValidationError, Validator},
 };
-use vrb_dbase::{db_enums::StreamState, schema};
+use vrb_dbase::{enm_stream_state::StreamState, schema};
 
 pub const MSG_TITLE_REQUIRED: &str = "title:required";
 pub const TITLE_MIN: u8 = 2;

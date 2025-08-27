@@ -19,7 +19,7 @@ mod tests {
         api_error::{code_to_str, ApiError},
         consts, validators,
     };
-    use vrb_dbase::db_enums::StreamState;
+    use vrb_dbase::enm_stream_state::StreamState;
     use vrb_tools::{cdis::coding, err, png_files};
 
     use crate::{
