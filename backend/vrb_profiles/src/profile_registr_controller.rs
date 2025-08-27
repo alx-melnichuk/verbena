@@ -22,7 +22,7 @@ use vrb_common::{
     err,
     validators::{msg_validation, Validator},
 };
-use vrb_dbase::db_enums::UserRole;
+use vrb_dbase::enm_user_role::UserRole;
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]

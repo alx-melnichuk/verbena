@@ -14,7 +14,7 @@ use vrb_common::{
     err, parser,
     validators::{self, msg_validation, ValidationChecks, Validator},
 };
-use vrb_dbase::db_enums::{StreamState, UserRole};
+use vrb_dbase::{enm_user_role::UserRole, db_enums::StreamState};
 use vrb_tools::{cdis::coding, loading::dynamic_image};
 
 #[cfg(not(all(test, feature = "mockdata")))]

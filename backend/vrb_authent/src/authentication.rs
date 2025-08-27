@@ -10,7 +10,7 @@ use vrb_common::{
     api_error::{code_to_str, ApiError},
     err,
 };
-use vrb_dbase::db_enums::UserRole;
+use vrb_dbase::enm_user_role::UserRole;
 use vrb_tools::{token_coding, token_data};
 
 #[cfg(not(any(test, feature = "mockdata")))]

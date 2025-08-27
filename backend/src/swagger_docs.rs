@@ -4,7 +4,7 @@ use utoipa::{
 };
 use vrb_chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use vrb_common::api_error;
-use vrb_dbase::db_enums;
+use vrb_dbase::{enm_user_role, db_enums};
 use vrb_profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller};
 use vrb_streams::{stream_controller, stream_models};
 
@@ -57,7 +57,7 @@ use vrb_streams::{stream_controller, stream_models};
             chat_message_models::DeleteBlockedUserDto, // ::delete_blocked_user
             api_error::ApiError,
             // user model
-            db_enums::UserRole,
+            enm_user_role::UserRole,
             // profile_controller
             profile_models::UniquenessProfileDto, // ::uniqueness_check
             profile_models::UniquenessProfileResponseDto, // ::uniqueness_check

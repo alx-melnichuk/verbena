@@ -243,7 +243,7 @@ pub mod tests {
     use chrono::Utc;
     use vrb_authent::{config_jwt, user_auth_models::User};
     use vrb_common::consts;
-    use vrb_dbase::db_enums::UserRole;
+    use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::token_coding;
 
     use crate::{

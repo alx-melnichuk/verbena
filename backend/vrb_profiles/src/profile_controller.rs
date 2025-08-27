@@ -20,7 +20,7 @@ use vrb_common::{
     consts, err, parser,
     validators::{self, msg_validation, ValidationChecks, Validator},
 };
-use vrb_dbase::db_enums::UserRole;
+use vrb_dbase::enm_user_role::UserRole;
 use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profile_orm::impls::ProfileOrmApp;

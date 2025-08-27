@@ -20,7 +20,7 @@ pub mod tests {
         api_error::{code_to_str, ApiError},
         consts, err, validators, user_validations,
     };
-    use vrb_dbase::db_enums::UserRole;
+    use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::{cdis::coding, hash_tools, png_files};
 
     use crate::{

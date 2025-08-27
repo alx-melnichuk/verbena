@@ -115,7 +115,7 @@ pub mod impls {
 #[cfg(any(test, feature = "mockdata"))]
 pub mod tests {
     use actix_web::web;
-    use vrb_dbase::db_enums::UserRole;
+    use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::token_coding;
 
     use crate::config_jwt;

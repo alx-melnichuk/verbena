@@ -10,7 +10,7 @@ use vrb_common::{
     validators::{ValidationChecks, ValidationError, Validator},
     user_validations,
 };
-use vrb_dbase::{db_enums::UserRole, schema};
+use vrb_dbase::{enm_user_role::UserRole, schema};
 
 pub const DESCRIPT_MIN: u8 = 2;
 pub const MSG_DESCRIPT_MIN_LENGTH: &str = "descript:min_length";

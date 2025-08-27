@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use vrb_dbase::{db_enums::UserRole, schema};
+use vrb_dbase::{enm_user_role::UserRole, schema};
 
 // ** Model: "User". **
 

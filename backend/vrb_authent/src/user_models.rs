@@ -5,7 +5,7 @@ use utoipa::ToSchema;
 use vrb_common::{
     serial_datetime, user_validations, validators::{ValidationError, Validator}
 };
-use vrb_dbase::{db_enums::UserRole, schema};
+use vrb_dbase::{enm_user_role::UserRole, schema};
 
 // ** Section: database "users" **
 

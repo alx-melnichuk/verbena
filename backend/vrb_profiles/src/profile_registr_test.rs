@@ -18,7 +18,7 @@ mod tests {
         api_error::{code_to_str, ApiError},
         err, user_validations,
     };
-    use vrb_dbase::db_enums::UserRole;
+    use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
     use crate::{
