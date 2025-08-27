@@ -152,22 +152,24 @@ where
         async move {
             let user_auth_orm = req.app_data::<web::Data<UserAuthOrmApp>>().unwrap().get_ref();
 
-            // Find user session by "id" from token.
+            // Token verification:
+            // 1. Search for a session by "id" from the token;
             let opt_session = user_auth_orm.get_session_by_id(user_id).map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 return ApiError::create(507, err::MSG_DATABASE, &e); // 507
             })?;
-            // If the session is missing, then return an error406("NotAcceptable", "session_not_found; user_id: {}").
+            // If the session does not exist, return error 406("NotAcceptable", "session_not_found; user_id: {}").
             let session = is_session_not_found(opt_session, user_id)?;
-            // Each session contains an additional numeric value "num_token".
-            // If "num_token" is not equal to "session.num_token", return error401(c)("Unauthorized","unacceptable_token_num; user_id: {}").
+            // 2. Compare "num_token" from session with "num_token" from token;
+            // To block hacking, the session contains a numeric value "num_token".
+            // If session.num_token is not equal to token.num_token,return error401(c)("Unauthorized","unacceptable_token_num; user_id: {}")
             let _ = is_unacceptable_token_num(&session, num_token, user_id)?;
-            // Find user by "id" from token.
+            // 3. If everything is correct, then search for the user by "user_id" from the token;
             let opt_user = user_auth_orm.get_user_by_id(user_id, false).map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             })?;
-            // If the user is missing, then return an error401(d)("Unauthorized", "unacceptable_token_id; user_id: {}").
+            // If the user is not present, return error401(d)("Unauthorized", "unacceptable_token_id; user_id: {}").
             let user = is_unacceptable_token_id(opt_user, user_id)?;
 
             if let Some(timer0) = opt_timer0 {
