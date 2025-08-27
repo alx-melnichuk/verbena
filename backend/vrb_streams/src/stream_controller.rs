@@ -851,7 +851,6 @@ pub async fn post_stream(
         if let Err(err) = res_upload {
             let msg = format!("{} - {}", &full_path_file, err.to_string());
             error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_UPLOAD_FILE, &msg);
-            eprintln!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_UPLOAD_FILE, &msg); // #
             return Err(ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, &msg)) // 500
         }
         path_new_logo_file = full_path_file;
