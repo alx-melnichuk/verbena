@@ -5,10 +5,9 @@ use utoipa::ToSchema;
 use vrb_common::{
     serial_datetime,
     validators::{ValidationError, Validator},
+    user_validations,
 };
 use vrb_dbase::{db_enums::UserRole, schema};
-
-use crate::profiles::profile_models;
 
 // ** Section: database "users" **
 
@@ -69,13 +68,13 @@ impl Validator for ModifyUserDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         if let Some(nickname_val) = &self.nickname {
-            errors.push(profile_models::validate_nickname(nickname_val).err());
+            errors.push(user_validations::validate_nickname(nickname_val).err());
         }
         if let Some(email_val) = &self.email {
-            errors.push(profile_models::validate_email(email_val).err());
+            errors.push(user_validations::validate_email(email_val).err());
         }
         if let Some(password_val) = &self.password {
-            errors.push(profile_models::validate_password(password_val).err());
+            errors.push(user_validations::validate_password(password_val).err());
         }
 
         self.filter_errors(errors)
@@ -94,11 +93,11 @@ impl Validator for NewPasswordUserDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(profile_models::validate_password(&self.password).err());
+        errors.push(user_validations::validate_password(&self.password).err());
 
-        errors.push(profile_models::validate_new_password(&self.new_password).err());
+        errors.push(user_validations::validate_new_password(&self.new_password).err());
 
-        errors.push(profile_models::validate_inequality(&self.new_password, &self.password).err());
+        errors.push(user_validations::validate_inequality(&self.new_password, &self.password).err());
 
         self.filter_errors(errors)
     }
