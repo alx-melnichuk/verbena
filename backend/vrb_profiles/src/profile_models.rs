@@ -528,7 +528,7 @@ pub struct ProfileTokensDto {
 // * * * * Section: models for the "profile_registr_controller". * * * *
 
 // ** Model Dto: "RegistrProfileDto". Used: in "profile_registr_controller::registration(). **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrProfileDto {
@@ -536,7 +536,7 @@ pub struct RegistrProfileDto {
     pub email: String,
     pub password: String,
 }
-
+// #
 impl Validator for RegistrProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
@@ -551,7 +551,7 @@ impl Validator for RegistrProfileDto {
 }
 
 // ** Model Dto: "RegistrProfileResponseDto". Used: in "profile_registr_controller::registration(). **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrProfileResponseDto {
