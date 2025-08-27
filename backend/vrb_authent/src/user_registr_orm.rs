@@ -1,6 +1,6 @@
 use vrb_dbase::dbase::DbPool;
 
-use crate::user_models::{CreateUserRegistr, UserRegistr};
+use crate::user_models1::{CreateUserRegistr, UserRegistr};
 
 pub const DURATION_IN_DAYS: u16 = 90;
 

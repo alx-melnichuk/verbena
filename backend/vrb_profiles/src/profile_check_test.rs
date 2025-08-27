@@ -3,7 +3,7 @@ pub mod tests {
     use actix_web::http::StatusCode;
     use chrono::{DateTime, Duration, Utc};
     use serde_json;
-    use vrb_authent::{user_models::UserRegistr, user_registr_orm::tests::UserRegistrOrmApp};
+    use vrb_authent::{user_models1::UserRegistr, user_registr_orm::tests::UserRegistrOrmApp};
     use vrb_common::{api_error::code_to_str, err};
     use vrb_dbase::enm_user_role::UserRole;
 

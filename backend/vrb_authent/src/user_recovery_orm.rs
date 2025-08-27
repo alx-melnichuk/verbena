@@ -1,6 +1,6 @@
 use vrb_dbase::dbase::DbPool;
 
-use crate::user_models::{CreateUserRecovery, UserRecovery};
+use crate::user_models1::{CreateUserRecovery, UserRecovery};
 
 pub const DURATION_IN_DAYS: u16 = 90;
 
@@ -40,7 +40,7 @@ pub mod impls {
         schema::{self, user_recovery::dsl},
     };
 
-    use crate::user_models::UserRecovery;
+    use crate::user_models1::UserRecovery;
     use crate::user_recovery_orm::DURATION_IN_DAYS;
 
     use super::*;
@@ -186,7 +186,7 @@ pub mod tests {
     use actix_web::web;
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::user_models::{CreateUserRecovery, UserRecovery};
+    use crate::user_models1::{CreateUserRecovery, UserRecovery};
 
     use super::{UserRecoveryOrm, DURATION_IN_DAYS};
 

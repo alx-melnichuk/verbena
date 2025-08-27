@@ -14,7 +14,7 @@ use vrb_authent::user_registr_orm::impls::UserRegistrOrmApp;
 use vrb_authent::user_registr_orm::tests::UserRegistrOrmApp;
 
 use vrb_authent::{
-    authentication::RequireAuth, config_jwt, user_models, user_recovery_orm::UserRecoveryOrm, user_registr_orm::UserRegistrOrm,
+    authentication::RequireAuth, config_jwt, user_models1, user_recovery_orm::UserRecoveryOrm, user_registr_orm::UserRegistrOrm,
 };
 
 use vrb_common::{
@@ -175,7 +175,7 @@ pub async fn registration(
     // Waiting time for registration confirmation (in seconds).
     let final_date_utc = Utc::now() + Duration::seconds(app_registr_duration.into());
 
-    let create_profile_registr_dto = user_models::CreateUserRegistr {
+    let create_profile_registr_dto = user_models1::CreateUserRegistr {
         nickname: registr_profile_dto.nickname.clone(),
         email: registr_profile_dto.email.clone(),
         password: password_hashed,
@@ -442,7 +442,7 @@ pub async fn recovery(
     // Waiting time for password recovery confirmation (in seconds).
     let final_date_utc = Utc::now() + Duration::seconds(app_recovery_duration.into());
 
-    let create_user_recovery = user_models::CreateUserRecovery {
+    let create_user_recovery = user_models1::CreateUserRecovery {
         user_id: user_id,
         final_date: final_date_utc,
     };
