@@ -1,6 +1,6 @@
 use vrb_dbase::dbase::DbPool;
 
-use crate::user_models1::{CreateUserRegistr, UserRegistr};
+use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
 
 pub const DURATION_IN_DAYS: u16 = 90;
 
@@ -42,9 +42,8 @@ pub mod impls {
         schema::{self, user_registration::dsl},
     };
 
-    use crate::user_registr_orm::DURATION_IN_DAYS;
-
-    use super::*;
+    use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
+    use crate::user_registr_orm::{DURATION_IN_DAYS, UserRegistrOrm};
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
@@ -211,7 +210,8 @@ pub mod tests {
     use actix_web::web;
     use chrono::{DateTime, Duration, Utc};
 
-    use super::*;
+    use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
+    use crate::user_registr_orm::{DURATION_IN_DAYS, UserRegistrOrm};
 
     pub const USER_REGISTR_ID: i32 = 1200;
 
