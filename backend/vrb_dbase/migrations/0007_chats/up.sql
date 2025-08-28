@@ -736,38 +736,58 @@ $$;
 
 -- **
 
-/* Create a stored function to search data from user tables by ID. */
-CREATE OR REPLACE FUNCTION find_user_by_id(
+/* Stored function for retrieving data from the "users" tables by ID or nickname or email. */
+CREATE OR REPLACE FUNCTION find_user(
   IN _id INTEGER,
+  IN _nickname VARCHAR,
+  IN _email VARCHAR,
   IN _is_password BOOLEAN, 
   OUT id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
   OUT "password" VARCHAR,
+  OUT "role" user_role,
   OUT created_at TIMESTAMP WITH TIME ZONE,
-  OUT updated_at TIMESTAMP WITH TIME ZONE,
-  OUT "role" user_role
+  OUT updated_at TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
   rec1 RECORD;
 BEGIN
-  IF _id IS NULL THEN
-    RETURN;
+  IF _id IS NOT NULL THEN
+    SELECT u.id, u.nickname, u.email, u."password", u."role", u.created_at, u.updated_at
+    FROM "users" u
+    WHERE u.id = _id
+    INTO rec1;
   END IF;
 
-  RETURN QUERY
-    SELECT
-      u.id,
-      u.nickname,
-      u.email,
-      CASE WHEN _is_password THEN u."password" ELSE ''::VARCHAR END AS "password",
-      u.created_at,
-      u.updated_at,
-      u."role"
+  IF rec1 IS NULL AND LENGTH(coalesce(_nickname, '')) > 0 THEN
+    SELECT u.id, u.nickname, u.email, u."password", u."role", u.created_at, u.updated_at
     FROM users u
-    WHERE u.id = _id
-    LIMIT 1;
+    WHERE u.nickname = _nickname
+    LIMIT 1
+    INTO rec1;
+  END IF;
+
+  IF rec1 IS NULL AND LENGTH(coalesce(_email, '')) > 0 THEN
+    SELECT u.id, u.nickname, u.email, u."password", u."role", u.created_at, u.updated_at
+    FROM "users" u
+    WHERE u.email = _email
+    LIMIT 1
+    INTO rec1;
+  END IF;
+
+  IF rec1 IS NOT NULL AND rec1.id IS NOT NULL THEN
+    RETURN QUERY 
+      SELECT
+        rec1.id,
+        rec1.nickname,
+        rec1.email,
+        CASE WHEN _is_password THEN rec1."password" ELSE ''::VARCHAR END AS "password",
+        rec1."role",
+        rec1.created_at,
+        rec1.updated_at;
+  END IF;
 END;
 $$;
 

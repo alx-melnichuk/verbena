@@ -1,6 +1,6 @@
 
 /* Remove stored function to search data from user tables by ID. */
-DROP FUNCTION IF EXISTS find_user_by_id;
+DROP FUNCTION IF EXISTS find_user;
 
 -- Removing entities: "blocked_users", "chat_messages", chat_message_logs.
 
