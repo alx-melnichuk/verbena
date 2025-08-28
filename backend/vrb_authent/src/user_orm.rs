@@ -58,7 +58,7 @@ pub mod impls {
 
             #[rustfmt::skip]
             let query =
-                diesel::sql_query("select * from find_user_by_id($1, $2);")
+                diesel::sql_query("select * from find_user($1, NULL, NULL, $2);")
                 .bind::<sql_types::Integer, _>(id)
                 .bind::<sql_types::Bool, _>(is_password);
 
