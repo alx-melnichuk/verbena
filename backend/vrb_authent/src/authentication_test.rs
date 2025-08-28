@@ -12,7 +12,7 @@ mod tests {
 
     use crate::authentication::RequireAuth;
     use crate::config_jwt;
-    use crate::user_auth_models::Session;
+    use crate::user_models::Session;
     use crate::user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID};
 
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";

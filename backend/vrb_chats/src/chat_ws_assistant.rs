@@ -7,7 +7,7 @@ use vrb_authent::user_orm::tests::UserOrmApp;
 use vrb_authent::{
     authentication::{is_session_not_found, is_unacceptable_token_id, is_unacceptable_token_num},
     config_jwt,
-    user_auth_models::User,
+    user_models::User,
     user_orm::UserOrm,
 };
 use vrb_common::{

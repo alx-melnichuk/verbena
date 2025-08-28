@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_authent::user_auth_models::User;
+use vrb_authent::user_models::User;
 use vrb_common::{
     err, serial_datetime,
     validators::{ValidationChecks, ValidationError, Validator},

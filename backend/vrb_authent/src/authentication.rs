@@ -19,7 +19,7 @@ use crate::user_orm::impls::UserOrmApp;
 use crate::user_orm::tests::UserOrmApp;
 use crate::{
     config_jwt,
-    user_auth_models::{Session, User},
+    user_models::{Session, User},
     user_orm::UserOrm,
 };
 

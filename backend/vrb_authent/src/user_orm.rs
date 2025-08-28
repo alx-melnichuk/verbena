@@ -1,4 +1,4 @@
-use crate::user_auth_models::{Session, User};
+use crate::user_models::{Session, User};
 use vrb_dbase::dbase::DbPool;
 
 pub trait UserOrm {
@@ -30,7 +30,7 @@ pub mod impls {
     use log::{info, log_enabled, Level::Info};
     use vrb_dbase::{dbase, schema};
 
-    use crate::user_auth_models::{Session, User};
+    use crate::user_models::{Session, User};
     use crate::user_orm::UserOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
@@ -119,7 +119,7 @@ pub mod tests {
     use vrb_tools::token_coding;
 
     use crate::config_jwt;
-    use crate::user_auth_models::{Session, User};
+    use crate::user_models::{Session, User};
     use crate::user_orm::UserOrm;
 
     pub const ADMIN: u8 = 0;
