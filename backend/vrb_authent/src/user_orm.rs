@@ -1,5 +1,7 @@
-use crate::user_models::{Session, User};
 use vrb_dbase::dbase::DbPool;
+
+use crate::profile_models2::{CreateProfile, Profile, ModifyProfile};
+use crate::user_models::{Session, User};
 
 pub trait UserOrm {
     /// Get an entity (user) by ID.
@@ -11,6 +13,19 @@ pub trait UserOrm {
     /// Modify the entity (session).
     fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
     // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
+
+    /// Find for an entity (user) by nickname or email.
+    #[rustfmt::skip]
+    fn find_user_by_nickname_or_email(
+        &self, nickname: Option<&str>, email: Option<&str>, is_password: bool,
+    ) -> Result<Option<User>, String>;
+
+    /// Add a new entry (user, profile).
+    fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String>;
+
+    /// Modify an entity (user, profile).
+    fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String>;
+
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -30,6 +45,7 @@ pub mod impls {
     use log::{info, log_enabled, Level::Info};
     use vrb_dbase::{dbase, schema};
 
+    use crate::profile_models2::{CreateProfile, Profile, ModifyProfile};
     use crate::user_models::{Session, User};
     use crate::user_orm::UserOrm;
 
@@ -109,16 +125,126 @@ pub mod impls {
             }
             Ok(result)
         }
+
+        /// Find for an entity (user) by nickname or email.
+        fn find_user_by_nickname_or_email(
+            &self,
+            nickname: Option<&str>,
+            email: Option<&str>,
+            is_password: bool,
+        ) -> Result<Option<User>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
+            let nickname2_len = nickname2.len();
+            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
+            let email2_len = email2.len();
+            if nickname2_len == 0 && email2_len == 0 {
+                return Ok(None);
+            }
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from find_user(NULL, $1, $2, $3);")
+                .bind::<sql_types::Text, _>(nickname2)
+                .bind::<sql_types::Text, _>(email2)
+                .bind::<sql_types::Bool, _>(is_password);
+
+            // Run query using Diesel to find user by id (and user_id) and return it.
+            let opt_user = query
+                .get_result::<User>(&mut conn)
+                .optional()
+                .map_err(|e| format!("find_user: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                #[rustfmt::skip]
+                info!("find_user_by_nickname_or_email() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(opt_user)
+        }
+
+        /// Add a new entry (profile, user).
+        fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            let nickname = create_profile.nickname.to_lowercase(); // #?
+            let email = create_profile.email.to_lowercase();
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from create_profile_user($1,$2,$3,$4,$5,$6,$7,$8);")
+                .bind::<sql_types::Text, _>(nickname) // $1
+                .bind::<sql_types::Text, _>(email) // $2
+                .bind::<sql_types::Text, _>(create_profile.password) // $3
+                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(create_profile.role) // $4
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.avatar) // $5
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.descript) // $6
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.theme) // $7
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.locale); // $8
+
+            // Run a query with Diesel to create a new user and return it.
+            let profile_user = query
+                .get_result::<Profile>(&mut conn)
+                .map_err(|e| format!("create_profile_user: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("create_profile_user() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(profile_user)
+        }
+
+        /// Modify an entity (user, profile).
+        fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            let nickname = modify_profile.nickname.map(|v| v.to_lowercase());
+            let email = modify_profile.email.map(|v| v.to_lowercase());
+            let avatar = match modify_profile.avatar {
+                Some(value1) => match value1 {
+                    Some(value2) => Some(value2),
+                    None => Some("".to_string()),
+                },
+                None => None,
+            };
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from modify_profile_user($1,$2,$3,$4,$5,$6,$7,$8,$9);")
+                .bind::<sql_types::Integer, _>(user_id) // $1
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(nickname) // $2
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(email) // $3
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.password) // $4
+                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(modify_profile.role) // $5
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(avatar) // $6
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.descript) // $7
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.theme) // $8
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.locale); // $9
+
+            // Run a query with Diesel to create a new user and return it.
+            let profile_user = query
+                .get_result::<Profile>(&mut conn)
+                .optional()
+                .map_err(|e| format!("modify_profile_user: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("modify_profile() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(profile_user)
+        }
     }
 }
 
 #[cfg(any(test, feature = "mockdata"))]
 pub mod tests {
     use actix_web::web;
+    use chrono::Utc;
     use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::token_coding;
 
     use crate::config_jwt;
+    use crate::profile_models2::{CreateProfile, Profile, ModifyProfile};
     use crate::user_models::{Session, User};
     use crate::user_orm::UserOrm;
 
@@ -241,6 +367,93 @@ pub mod tests {
 
             Ok(Some(res_session))
         }
+
+        /// Find for an entity (user) by nickname or email.
+        fn find_user_by_nickname_or_email(
+            &self,
+            nickname: Option<&str>,
+            email: Option<&str>,
+            is_password: bool,
+        ) -> Result<Option<User>, String> {
+            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
+            let nickname2_len = nickname2.len();
+            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
+            let email2_len = email2.len();
+
+            if nickname2_len == 0 && email2_len == 0 {
+                return Ok(None);
+            }
+
+            let opt_user = self
+                .user_vec
+                .iter()
+                .find(|u| (nickname2_len > 0 && u.nickname == nickname2) || (email2_len > 0 && u.email == email2))
+                .map(|u| u.clone());
+
+            let result = match opt_user {
+                Some(mut user) => {
+                    if !is_password {
+                        user.password = "".to_string();
+                    }
+                    Some(user)
+                },
+                None => None,
+            };
+
+            Ok(result)
+        }
+
+        /// Add a new entry (user, profile).
+        fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
+            let nickname = create_profile.nickname.to_lowercase();
+            let email = create_profile.email.to_lowercase();
+
+            // Check the availability of the profile by nickname and email.
+            let opt_profile = self.find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)?;
+            if opt_profile.is_some() {
+                return Err("Profile already exists".to_string());
+            }
+
+            let idx: i32 = self.user_vec.len().try_into().unwrap();
+            let user_id: i32 = USER1_ID + idx;
+
+            let profile_user = Profile::new(
+                user_id,
+                &nickname,
+                &email,
+                create_profile.role.unwrap_or(UserRole::User),
+                create_profile.avatar.as_deref(),
+                create_profile.descript.as_deref(),
+                create_profile.theme.as_deref(),
+                create_profile.locale.as_deref(),
+            );
+            Ok(profile_user)
+        }
+
+        /// Modify an entity (profile, user).
+        fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
+            let opt_user = self.user_vec.iter().find(|user| (*user).id == user_id);
+            let opt_profile3: Option<Profile> = if let Some(user) = opt_user {
+                let profile2 = Profile {
+                    user_id: user.id,
+                    nickname: modify_profile.nickname.unwrap_or(user.nickname.clone()),
+                    email: modify_profile.email.unwrap_or(user.email.clone()),
+                    password: modify_profile.password.unwrap_or(user.password.clone()),
+                    role: modify_profile.role.unwrap_or(user.role.clone()),
+                    avatar: modify_profile.avatar.unwrap_or(None), // # user.avatar.clone()),
+                    descript: modify_profile.descript.or(None), // # user.descript.clone()),
+                    theme: modify_profile.theme.or(None), // # user.theme.clone()),
+                    locale: modify_profile.locale.or(None), // # user.locale.clone()),
+                    created_at: user.created_at,
+                    updated_at: Utc::now(),
+                };
+                Some(profile2)
+            } else {
+                None
+            };
+            Ok(opt_profile3)
+        }
+
     }
 
     pub struct UserOrmTest {}

@@ -86,3 +86,5 @@ pub const MSG_DATABASE: &str = "database_query_error";
 
 // 510 Not Extended - Error while converting file.
 pub const MSG_ERROR_CONVERT_FILE: &str = "error_convert_file";
+// 510 Not Extended - Error when sending email.
+pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
