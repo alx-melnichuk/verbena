@@ -72,7 +72,7 @@ pub const PROFILE_LOCALE_DEF: &str = "default";
 // * * * * Section: models for "ProfileOrm". * * * *
 
 // ** Model: "Profile". Used to return user profile data. **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::profiles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -100,7 +100,7 @@ pub struct Profile {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
-
+// #
 impl Profile {
     pub fn new(
         user_id: i32,
@@ -154,7 +154,7 @@ impl Profile {
         }
     }
 }
-
+// #
 impl From<User> for Profile {
     fn from(user: User) -> Self {
         Profile {
@@ -174,7 +174,7 @@ impl From<User> for Profile {
 }
 
 // ** Model: "CreateProfile". Used: ProfileOrm::create_profile_user() **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct CreateProfile {
     pub nickname: String,         // min_len=3 max_len=64
@@ -186,7 +186,7 @@ pub struct CreateProfile {
     pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
     pub locale: Option<String>,   // min_len=2 max_len=32 default "default"
 }
-
+// #
 impl CreateProfile {
     pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateProfile {
         CreateProfile {
@@ -203,7 +203,7 @@ impl CreateProfile {
 }
 
 // ** Model: "ModifyProfile". Used: ProfileOrm::modify_profile() **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModifyProfile {
     pub nickname: Option<String>,       // min_len=3,max_len=64
@@ -261,7 +261,7 @@ impl UniquenessProfileResponseDto {
 
 // ** Model Dto: "ProfileDto". Used: in "profile_get_controller::get_profile_by_id()" and many other methods. **
 // **                          Used: in "profile_controller::put_profile()" and many other methods. **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileDto {
@@ -282,7 +282,7 @@ pub struct ProfileDto {
     #[serde(with = "serial_datetime")]
     pub updated_at: DateTime<Utc>,
 }
-
+// #
 impl From<Profile> for ProfileDto {
     fn from(profile: Profile) -> Self {
         ProfileDto {
@@ -561,13 +561,13 @@ pub struct RegistrProfileResponseDto {
 }
 
 // ** Model Dto: "RecoveryProfileDto". Used: in "profile_registr_controller::recovery(). **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryProfileDto {
     pub email: String,
 }
-
+// #
 impl Validator for RecoveryProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
@@ -580,7 +580,7 @@ impl Validator for RecoveryProfileDto {
 }
 
 // ** Model Dto: "RecoveryProfileResponseDto". Used: in "profile_registr_controller::recovery(). **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryProfileResponseDto {
@@ -590,13 +590,13 @@ pub struct RecoveryProfileResponseDto {
 }
 
 // ** Model Dto: "RecoveryDataDto". Used: in "profile_registr_controller::confirm_recovery(). **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryDataDto {
     pub password: String,
 }
-
+// #
 impl Validator for RecoveryDataDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
