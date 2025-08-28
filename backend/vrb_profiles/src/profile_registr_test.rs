@@ -10,7 +10,7 @@ mod tests {
     use serde_json::json;
     use vrb_authent::{
         config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
+        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
         user_recovery_orm::tests::UserRecoveryOrmTest as RecovTest,
         user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
     };
@@ -1372,7 +1372,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(clear_for_expired)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(registrs))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;

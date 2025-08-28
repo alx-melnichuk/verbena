@@ -1,14 +1,14 @@
 use actix_web::http::StatusCode;
 use log::error;
 #[cfg(not(all(test, feature = "mockdata")))]
-use vrb_authent::user_auth_orm::impls::UserAuthOrmApp;
+use vrb_authent::user_orm::impls::UserOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
-use vrb_authent::user_auth_orm::tests::UserAuthOrmApp;
+use vrb_authent::user_orm::tests::UserOrmApp;
 use vrb_authent::{
     authentication::{is_session_not_found, is_unacceptable_token_id, is_unacceptable_token_num},
     config_jwt,
     user_auth_models::User,
-    user_auth_orm::UserAuthOrm,
+    user_orm::UserOrm,
 };
 use vrb_common::{
     api_error::{code_to_str, ApiError},
@@ -40,17 +40,17 @@ pub struct ChatStream {
 pub struct ChatWsAssistant {
     config_jwt: config_jwt::ConfigJwt,
     chat_message_orm: ChatMessageOrmApp,
-    user_auth_orm: UserAuthOrmApp,
+    user_orm: UserOrmApp,
 }
 
 // ** ChatWsAssistant implementation **
 
 impl ChatWsAssistant {
-    pub fn new(config_jwt: config_jwt::ConfigJwt, chat_message_orm: ChatMessageOrmApp, user_auth_orm: UserAuthOrmApp) -> Self {
+    pub fn new(config_jwt: config_jwt::ConfigJwt, chat_message_orm: ChatMessageOrmApp, user_orm: UserOrmApp) -> Self {
         ChatWsAssistant {
             config_jwt,
             chat_message_orm,
-            user_auth_orm,
+            user_orm,
         }
     }
     /** Decode the token. And unpack the two parameters from the token. */
@@ -61,11 +61,11 @@ impl ChatWsAssistant {
     }
     /** Check the correctness of the numeric token and get the user data. */
     pub fn check_num_token_and_get_user(&self, user_id: i32, num_token: i32) -> Result<User, ApiError> {
-        let user_auth_orm: UserAuthOrmApp = self.user_auth_orm.clone();
+        let user_orm: UserOrmApp = self.user_orm.clone();
 
         // Token verification:
         // 1. Search for a session by "id" from the token;
-        let opt_session = user_auth_orm.get_session_by_id(user_id).map_err(|e| {
+        let opt_session = user_orm.get_session_by_id(user_id).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             return ApiError::create(507, err::MSG_DATABASE, &e); // 507
         })?;
@@ -76,7 +76,7 @@ impl ChatWsAssistant {
         // If session.num_token is not equal to token.num_token,return error401(c)("Unauthorized","unacceptable_token_num; user_id: {}")
         let _ = is_unacceptable_token_num(&session, num_token, user_id)?;
         // 3. If everything is correct, then search for the user by "user_id" from the token;
-        let opt_user = user_auth_orm.get_user_by_id(user_id, false).map_err(|e| {
+        let opt_user = user_orm.get_user_by_id(user_id, false).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })?;

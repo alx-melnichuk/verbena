@@ -11,7 +11,7 @@ pub mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID},
+        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -46,7 +46,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -75,7 +75,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -97,7 +97,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -136,7 +136,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -179,7 +179,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -221,7 +221,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl))
         ).await;
@@ -259,7 +259,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -297,7 +297,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -339,7 +339,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -379,7 +379,7 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile_current)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl))
         ).await;

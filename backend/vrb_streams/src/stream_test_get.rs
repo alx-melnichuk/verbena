@@ -10,10 +10,9 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
     };
-    use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_tools::err;
+    use vrb_common::{api_error::{code_to_str, ApiError}, err};
 
     use crate::{
         config_strm,
@@ -46,7 +45,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_by_id)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -74,7 +73,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_by_id)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -102,7 +101,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_by_id)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -122,7 +121,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_by_id)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -151,7 +150,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_by_id)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -187,7 +186,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -224,7 +223,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -264,7 +263,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -301,7 +300,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -338,7 +337,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -380,7 +379,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -430,7 +429,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -479,7 +478,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -526,7 +525,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -574,7 +573,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -619,7 +618,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_config)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
         ).await;
         #[rustfmt::skip]
@@ -661,7 +660,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_events)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -711,7 +710,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_events)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -759,7 +758,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_events)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -804,7 +803,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_events)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -846,7 +845,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_events)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -888,7 +887,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_events)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -930,7 +929,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_period)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
         #[rustfmt::skip]
@@ -965,7 +964,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_period)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
         #[rustfmt::skip]
@@ -1010,7 +1009,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_period)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -1037,7 +1036,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_period)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -1067,7 +1066,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_period)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -1097,7 +1096,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_streams_period)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]

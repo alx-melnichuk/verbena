@@ -13,14 +13,14 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts, validators,
+        consts, err, validators,
     };
     use vrb_dbase::enm_stream_state::StreamState;
-    use vrb_tools::{cdis::coding, err, png_files};
+    use vrb_tools::{cdis::coding, png_files};
 
     use crate::{
         config_strm,
@@ -46,7 +46,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -73,7 +73,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -106,7 +106,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -144,7 +144,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -173,7 +173,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -200,7 +200,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -229,7 +229,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -258,7 +258,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -288,7 +288,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -317,7 +317,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -346,7 +346,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -379,7 +379,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -409,7 +409,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -439,7 +439,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -469,7 +469,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -498,7 +498,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -529,7 +529,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -567,7 +567,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -607,7 +607,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -643,7 +643,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -670,7 +670,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -698,7 +698,7 @@ mod tests {
             App::new()
                 .service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams)),
         )
@@ -748,7 +748,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -807,7 +807,7 @@ mod tests {
             let app = test::init_service(
                 App::new().service(put_stream)
                     .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                    .configure(User_Test::cfg_user_auth_orm(data_u))
+                    .configure(User_Test::cfg_user_orm(data_u))
                     .configure(Strm_Test::cfg_config_strm(config_strm))
                     .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -870,7 +870,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -938,7 +938,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1002,7 +1002,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1052,7 +1052,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1091,7 +1091,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1119,7 +1119,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_toggle_state)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[USER1])))
         ).await;
@@ -1143,7 +1143,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_toggle_state)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[USER1])))
         ).await;
@@ -1172,7 +1172,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_toggle_state)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1203,7 +1203,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_toggle_state)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1227,7 +1227,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_toggle_state)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1276,7 +1276,7 @@ mod tests {
             let app = test::init_service(
                 App::new().service(put_toggle_state)
                     .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                    .configure(User_Test::cfg_user_auth_orm(data_u))
+                    .configure(User_Test::cfg_user_orm(data_u))
                     .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                     .configure(Strm_Test::cfg_stream_orm(streams))
             ).await;
@@ -1319,7 +1319,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_toggle_state)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1362,7 +1362,7 @@ mod tests {
             let app = test::init_service(
                 App::new().service(put_toggle_state)
                     .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                    .configure(User_Test::cfg_user_auth_orm(data_u))
+                    .configure(User_Test::cfg_user_orm(data_u))
                     .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                     .configure(Strm_Test::cfg_stream_orm(streams))
             ).await;

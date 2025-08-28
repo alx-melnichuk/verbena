@@ -7,13 +7,13 @@ mod tests {
         test, App, HttpResponse,
     };
     use serde_json;
-    use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_tools::{err, token_coding, token_data};
+    use vrb_common::{api_error::{code_to_str, ApiError}, err};
+    use vrb_tools::{token_coding, token_data};
 
     use crate::authentication::RequireAuth;
     use crate::config_jwt;
     use crate::user_auth_models::Session;
-    use crate::user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1_ID};
+    use crate::user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID};
 
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
     const MSG_FAILED_TO_DESER: &str = "Failed to deserialize JSON string";
@@ -39,7 +39,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_auth)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -54,7 +54,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_auth)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().cookie(Cookie::new("token", token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -69,7 +69,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_require_only_admin)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -83,7 +83,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_auth)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().to_request();
         let result = test::try_call_service(&app, req).await.err();
@@ -103,7 +103,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_auth)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth("invalid_token123")).to_request();
         let result = test::try_call_service(&app, req).await.err();
@@ -128,7 +128,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_auth)
                 .configure(User_Test::cfg_config_jwt(config_jwt))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token1)).to_request();
         let result = test::try_call_service(&app, req).await.err();
@@ -150,7 +150,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_auth)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token2)).to_request();
         let result = test::try_call_service(&app, req).await.err();
@@ -172,7 +172,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_auth)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token2)).to_request();
         let result = test::try_call_service(&app, req).await.err();
@@ -194,7 +194,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_auth)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token2)).to_request();
         let result = test::try_call_service(&app, req).await.err();
@@ -214,7 +214,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(handler_with_require_only_admin)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token1)).to_request();
         let result = test::try_call_service(&app, req).await.err();

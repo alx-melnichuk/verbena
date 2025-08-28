@@ -7,9 +7,9 @@ mod tests {
     use serde_json::{from_slice, to_string};
     use vrb_authent::{
         config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER},
+        user_orm::tests::{UserOrmTest as User_Test, USER},
     };
-    use vrb_tools::err;
+    use vrb_common::err;
 
     use crate::{
         chat_event_ws::{JoinEWS, MsgEWS},
@@ -38,7 +38,7 @@ mod tests {
             App::new()
                 .service(get_ws_chat)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
@@ -96,7 +96,7 @@ mod tests {
             App::new()
                 .service(get_ws_chat)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
@@ -199,7 +199,7 @@ mod tests {
             App::new()
                 .service(get_ws_chat)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
@@ -289,7 +289,7 @@ mod tests {
             App::new()
                 .service(get_ws_chat)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
 
@@ -396,7 +396,7 @@ mod tests {
             App::new()
                 .service(get_ws_chat)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
@@ -482,7 +482,7 @@ mod tests {
             App::new()
                 .service(get_ws_chat)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
 

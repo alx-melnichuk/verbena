@@ -10,7 +10,7 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
+        user_orm::tests::{UserOrmTest as User_Test, USER, USER1_ID},
     };
 
     use crate::{
@@ -36,7 +36,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_chat_message)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -68,7 +68,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_chat_message)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -103,7 +103,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_chat_message)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -140,7 +140,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_chat_message)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -175,7 +175,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_chat_message)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -212,7 +212,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_chat_message)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(User_Test::cfg_user_auth_orm(data_u))
+                .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]

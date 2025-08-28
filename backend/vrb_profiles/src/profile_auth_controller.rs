@@ -4,13 +4,13 @@ use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, http
 use log::{debug, error, log_enabled, Level::Debug};
 use utoipa;
 #[cfg(not(all(test, feature = "mockdata")))]
-use vrb_authent::user_auth_orm::impls::UserAuthOrmApp;
+use vrb_authent::user_orm::impls::UserOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
-use vrb_authent::user_auth_orm::tests::UserAuthOrmApp;
+use vrb_authent::user_orm::tests::UserOrmApp;
 use vrb_authent::{
     authentication::{Authenticated, RequireAuth},
     config_jwt,
-    user_auth_orm::UserAuthOrm,
+    user_orm::UserOrm,
 };
 use vrb_common::{
     api_error::{code_to_str, ApiError},
@@ -90,7 +90,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 #[post("/api/login")]
 pub async fn login(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    user_auth_orm: web::Data<UserAuthOrmApp>,
+    user_orm: web::Data<UserOrmApp>,
     profile_orm: web::Data<ProfileOrmApp>,
     json_body: web::Json<LoginProfileDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -160,7 +160,7 @@ pub async fn login(
 
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = user_auth_orm.modify_session(profile_pwd.user_id, Some(num_token)).map_err(|e| {
+        let res_session = user_orm.modify_session(profile_pwd.user_id, Some(num_token)).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
@@ -231,7 +231,7 @@ pub async fn login(
     security(("bearer_auth" = []))
 )]
 #[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn logout(authenticated: Authenticated, user_auth_orm: web::Data<UserAuthOrmApp>) -> actix_web::Result<HttpResponse, ApiError> {
+pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp>) -> actix_web::Result<HttpResponse, ApiError> {
     #[rustfmt::skip]
     let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
     // Get user ID.
@@ -240,7 +240,7 @@ pub async fn logout(authenticated: Authenticated, user_auth_orm: web::Data<UserA
     // Clear "num_token" value.
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = user_auth_orm.modify_session(user.id, None).map_err(|e| {
+        let res_session = user_orm.modify_session(user.id, None).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
@@ -313,7 +313,7 @@ pub async fn logout(authenticated: Authenticated, user_auth_orm: web::Data<UserA
 #[post("/api/token")]
 pub async fn update_token(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    user_auth_orm: web::Data<UserAuthOrmApp>,
+    user_orm: web::Data<UserOrmApp>,
     json_token_user_dto: web::Json<TokenDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     #[rustfmt::skip]
@@ -330,11 +330,11 @@ pub async fn update_token(
         ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
     })?;
 
-    let user_auth_orm2 = user_auth_orm.get_ref().clone();
+    let user_orm2 = user_orm.get_ref().clone();
 
     let opt_session = web::block(move || {
         // Find a session for a given user.
-        let existing_session = user_auth_orm2.get_session_by_id(user_id).map_err(|e| {
+        let existing_session = user_orm2.get_session_by_id(user_id).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
@@ -382,7 +382,7 @@ pub async fn update_token(
     let opt_session = web::block(move || {
         // Find a session for a given user.
         #[rustfmt::skip]
-        let existing_session = user_auth_orm.modify_session(user_id, Some(num_token))
+        let existing_session = user_orm.modify_session(user_id, Some(num_token))
         .map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507

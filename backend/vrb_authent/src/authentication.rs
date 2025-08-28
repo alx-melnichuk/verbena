@@ -14,13 +14,13 @@ use vrb_dbase::enm_user_role::UserRole;
 use vrb_tools::{token_coding, token_data};
 
 #[cfg(not(any(test, feature = "mockdata")))]
-use crate::user_auth_orm::impls::UserAuthOrmApp;
+use crate::user_orm::impls::UserOrmApp;
 #[cfg(any(test, feature = "mockdata"))]
-use crate::user_auth_orm::tests::UserAuthOrmApp;
+use crate::user_orm::tests::UserOrmApp;
 use crate::{
     config_jwt,
     user_auth_models::{Session, User},
-    user_auth_orm::UserAuthOrm,
+    user_orm::UserOrm,
 };
 
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
@@ -150,11 +150,11 @@ where
 
         // Handle user extraction and request processing
         async move {
-            let user_auth_orm = req.app_data::<web::Data<UserAuthOrmApp>>().unwrap().get_ref();
+            let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap().get_ref();
 
             // Token verification:
             // 1. Search for a session by "id" from the token;
-            let opt_session = user_auth_orm.get_session_by_id(user_id).map_err(|e| {
+            let opt_session = user_orm.get_session_by_id(user_id).map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 return ApiError::create(507, err::MSG_DATABASE, &e); // 507
             })?;
@@ -165,7 +165,7 @@ where
             // If session.num_token is not equal to token.num_token,return error401(c)("Unauthorized","unacceptable_token_num; user_id: {}")
             let _ = is_unacceptable_token_num(&session, num_token, user_id)?;
             // 3. If everything is correct, then search for the user by "user_id" from the token;
-            let opt_user = user_auth_orm.get_user_by_id(user_id, false).map_err(|e| {
+            let opt_user = user_orm.get_user_by_id(user_id, false).map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             })?;

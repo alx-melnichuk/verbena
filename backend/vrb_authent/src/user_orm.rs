@@ -1,7 +1,7 @@
 use crate::user_auth_models::{Session, User};
 use vrb_dbase::dbase::DbPool;
 
-pub trait UserAuthOrm {
+pub trait UserOrm {
     /// Get an entity (user) by ID.
     fn get_user_by_id(&self, id: i32, is_password: bool) -> Result<Option<User>, String>;
 
@@ -14,12 +14,12 @@ pub trait UserAuthOrm {
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_user_auth_orm_app(pool: DbPool) -> impls::UserAuthOrmApp {
-    impls::UserAuthOrmApp::new(pool)
+pub fn get_user_orm_app(pool: DbPool) -> impls::UserOrmApp {
+    impls::UserOrmApp::new(pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
-pub fn get_user_auth_orm_app(_: DbPool) -> tests::UserAuthOrmApp {
-    tests::UserAuthOrmApp::new()
+pub fn get_user_orm_app(_: DbPool) -> tests::UserOrmApp {
+    tests::UserOrmApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -31,25 +31,25 @@ pub mod impls {
     use vrb_dbase::{dbase, schema};
 
     use crate::user_auth_models::{Session, User};
-    use crate::user_auth_orm::UserAuthOrm;
+    use crate::user_orm::UserOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
     #[derive(Debug, Clone)]
-    pub struct UserAuthOrmApp {
+    pub struct UserOrmApp {
         pub pool: dbase::DbPool,
     }
 
-    impl UserAuthOrmApp {
+    impl UserOrmApp {
         pub fn new(pool: dbase::DbPool) -> Self {
-            UserAuthOrmApp { pool }
+            UserOrmApp { pool }
         }
         pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
             (&self.pool).get().map_err(|e| format!("{}: {}", CONN_POOL, e.to_string()))
         }
     }
 
-    impl UserAuthOrm for UserAuthOrmApp {
+    impl UserOrm for UserOrmApp {
         /// Get an entity (user) by ID.
         fn get_user_by_id(&self, id: i32, is_password: bool) -> Result<Option<User>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -120,7 +120,7 @@ pub mod tests {
 
     use crate::config_jwt;
     use crate::user_auth_models::{Session, User};
-    use crate::user_auth_orm::UserAuthOrm;
+    use crate::user_orm::UserOrm;
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
@@ -143,15 +143,15 @@ pub mod tests {
     pub const USER1_NUM_TOKEN: i32 = 20000 + USER1_ID; //  1234;
 
     #[derive(Debug, Clone)]
-    pub struct UserAuthOrmApp {
+    pub struct UserOrmApp {
         pub user_vec: Vec<User>,
         pub session_vec: Vec<Session>,
     }
 
-    impl UserAuthOrmApp {
+    impl UserOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            UserAuthOrmApp {
+            UserOrmApp {
                 user_vec: Vec::new(),
                 session_vec: Vec::new(),
             }
@@ -186,7 +186,7 @@ pub mod tests {
                 }
             }
 
-            UserAuthOrmApp {
+            UserOrmApp {
                 user_vec: user_vec,
                 session_vec,
             }
@@ -201,7 +201,7 @@ pub mod tests {
         }
     }
 
-    impl UserAuthOrm for UserAuthOrmApp {
+    impl UserOrm for UserOrmApp {
         /// Get an entity (user) by ID.
         fn get_user_by_id(&self, id: i32, is_password: bool) -> Result<Option<User>, String> {
             let opt_user = self.user_vec.iter().find(|user| user.id == id).map(|user| user.clone());
@@ -243,9 +243,9 @@ pub mod tests {
         }
     }
 
-    pub struct UserAuthOrmTest {}
+    pub struct UserOrmTest {}
 
-    impl UserAuthOrmTest {
+    impl UserOrmTest {
         pub fn user_ids() -> Vec<i32> {
             vec![USER1_ID, USER2_ID, USER3_ID, USER4_ID]
         }
@@ -271,7 +271,7 @@ pub mod tests {
         pub fn users(roles: &[u8]) -> (Vec<User>, Vec<Session>) {
             let mut user_vec: Vec<User> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
-            let user_ids = UserAuthOrmTest::user_ids();
+            let user_ids = UserOrmTest::user_ids();
             let len = if roles.len() > user_ids.len() { user_ids.len() } else { roles.len() };
             for index in 0..len {
                 let user_id = user_ids.get(index).unwrap().clone();
@@ -285,9 +285,9 @@ pub mod tests {
                 let num_token = if user_id == USER1_ID { Some(Self::get_num_token(user_id)) } else { None };
                 session_vec.push(Session { user_id, num_token });
             }
-            let user_auth_orm_app = UserAuthOrmApp { user_vec, session_vec };
+            let user_orm_app = UserOrmApp { user_vec, session_vec };
 
-            (user_auth_orm_app.user_vec, user_auth_orm_app.session_vec)
+            (user_orm_app.user_vec, user_orm_app.session_vec)
         }
         pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
@@ -295,11 +295,11 @@ pub mod tests {
                 config.app_data(web::Data::clone(&data_config_jwt));
             }
         }
-        pub fn cfg_user_auth_orm(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
+        pub fn cfg_user_orm(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
-                let data_user_auth_orm = web::Data::new(UserAuthOrmApp::create(&data_p.0, &data_p.1));
+                let data_user_orm = web::Data::new(UserOrmApp::create(&data_p.0, &data_p.1));
 
-                config.app_data(web::Data::clone(&data_user_auth_orm));
+                config.app_data(web::Data::clone(&data_user_orm));
             }
         }
     }
