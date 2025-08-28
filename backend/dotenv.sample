@@ -9,8 +9,8 @@
 # for debugging
 # _ Section "authentication"
 LOG01=vrb_authent::authentication=debug
-# _ Section "chat_message" ORM, CTRL
-# LOG02=verbena::chats=debug
+# LOG02=vrb_authent::user_orm=info # _ Section "user_orm"
+# LOG02=verbena::chats=debug # _ Section "chat_message" ORM, CTRL
 RUST_LOG=warn,actix_web=info,verbena=warn,${LOG01},${LOG02}
 
 # -----------------------------------------------------------------------------
