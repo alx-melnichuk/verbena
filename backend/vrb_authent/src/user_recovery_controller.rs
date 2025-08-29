@@ -1,6 +1,8 @@
+use std::time::Instant as tm;
+
 use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
-use log::error;
+use log::{info, error, log_enabled, Level::Info};
 use utoipa;
 use vrb_common::{
     api_error::{code_to_str, ApiError},
@@ -99,6 +101,8 @@ pub async fn recovery(
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
     json_body: web::Json<RecoveryUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -232,7 +236,9 @@ pub async fn recovery(
         email: user.email.clone(),
         recovery_token: recovery_token.clone(),
     };
-
+    if let Some(timer) = timer {
+        info!("recovery() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
     Ok(HttpResponse::Created().json(recovery_profile_response_dto)) // 201
 }
 
@@ -286,6 +292,8 @@ pub async fn confirm_recovery(
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
     json_body: web::Json<RecoveryDataDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -405,11 +413,16 @@ pub async fn confirm_recovery(
             created_at: user.created_at,
             updated_at: user.updated_at,
         };
-
+        if let Some(timer) = timer {
+            info!("confirm_recovery() time: {}", format!("{:.2?}", timer.elapsed()));
+        }
         Ok(HttpResponse::Ok().json(response_dto)) // 200
     } else {
         let msg = format!("user_id: {}", user_id);
         error!("{}-{}; {}", code_to_str(StatusCode::NOT_FOUND), MSG_USER_NOT_FOUND, &msg);
+        if let Some(timer) = timer {
+            info!("confirm_recovery() time: {}", format!("{:.2?}", timer.elapsed()));
+        }
         Err(ApiError::create(404, MSG_USER_NOT_FOUND, &msg)) // 404
     }
 }
@@ -449,6 +462,7 @@ pub async fn confirm_recovery(
 pub async fn recovery_clear_for_expired(
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
     // Delete entries in the "user_recovery" table, that are already expired.
     let count_inactive_recover_res = 
@@ -468,7 +482,9 @@ pub async fn recovery_clear_for_expired(
     let clear_for_expired_response_dto = RecoveryClearForExpiredResponseDto {
         count_inactive_recover,
     };
-    
+    if let Some(timer) = timer {
+        info!("recovery_clear_for_expired() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
     Ok(HttpResponse::Ok().json(clear_for_expired_response_dto)) // 200
 }
 

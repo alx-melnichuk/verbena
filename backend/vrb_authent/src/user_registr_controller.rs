@@ -1,8 +1,8 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant as tm};
 
 use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
-use log::error;
+use log::{info, error, log_enabled, Level::Info};
 use utoipa;
 use vrb_common::{
     api_error::{code_to_str, ApiError},
@@ -121,6 +121,8 @@ pub async fn registration(
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     json_body: web::Json<RegistrUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -254,7 +256,9 @@ pub async fn registration(
         email: registr_user_dto.email.clone(),
         registr_token: registr_token.clone(),
     };
-
+    if let Some(timer) = timer {
+        info!("registration() time: {}", format!("{:.2?}", timer.elapsed()));
+    }    
     Ok(HttpResponse::Created().json(registr_profile_response_dto)) // 201
 }
 
@@ -293,6 +297,8 @@ pub async fn confirm_registration(
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     user_orm: web::Data<UserOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
     let registr_token = request.match_info().query("registr_token").to_string();
 
     let config_jwt = config_jwt.get_ref().clone();
@@ -367,7 +373,9 @@ pub async fn confirm_registration(
         email: user.email,
         created_at: user.created_at,
     };
-
+    if let Some(timer) = timer {
+        info!("confirm_registration() time: {}", format!("{:.2?}", timer.elapsed()));
+    }    
     Ok(HttpResponse::Created().json(response_dto)) // 201
 }
 
@@ -406,6 +414,8 @@ pub async fn confirm_registration(
 pub async fn registration_clear_for_expired(
     user_registr_orm: web::Data<UserRegistrOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
     // Delete entries in the "user_registr" table, that are already expired.
     let count_inactive_registr_res = 
         web::block(move || user_registr_orm.delete_inactive_final_date(None)
@@ -424,7 +434,9 @@ pub async fn registration_clear_for_expired(
     let clear_for_expired_response_dto = RegistrationClearForExpiredResponseDto {
         count_inactive_registr,
     };
-    
+    if let Some(timer) = timer {
+        info!("registration_clear_for_expired() time: {}", format!("{:.2?}", timer.elapsed()));
+    }    
     Ok(HttpResponse::Ok().json(clear_for_expired_response_dto)) // 200
 }
 
