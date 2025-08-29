@@ -10,10 +10,10 @@ use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
-use vrb_authent::{self, config_jwt, user_orm, user_recovery_orm, user_registr_orm};
+use vrb_authent::{self, config_jwt, user_orm, user_recovery_controller, user_recovery_orm, user_registr_controller, user_registr_orm};
 use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
 use vrb_dbase::dbase;
-use vrb_profiles::{config_prfl, profile_auth_controller, profile_controller, profile_orm, profile_registr_controller};
+use vrb_profiles::{config_prfl, profile_auth_controller, profile_controller, profile_orm};
 use vrb_streams::{config_strm, stream_controller, stream_orm};
 #[cfg(not(feature = "mockdata"))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
@@ -100,9 +100,9 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let config_app0 = config_app::ConfigApp::init_by_env();
         let temp_file_config0 = TempFileConfig::default().clone().directory(config_app0.app_dir_tmp.clone());
 
-        // used: profile_registr_controller, static_controller
+        // used: user_recovery_controller, user_registr_controller, static_controller
         let config_app = web::Data::new(config_app0);
-        // used: profile_auth_controller, profile_registr_controller
+        // used: profile_auth_controller, user_recovery_controller, user_registr_controller
         let config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
         // Used "actix-multipart" to upload files. TempFileConfig.from_req()
         let temp_file_config = web::Data::new(temp_file_config0);
@@ -116,13 +116,13 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let config_prfl = web::Data::new(config_prfl::ConfigPrfl::init_by_env());
 
         // Adding various entities.
-        // used: profile_registr_controller
+        // used: user_recovery_controller, user_registr_controller
         let mailer = web::Data::new(MailerApp::new(config_smtp0));
         // Create "UserOrmApp".
         let user_orm = web::Data::new(user_orm::get_user_orm_app(pool.clone()));
-        // used: profile_registr_controller
+        // used: user_registr_controller
         let user_registr_orm = web::Data::new(user_registr_orm::get_user_registr_orm_app(pool.clone()));
-        // used: profile_registr_controller
+        // used: user_recovery_controller
         let user_recovery_orm = web::Data::new(user_recovery_orm::get_user_recovery_orm_app(pool.clone()));
         // used: stream_controller, profile_controller
         let stream_orm = web::Data::new(stream_orm::get_stream_orm_app(pool.clone()));
@@ -154,7 +154,8 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             // Add documentation service "SwaggerUi".
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
             // Add configuration of internal services.
-            .configure(profile_registr_controller::configure())
+            .configure(user_recovery_controller::configure())
+            .configure(user_registr_controller::configure())
             .configure(profile_auth_controller::configure())
             .configure(stream_controller::configure())
             .configure(profile_controller::configure())
