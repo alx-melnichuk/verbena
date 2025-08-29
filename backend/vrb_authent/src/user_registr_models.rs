@@ -3,13 +3,11 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use vrb_common::{
+    user_validations,
     /*err, serial_datetime,*/
     validators::{/*ValidationChecks,*/ ValidationError, Validator},
-    user_validations,
 };
 use vrb_dbase::schema;
-
-
 
 // * * * * Section: models for "UserRegistrOrm". * * * *
 
@@ -35,17 +33,17 @@ pub struct CreateUserRegistr {
 
 // * * * * Section: models for the "user_registr_controller". * * * *
 
-// ** Model Dto: "RegistrProfileDto". Used: in "user_registr_controller::registration(). **
-// #
+// ** Used: in "user_registr_controller::registration(). **
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct RegistrProfileDto {
+pub struct RegistrUserDto {
     pub nickname: String,
     pub email: String,
     pub password: String,
 }
-// #
-impl Validator for RegistrProfileDto {
+
+impl Validator for RegistrUserDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
@@ -58,12 +56,33 @@ impl Validator for RegistrProfileDto {
     }
 }
 
-// ** Model Dto: "RegistrProfileResponseDto". Used: in "profile_registr_controller::registration(). **
-// #
+// ** Used: in "user_registr_controller::registration(). **
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct RegistrProfileResponseDto {
+pub struct RegistrUserResponseDto {
     pub nickname: String,
     pub email: String,
     pub registr_token: String,
 }
+
+// ** Used: in "user_registr_controller::confirm_registration(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfirmRegistrUserResponseDto {
+    pub id: i32,
+    pub nickname: String,
+    pub email: String,
+    pub created_at: DateTime<Utc>,
+}
+
+// ** Model Dto: "RegistrationClearForExpiredResponseDto". Used: in "user_registr_controller::clear_for_expired(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct RegistrationClearForExpiredResponseDto {
+    pub count_inactive_registr: usize,
+}
+
+// ** - **

@@ -43,7 +43,7 @@ pub mod impls {
     };
 
     use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
-    use crate::user_registr_orm::{DURATION_IN_DAYS, UserRegistrOrm};
+    use crate::user_registr_orm::{UserRegistrOrm, DURATION_IN_DAYS};
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
@@ -211,7 +211,7 @@ pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
     use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
-    use crate::user_registr_orm::{DURATION_IN_DAYS, UserRegistrOrm};
+    use crate::user_registr_orm::{UserRegistrOrm, DURATION_IN_DAYS};
 
     pub const USER_REGISTR_ID: i32 = 1200;
 
@@ -293,11 +293,11 @@ pub mod tests {
             Ok(result)
         }
         /// Add a new entity (user_registration).
-        fn create_user_registr(&self, create_profile_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String> {
-            let nickname = create_profile_registr_dto.nickname.clone();
-            let email = create_profile_registr_dto.email.clone();
-            let password = create_profile_registr_dto.password.clone();
-            let final_date = create_profile_registr_dto.final_date.clone();
+        fn create_user_registr(&self, create_user_registr: CreateUserRegistr) -> Result<UserRegistr, String> {
+            let nickname = create_user_registr.nickname.clone();
+            let email = create_user_registr.email.clone();
+            let password = create_user_registr.password.clone();
+            let final_date = create_user_registr.final_date.clone();
             #[rustfmt::skip]
             let opt_res_user1: Option<UserRegistr> =
                 self.find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))?;
@@ -307,8 +307,8 @@ pub mod tests {
 
             let idx: i32 = self.user_registr_vec.len().try_into().unwrap();
             let new_id: i32 = USER_REGISTR_ID + idx;
-            let nickname = create_profile_registr_dto.nickname.clone();
-            let email = create_profile_registr_dto.email.clone();
+            let nickname = create_user_registr.nickname.clone();
+            let email = create_user_registr.email.clone();
             #[rustfmt::skip]
             let user_registr_saved: UserRegistr =
                 UserRegistrOrmApp::new_user_registr(new_id, &nickname, &email, &password, final_date);

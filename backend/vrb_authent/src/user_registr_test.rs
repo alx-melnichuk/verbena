@@ -6,30 +6,24 @@ mod tests {
         http::StatusCode,
         test, App,
     };
-    use chrono::{Duration, Utc};
+    use chrono::{Duration, SecondsFormat, Utc};
     use serde_json::json;
     use vrb_common::{
         api_error::{code_to_str, ApiError},
         err, user_validations,
     };
-    use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
-
-    #[cfg(not(all(test, feature = "mockdata")))]
-    use crate::user_orm::impls::UserOrmApp;
-    #[cfg(all(test, feature = "mockdata"))]
-    use crate::user_orm::tests::UserOrmApp;
 
     use crate::{
         config_jwt,
-        profile_models2::ProfileDto,
-        user_models::{Session, UserMock},
+        user_models::UserMock,
         user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
-        user_recovery_orm::tests::UserRecoveryOrmTest as RecovTest,
         user_registr_controller::{
-            confirm_registration, registration, tests as RgsCtTest, MSG_REGISTR_NOT_FOUND,
+            confirm_registration, registration, registration_clear_for_expired, tests as RgsCtTest, MSG_REGISTR_NOT_FOUND,
         },
-        user_registr_models::{RegistrProfileDto, RegistrProfileResponseDto},
+        user_registr_models::{
+            ConfirmRegistrUserResponseDto, RegistrUserDto, RegistrUserResponseDto, RegistrationClearForExpiredResponseDto,
+        },
         user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
     };
 
@@ -96,7 +90,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "passwordD1T1".to_string(),
@@ -126,7 +120,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: UserMock::nickname_min(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "passwordD1T1".to_string(),
@@ -156,7 +150,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: UserMock::nickname_max(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "passwordD1T1".to_string(),
@@ -186,7 +180,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: UserMock::nickname_wrong(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "passwordD1T1".to_string(),
@@ -216,7 +210,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "".to_string(),
                 password: "passwordD1T1".to_string(),
@@ -246,7 +240,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserMock::email_min(),
                 password: "passwordD1T1".to_string(),
@@ -276,7 +270,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserMock::email_max(),
                 password: "passwordD1T1".to_string(),
@@ -306,7 +300,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserMock::email_wrong(),
                 password: "passwordD1T1".to_string(),
@@ -336,7 +330,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "".to_string(),
@@ -366,7 +360,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: UserMock::password_min(),
@@ -396,7 +390,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: UserMock::password_max(),
@@ -426,7 +420,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: UserMock::password_wrong(),
@@ -458,7 +452,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: nickname1, email: format!("A{}", email1), password: "passwordD2T2".to_string(),
             })
             .to_request();
@@ -488,7 +482,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: format!("A{}", nickname1), email: email1, password: "passwordD2T2".to_string(),
             })
             .to_request();
@@ -519,7 +513,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: nickname1, email: format!("A{}", email1), password: "passwordD2T2".to_string(),
             })
             .to_request();
@@ -550,7 +544,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: format!("A{}", nickname1), email: email1, password: "passwordD2T2".to_string(),
             })
             .to_request();
@@ -581,7 +575,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: nickname.clone(), email: format!("{}@gmail.com", nickname), password: "passwordD2T2".to_string(),
             })
             .to_request();
@@ -611,7 +605,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
-            .set_json(RegistrProfileDto {
+            .set_json(RegistrUserDto {
                 nickname: user_registr1.nickname.clone(),
                 email: user_registr1.email.clone(),
                 password: user_registr1.password.clone(),
@@ -624,7 +618,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
 
-        let registr_profile_resp: RegistrProfileResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let registr_profile_resp: RegistrUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(user_registr1.nickname, registr_profile_resp.nickname);
         assert_eq!(user_registr1.email, registr_profile_resp.email);
 
@@ -765,11 +759,45 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response_dto_res: ConfirmRegistrUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let now_str = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        assert_eq!(response_dto_res.id, last_user_id + 1);
+        assert_eq!(response_dto_res.nickname, nickname);
+        assert_eq!(response_dto_res.email, email);
+        assert_eq!(response_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Millis, true), now_str);
+    }
 
-        assert_eq!(profile_dto_res.id, last_user_id + 1);
-        assert_eq!(profile_dto_res.nickname, nickname);
-        assert_eq!(profile_dto_res.email, email);
-        assert_eq!(profile_dto_res.role, UserRole::User);
+    // ** registration_clear_for_expired **
+
+    #[actix_web::test]
+    async fn test_registration_clear_for_expired() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[ADMIN]);
+        let config_app = config_app::get_test_config();
+
+        let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
+        let mut registrs = RegisTest::registrs(true);
+        let registr1 = registrs.get_mut(0).unwrap();
+        registr1.final_date = Utc::now() - Duration::seconds(registr_duration);
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration_clear_for_expired)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_orm(data_u))
+                .configure(RegisTest::cfg_registr_orm(registrs))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&"/api/registration/clear_for_expired")
+            .insert_header(RgsCtTest::header_auth(&token1))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response_dto: RegistrationClearForExpiredResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(response_dto.count_inactive_registr, 1);
     }
 }

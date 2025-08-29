@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use actix_web::{http::StatusCode, post, put, web, HttpResponse};
+use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
@@ -9,7 +9,6 @@ use vrb_common::{
     err,
     validators::{msg_validation, Validator},
 };
-use vrb_dbase::enm_user_role::UserRole;
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -25,11 +24,13 @@ use crate::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::user_registr_orm::tests::UserRegistrOrmApp;
 use crate::{
+    authentication::RequireAuth,
     config_jwt,
-    profile_models2::{CreateProfile, Profile, ProfileDto, PROFILE_THEME_LIGHT_DEF},
+    user_models::CreateUser,
     user_orm::UserOrm,
-    user_registr_models::CreateUserRegistr,
-    user_registr_models::{RegistrProfileDto, RegistrProfileResponseDto},
+    user_registr_models::{
+        ConfirmRegistrUserResponseDto, CreateUserRegistr, RegistrUserDto, RegistrUserResponseDto, RegistrationClearForExpiredResponseDto,
+    },
     user_registr_orm::UserRegistrOrm,
 };
 
@@ -48,9 +49,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(registration)
             // PUT /api/registration/{registr_token}
             .service(confirm_registration)
-            // // GET /api/clear_for_expired
-            // .service(clear_for_expired)
-            ;
+            // GET /api/registration/clear_for_expired
+            .service(registration_clear_for_expired);
     }
 }
 
@@ -80,12 +80,12 @@ fn is_nickname_email_params_not_specified(opt_nickname: Option<&str>, opt_email:
 /// -H 'Content-Type: application/json'
 /// ```
 ///
-/// Return new user registration parameters (`RegistrProfileResponseDto`) with status 201.
+/// Return new user registration parameters (`RegistrUserResponseDto`) with status 201.
 ///
 #[utoipa::path(
     responses(
-        (status = 201, description = "New user registration parameters and registration token.", body = RegistrProfileResponseDto,
-            example = json!(RegistrProfileResponseDto { nickname:"Emma_Johnson".to_string(), email:"Emma_Johnson@gmail.us".to_string(),registr_token: TOKEN_REGISTR.to_string() })
+        (status = 201, description = "New user registration parameters and registration token.", body = RegistrUserResponseDto,
+            example = json!(RegistrUserResponseDto { nickname:"Emma_Johnson".to_string(), email:"Emma_Johnson@gmail.us".to_string(),registr_token: TOKEN_REGISTR.to_string() })
         ),
         (status = 409, description = "Error: nickname (email) is already in use.", body = ApiError, examples(
             ("Nickname" = (summary = "Nickname already used",
@@ -98,7 +98,7 @@ fn is_nickname_email_params_not_specified(opt_nickname: Option<&str>, opt_email:
         (status = 417, body = [ApiError], description = "Validation error. `curl -i
              -X POST http://localhost:8080/api/login -d '{ \"nickname\": \"us\", \"email\": \"us_email\", \"password\": \"pas\" }'`",
             example = json!(ApiError::validations(
-                (RegistrProfileDto { nickname: "us".to_string(), email: "us_email".to_string(), password: "pas".to_string() })
+                (RegistrUserDto { nickname: "us".to_string(), email: "us_email".to_string(), password: "pas".to_string() })
                     .validate().err().unwrap()) )),
         (status = 422, description = "Token encoding error.", body = ApiError,
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
@@ -119,7 +119,7 @@ pub async fn registration(
     mailer: web::Data<MailerApp>,
     user_orm: web::Data<UserOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
-    json_body: web::Json<RegistrProfileDto>,
+    json_body: web::Json<RegistrUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -128,18 +128,18 @@ pub async fn registration(
         return Ok(ApiError::to_response(&ApiError::validations(validation_errors)));
     }
 
-    let mut registr_profile_dto: RegistrProfileDto = json_body.into_inner();
-    registr_profile_dto.nickname = registr_profile_dto.nickname.to_lowercase();
-    registr_profile_dto.email = registr_profile_dto.email.to_lowercase();
+    let mut registr_user_dto: RegistrUserDto = json_body.into_inner();
+    registr_user_dto.nickname = registr_user_dto.nickname.to_lowercase();
+    registr_user_dto.email = registr_user_dto.email.to_lowercase();
 
-    let password = registr_profile_dto.password.clone();
+    let password = registr_user_dto.password.clone();
     let password_hashed = hash_tools::encode_hash(&password).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_HASHING_PASSWORD, &e);
         ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, &e) // 500
     })?;
 
-    let nickname = registr_profile_dto.nickname.clone();
-    let email = registr_profile_dto.email.clone();
+    let nickname = registr_user_dto.nickname.clone();
+    let email = registr_user_dto.email.clone();
     let mut res_search: Option<(bool, bool)> = None;
 
     let opt_nickname: Option<String> = Some(nickname.clone());
@@ -200,16 +200,16 @@ pub async fn registration(
     // Waiting time for registration confirmation (in seconds).
     let final_date_utc = Utc::now() + Duration::seconds(app_registr_duration.into());
 
-    let create_profile_registr_dto = CreateUserRegistr {
-        nickname: registr_profile_dto.nickname.clone(),
-        email: registr_profile_dto.email.clone(),
+    let create_user_registr = CreateUserRegistr {
+        nickname: registr_user_dto.nickname.clone(),
+        email: registr_user_dto.email.clone(),
         password: password_hashed,
         final_date: final_date_utc,
     };
     // Create a new entity (user).
     let user_registr = web::block(move || {
         #[rustfmt::skip]
-        let user_registr = user_registr_orm.create_user_registr(create_profile_registr_dto)
+        let user_registr = user_registr_orm.create_user_registr(create_user_registr)
         .map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
@@ -237,8 +237,8 @@ pub async fn registration(
     // Prepare a letter confirming this registration.
     let domain = &config_app.app_domain;
     let subject = format!("Account registration in {}", &config_app.app_name);
-    let nickname = registr_profile_dto.nickname.clone();
-    let receiver = registr_profile_dto.email.clone();
+    let nickname = registr_user_dto.nickname.clone();
+    let receiver = registr_user_dto.email.clone();
     let target = registr_token.clone();
     let registr_duration = app_registr_duration.clone() / 60; // Convert from seconds to minutes.
     let result = mailer.send_verification_code(&receiver, &domain, &subject, &nickname, &target, registr_duration);
@@ -249,9 +249,9 @@ pub async fn registration(
         return Err(ApiError::create(510, err::MSG_ERROR_SENDING_EMAIL, &e)); // 510
     }
 
-    let registr_profile_response_dto = RegistrProfileResponseDto {
-        nickname: registr_profile_dto.nickname.clone(),
-        email: registr_profile_dto.email.clone(),
+    let registr_profile_response_dto = RegistrUserResponseDto {
+        nickname: registr_user_dto.nickname.clone(),
+        email: registr_user_dto.email.clone(),
         registr_token: registr_token.clone(),
     };
 
@@ -267,14 +267,13 @@ pub async fn registration(
 /// curl -i -X PUT http://localhost:8080/api/registration/registr_token1234
 /// ```
 ///
-/// Return the new user's profile. (`ProfileDto`) with status 201.
+/// Return the new user's profile. (`ConfirmRegistrUserResponseDto`) with status 201.
 ///
 #[utoipa::path(
     responses(
-        (status = 201, description = "New user profile.", body = ProfileDto,
-            example = json!(ProfileDto::from(
-            Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_LIGHT_DEF), None))
-            )
+        (status = 201, description = "New user profile.", body = ConfirmRegistrUserResponseDto,
+            example = json!(ConfirmRegistrUserResponseDto { id: 120, nickname: "james_miller".to_owned()
+                , email: "james_miller@gmail.us".to_owned(), created_at: Utc::now() })
         ),
         (status = 401, description = "The token is invalid or expired.", body = ApiError,
             example = json!(ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken"))),
@@ -335,11 +334,11 @@ pub async fn confirm_registration(
     })?;
 
     // If such an entry exists, then add a new user.
-    let create_profile = CreateProfile::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
+    let create_user = CreateUser::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
 
-    let profile = web::block(move || {
-        // Create a new entity (profile,user).
-        let res_profile = user_orm.create_profile_user(create_profile).map_err(|e| {
+    let user = web::block(move || {
+        // Create a new entity (user, profile).
+        let res_profile = user_orm.create_user(create_user).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
         });
@@ -362,9 +361,71 @@ pub async fn confirm_registration(
         // An error during this operation has no effect.
     });
 
-    let profile_dto = ProfileDto::from(profile);
+    let response_dto = ConfirmRegistrUserResponseDto {
+        id: user.id,
+        nickname: user.nickname,
+        email: user.email,
+        created_at: user.created_at,
+    };
 
-    Ok(HttpResponse::Created().json(profile_dto)) // 201
+    Ok(HttpResponse::Created().json(response_dto)) // 201
+}
+
+/// clear_for_expire
+///
+/// Clean up expired user registration and password recovery requests.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/clear_for_expired
+/// ```
+///
+/// Returns the number (of expired) records deleted (`RegistrationClearForExpiredResponseDto`) with status 200.
+///
+/// The "admin" role is required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The number of deleted outdated user registration records.",
+            body = RegistrationClearForExpiredResponseDto, 
+            example = json!(RegistrationClearForExpiredResponseDto { count_inactive_registr: 4, })
+        ),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[get("/api/registration/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+pub async fn registration_clear_for_expired(
+    user_registr_orm: web::Data<UserRegistrOrmApp>,
+) -> actix_web::Result<HttpResponse, ApiError> {
+    // Delete entries in the "user_registr" table, that are already expired.
+    let count_inactive_registr_res = 
+        web::block(move || user_registr_orm.delete_inactive_final_date(None)
+        .map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })
+        ).await
+        .map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+        })?;
+
+    let count_inactive_registr = count_inactive_registr_res.unwrap_or(0);
+
+    let clear_for_expired_response_dto = RegistrationClearForExpiredResponseDto {
+        count_inactive_registr,
+    };
+    
+    Ok(HttpResponse::Ok().json(clear_for_expired_response_dto)) // 200
 }
 
 #[cfg(all(test, feature = "mockdata"))]
