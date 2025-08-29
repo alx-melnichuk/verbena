@@ -2,6 +2,7 @@ use utoipa::{
     openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
+use vrb_authent::{user_recovery_models, user_registr_models};
 use vrb_chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use vrb_common::api_error;
 use vrb_dbase::{enm_stream_state, enm_user_role};
@@ -58,6 +59,17 @@ use vrb_streams::{stream_controller, stream_models};
             api_error::ApiError,
             // user model
             enm_user_role::UserRole,
+            // user_recovery_controller
+            user_recovery_models::RecoveryUserDto, // ::recovery
+            user_recovery_models::RecoveryUserResponseDto, // ::recovery
+            user_recovery_models::ConfirmRecoveryUserResponseDto, // ::confirm_recovery
+            user_recovery_models::RecoveryClearForExpiredResponseDto, // ::recovery_clear_for_expired
+            // user_registr_controller
+            user_registr_models::RegistrUserDto, // ::registration
+            user_registr_models::RegistrUserResponseDto, // ::registration
+            user_registr_models::ConfirmRegistrUserResponseDto, // ::confirm_registration
+            user_registr_models::RegistrationClearForExpiredResponseDto, // ::registration_clear_for_expired
+
             // profile_controller
             profile_models::UniquenessProfileDto, // ::uniqueness_check
             profile_models::UniquenessProfileResponseDto, // ::uniqueness_check
