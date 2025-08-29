@@ -3,8 +3,8 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use vrb_common::{
-    validators::{ValidationError, Validator},
     user_validations,
+    validators::{ValidationError, Validator},
 };
 use vrb_dbase::schema;
 
@@ -26,15 +26,15 @@ pub struct CreateUserRecovery {
     pub final_date: DateTime<Utc>,
 }
 
-// ** Model Dto: "RecoveryProfileDto". Used: in "user_recovery_controller::recovery(). **
+// ** Used: in "user_recovery_controller::recovery(). **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct RecoveryProfileDto {
+pub struct RecoveryUserDto {
     pub email: String,
 }
 
-impl Validator for RecoveryProfileDto {
+impl Validator for RecoveryUserDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
@@ -45,17 +45,29 @@ impl Validator for RecoveryProfileDto {
     }
 }
 
-// ** Model Dto: "RecoveryProfileResponseDto". Used: in "user_recovery_controller::recovery(). **
+// ** Used: in "user_recovery_controller::recovery(). **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct RecoveryProfileResponseDto {
+pub struct RecoveryUserResponseDto {
     pub id: i32,
     pub email: String,
     pub recovery_token: String,
 }
 
-// ** Model Dto: "RecoveryDataDto". Used: in "profile_registr_controller::confirm_recovery(). **
+// ** Used: in "user_recovery_controller::confirm_recovery(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfirmRecoveryUserResponseDto {
+    pub id: i32,
+    pub nickname: String,
+    pub email: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+// ** Model Dto: "RecoveryDataDto". Used: in "user_recovery_controller::confirm_recovery(). **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -72,4 +84,12 @@ impl Validator for RecoveryDataDto {
 
         self.filter_errors(errors)
     }
+}
+
+// ** Model Dto: "RecoveryClearForExpiredResponseDto". Used: in "user_recovery_controller::clear_for_expired(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct RecoveryClearForExpiredResponseDto {
+    pub count_inactive_recover: usize,
 }

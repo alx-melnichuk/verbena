@@ -6,28 +6,25 @@ mod tests {
         http::StatusCode,
         test, App,
     };
-    use chrono::{Duration, Utc};
+    use chrono::{Duration, SecondsFormat, Utc};
     use serde_json::json;
-        use vrb_common::{
+    use vrb_common::{
         api_error::{code_to_str, ApiError},
         err, user_validations,
     };
-    use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
-    #[cfg(not(all(test, feature = "mockdata")))]
-    use crate::user_orm::impls::UserOrmApp;
-    #[cfg(all(test, feature = "mockdata"))]
-    use crate::user_orm::tests::UserOrmApp;
-    
     use crate::{
         config_jwt,
-        user_models::{Session, UserMock},
+        user_models::UserMock,
         user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
+        user_recovery_controller::{
+            confirm_recovery, recovery, recovery_clear_for_expired, tests as RcvCtTest, MSG_RECOVERY_NOT_FOUND, MSG_USER_NOT_FOUND,
+        },
+        user_recovery_models::{
+            ConfirmRecoveryUserResponseDto, RecoveryClearForExpiredResponseDto, RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto,
+        },
         user_recovery_orm::tests::UserRecoveryOrmTest as RecovTest,
-        user_recovery_models::{RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto},
-        user_recovery_controller::{recovery, confirm_recovery, tests as RcvCtTest, MSG_RECOVERY_NOT_FOUND, MSG_USER_NOT_FOUND,},
-        profile_models2::ProfileDto,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -97,7 +94,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryProfileDto { email: "".to_string() })
+            .set_json(RecoveryUserDto { email: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -123,7 +120,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryProfileDto { email: UserMock::email_min() })
+            .set_json(RecoveryUserDto { email: UserMock::email_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -149,7 +146,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryProfileDto { email: UserMock::email_max() })
+            .set_json(RecoveryUserDto { email: UserMock::email_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -175,7 +172,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryProfileDto { email: UserMock::email_wrong() })
+            .set_json(RecoveryUserDto { email: UserMock::email_wrong() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -202,7 +199,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryProfileDto { email: email.to_string() })
+            .set_json(RecoveryUserDto { email: email.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
@@ -232,7 +229,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryProfileDto { email: user1_email.to_string() })
+            .set_json(RecoveryUserDto { email: user1_email.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
@@ -240,7 +237,7 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_recov_res: RecoveryProfileResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let user_recov_res: RecoveryUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_recov_res.id, user_recovery1_id);
         assert_eq!(user_recov_res.email, user1_email.to_string());
@@ -270,7 +267,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryProfileDto { email: user1_email.to_string() })
+            .set_json(RecoveryUserDto { email: user1_email.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
@@ -278,7 +275,7 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_recov_res: RecoveryProfileResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let user_recov_res: RecoveryUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_recov_res.id, user_recovery1_id);
         assert_eq!(user_recov_res.email, user1_email.to_string());
@@ -307,7 +304,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryProfileDto { email: user1_email.to_string() })
+            .set_json(RecoveryUserDto { email: user1_email.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY); // 422
@@ -554,9 +551,11 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_recovery_success() {
         let data_u = User_Test::users(&[USER]);
-        let user1 = data_u.0.get(0).unwrap().clone();
-        let user1_id = user1.id;
-        let profile1_dto = ProfileDto::from(user1);
+        let user1 = data_u.0.get(0).unwrap();
+        let user1_id = user1.id.clone();
+        let nickname = user1.nickname.clone();
+        let email = user1.email.clone();
+        let user1_created_at = user1.created_at.clone();
 
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
@@ -584,35 +583,24 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json = serde_json::json!(profile1_dto).to_string();
-        let profile1_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(profile_dto_res.id, profile1_dto_ser.id);
-        assert_eq!(profile_dto_res.nickname, profile1_dto_ser.nickname);
-        assert_eq!(profile_dto_res.email, profile1_dto_ser.email);
-        assert_eq!(profile_dto_res.role, profile1_dto_ser.role);
-        assert_eq!(profile_dto_res.avatar, profile1_dto_ser.avatar);
-        assert_eq!(profile_dto_res.descript, profile1_dto_ser.descript);
-        assert_eq!(profile_dto_res.theme, profile1_dto_ser.theme);
-        assert_eq!(profile_dto_res.created_at, profile1_dto_ser.created_at);
+        let response_dto_res: ConfirmRecoveryUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let now_str = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        assert_eq!(response_dto_res.id, user1_id);
+        assert_eq!(response_dto_res.nickname, nickname);
+        assert_eq!(response_dto_res.email, email);
+        assert_eq!(response_dto_res.created_at, user1_created_at);
+        assert_eq!(response_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true), now_str);
     }
 
-    // ** clear_for_expired **
+    // ** recovery_clear_for_expired **
 
-    /*#[actix_web::test]
-    async fn test_clear_for_expired_user_recovery() {
+    #[actix_web::test]
+    async fn test_recovery_clear_for_expired() {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = User_Test::users(&[ADMIN]);
         let user1_id = data_u.0.get(0).unwrap().id;
 
         let config_app = config_app::get_test_config();
-
-        let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
-        let mut registrs = RegisTest::registrs(true);
-        let registr1 = registrs.get_mut(0).unwrap();
-        registr1.final_date = Utc::now() - Duration::seconds(registr_duration);
 
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let mut recoveries = RecovTest::recoveries(Some(user1_id));
@@ -620,14 +608,13 @@ mod tests {
         recovery1.final_date = Utc::now() - Duration::seconds(recovery_duration);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(clear_for_expired)
+            App::new().service(recovery_clear_for_expired)
                 .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(registrs))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&"/api/clear_for_expired")
+        let req = test::TestRequest::get().uri("/api/recovery/clear_for_expired")
             .insert_header(RcvCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -636,9 +623,7 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response_dto: ClearForExpiredResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(response_dto.count_inactive_registr, 1);
+        let response_dto: RecoveryClearForExpiredResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(response_dto.count_inactive_recover, 1);
-    }*/
-
+    }
 }

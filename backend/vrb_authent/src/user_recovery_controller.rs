@@ -1,4 +1,4 @@
-use actix_web::{http::StatusCode, post, put, web, HttpResponse};
+use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
@@ -7,7 +7,6 @@ use vrb_common::{
     err,
     validators::{msg_validation, Validator},
 };
-use vrb_dbase::enm_user_role::UserRole;
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -25,10 +24,14 @@ use crate::user_recovery_orm::impls::UserRecoveryOrmApp;
 use crate::user_recovery_orm::tests::UserRecoveryOrmApp;
 
 use crate::{
+    authentication::RequireAuth,
     config_jwt,
-    profile_models2::{ModifyProfile, Profile, ProfileDto, PROFILE_THEME_LIGHT_DEF, PROFILE_THEME_DARK},
+    user_models::ModifyUser,
     user_orm::UserOrm,
-    user_recovery_models::{CreateUserRecovery, RecoveryProfileDto, RecoveryProfileResponseDto, RecoveryDataDto},
+    user_recovery_models::{
+        ConfirmRecoveryUserResponseDto, CreateUserRecovery, RecoveryClearForExpiredResponseDto, RecoveryDataDto, RecoveryUserDto,
+        RecoveryUserResponseDto,
+    },
     user_recovery_orm::UserRecoveryOrm,
 };
 
@@ -49,9 +52,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(recovery)
             // PUT /api/recovery/{recovery_token}
             .service(confirm_recovery)
-            // // GET /api/clear_for_expired
-            // .service(clear_for_expired)
-            ;
+            // GET /api/recovery/clear_for_expired
+            .service(recovery_clear_for_expired);
     }
 }
 
@@ -65,19 +67,19 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// -d '{"email": "user@email"}' \
 /// -H 'Content-Type: application/json'
 /// ```
-/// Return new user registration parameters (`RecoveryProfileResponseDto`) with status 201.
+/// Return new user registration parameters (`RecoveryUserResponseDto`) with status 201.
 ///
 #[utoipa::path(
     responses(
-        (status = 201, description = "User password recovery options and recovery token.", body = RecoveryProfileResponseDto,
-            example = json!(RecoveryProfileResponseDto {
+        (status = 201, description = "User password recovery options and recovery token.", body = RecoveryUserResponseDto,
+            example = json!(RecoveryUserResponseDto {
                 id: 27, email: "James_Miller@gmail.us".to_string(), recovery_token: TOKEN_RECOVERY.to_string() })
         ),
         (status = 404, description = "An entry to recover the user's password was not found.", body = ApiError,
             example = json!(ApiError::create(404, MSG_USER_NOT_FOUND, "email: user@email"))),
         (status = 417, body = [ApiError],
             description = "Validation error. `curl -i -X POST http://localhost:8080/api/recovery -d '{\"email\": \"us_email\" }'`",
-            example = json!(ApiError::validations((RecoveryProfileDto { email: "us_email".to_string() }).validate().err().unwrap()))),
+            example = json!(ApiError::validations((RecoveryUserDto { email: "us_email".to_string() }).validate().err().unwrap()))),
         (status = 422, description = "Token encoding error.", body = ApiError,
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
@@ -95,7 +97,7 @@ pub async fn recovery(
     mailer: web::Data<MailerApp>,
     user_orm: web::Data<UserOrmApp>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
-    json_body: web::Json<RecoveryProfileDto>,
+    json_body: web::Json<RecoveryUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -104,7 +106,7 @@ pub async fn recovery(
         return Ok(ApiError::to_response(&ApiError::validations(validation_errors)));
     }
 
-    let mut recovery_profile_dto: RecoveryProfileDto = json_body.into_inner();
+    let mut recovery_profile_dto: RecoveryUserDto = json_body.into_inner();
     recovery_profile_dto.email = recovery_profile_dto.email.to_lowercase();
     let email = recovery_profile_dto.email.clone();
 
@@ -225,7 +227,7 @@ pub async fn recovery(
         return Err(ApiError::create(510, err::MSG_ERROR_SENDING_EMAIL, &msg)); // 510
     }
 
-    let recovery_profile_response_dto = RecoveryProfileResponseDto {
+    let recovery_profile_response_dto = RecoveryUserResponseDto {
         id: user_recovery_id,
         email: user.email.clone(),
         recovery_token: recovery_token.clone(),
@@ -245,21 +247,14 @@ pub async fn recovery(
 /// -H 'Content-Type: application/json'
 /// ```
 ///
-/// Returns data about the user whose password was recovered (`ProfileDto`), with status 200.
+/// Returns data about the user whose password was recovered (`ConfirmRecoveryUserResponseDto`), with status 200.
 ///
 #[utoipa::path(
     responses(
-        (status = 200, description = "Information about the user whose password was restored.", body = ProfileDto,
-            examples(
-            ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
-                value = json!(ProfileDto::from(
-                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), None))
-            ))),
-            ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
-                value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), None))
-            )))),
+        (status = 200, description = "Information about the user whose password was restored.", body = ConfirmRecoveryUserResponseDto,
+            example = json!(ConfirmRecoveryUserResponseDto { id: 120, nickname: "james_miller".to_owned()
+                , email: "james_miller@gmail.us".to_owned(), created_at: Utc::now()
+                , updated_at: (Utc::now() - Duration::hours(2) - Duration::minutes(30)) })
         ),
         (status = 401, description = "The token is invalid or expired.", body = ApiError,
             example = json!(ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken"))),
@@ -371,17 +366,19 @@ pub async fn confirm_recovery(
         ApiError::create(404, MSG_USER_NOT_FOUND, &msg) // 404
     })?;
     // Create a model to update the "password" field in the user profile.
-    #[rustfmt::skip]
-    let modify_profile = ModifyProfile {
-        nickname: None, email: None, password: Some(password_hashed), role: None,  avatar: None, descript: None, theme: None, locale: None,
+    let modify_user = ModifyUser {
+        nickname: None,
+        email: None,
+        password: Some(password_hashed),
+        role: None,
     };
     // Update the password hash for the user profile.
-    let opt_profile = web::block(move || {
-        let opt_profile1 = user_orm.modify_profile(user.id, modify_profile).map_err(|e| {
+    let opt_user = web::block(move || {
+        let opt_user1 = user_orm.modify_user(user.id, modify_user).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
-        opt_profile1
+        opt_user1
     })
     .await
     .map_err(|e| {
@@ -389,9 +386,9 @@ pub async fn confirm_recovery(
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
-    // If the user profile is updated successfully,
+    // If the user is updated successfully,
     // then delete the password recovery entry (table "user_recovery").
-    if let Some(profile) = opt_profile {
+    if let Some(user) = opt_user {
         let user_recovery_orm2 = user_recovery_orm.clone();
         let _ = web::block(move || {
             // Delete entries in the “user_recovery" table.
@@ -401,13 +398,78 @@ pub async fn confirm_recovery(
         })
         .await;
 
-        let profile_dto = ProfileDto::from(profile);
-        Ok(HttpResponse::Ok().json(profile_dto)) // 200
+        let response_dto = ConfirmRecoveryUserResponseDto {
+            id: user.id,
+            nickname: user.nickname,
+            email: user.email,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+        };
+
+        Ok(HttpResponse::Ok().json(response_dto)) // 200
     } else {
         let msg = format!("user_id: {}", user_id);
         error!("{}-{}; {}", code_to_str(StatusCode::NOT_FOUND), MSG_USER_NOT_FOUND, &msg);
         Err(ApiError::create(404, MSG_USER_NOT_FOUND, &msg)) // 404
     }
+}
+
+/// clear_for_expire
+///
+/// Clean up expired user registration and password recovery requests.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/recovery/clear_for_expired
+/// ```
+///
+/// Returns the number (of expired) records deleted (`RecoveryClearForExpiredResponseDto`) with status 200.
+///
+/// The "admin" role is required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The number of deleted outdated expired password recovery records.",
+            body = RecoveryClearForExpiredResponseDto, 
+            example = json!(RecoveryClearForExpiredResponseDto { count_inactive_recover: 2 })
+        ),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[get("/api/recovery/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+pub async fn recovery_clear_for_expired(
+    user_recovery_orm: web::Data<UserRecoveryOrmApp>,
+) -> actix_web::Result<HttpResponse, ApiError> {
+
+    // Delete entries in the "user_recovery" table, that are already expired.
+    let count_inactive_recover_res = 
+        web::block(move || user_recovery_orm.delete_inactive_final_date(None)
+        .map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })
+        ).await
+        .map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+        })?;
+
+    let count_inactive_recover = count_inactive_recover_res.unwrap_or(0);
+
+    let clear_for_expired_response_dto = RecoveryClearForExpiredResponseDto {
+        count_inactive_recover,
+    };
+    
+    Ok(HttpResponse::Ok().json(clear_for_expired_response_dto)) // 200
 }
 
 #[cfg(all(test, feature = "mockdata"))]
