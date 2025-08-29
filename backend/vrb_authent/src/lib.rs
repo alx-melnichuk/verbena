@@ -1,7 +1,6 @@
 pub mod authentication;
 pub mod authentication_test;
 pub mod config_jwt;
-pub mod profile_models2;
 pub mod user_models;
 pub mod user_orm;
 pub mod user_recovery_controller;

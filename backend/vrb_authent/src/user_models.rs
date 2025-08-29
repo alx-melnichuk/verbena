@@ -35,6 +35,37 @@ impl User {
     }
 }
 
+// ** Used: UserOrm::create_user() **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct CreateUser {
+    pub nickname: String,         // min_len=3 max_len=64
+    pub email: String,            // min_len=5 max_len=254
+    pub password: String,         // min_len=6 max_len=64
+    pub role: Option<UserRole>,   // default "user"
+}
+
+impl CreateUser {
+    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> Self {
+        CreateUser {
+            nickname: nickname.to_owned(),
+            email: email.to_owned(),
+            password: password.to_owned(),
+            role: role.clone(),
+        }
+    }
+}
+
+// ** Used: UserOrm::modify_user() **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct ModifyUser {
+    pub nickname: Option<String>,       // min_len=3,max_len=64
+    pub email: Option<String>,          // min_len=5,max_len=254,"email:email_type"
+    pub password: Option<String>,       // min_len=6,max_len=64
+    pub role: Option<UserRole>,         // default "user"
+}
+
 // * * * *   * * * *
 
 #[cfg(all(test, feature = "mockdata"))]
