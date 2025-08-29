@@ -1,11 +1,11 @@
-use std::rc::Rc;
+use std::{rc::Rc, time::Instant as tm};
 
 use actix_web::{dev, error, http::StatusCode, web, FromRequest, HttpMessage};
 use futures_util::{
     future::{ready, LocalBoxFuture, Ready},
     FutureExt,
 };
-use log::{debug, error, log_enabled, Level::Info};
+use log::{error, info, log_enabled, Level::Info};
 use vrb_common::{
     api_error::{code_to_str, ApiError},
     err,
@@ -118,7 +118,7 @@ where
 
     /// The future type representing the asynchronous response.
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
-        let opt_timer0 = if log_enabled!(Info) { Some(std::time::Instant::now()) } else { None };
+        let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
         // Extract the token from the cookie or authorization header.
         let token = token_data::get_token_from_cookie_or_header(req.request());
@@ -172,8 +172,8 @@ where
             // If the user is not present, return error401(d)("Unauthorized", "unacceptable_token_id; user_id: {}").
             let user = is_unacceptable_token_id(opt_user, user_id)?;
 
-            if let Some(timer0) = opt_timer0 {
-                debug!("timer0: {}, user.role: {:?}", format!("{:.2?}", timer0.elapsed()), &user.role);
+            if let Some(timer) = timer {
+                info!("authentication() time: {}", format!("{:.2?}", timer.elapsed()));
             }
 
             // Check if user's role matches the required role
