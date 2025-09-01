@@ -65,6 +65,8 @@ RUST_LOG=warn,actix_web=info,verbena=warn,${LOG01},${LOG02}
 # SMTP_HOST_PORT=
 # The value of the SMTP server user parameters: `user:password`
 # SMTP_USER_PASS=
+# Path to letter text templates (default: "./templates")
+# SMTP_PATH_TEMPLATE=
 # Sign to disable sending letters (default: false)
 # SMTP_NOT_SEND_LETTER=false
 # Sign for saving the text of the letter (default: false)
