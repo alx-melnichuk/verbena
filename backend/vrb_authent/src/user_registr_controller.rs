@@ -59,7 +59,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 }
 
 // Check if the nickname and email parameters are specified.
-fn is_nickname_email_params_not_specified(opt_nickname: Option<&str>, opt_email: Option<&str>) -> Result<(), ApiError> {
+pub fn is_nickname_email_params_not_specified(opt_nickname: Option<&str>, opt_email: Option<&str>) -> Result<(), ApiError> {
     let nickname = opt_nickname.unwrap_or("");
     let email = opt_email.unwrap_or("");
     #[rustfmt::skip]
@@ -147,16 +147,17 @@ pub async fn registration(
 
     let nickname = registr_user_dto.nickname.clone();
     let email = registr_user_dto.email.clone();
-    let mut res_search: Option<(bool, bool)> = None;
 
     let opt_nickname: Option<String> = Some(nickname.clone());
     let opt_email: Option<String> = Some(email.clone());
     // Check if the nickname and email parameters are specified.
     is_nickname_email_params_not_specified(opt_nickname.as_deref(), opt_email.as_deref())?;
 
+    let mut res_search: Option<(bool, bool)> = None;
+
     if res_search.is_none() {
         let user_orm2 = user_orm.get_ref().clone();
-        // Find in the "profile" table an entry by nickname or email.
+        // Find in the "user" table an entry by nickname or email.
         let opt_user = web::block(move || {
             let existing_user = user_orm2
                 .find_user_by_nickname_or_email(opt_nickname.as_deref(), opt_email.as_deref(), false)
@@ -167,7 +168,7 @@ pub async fn registration(
         .await
         .map_err(|e| ApiError::create(506, err::MSG_BLOCKING, &e.to_string()))?; // 506
 
-        // If such an entry exists in the "profiles" table, then exit.
+        // If such an entry exists in the "users" table, then exit.
         if let Some(user) = opt_user {
             res_search = Some((nickname == user.nickname, email == user.email));
         }
