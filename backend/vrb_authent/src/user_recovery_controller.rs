@@ -2,7 +2,7 @@ use std::time::Instant as tm;
 
 use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
-use log::{info, error, log_enabled, Level::Info};
+use log::{error, info, log_enabled, Level::Info};
 use utoipa;
 use vrb_common::{
     api_error::{code_to_str, ApiError},
@@ -13,7 +13,11 @@ use vrb_common::{
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]
 use vrb_tools::send_email::mailer::tests::MailerApp;
-use vrb_tools::{config_app, hash_tools, send_email::mailer::Mailer, token_coding};
+use vrb_tools::{
+    config_app, hash_tools,
+    send_email::{config_smtp, mailer::Mailer},
+    token_coding,
+};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::user_orm::impls::UserOrmApp;
@@ -97,12 +101,12 @@ pub async fn recovery(
     config_app: web::Data<config_app::ConfigApp>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     mailer: web::Data<MailerApp>,
+    config_smtp: web::Data<config_smtp::ConfigSmtp>,
     user_orm: web::Data<UserOrmApp>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
     json_body: web::Json<RecoveryUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -214,6 +218,8 @@ pub async fn recovery(
         ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
+    let config_smtp = config_smtp.get_ref().clone();
+    let path_template = config_smtp.smtp_path_template;
     // Prepare a letter confirming this recovery.
     let domain = &config_app.app_domain;
     let subject = format!("Account recovery on {}", &config_app.app_name);
@@ -223,7 +229,9 @@ pub async fn recovery(
     let recovery_duration = app_recovery_duration.clone() / 60; // Convert from seconds to minutes.
 
     // Send an email to this user.
-    let result = mailer.send_password_recovery(&receiver, &domain, &subject, &nickname, &target, recovery_duration);
+    #[rustfmt::skip]
+    let result = mailer.send_password_recovery(
+        &path_template, &receiver, &domain, &subject, &nickname, &target, recovery_duration);
 
     if result.is_err() {
         let msg = result.unwrap_err();
@@ -513,6 +521,9 @@ pub mod tests {
 
     pub fn cfg_mailer(config_smtp: config_smtp::ConfigSmtp) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
+            let data_config_smtp = web::Data::new(config_smtp.clone());
+            config.app_data(web::Data::clone(&data_config_smtp));
+
             let data_mailer = web::Data::new(MailerApp::new(config_smtp));
             config.app_data(web::Data::clone(&data_mailer));
         }
