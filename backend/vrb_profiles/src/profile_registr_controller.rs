@@ -217,7 +217,8 @@ pub async fn registration(
     let receiver = registr_profile_dto.email.clone();
     let target = registr_token.clone();
     let registr_duration = app_registr_duration.clone() / 60; // Convert from seconds to minutes.
-    let result = mailer.send_verification_code(&receiver, &domain, &subject, &nickname, &target, registr_duration);
+    let result = mailer.send_verification_code(
+        "../templates", &receiver, &domain, &subject, &nickname, &target, registr_duration);
 
     if result.is_err() {
         let e = result.unwrap_err();
@@ -505,7 +506,8 @@ pub async fn recovery(
     let recovery_duration = app_recovery_duration.clone() / 60; // Convert from seconds to minutes.
 
     // Send an email to this user.
-    let result = mailer.send_password_recovery(&receiver, &domain, &subject, &nickname, &target, recovery_duration);
+    let result = mailer.send_password_recovery(
+        "../templates", &receiver, &domain, &subject, &nickname, &target, recovery_duration);
 
     if result.is_err() {
         let msg = result.unwrap_err();
