@@ -1,27 +1,5 @@
 use std::{borrow::Cow, env, fs, ops::Deref, path};
 
-use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{delete, get, http::StatusCode, put, web, HttpResponse};
-use chrono::{DateTime, Utc};
-use log::error;
-use mime::IMAGE;
-use serde_json::json;
-use utoipa;
-#[cfg(not(all(test, feature = "mockdata")))]
-use vrb_authent::user_registr_orm::impls::UserRegistrOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use vrb_authent::user_registr_orm::tests::UserRegistrOrmApp;
-use vrb_authent::{
-    authentication::{Authenticated, RequireAuth},
-};
-use vrb_common::{
-    alias_path::{alias_path_profile, alias_path_stream},
-    api_error::{code_to_str, ApiError},
-    consts, err, parser,
-    validators::{self, msg_validation, ValidationChecks, Validator},
-};
-use vrb_dbase::enm_user_role::UserRole;
-use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -35,6 +13,30 @@ use crate::{
     },
     profile_orm::ProfileOrm,
 };
+use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
+use actix_web::{delete, get, http::StatusCode, put, web, HttpResponse};
+use chrono::{DateTime, Utc};
+use log::error;
+use mime::IMAGE;
+use serde_json::json;
+use utoipa;
+use vrb_authent::{
+    authentication::{Authenticated, RequireAuth},
+    user_orm::UserOrm,
+    user_registr_orm::UserRegistrOrm,
+};
+#[cfg(not(all(test, feature = "mockdata")))]
+use vrb_authent::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegistrOrmApp};
+#[cfg(all(test, feature = "mockdata"))]
+use vrb_authent::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
+use vrb_common::{
+    alias_path::{alias_path_profile, alias_path_stream},
+    api_error::{code_to_str, ApiError},
+    consts, err, parser,
+    validators::{self, msg_validation, ValidationChecks, Validator},
+};
+use vrb_dbase::enm_user_role::UserRole;
+use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image};
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -402,29 +404,71 @@ pub async fn get_profile_current(
 )]
 #[get("/api/profiles_uniqueness")]
 pub async fn uniqueness_check(
-    profile_orm: web::Data<ProfileOrmApp>,
+    user_orm: web::Data<UserOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     query_params: web::Query<UniquenessProfileDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get search parameters.
     let uniqueness_user_dto: UniquenessProfileDto = query_params.clone().into_inner();
 
-    let opt_nickname = uniqueness_user_dto.nickname.clone();
-    let opt_email = uniqueness_user_dto.email.clone();
+    let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_owned());
+    let email = uniqueness_user_dto.email.unwrap_or("".to_owned());
 
-    let profile_orm = profile_orm.get_ref().clone();
-    let registr_orm = user_registr_orm.get_ref().clone();
+    #[rustfmt::skip]
+    let opt_nickname = if nickname.len() > 0 { Some(nickname.clone()) } else { None };
+    let opt_email = if email.len() > 0 { Some(email.clone()) } else { None };
 
-    let res_search = profile_check::uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, registr_orm)
-        .await
-        .map_err(|err| {
-            #[rustfmt::skip]
-            let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
-            error!("{}-{}; {}", &err.code, &err.message, &prm1);
-            err
-        })?;
-    let uniqueness = res_search.is_none();
+    // Check if the nickname and email parameters are specified.
+    if opt_nickname.is_none() && opt_email.is_none() {
+        let json = serde_json::json!({ "nickname": "null", "email": "null" });
+        return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
+            .add_param(Cow::Borrowed("invalidParams"), &json));
+    }
 
+    let user_orm2 = user_orm.get_ref().clone();
+    let user_registr_orm2 = user_registr_orm.get_ref().clone();
+
+    let opt_search = web::block(move || {
+        let mut res_search: Option<(bool, bool)> = None;
+
+        if res_search.is_none() {
+            let opt_nickname2 = opt_nickname.clone();
+            let opt_email2 = opt_email.clone();
+            // Search for "nickname" or "email" in the "users" table.
+            let opt_user = user_orm2
+                .find_user_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref(), false)
+                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                .ok()?;
+
+            // If such an entry exists in the "users" table, then exit.
+            if let Some(user) = opt_user {
+                res_search = Some((nickname == user.nickname, email == user.email));
+            }
+        }
+
+        if res_search.is_none() {
+            let opt_nickname2 = opt_nickname.clone();
+            let opt_email2 = opt_email.clone();
+            let opt_user_registr = user_registr_orm2
+                .find_user_registr_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
+                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                .ok()?;
+
+            // If such an entry exists in the "user_registrs" table, then exit.
+            if let Some(user_registr) = opt_user_registr {
+                res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
+            }
+        }
+        res_search
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
+
+    let uniqueness = opt_search.is_none();
+    
     let response_dto = UniquenessProfileResponseDto::new(uniqueness);
 
     Ok(HttpResponse::Ok().json(response_dto)) // 200
