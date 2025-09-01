@@ -1,5 +1,7 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
+    use std::env;
+
     use actix_web::{
         body, dev,
         http::header::{HeaderValue, CONTENT_TYPE},
@@ -9,8 +11,7 @@ mod tests {
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json::json;
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
-        err, user_validations,
+        api_error::{code_to_str, ApiError}, consts, err, user_validations
     };
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
@@ -27,12 +28,14 @@ mod tests {
         user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
     };
 
+    const TEST_PATH_TEMPLATE: &str = "../templates";
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     // ** registration **
 
     #[actix_web::test]
     async fn test_registration_no_data() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -55,6 +58,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_empty_json_object() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -78,6 +82,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_empty() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -108,6 +113,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_min() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -138,6 +144,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_max() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -168,6 +175,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_wrong() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -198,6 +206,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_empty() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -228,6 +237,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_min() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -258,6 +268,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_max() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -288,6 +299,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_wrong() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -318,6 +330,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_empty() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -348,6 +361,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_min() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -378,6 +392,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_max() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -408,6 +423,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_wrong() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -438,6 +454,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let email1 = data_u.0.get(0).unwrap().email.clone();
@@ -468,6 +485,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let email1 = data_u.0.get(0).unwrap().email.clone();
@@ -498,6 +516,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         let registrs = RegisTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
@@ -529,6 +548,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         let registrs = RegisTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
@@ -560,6 +580,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_err_jsonwebtoken_encode() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = User_Test::users(&[USER]);
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
@@ -591,6 +612,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_new_user() {
+        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let registrs = RegisTest::registrs(true);
         let user_registr1 = registrs.get(0).unwrap().clone();
         let data_u = User_Test::users(&[USER]);
