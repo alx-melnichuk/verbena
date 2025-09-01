@@ -2,6 +2,7 @@ pub trait Mailer {
     /// Send an email to confirm registration.
     fn send_verification_code(
         &self,
+        path_template: &str,
         receiver: &str,
         domain: &str,
         subject: &str,
@@ -12,6 +13,7 @@ pub trait Mailer {
     /// Send an email to confirm the password change.
     fn send_password_recovery(
         &self,
+        path_template: &str,
         receiver: &str,
         domain: &str,
         subject: &str,
@@ -31,7 +33,7 @@ pub trait Mailer {
  */
 
 pub mod impls {
-    use std::{collections::HashMap, fs::File, io::Write, path::Path};
+    use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
 
     use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport};
 
@@ -102,6 +104,7 @@ pub mod impls {
         /// Send an email to confirm registration.
         fn send_verification_code(
             &self,
+            path_template: &str,
             receiver: &str,
             domain: &str,
             subject: &str,
@@ -109,6 +112,9 @@ pub mod impls {
             target: &str,
             registr_duration: i64,
         ) -> Result<(), String> {
+            if path_template.len() == 0 {
+                return Err("Path_template not specified.".to_string());
+            }
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
@@ -120,9 +126,12 @@ pub mod impls {
             let registr_duration_val = registr_duration.to_string();
             params.insert("registr_duration", &registr_duration_val);
 
+            let path_verification_code: PathBuf = [path_template, "verification_code.hbs"].iter().collect();
+            let path_basic_layout: PathBuf = [path_template, "basic_layout.hbs"].iter().collect();
+
             let tpl_vec = [
-                ("verification_code", Path::new("../templates/verification_code.hbs")),
-                ("base", Path::new("../templates/basic_layout.hbs")),
+                ("verification_code", path_verification_code.as_path()),
+                ("base", path_basic_layout.as_path()),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -142,6 +151,7 @@ pub mod impls {
         /// Send an email to confirm the password change.
         fn send_password_recovery(
             &self,
+            path_template: &str,
             receiver: &str,
             domain: &str,
             subject: &str,
@@ -149,6 +159,9 @@ pub mod impls {
             target: &str,
             recovery_duration: i64,
         ) -> Result<(), String> {
+            if path_template.len() == 0 {
+                return Err("Path_template not specified.".to_string());
+            }
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
@@ -160,9 +173,12 @@ pub mod impls {
             let recovery_duration_val = recovery_duration.to_string();
             params.insert("recovery_duration", &recovery_duration_val);
 
+            let path_password_recovery: PathBuf = [path_template, "password_recovery.hbs"].iter().collect();
+            let path_basic_layout: PathBuf = [path_template, "basic_layout.hbs"].iter().collect();
+
             let tpl_vec = [
-                ("password_recovery", Path::new("../templates/password_recovery.hbs")),
-                ("base", Path::new("../templates/basic_layout.hbs")),
+                ("password_recovery", path_password_recovery.as_path()),
+                ("base", path_basic_layout.as_path()),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -184,7 +200,7 @@ pub mod impls {
 }
 
 pub mod tests {
-    use std::{collections::HashMap, fs::File, io::Write, path::Path};
+    use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
 
     use crate::send_email::config_smtp::ConfigSmtp;
     use crate::template_rendering;
@@ -211,6 +227,7 @@ pub mod tests {
         /// Send an email to confirm registration.
         fn send_verification_code(
             &self,
+            path_template: &str,
             receiver: &str,
             domain: &str,
             subject: &str,
@@ -218,6 +235,9 @@ pub mod tests {
             target: &str,
             registr_duration: i64,
         ) -> Result<(), String> {
+            if path_template.len() == 0 {
+                return Err("Path_template not specified.".to_string());
+            }
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
@@ -233,9 +253,13 @@ pub mod tests {
             let registr_duration_val = registr_duration.to_string();
             params.insert("registr_duration", &registr_duration_val);
 
+
+            let path_verification_code: PathBuf = [path_template, "verification_code.hbs"].iter().collect();
+            let path_basic_layout: PathBuf = [path_template, "basic_layout.hbs"].iter().collect();
+
             let tpl_vec = [
-                ("verification_code", Path::new("../templates/verification_code.hbs")),
-                ("base", Path::new("../templates/basic_layout.hbs")),
+                ("verification_code", path_verification_code.as_path()),
+                ("base", path_basic_layout.as_path()),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -258,6 +282,7 @@ pub mod tests {
         /// Send an email to confirm the password change.
         fn send_password_recovery(
             &self,
+            path_template: &str,
             receiver: &str,
             domain: &str,
             subject: &str,
@@ -265,6 +290,9 @@ pub mod tests {
             target: &str,
             recovery_duration: i64,
         ) -> Result<(), String> {
+            if path_template.len() == 0 {
+                return Err("Path_template not specified.".to_string());
+            }
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
@@ -280,9 +308,12 @@ pub mod tests {
             let recovery_duration_val = recovery_duration.to_string();
             params.insert("recovery_duration", &recovery_duration_val);
 
+            let path_password_recovery: PathBuf = [path_template, "password_recovery.hbs"].iter().collect();
+            let path_basic_layout: PathBuf = [path_template, "basic_layout.hbs"].iter().collect();
+
             let tpl_vec = [
-                ("password_recovery", Path::new("../templates/password_recovery.hbs")),
-                ("base", Path::new("../templates/basic_layout.hbs")),
+                ("password_recovery", path_password_recovery.as_path()),
+                ("base", path_basic_layout.as_path()),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
