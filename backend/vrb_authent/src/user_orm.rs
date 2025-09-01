@@ -478,7 +478,6 @@ pub mod tests {
         pub fn cfg_user_orm(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
                 let data_user_orm = web::Data::new(UserOrmApp::create(&data_p.0, &data_p.1));
-
                 config.app_data(web::Data::clone(&data_user_orm));
             }
         }
