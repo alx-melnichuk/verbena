@@ -2,11 +2,11 @@ use utoipa::{
     openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
-use vrb_authent::{user_recovery_models, user_registr_models};
+use vrb_authent::{user_recovery_models, user_registr_models, user_registr_controller, user_recovery_controller};
 use vrb_chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use vrb_common::api_error;
 use vrb_dbase::{enm_stream_state, enm_user_role};
-use vrb_profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller};
+use vrb_profiles::{profile_auth_controller, profile_controller, profile_models};
 use vrb_streams::{stream_controller, stream_models};
 
 #[derive(OpenApi)]
@@ -31,11 +31,12 @@ use vrb_streams::{stream_controller, stream_models};
         profile_auth_controller::login,
         profile_auth_controller::logout,
         profile_auth_controller::update_token,
-        profile_registr_controller::registration,
-        profile_registr_controller::confirm_registration,
-        profile_registr_controller::recovery,
-        profile_registr_controller::confirm_recovery,
-        profile_registr_controller::clear_for_expired,
+        user_registr_controller::registration,
+        user_registr_controller::confirm_registration,
+        user_registr_controller::registration_clear_for_expired,
+        user_recovery_controller::recovery,
+        user_recovery_controller::confirm_recovery,
+        user_recovery_controller::recovery_clear_for_expired,
         stream_controller::get_streams,
         stream_controller::get_stream_by_id,
         stream_controller::get_stream_config,
@@ -82,12 +83,6 @@ use vrb_streams::{stream_controller, stream_models};
             profile_models::LoginProfileDto, profile_models::LoginProfileResponseDto, // ::login
             profile_models::ProfileTokensDto, // ::login, ::update_token
             profile_models::TokenDto, // ::update_token
-            // profile_registr_controller
-            profile_models::RegistrProfileDto, profile_models::RegistrProfileResponseDto, // ::registration
-            // profile_models::ProfileDto, // ::confirm_registration
-            profile_models::RecoveryProfileDto, profile_models::RecoveryProfileResponseDto, // ::recovery
-            profile_models::RecoveryDataDto, // profile_models::ProfileDto // ::confirm_recovery
-            profile_models::ClearForExpiredResponseDto, // ::clear_for_expired
             // stream_controller
             stream_models::StreamInfoDto,
             stream_models::SearchStreamInfoDto, // ::get_streams

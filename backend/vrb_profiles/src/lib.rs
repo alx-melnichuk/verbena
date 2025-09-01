@@ -6,8 +6,6 @@ pub mod profile_check_test;
 pub mod profile_controller;
 pub mod profile_models;
 pub mod profile_orm;
-pub mod profile_registr_controller;
-pub mod profile_registr_test;
 pub mod profile_test_delete;
 pub mod profile_test_get;
 pub mod profile_test_put;
