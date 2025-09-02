@@ -46,8 +46,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(get_profile_config)
             // GET /api/profiles_current
             .service(get_profile_current)
-            // GET /api/profiles_uniqueness
-            .service(uniqueness_check)
             // PUT /api/profiles
             .service(put_profile)
             // PUT /api/profiles_new_password
@@ -362,103 +360,6 @@ pub async fn get_profile_current(
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
-}
-
-// ** Section: uniqueness_check **
-
-/// uniqueness_check
-///
-/// Checking the uniqueness of the user's "nickname" or "email".
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/profiles_uniqueness?nickname=demo1
-/// ```
-/// Or you could call with the next curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/profiles_uniqueness?email=demo1@gmail.us
-/// ```
-///
-/// If the value is already in use, then `{"uniqueness":false}` is returned with status 200.
-/// If the value is not yet used, then `{"uniqueness":true}` is returned with status 200.
-///
-#[utoipa::path(
-    responses(
-        (status = 200, description = "The result of checking whether nickname (email) is already in use.", 
-            body = UniquenessProfileResponseDto,
-            examples(
-            ("already_use" = (summary = "already in use",  description = "If the nickname (email) is already in use.",
-                value = json!(UniquenessProfileResponseDto::new(false)))),
-            ("not_use" = (summary = "not yet in use", description = "If the nickname (email) is not yet used.",
-                value = json!(UniquenessProfileResponseDto::new(true))))
-        )),
-        (status = 406, description = "None of the parameters are specified.", body = ApiError,
-            example = json!(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED)
-                .add_param(Cow::Borrowed("invalidParams"), &json!({ "nickname": "null", "email": "null" })))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
-        (status = 507, description = "Database error.", body = ApiError, 
-            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
-    ),
-)]
-#[get("/api/profiles_uniqueness")]
-pub async fn uniqueness_check(
-    user_orm: web::Data<UserOrmApp>,
-    user_registr_orm: web::Data<UserRegistrOrmApp>,
-    query_params: web::Query<UniquenessProfileDto>,
-) -> actix_web::Result<HttpResponse, ApiError> {
-    // Get search parameters.
-    let uniqueness_user_dto: UniquenessProfileDto = query_params.clone().into_inner();
-
-    let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_owned());
-    let email = uniqueness_user_dto.email.unwrap_or("".to_owned());
-    // Check if the nickname and email parameters are specified.
-    if nickname.len() == 0 && email.len() == 0 {
-        let json = serde_json::json!({ "nickname": "null", "email": "null" });
-        return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
-            .add_param(Cow::Borrowed("invalidParams"), &json));
-    }
-
-    let user_orm2 = user_orm.get_ref().clone();
-    let user_registr_orm2 = user_registr_orm.get_ref().clone();
-
-    let opt_search = web::block(move || {
-        let mut res_search: Option<(bool, bool)> = None;
-
-        if res_search.is_none() {
-            // Search for "nickname" or "email" in the "users" table.
-            let opt_user = user_orm2
-                .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
-                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
-                .ok()?;
-            // If such an entry exists in the "users" table, then exit.
-            if let Some(user) = opt_user {
-                res_search = Some((nickname == user.nickname, email == user.email));
-            }
-        }
-        if res_search.is_none() {
-            let opt_user_registr = user_registr_orm2
-                .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
-                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
-                .ok()?;
-            // If such an entry exists in the "user_registrs" table, then exit.
-            if let Some(user_registr) = opt_user_registr {
-                res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
-            }
-        }
-        res_search
-    })
-    .await
-    .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
-
-    let uniqueness = opt_search.is_none();
-
-    let response_dto = UniquenessProfileResponseDto::new(uniqueness);
-
-    Ok(HttpResponse::Ok().json(response_dto)) // 200
 }
 
 // ** Section: put_profiles **
