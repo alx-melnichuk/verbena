@@ -132,9 +132,9 @@ pub mod impls {
         ) -> Result<Option<User>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
-            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
+            let nickname2 = nickname.unwrap_or("").to_lowercase();
             let nickname2_len = nickname2.len();
-            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
+            let email2 = email.unwrap_or("").to_lowercase();
             let email2_len = email2.len();
             if nickname2_len == 0 && email2_len == 0 {
                 return Ok(None);
