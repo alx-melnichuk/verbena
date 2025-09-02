@@ -80,7 +80,7 @@ END;
 $$;
 
 /* Create a stored function to add a new user, their profile, and their session. */
-CREATE OR REPLACE FUNCTION create_profile_user(
+/* // # CREATE OR REPLACE FUNCTION create_profile_user(
   IN _nickname VARCHAR,
   IN _email VARCHAR,
   IN _password VARCHAR,
@@ -128,9 +128,9 @@ BEGIN
     rec2.locale, rec1.created_at,
     CASE WHEN rec1.updated_at > rec2.updated_at THEN rec1.updated_at ELSE rec2.updated_at END as updated_at;
 END;
-$$;
+$$; */
 
-/* Create a stored function to modify a user and their profile. */
+/* // ? Create a stored function to modify a user and their profile. */
 CREATE OR REPLACE FUNCTION modify_profile_user(
   INOUT user_id INTEGER,
   INOUT nickname VARCHAR,
