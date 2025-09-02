@@ -64,7 +64,7 @@ export class ProfileApiService {
         const search = { nickname: (!nickname ? null : nickname), email: (!email ? null : email) };
         const params: HttpParams = HttpParamsUtil.create(search);
 
-        const url = Uri.appUri("appApi://profiles_uniqueness");
+        const url = Uri.appUri("appApi://users_uniqueness");
         return lastValueFrom(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
     }
 
