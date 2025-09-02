@@ -173,35 +173,6 @@ impl From<User> for Profile {
     }
 }
 
-// ** Model: "CreateProfile". Used: ProfileOrm::create_profile_user() **
-// #
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct CreateProfile {
-    pub nickname: String,         // min_len=3 max_len=64
-    pub email: String,            // min_len=5 max_len=254
-    pub password: String,         // min_len=6 max_len=64
-    pub role: Option<UserRole>,   // default "user"
-    pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
-    pub descript: Option<String>, // min_len=2,max_len=2048 default ""
-    pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
-    pub locale: Option<String>,   // min_len=2 max_len=32 default "default"
-}
-// #
-impl CreateProfile {
-    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateProfile {
-        CreateProfile {
-            nickname: nickname.to_owned(),
-            email: email.to_owned(),
-            password: password.to_owned(),
-            role: role.clone(),
-            avatar: None,
-            descript: None,
-            theme: None,
-            locale: None,
-        }
-    }
-}
-
 // ** Model: "ModifyProfile". Used: ProfileOrm::modify_profile() **
 // #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -235,7 +206,7 @@ impl Session {
 // * * * * Section: models for the "profile_get_controller". * * * *
 
 // ** Model Dto: "UniquenessProfileDto". Used: in "profile_get_controller::uniqueness_check()". **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UniquenessProfileDto {
@@ -246,13 +217,13 @@ pub struct UniquenessProfileDto {
 }
 
 // ** Model Dto: "UniquenessProfileResponseDto". Used: in "profile_get_controller::uniqueness_check()". **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UniquenessProfileResponseDto {
     pub uniqueness: bool,
 }
-
+// #
 impl UniquenessProfileResponseDto {
     pub fn new(uniqueness: bool) -> Self {
         UniquenessProfileResponseDto { uniqueness }

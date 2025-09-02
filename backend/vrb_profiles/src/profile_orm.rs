@@ -1,6 +1,6 @@
 use vrb_dbase::dbase::DbPool;
 
-use crate::profile_models::{CreateProfile, ModifyProfile, Profile};
+use crate::profile_models::{ModifyProfile, Profile};
 
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
@@ -11,9 +11,6 @@ pub trait ProfileOrm {
     fn find_profile_by_nickname_or_email(
         &self, nickname: Option<&str>, email: Option<&str>, is_password: bool,
     ) -> Result<Option<Profile>, String>;
-
-    /// Add a new entry (profile, user).
-    fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String>;
 
     /// Modify an entity (profile, user).
     fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String>;
@@ -42,7 +39,7 @@ pub mod impls {
     use log::{info, log_enabled, Level::Info};
     use vrb_dbase::{dbase, schema};
 
-    use crate::profile_models::{CreateProfile, ModifyProfile, Profile, StreamLogo};
+    use crate::profile_models::{ModifyProfile, Profile, StreamLogo};
 
     use super::ProfileOrm;
 
@@ -120,37 +117,6 @@ pub mod impls {
                 info!("find_profile_by_nickname_or_email() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             Ok(opt_profile)
-        }
-
-        /// Add a new entry (profile, user).
-        fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
-            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-
-            let nickname = create_profile.nickname.to_lowercase(); // #?
-            let email = create_profile.email.to_lowercase();
-
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query("select * from create_profile_user($1,$2,$3,$4,$5,$6,$7,$8);")
-                .bind::<sql_types::Text, _>(nickname) // $1
-                .bind::<sql_types::Text, _>(email) // $2
-                .bind::<sql_types::Text, _>(create_profile.password) // $3
-                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(create_profile.role) // $4
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.avatar) // $5
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.descript) // $6
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.theme) // $7
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.locale); // $8
-
-            // Run a query with Diesel to create a new user and return it.
-            let profile_user = query
-                .get_result::<Profile>(&mut conn)
-                .map_err(|e| format!("create_profile_user: {}", e.to_string()))?;
-
-            if let Some(timer) = timer {
-                info!("create_profile_user() time: {}", format!("{:.2?}", timer.elapsed()));
-            }
-            Ok(profile_user)
         }
 
         /// Modify an entity (profile, user).
@@ -362,33 +328,6 @@ pub mod tests {
             };
 
             Ok(result)
-        }
-
-        /// Add a new entry (profile, user).
-        fn create_profile_user(&self, create_profile: profile_models::CreateProfile) -> Result<Profile, String> {
-            let nickname = create_profile.nickname.to_lowercase();
-            let email = create_profile.email.to_lowercase();
-
-            // Check the availability of the profile by nickname and email.
-            let opt_profile = self.find_profile_by_nickname_or_email(Some(&nickname), Some(&email), false)?;
-            if opt_profile.is_some() {
-                return Err("Profile already exists".to_string());
-            }
-
-            let idx: i32 = self.profile_vec.len().try_into().unwrap();
-            let user_id: i32 = USER1_ID + idx;
-
-            let profile_user = Profile::new(
-                user_id,
-                &nickname,
-                &email,
-                create_profile.role.unwrap_or(UserRole::User),
-                create_profile.avatar.as_deref(),
-                create_profile.descript.as_deref(),
-                create_profile.theme.as_deref(),
-                create_profile.locale.as_deref(),
-            );
-            Ok(profile_user)
         }
 
         /// Modify an entity (profile, user).
