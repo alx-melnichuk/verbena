@@ -9,7 +9,6 @@
     <style type="text/css">
       html {
         font-family: Roboto, 'Helvetica Neue', sans-serif;
-        font-size: 14px;
         height: 100%;
         line-height: 1.5;
       }
@@ -77,25 +76,40 @@
       footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
       main { flex: 1 1 auto; height: fit-content; }
 
-      .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
+      .hd-panel { padding: 0 1em; }
+      .hd-logo-mini {
+        background-image: url("assets/images/logo-bin.svg");
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        height: 3.5em;
+        width: 3.5em;
+      }
+
+      .s-logo-text { font-size: 1.125rem; font-weight: bold; }
 
       .s-content {
         background-color: honeydew;
+        border-color: rgb(228, 243, 228);
+        border-style: solid;
         border-radius: var(--pd);
+        border-width: 2px;
+        box-shadow: rgba(0, 0, 0, 0.35) 0px 4px 11px;
         box-sizing: border-box;
-        margin-bottom: 7em;
+        display: flex;
+        flex-direction: column;
+        margin: auto;
         min-height: 10vh;
-        padding: var(--pd);
+        padding: calc(var(--pd) / 2) var(--pd);
         width: var(--wd);
       }
       .s-title {
-        font-size: calc(100% + 4px);
+        font-size: calc(100% + 6px);
         font-weight: bold;
+        text-align: center;
       }
-      .s-text { font-size: calc(100% - 2px); }
 
-      .s-err { color: rgb(224,32,32); }
-      .s-field-wrap { --wd-icon: 1.68em; margin-bottom: 0.25em; }
+      .s-field-wrap { --wd-icon: 1.68em; margin-bottom: 0.05em; }
       .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
       .s-field:disabled { color: rgba(0,0,0,0.38); caret-color: transparent; }
 
@@ -106,9 +120,9 @@
 
       .s-field {
         border-color: var(--br-cl-err, var(--br-cl-foc, var(--br-cl-hov, var(--br-cl,unset))));
-        border-radius: 0.25em;
+        border-radius: 0.5em;
         border-style: solid;
-        height: 3em;
+        height: 3.5em;
         outline: none;
         padding-left: calc(1em + var(--delta, 0px));
         padding-right: calc(1em + var(--delta, 0px));
@@ -149,9 +163,11 @@
       }
 
       .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
-      .s-hint { line-height: 1.2; font-size: calc(100% - 4px); }
+      .s-hint { line-height: 1.2; font-size: calc(0.75rem + 1px); }
       .s-hint:not(.s-err) { color: hsl(210, 8%, 35%); }
-      .s-submit { background-color: #3f51b5; color: #fff; }
+      .s-err { color: rgb(224,32,32); }
+
+      .s-submit { background-color: #3f51b5; border-radius: 4rem / 8rem; color: #fff; height: 2.5em; }
 
       .s-footer {
         height: 100%;
@@ -162,20 +178,20 @@
 
     <div ds-fl fl-dr-col hg-100 class="s-desktop">
       <header ds-fl js-cn-bet bx-sz-brd>
-        <div ds-fl al-it-cen pd-lf-05 pd-rg-05>
+        <div ds-fl al-it-cen class="hd-panel">
           <i bg-sz-cov class="hd-logo-mini"></i>
-          <span mr-lf-05 id="app_name_id1" style="font-size: x-large; font-weight: 600;"></span>
+          <span mr-lf-05 id="app_name_id1" class="s-logo-text"></span>
         </div>
       </header>
 
       <main>
         <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
-          <div us-nn id="content_id" class="s-content">
+          <div us-nn id="content_id" class="s-content ">
             <form ds-fl fl-dr-col id="form_prm_id">
 
-              <div mr-bt-05 tx-al-cen class="s-title" id="title_id">Change password</div>
+              <div class="s-title" id="title_id">Change password</div>
 
-              <span mr-bt-05 mr-tp-05 tx-al-cen class="s-text" id="label_id">Enter a new password for your account</span>
+              <span mr-tp-05 tx-al-cen id="label_id">Enter a new password for your account</span>
 
               <div mr-tp-05 wd-100 ps-rel class="s-field-wrap">
                 <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field"
@@ -197,7 +213,7 @@
 
             </form>
             
-            <button type="button" fn-sz-inh mr-bt-05 wd-100 id="btn_submit_id"
+            <button type="button" fn-sz-inh mr-tp-05 mr-bt-05 wd-100 id="btn_submit_id"
               class="s-btn s-submit" onclick="doSubmit()" disabled>
               <span fn-sz-2 fn-wg-bold id="submit_label_id">Change</span>
             </button>
