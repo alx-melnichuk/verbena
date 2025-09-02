@@ -58,21 +58,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-// Check if the nickname and email parameters are specified.
-pub fn is_nickname_email_params_not_specified(opt_nickname: Option<&str>, opt_email: Option<&str>) -> Result<(), ApiError> {
-    let nickname = opt_nickname.unwrap_or("");
-    let email = opt_email.unwrap_or("");
-    #[rustfmt::skip]
-    let opt_nickname = if nickname.len() > 0 { Some(nickname) } else { None };
-    let opt_email = if email.len() > 0 { Some(email) } else { None };
-
-    if opt_nickname.is_none() && opt_email.is_none() {
-        let json = serde_json::json!({ "nickname": "null", "email": "null" });
-        return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
-            .add_param(Cow::Borrowed("invalidParams"), &json));
-    }
-    Ok(())
-}
 /// registration
 ///
 /// Send an email confirming user registration.
@@ -148,54 +133,50 @@ pub async fn registration(
     let nickname = registr_user_dto.nickname.clone();
     let email = registr_user_dto.email.clone();
 
-    let opt_nickname: Option<String> = Some(nickname.clone());
-    let opt_email: Option<String> = Some(email.clone());
     // Check if the nickname and email parameters are specified.
-    is_nickname_email_params_not_specified(opt_nickname.as_deref(), opt_email.as_deref())?;
+    if nickname.len() == 0 && email.len() == 0 {
+        let json = serde_json::json!({ "nickname": "null", "email": "null" });
+        return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
+            .add_param(Cow::Borrowed("invalidParams"), &json));
+    }
 
-    let mut res_search: Option<(bool, bool)> = None;
+    let user_orm2 = user_orm.get_ref().clone();
+    let user_registr_orm2 = user_registr_orm.get_ref().clone();
 
-    if res_search.is_none() {
-        let user_orm2 = user_orm.get_ref().clone();
-        // Find in the "user" table an entry by nickname or email.
-        let opt_user = web::block(move || {
-            let existing_user = user_orm2
-                .find_user_by_nickname_or_email(opt_nickname.as_deref(), opt_email.as_deref(), false)
+    let opt_search = web::block(move || {
+        let mut res_search: Option<(bool, bool)> = None;
+
+        if res_search.is_none() {
+            // Search for "nickname" or "email" in the "users" table.
+            let opt_user = user_orm2
+                .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
                 .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
                 .ok()?;
-            existing_user
-        })
-        .await
-        .map_err(|e| ApiError::create(506, err::MSG_BLOCKING, &e.to_string()))?; // 506
-
-        // If such an entry exists in the "users" table, then exit.
-        if let Some(user) = opt_user {
-            res_search = Some((nickname == user.nickname, email == user.email));
+            // If such an entry exists in the "users" table, then exit.
+            if let Some(user) = opt_user {
+                res_search = Some((nickname == user.nickname, email == user.email));
+            }
         }
-    }
-    if res_search.is_none() {
-        let opt_nickname: Option<String> = Some(nickname.clone());
-        let opt_email: Option<String> = Some(email.clone());
-        let user_registr_orm2 = user_registr_orm.get_ref().clone();
-        // Find in the "user_registr" table an entry with an active date, by nickname or email.
-        let opt_user_registr = web::block(move || {
-            let existing_user_registr = user_registr_orm2
-                .find_user_registr_by_nickname_or_email(opt_nickname.as_deref(), opt_email.as_deref())
+        if res_search.is_none() {
+            let opt_user_registr = user_registr_orm2
+                .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
                 .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
                 .ok()?;
-            existing_user_registr
-        })
-        .await
-        .map_err(|e| ApiError::create(506, err::MSG_BLOCKING, &e.to_string()))?; // 506
-
-        // If such a record exists in the "registration" table, then exit.
-        if let Some(user_registr) = opt_user_registr {
-            res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
+            // If such an entry exists in the "user_registrs" table, then exit.
+            if let Some(user_registr) = opt_user_registr {
+                res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
+            }
         }
-    }
+        res_search
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
 
     // Since the specified "nickname" or "email" is not unique, return an error.
-    if let Some((is_nickname, _)) = res_search {
+    if let Some((is_nickname, _)) = opt_search {
         #[rustfmt::skip]
         let message = if is_nickname { err::MSG_NICKNAME_ALREADY_USE } else { err::MSG_EMAIL_ALREADY_USE };
         error!("{}-{}", code_to_str(StatusCode::CONFLICT), &message);
