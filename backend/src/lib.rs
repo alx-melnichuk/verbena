@@ -10,7 +10,10 @@ use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
-use vrb_authent::{self, config_jwt, user_orm, user_recovery_controller, user_recovery_orm, user_registr_controller, user_registr_orm};
+use vrb_authent::{
+    self, config_jwt, user_authent_controller, user_orm, user_recovery_controller, user_recovery_orm, user_registr_controller,
+    user_registr_orm,
+};
 use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
 use vrb_dbase::dbase;
 use vrb_profiles::{config_prfl, profile_auth_controller, profile_controller, profile_orm};
@@ -156,6 +159,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             // Add configuration of internal services.
             .configure(user_recovery_controller::configure())
             .configure(user_registr_controller::configure())
+            .configure(user_authent_controller::configure())
             .configure(profile_auth_controller::configure())
             .configure(stream_controller::configure())
             .configure(profile_controller::configure())

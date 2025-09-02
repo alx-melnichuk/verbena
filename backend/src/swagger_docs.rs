@@ -2,7 +2,10 @@ use utoipa::{
     openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
-use vrb_authent::{user_recovery_models, user_registr_models, user_registr_controller, user_recovery_controller};
+use vrb_authent::{
+    user_authent_controller, user_authent_models, user_recovery_controller, user_recovery_models, user_registr_controller,
+    user_registr_models,
+};
 use vrb_chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use vrb_common::api_error;
 use vrb_dbase::{enm_stream_state, enm_user_role};
@@ -20,7 +23,6 @@ use vrb_streams::{stream_controller, stream_models};
         chat_message_controller::post_blocked_user,
         chat_message_controller::delete_blocked_user,
         chat_ws_controller::get_ws_chat,
-        profile_controller::uniqueness_check,
         profile_controller::get_profile_by_id,
         profile_controller::get_profile_current,
         profile_controller::get_profile_config,
@@ -31,6 +33,7 @@ use vrb_streams::{stream_controller, stream_models};
         profile_auth_controller::login,
         profile_auth_controller::logout,
         profile_auth_controller::update_token,
+        user_authent_controller::users_uniqueness,
         user_registr_controller::registration,
         user_registr_controller::confirm_registration,
         user_registr_controller::registration_clear_for_expired,
@@ -70,10 +73,11 @@ use vrb_streams::{stream_controller, stream_models};
             user_registr_models::RegistrUserResponseDto, // ::registration
             user_registr_models::ConfirmRegistrUserResponseDto, // ::confirm_registration
             user_registr_models::RegistrationClearForExpiredResponseDto, // ::registration_clear_for_expired
+            // users_uniqueness
+            user_authent_models::UserUniquenessDto, // ::users_uniqueness
+            user_authent_models::UserUniquenessResponseDto, // ::users_uniqueness
 
             // profile_controller
-            profile_models::UniquenessProfileDto, // ::uniqueness_check
-            profile_models::UniquenessProfileResponseDto, // ::uniqueness_check
             profile_models::ProfileConfigDto, // ::get_profile_config
             // profile_controller
             profile_models::ProfileDto, // ::put_profile

@@ -1,0 +1,154 @@
+use std::borrow::Cow;
+
+use actix_web::{get, http::StatusCode, web, HttpResponse};
+use log::error;
+use serde_json::json;
+use utoipa;
+use vrb_common::{
+    api_error::{code_to_str, ApiError},
+    err,
+};
+
+use crate::{
+    user_authent_models::{UserUniquenessDto, UserUniquenessResponseDto},
+    user_orm::UserOrm,
+    user_registr_orm::UserRegistrOrm,
+};
+#[cfg(not(all(test, feature = "mockdata")))]
+use crate::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegistrOrmApp};
+#[cfg(all(test, feature = "mockdata"))]
+use crate::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
+
+pub const TOKEN_NAME: &str = "token";
+
+pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
+        config
+            // GET /api/users_uniqueness
+            .service(users_uniqueness);
+    }
+}
+
+// ** Section: users_uniqueness **
+
+/// users_uniqueness
+///
+/// Checking the uniqueness of the user's "nickname" or "email".
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/users_uniqueness?nickname=demo1
+/// ```
+/// Or you could call with the next curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/users_uniqueness?email=demo1@gmail.us
+/// ```
+///
+/// Returns the result of the user data uniqueness check (`UserUniquenessResponseDto`) with status 200.
+/// If the value is already in use, then `{"uniqueness":false}`.
+/// If the value is not yet used, then `{"uniqueness":true}`.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The result of checking whether nickname (email) is already in use.", 
+            body = UserUniquenessResponseDto,
+            examples(
+            ("already_use" = (summary = "already in use",  description = "If the nickname (email) is already in use.",
+                value = json!(UserUniquenessResponseDto::new(false)))),
+            ("not_use" = (summary = "not yet in use", description = "If the nickname (email) is not yet used.",
+                value = json!(UserUniquenessResponseDto::new(true))))
+        )),
+        (status = 406, description = "None of the parameters are specified.", body = ApiError,
+            example = json!(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED)
+                .add_param(Cow::Borrowed("invalidParams"), &json!({ "nickname": "null", "email": "null" })))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+)]
+#[get("/api/users_uniqueness")]
+pub async fn users_uniqueness(
+    user_orm: web::Data<UserOrmApp>,
+    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    query_params: web::Query<UserUniquenessDto>,
+) -> actix_web::Result<HttpResponse, ApiError> {
+    // Get search parameters.
+    let uniqueness_user_dto: UserUniquenessDto = query_params.clone().into_inner();
+
+    let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_owned());
+    let email = uniqueness_user_dto.email.unwrap_or("".to_owned());
+    // Check if the nickname and email parameters are specified.
+    if nickname.len() == 0 && email.len() == 0 {
+        let json = serde_json::json!({ "nickname": "null", "email": "null" });
+        return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
+            .add_param(Cow::Borrowed("invalidParams"), &json));
+    }
+
+    let user_orm2 = user_orm.get_ref().clone();
+    let user_registr_orm2 = user_registr_orm.get_ref().clone();
+
+    let opt_search = web::block(move || {
+        let mut res_search: Option<(bool, bool)> = None;
+
+        if res_search.is_none() {
+            // Search for "nickname" or "email" in the "users" table.
+            let opt_user = user_orm2
+                .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
+                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                .ok()?;
+            // If such an entry exists in the "users" table, then exit.
+            if let Some(user) = opt_user {
+                res_search = Some((nickname == user.nickname, email == user.email));
+            }
+        }
+        if res_search.is_none() {
+            let opt_user_registr = user_registr_orm2
+                .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
+                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                .ok()?;
+            // If such an entry exists in the "user_registrs" table, then exit.
+            if let Some(user_registr) = opt_user_registr {
+                res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
+            }
+        }
+        res_search
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
+
+    let uniqueness = opt_search.is_none();
+
+    let response_dto = UserUniquenessResponseDto::new(uniqueness);
+
+    Ok(HttpResponse::Ok().json(response_dto)) // 200
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub mod tests {
+
+    use actix_web::{http, web};
+    use vrb_common::api_error::ApiError;
+    use vrb_tools::{
+        config_app,
+        send_email::{config_smtp, mailer::tests::MailerApp},
+        token_data::BEARER,
+    };
+
+    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
+
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
+        }
+    }
+}
