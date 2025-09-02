@@ -19,11 +19,14 @@ pub trait UserOrm {
         &self, nickname: Option<&str>, email: Option<&str>, is_password: bool,
     ) -> Result<Option<User>, String>;
 
-    /// Add a new entry (user, profile).
+    /// Add a new entry (user).
     fn create_user(&self, create_user: CreateUser) -> Result<User, String>;
 
     /// Modify an entity (user).
-    fn modify_user(&self, user_id: i32, modify_user: ModifyUser) -> Result<Option<User>, String>;
+    fn modify_user(&self, id: i32, modify_user: ModifyUser) -> Result<Option<User>, String>;
+
+    /// Delete an entity (user).
+    fn delete_user(&self, id: i32) -> Result<Option<User>, String>;
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -164,22 +167,22 @@ pub mod impls {
         fn create_user(&self, create_user: CreateUser) -> Result<User, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
-            let nickname = create_user.nickname.to_lowercase(); // #?
-            let email = create_user.email.to_lowercase();
+            let create_user2 = CreateUser::new(
+                &create_user.nickname.to_lowercase(),
+                &create_user.email.to_lowercase(),
+                &create_user.password,
+                create_user.role,
+            );
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from create_profile_user($1,$2,$3,$4,NULL,NULL,NULL,NULL);")
-                .bind::<sql_types::Text, _>(nickname) // $1
-                .bind::<sql_types::Text, _>(email) // $2
-                .bind::<sql_types::Text, _>(create_user.password) // $3
-                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(create_user.role); // $4
-
-            // Run a query with Diesel to create a new user and return it.
-            let user = query
-                .get_result::<User>(&mut conn)
-                .map_err(|e| format!("create_profile_user: {}", e.to_string()))?;
+            // Run query using Diesel to add a new user entry.
+            let user: User = diesel::insert_into(schema::users::table)
+                .values(create_user2)
+                .returning(User::as_returning())
+                .get_result(&mut conn)
+                .map_err(|e| format!("create_user: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("create_user() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -188,32 +191,49 @@ pub mod impls {
         }
 
         /// Modify an entity (user).
-        fn modify_user(&self, user_id: i32, modify_user: ModifyUser) -> Result<Option<User>, String> {
+        fn modify_user(&self, id: i32, modify_user: ModifyUser) -> Result<Option<User>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
-            let nickname = modify_user.nickname.map(|v| v.to_lowercase());
-            let email = modify_user.email.map(|v| v.to_lowercase());
+            let modify_user2 = ModifyUser::new(
+                modify_user.nickname.map(|v| v.to_lowercase()),
+                modify_user.email.map(|v| v.to_lowercase()),
+                modify_user.password,
+                modify_user.role,
+            );
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query("select * from modify_profile_user($1,$2,$3,$4,$5,NULL,NULL,NULL,NULL);")
-                .bind::<sql_types::Integer, _>(user_id) // $1
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(nickname) // $2
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(email) // $3
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_user.password) // $4
-                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(modify_user.role); // $5
-
-            // Run a query with Diesel to create a new user and return it.
-            let user = query
-                .get_result::<User>(&mut conn)
+            // Run query using Diesel to full or partially modify the user entry.
+            let opt_user: Option<User> = diesel::update(schema::users::dsl::users.find(id))
+                .set(&modify_user2)
+                .returning(User::as_returning())
+                .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("modify_profile_user: {}", e.to_string()))?;
+                .map_err(|e| format!("modify_user: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("modify_user() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(user)
+            Ok(opt_user)
+        }
+
+        /// Delete an entity (user).
+        fn delete_user(&self, id: i32) -> Result<Option<User>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            // Run query using Diesel to delete a entry (user).
+            let result = diesel::delete(schema::users::dsl::users.find(id))
+                .returning(User::as_returning())
+                .get_result(&mut conn)
+                .optional()
+                .map_err(|e| format!("delete_user: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("delete_user() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(result)
         }
     }
 }
@@ -403,23 +423,39 @@ pub mod tests {
         }
 
         /// Modify an entity (user).
-        fn modify_user(&self, user_id: i32, modify_user: ModifyUser) -> Result<Option<User>, String> {
-            let opt_user = self.user_vec.iter().find(|user| (*user).id == user_id);
-            let opt_user3: Option<User> = if let Some(user) = opt_user {
-                let profile2 = User {
-                    id: user.id,
-                    nickname: modify_user.nickname.unwrap_or(user.nickname.clone()),
-                    email: modify_user.email.unwrap_or(user.email.clone()),
-                    password: modify_user.password.unwrap_or(user.password.clone()),
-                    role: modify_user.role.unwrap_or(user.role.clone()),
-                    created_at: user.created_at,
-                    updated_at: Utc::now(),
-                };
-                Some(profile2)
+        fn modify_user(&self, id: i32, modify_user: ModifyUser) -> Result<Option<User>, String> {
+            let opt_user1 = self.user_vec.iter().find(|user| (*user).id == id);
+            let opt_user: Option<User> = if let Some(user1) = opt_user1 {
+                let mut user = user1.clone();
+                if let Some(nickname) = modify_user.nickname {
+                    if nickname.len() > 0 {
+                        user.nickname = nickname;
+                    }
+                }
+                if let Some(email) = modify_user.email {
+                    if email.len() > 0 {
+                        user.email = email;
+                    }
+                }
+                if let Some(password) = modify_user.password {
+                    user.password = password;
+                }
+                if let Some(role) = modify_user.role {
+                    user.role = role;
+                }
+                user.updated_at = Utc::now();
+                Some(user)
             } else {
                 None
             };
-            Ok(opt_user3)
+            Ok(opt_user)
+        }
+
+        /// Delete an entity (user).
+        fn delete_user(&self, id: i32) -> Result<Option<User>, String> {
+            let user_opt = self.user_vec.iter().find(|user| user.id == id);
+
+            Ok(user_opt.map(|u| u.clone()))
         }
     }
 

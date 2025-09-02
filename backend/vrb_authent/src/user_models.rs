@@ -15,9 +15,9 @@ pub struct User {
     pub nickname: String, // max_len: 255
     pub email: String,    // max_len: 255
     pub password: String, // max_len: 255
+    pub role: UserRole,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    pub role: UserRole,
 }
 
 impl User {
@@ -28,21 +28,22 @@ impl User {
             nickname: nickname.into(), // max_len: 255
             email: email.into(),       // max_len: 255
             password: password.into(), // max_len: 255
+            role,
             created_at: now.clone(),
             updated_at: now.clone(),
-            role,
         }
     }
 }
 
 // ** Used: UserOrm::create_user() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset, Insertable)]
+#[diesel(table_name = schema::users)]
 pub struct CreateUser {
-    pub nickname: String,         // min_len=3 max_len=64
-    pub email: String,            // min_len=5 max_len=254
-    pub password: String,         // min_len=6 max_len=64
-    pub role: Option<UserRole>,   // default "user"
+    pub nickname: String,       // min_len=3 max_len=64
+    pub email: String,          // min_len=5 max_len=254
+    pub password: String,       // min_len=6 max_len=64
+    pub role: Option<UserRole>, // default "user"
 }
 
 impl CreateUser {
@@ -58,12 +59,24 @@ impl CreateUser {
 
 // ** Used: UserOrm::modify_user() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset)]
+#[diesel(table_name = schema::users)]
 pub struct ModifyUser {
-    pub nickname: Option<String>,       // min_len=3,max_len=64
-    pub email: Option<String>,          // min_len=5,max_len=254,"email:email_type"
-    pub password: Option<String>,       // min_len=6,max_len=64
-    pub role: Option<UserRole>,         // default "user"
+    pub nickname: Option<String>, // min_len=3,max_len=64
+    pub email: Option<String>,    // min_len=5,max_len=254,"email:email_type"
+    pub password: Option<String>, // min_len=6,max_len=64
+    pub role: Option<UserRole>,   // default "user"
+}
+
+impl ModifyUser {
+    pub fn new(nickname: Option<String>, email: Option<String>, password: Option<String>, role: Option<UserRole>) -> Self {
+        ModifyUser {
+            nickname,
+            email,
+            password,
+            role,
+        }
+    }
 }
 
 // * * * *   * * * *
