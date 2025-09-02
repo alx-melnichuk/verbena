@@ -6,7 +6,6 @@ use crate::profile_orm::impls::ProfileOrmApp;
 use crate::profile_orm::tests::ProfileOrmApp;
 use crate::{
     config_prfl::{self, ConfigPrfl},
-    profile_check,
     profile_models::{
         ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileConfigDto, ProfileDto, UniquenessProfileDto,
         UniquenessProfileResponseDto, PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
@@ -413,13 +412,8 @@ pub async fn uniqueness_check(
 
     let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_owned());
     let email = uniqueness_user_dto.email.unwrap_or("".to_owned());
-
-    #[rustfmt::skip]
-    let opt_nickname = if nickname.len() > 0 { Some(nickname.clone()) } else { None };
-    let opt_email = if email.len() > 0 { Some(email.clone()) } else { None };
-
     // Check if the nickname and email parameters are specified.
-    if opt_nickname.is_none() && opt_email.is_none() {
+    if nickname.len() == 0 && email.len() == 0 {
         let json = serde_json::json!({ "nickname": "null", "email": "null" });
         return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json));
@@ -432,28 +426,21 @@ pub async fn uniqueness_check(
         let mut res_search: Option<(bool, bool)> = None;
 
         if res_search.is_none() {
-            let opt_nickname2 = opt_nickname.clone();
-            let opt_email2 = opt_email.clone();
             // Search for "nickname" or "email" in the "users" table.
             let opt_user = user_orm2
-                .find_user_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref(), false)
+                .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
                 .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
                 .ok()?;
-
             // If such an entry exists in the "users" table, then exit.
             if let Some(user) = opt_user {
                 res_search = Some((nickname == user.nickname, email == user.email));
             }
         }
-
         if res_search.is_none() {
-            let opt_nickname2 = opt_nickname.clone();
-            let opt_email2 = opt_email.clone();
             let opt_user_registr = user_registr_orm2
-                .find_user_registr_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
+                .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
                 .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
                 .ok()?;
-
             // If such an entry exists in the "user_registrs" table, then exit.
             if let Some(user_registr) = opt_user_registr {
                 res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
@@ -468,7 +455,7 @@ pub async fn uniqueness_check(
     })?;
 
     let uniqueness = opt_search.is_none();
-    
+
     let response_dto = UniquenessProfileResponseDto::new(uniqueness);
 
     Ok(HttpResponse::Ok().json(response_dto)) // 200
@@ -594,6 +581,7 @@ pub async fn put_profile(
     authenticated: Authenticated,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
+    user_orm: web::Data<UserOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     MultipartForm(modify_profile_form): MultipartForm<ModifyProfileForm>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -626,23 +614,47 @@ pub async fn put_profile(
         }
     }
 
-    let opt_nickname = modify_profile_dto.nickname.clone();
-    let opt_email = modify_profile_dto.email.clone();
-    if opt_nickname.is_some() || opt_email.is_some() {
-        let profile_orm2 = profile_orm.get_ref().clone();
-        let registr_orm2 = user_registr_orm.get_ref().clone();
+    let nickname = modify_profile_dto.nickname.clone().unwrap_or("".to_owned());
+    let email = modify_profile_dto.email.clone().unwrap_or("".to_owned());
 
-        let res_search = profile_check::uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm2, registr_orm2)
-            .await
-            .map_err(|err| {
-                #[rustfmt::skip]
-                let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
-                error!("{}-{}; {}", &err.code, &err.message, &prm1);
-                err
-            })?;
+    if nickname.len() > 0 || email.len() > 0 {
+        let user_orm2 = user_orm.get_ref().clone();
+        let user_registr_orm2 = user_registr_orm.get_ref().clone();
+
+        let opt_search = web::block(move || {
+            let mut res_search: Option<(bool, bool)> = None;
+
+            if res_search.is_none() {
+                // Search for "nickname" or "email" in the "users" table.
+                let opt_user = user_orm2
+                    .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
+                    .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                    .ok()?;
+                // If such an entry exists in the "users" table, then exit.
+                if let Some(user) = opt_user {
+                    res_search = Some((nickname == user.nickname, email == user.email));
+                }
+            }
+            if res_search.is_none() {
+                let opt_user_registr = user_registr_orm2
+                    .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
+                    .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                    .ok()?;
+                // If such an entry exists in the "user_registrs" table, then exit.
+                if let Some(user_registr) = opt_user_registr {
+                    res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
+                }
+            }
+            res_search
+        })
+        .await
+        .map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+        })?;
 
         // Since the specified "nickname" or "email" is not unique, return an error.
-        if let Some((is_nickname, _)) = res_search {
+        if let Some((is_nickname, _)) = opt_search {
             #[rustfmt::skip]
             let message = if is_nickname { err::MSG_NICKNAME_ALREADY_USE } else { err::MSG_EMAIL_ALREADY_USE };
             error!("{}-{}", code_to_str(StatusCode::CONFLICT), &message);
