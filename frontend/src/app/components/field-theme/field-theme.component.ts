@@ -116,7 +116,7 @@ export class FieldThemeComponent implements OnChanges, ControlValueAccessor, Val
         const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
         for (let index = 0; index < errorsProps.length && !result; index++) {
             const error: string = errorsProps[index];
-            result = !result && 'required' === error ? 'Validation.theme:required' : result;
+            result = !result && 'required' === error ? 'ExpectationFailed.theme:required' : result;
         }
         return result;
     }

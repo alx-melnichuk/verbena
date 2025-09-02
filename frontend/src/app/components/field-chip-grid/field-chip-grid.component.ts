@@ -116,11 +116,11 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
         const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
         for (let index = 0; index < errorsProps.length && !result; index++) {
             const error: string = errorsProps[index];
-            result = !result && 'required' === error ? 'Validation.tag:required' : result;
-            result = !result && 'minAmount' === error ? 'Validation.tag:min_amount' : result;
-            result = !result && 'maxAmount' === error ? 'Validation.tag:max_amount' : result;
-            result = !result && 'minlength' === error ? 'Validation.tag:min_length' : result;
-            result = !result && 'maxlength' === error ? 'Validation.tag:max_length' : result;
+            result = !result && 'required' === error ? 'ExpectationFailed.tag:required' : result;
+            result = !result && 'minAmount' === error ? 'ExpectationFailed.tag:min_amount' : result;
+            result = !result && 'maxAmount' === error ? 'ExpectationFailed.tag:max_amount' : result;
+            result = !result && 'minlength' === error ? 'ExpectationFailed.tag:min_length' : result;
+            result = !result && 'maxlength' === error ? 'ExpectationFailed.tag:max_length' : result;
         }
         return result;
     }

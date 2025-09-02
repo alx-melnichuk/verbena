@@ -35,11 +35,11 @@ export class ValidatorUtils {
         const errorList: string[] = Object.keys(errors || {});
         for (let index = 0; index < errorList.length && !result; index++) {
             const error: string = errorList[index];
-            result = !result && 'required' === error ? `Validation.${name}:required` : result;
-            result = !result && 'minlength' === error ? `Validation.${name}:min_length` : result;
-            result = !result && 'maxlength' === error ? `Validation.${name}:max_length` : result;
-            result = !result && 'pattern' === error ? `Validation.${name}:regex` : result;
-            result = !result && 'email' === error ? `Validation.${name}:email_type` : result;
+            result = !result && 'required' === error ? `ExpectationFailed.${name}:required` : result;
+            result = !result && 'minlength' === error ? `ExpectationFailed.${name}:min_length` : result;
+            result = !result && 'maxlength' === error ? `ExpectationFailed.${name}:max_length` : result;
+            result = !result && 'pattern' === error ? `ExpectationFailed.${name}:regex` : result;
+            result = !result && 'email' === error ? `ExpectationFailed.${name}:email_type` : result;
         }
         return result;
     }

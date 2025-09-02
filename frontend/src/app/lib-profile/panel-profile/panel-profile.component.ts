@@ -250,7 +250,7 @@ export class PanelProfileComponent implements OnInit, OnChanges {
 
     public checkPassword(formGroup: FormGroup): void {
         if (formGroup.errors != null && formGroup.errors['new_password_equal_to_old_value']) {
-            this.errMsgsPassword.push('Validation.new_password:equal_to_old_value');
+            this.errMsgsPassword.push('ExpectationFailed.new_password:equal_to_old_value');
         }
     }
 
