@@ -1,27 +1,21 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use std::env;
-
     use actix_web::{
         body, dev,
         http::header::{HeaderValue, CONTENT_TYPE},
         http::StatusCode,
         test, App,
     };
-    use chrono::{Duration, SecondsFormat, Utc};
-    use serde_json::json;
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts, err, user_validations,
+        err,
     };
-    use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
     use crate::{
         config_jwt,
-        user_authent_controller::{tests as AthCtTest, users_uniqueness},
-        user_authent_models::{UserUniquenessDto, UserUniquenessResponseDto},
-        user_models::UserMock,
-        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
+        user_authent_controller::users_uniqueness,
+        user_authent_models::UserUniquenessResponseDto,
+        user_orm::tests::{UserOrmTest as User_Test, USER},
         user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
     };
 
@@ -126,8 +120,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":false}");
+        let response2_dto: UserUniquenessResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response1_dto = UserUniquenessResponseDto::new(false);
+        assert_eq!(response1_dto, response2_dto);
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_email_profile() {
@@ -149,8 +144,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":false}");
+        let response2_dto: UserUniquenessResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response1_dto = UserUniquenessResponseDto::new(false);
+        assert_eq!(response1_dto, response2_dto);
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_nickname_registr() {
@@ -173,8 +169,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":false}");
+        let response2_dto: UserUniquenessResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response1_dto = UserUniquenessResponseDto::new(false);
+        assert_eq!(response1_dto, response2_dto);
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_email_registr() {
@@ -197,8 +194,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":false}");
+        let response2_dto: UserUniquenessResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response1_dto = UserUniquenessResponseDto::new(false);
+        assert_eq!(response1_dto, response2_dto);
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_new_nickname() {
@@ -220,8 +218,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":true}");
+        let response2_dto: UserUniquenessResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response1_dto = UserUniquenessResponseDto::new(true);
+        assert_eq!(response1_dto, response2_dto);
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_new_email() {
@@ -243,7 +242,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":true}");
+        let response2_dto: UserUniquenessResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response1_dto = UserUniquenessResponseDto::new(true);
+        assert_eq!(response1_dto, response2_dto);
     }
 }
