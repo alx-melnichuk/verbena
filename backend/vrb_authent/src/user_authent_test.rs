@@ -8,15 +8,17 @@ mod tests {
         http::StatusCode,
         test, App,
     };
+    use serde_json::json;
     use vrb_common::{
         api_error::{code_to_str, ApiError},
         err,
     };
+    use vrb_tools::{token_coding, token_data::TOKEN_NAME};
 
     use crate::{
         config_jwt,
-        user_authent_controller::{users_uniqueness, logout, tests as AthCtTest,},
-        user_authent_models::UserUniquenessResponseDto,
+        user_authent_controller::{users_uniqueness, logout, tests as AthCtTest, update_token},
+        user_authent_models::{UserUniquenessResponseDto, TokenUserDto, TokenUserResponseDto},
         user_models::Session,
         user_orm::tests::{UserOrmTest as User_Test, USER, USER1_ID},
         user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
@@ -106,7 +108,7 @@ mod tests {
         assert_eq!(*app_err.params.get("invalidParams").unwrap(), json);
     }
     #[actix_web::test]
-    async fn test_users_uniqueness_by_nickname_profile() {
+    async fn test_users_uniqueness_by_nickname_user() {
         let data_u = User_Test::users(&[USER]);
         let nickname = data_u.0.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
@@ -130,7 +132,7 @@ mod tests {
         assert_eq!(response1_dto, response2_dto);
     }
     #[actix_web::test]
-    async fn test_users_uniqueness_by_email_profile() {
+    async fn test_users_uniqueness_by_email_user() {
         let data_u = User_Test::users(&[USER]);
         let email = data_u.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
@@ -403,6 +405,207 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         assert_eq!(body_str, "");
+    }
+    
+    // ** update_token **
+
+    #[actix_web::test]
+    async fn test_update_token_no_data() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(AthCtTest::header_auth(&token1))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        let expected_message = "Content type error";
+        assert!(body_str.contains(expected_message));
+    }
+    #[actix_web::test]
+    async fn test_update_token_empty_json_object() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(AthCtTest::header_auth(&token1))
+            .set_json(json!({}))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        let expected_message = "Json deserialize error: missing field";
+        assert!(body_str.contains(expected_message));
+    }
+    #[actix_web::test]
+    async fn test_update_token_invalid_dto_token_empty() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(AthCtTest::header_auth(&token1))
+            .set_json(TokenUserDto { token: "".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(app_err.message, format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidSubject"));
+    }
+    #[actix_web::test]
+    async fn test_update_token_invalid_dto_token_invalid() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(AthCtTest::header_auth(&token1))
+            .set_json(TokenUserDto { token: "invalid_token".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
+    }
+    #[actix_web::test]
+    async fn test_update_token_unacceptable_token_id() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret = config_jwt.jwt_secret.as_bytes();
+        let user_id_bad = data_u.0.get(0).unwrap().id + 1;
+        let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
+        let token_bad = token_coding::encode_token(user_id_bad, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(AthCtTest::header_auth(&token1))
+            .set_json(TokenUserDto { token: token_bad })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id_bad));
+    }
+    #[actix_web::test]
+    async fn test_update_token_unacceptable_token_num() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret = config_jwt.jwt_secret.as_bytes();
+        let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
+        let token_bad = token_coding::encode_token(user1_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(AthCtTest::header_auth(&token1))
+            .set_json(TokenUserDto { token: token_bad })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user1_id));
+    }
+    #[actix_web::test]
+    async fn test_update_token_valid_dto_token() {
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_access = config_jwt.jwt_access;
+        let jwt_secret = config_jwt.jwt_secret.as_bytes();
+        let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
+        let token_refresh = token_coding::encode_token(user1_id, num_token, &jwt_secret, config_jwt.jwt_refresh).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token)
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_orm(data_u))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(AthCtTest::header_auth(&token1))
+            .set_json(TokenUserDto { token: token_refresh })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        let opt_token_cookie = resp.response().cookies().find(|cookie| cookie.name() == TOKEN_NAME);
+        assert!(opt_token_cookie.is_some());
+
+        let token = opt_token_cookie.unwrap();
+        let token_value = token.value().to_string();
+        assert!(token_value.len() > 0);
+        let max_age = token.max_age();
+        assert!(max_age.is_some());
+        let max_age_value = max_age.unwrap();
+        assert_eq!(max_age_value, ActixWebDuration::new(jwt_access, 0));
+        assert_eq!(true, token.http_only().unwrap());
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let token_user_resp: TokenUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let access_token: String = token_user_resp.access_token;
+        assert!(!access_token.is_empty());
+        let refresh_token: String = token_user_resp.refresh_token;
+        assert!(refresh_token.len() > 0);
+        assert_eq!(token_value, access_token);
     }
 
 }

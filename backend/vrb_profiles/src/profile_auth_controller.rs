@@ -35,10 +35,11 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         config
             // POST /api/login
             .service(login)
-            // POST /api/logout
-            .service(logout)
-            // POST /api/token
-            .service(update_token);
+            // // POST /api/logout
+            // .service(logout)
+            // // POST /api/token
+            // .service(update_token)
+            ;
     }
 }
 

@@ -28,4 +28,22 @@ impl UserUniquenessResponseDto {
     }
 }
 
+// ** Used: in "user_authent_controller::update_token(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenUserDto {
+    // refreshToken
+    pub token: String,
+}
+
+// ** Used: in "user_authent_controller::update_token(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenUserResponseDto {
+    pub access_token: String,
+    pub refresh_token: String,
+}
+
 // ** - **

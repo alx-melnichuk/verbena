@@ -8,10 +8,12 @@ use vrb_common::{
     api_error::{code_to_str, ApiError},
     err,
 };
+use vrb_tools::{token_coding, token_data::TOKEN_NAME};
 
 use crate::{
     authentication::{Authenticated, RequireAuth},
-    user_authent_models::{UserUniquenessDto, UserUniquenessResponseDto},
+    config_jwt,
+    user_authent_models::{UserUniquenessDto, UserUniquenessResponseDto, TokenUserDto, TokenUserResponseDto},
     user_orm::UserOrm,
     user_registr_orm::UserRegistrOrm,
 };
@@ -20,7 +22,9 @@ use crate::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegistrOrm
 #[cfg(all(test, feature = "mockdata"))]
 use crate::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
 
-pub const TOKEN_NAME: &str = "token";
+const TOKEN1: &str = "6lqN0k3-SB_OXGzOJYUr2GwYwAEmlJWFMpOwiYrT04_WQMRQs3PAlb7WHFExilHzFrbNSTsdGzmBzFMwFD2rVXgiQtoK4fON634zV9rjMswSd7FW7eHh3PmoVxUVtID1j6TWck_wJy0TdO2rcnLZIfu2jbMzk6myQCl_5u05Ii9YvtXOI8-a0fhMRveIcM8udUGatXT5HRnGAzjDQuhDZ-94DonA0rvn2DK3D9h-baU=";
+const TOKEN2: &str = "6lqN0k3-SB_OXGzOJYUr2GwYwAEmlJWFMpOwiYrT04_WQMRQs3PAlb7WHFExilHzFrbNSTsdGzmBzFMwFD2rVXgiQtoK4fON634zV9rjMsycrLJ_eCAP5d_zV7JldChywcL8qi90BT67-GoisEs_KWGhtNs9oiue3cB346cD91M3KfKmEyQ9NxroZrj9YURVr5rKJbuB5mnNJK7yc_zzHXvkQq5qmaCtp3jv93C8aaM=";
+const TOKEN3: &str = "6lqN0k3-SB_OXGzOJYUr2GwYwAEmlJWFMpOwiYrT04_WQMRQs3PAlb7WHFExilHzgDSlSV4w1nQNpFT5PnamCv-tKrU2MGSdsQIRwPvTCIgvQqsScZb5j_zt2FQSG_C7kWfYtj1NcvEfC9Ze7Psl27Mua_cE909J-v8FutvVk3l5fLT3WxQL5yh0dZ2KpZ7YXDM17UYROGhzfHO1cC7rB6qF4zArCyCSmywTZ4ssUlI=";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -28,7 +32,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // GET /api/users_uniqueness
             .service(users_uniqueness)
             // POST /api/logout
-            .service(logout);
+            .service(logout)
+            // POST /api/token
+            .service(update_token);
     }
 }
 
@@ -203,6 +209,156 @@ pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp
         info!("logout() time: {}", format!("{:.2?}", timer.elapsed()));
     }
     Ok(HttpResponse::Ok().cookie(cookie).body(()))
+}
+
+/// update_token
+///
+/// Update the value of the authorization token.
+///
+/// When a token has expired, it can be refreshed using "refresh_token".
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/token \
+/// -d '{"token": "refresh_token"}' \
+/// -H 'Content-Type: application/json'
+/// ```
+///
+/// Return the new session token (`TokenUserResponseDto`) with a status of 200.
+///
+#[utoipa::path(
+    request_body(content = TokenUserDto,
+        description = "The value of the \"refreshToken\" field that was received during login. `TokenUserDto`",
+        example = json!(TokenUserDto { token: TOKEN1.to_owned() })
+    ),
+    responses(
+        (status = 200, description = "The new session token.", body = TokenUserResponseDto,
+            example = json!(TokenUserResponseDto { access_token: TOKEN2.to_owned(), refresh_token: TOKEN3.to_owned() })
+        ),
+        (status = 401, description = "Authorization required.", body = ApiError, examples(
+            ("Token" = (summary = "Token is invalid or expired",
+                description = "The token is invalid or expired.",
+                value = json!(ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken")))),
+            ("Token_number" = (summary = "Token number is incorrect", 
+                description = "The specified token number is incorrect.",
+                value = json!(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, "user_id: 1"))))
+        )),
+        (status = 406, description = "Error session not found.", body = ApiError,
+            example = json!(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, "user_id: 1"))),
+        (status = 422, description = "Token encoding error.", body = ApiError,
+            example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::new(506, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::new(507, "Error while querying the database."))),
+    ),
+)]
+#[post("/api/token")]
+pub async fn update_token(
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
+    user_orm: web::Data<UserOrmApp>,
+    json_token_user_dto: web::Json<TokenUserDto>,
+) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+    // Get token from json.
+    let token_user_dto: TokenUserDto = json_token_user_dto.into_inner();
+    let token = token_user_dto.token;
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Get user ID.
+    let (user_id, num_token) = token_coding::decode_token(&token, jwt_secret).map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+        ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
+    })?;
+
+    let user_orm2 = user_orm.get_ref().clone();
+
+    let opt_session = web::block(move || {
+        // Find a session for a given user.
+        let existing_session = user_orm2.get_session_by_id(user_id).map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        });
+        existing_session
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })??;
+
+    let session = opt_session.ok_or_else(|| {
+        // There is no session for this user.
+        let msg = format!("user_id: {}", user_id);
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg);
+        ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg) // 406
+    })?;
+
+    // Each session contains an additional numeric value.
+    let session_num_token = session.num_token.unwrap_or(0);
+    // Compare an additional numeric value from the session and from the token.
+    if session_num_token != num_token {
+        // If they do not match, then this is an error.
+        let msg = format!("user_id: {}", user_id);
+        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401
+        return Err(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg));
+    }
+
+    let num_token = token_coding::generate_num_token();
+    let config_jwt = config_jwt.get_ref().clone();
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Pack two parameters (user.id, num_token) into a access_token.
+    let access_token = token_coding::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
+    })?;
+
+    // Pack two parameters (user.id, num_token) into a access_token.
+    let refresh_token = token_coding::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
+    })?;
+
+    let opt_session = web::block(move || {
+        // Find a session for a given user.
+        #[rustfmt::skip]
+        let existing_session = user_orm.modify_session(user_id, Some(num_token))
+        .map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        });
+        existing_session
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })??;
+
+    if opt_session.is_none() {
+        // There is no session for this user.
+        let msg = format!("user_id: {}", user_id);
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg); // 406
+        return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg));
+    }
+
+    let profile_tokens_dto = TokenUserResponseDto {
+        access_token: access_token.to_owned(),
+        refresh_token,
+    };
+
+    let cookie = Cookie::build(TOKEN_NAME, access_token.to_owned())
+        .path("/")
+        .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
+        .http_only(true)
+        .finish();
+
+    if let Some(timer) = timer {
+        info!("update_token() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
+    Ok(HttpResponse::Ok().cookie(cookie).json(profile_tokens_dto)) // 200
 }
 
 #[cfg(all(test, feature = "mockdata"))]
