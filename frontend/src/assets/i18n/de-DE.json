@@ -80,6 +80,7 @@
     "finish_date_less_start_date" : "Das enddatum \"{{ invalidPeriod.streamPeriodFinish }}\" ist später als das startdatum \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Fehler beim deserialisieren des felds \"tag\".",
     "session_not_found": "Für diesen benutzer wurde keine sitzung gefunden.",
+    "profile_not_found": "Für diesen benutzer wurde kein profil gefunden.",
     "was_no_join_command": "Der benutzer ist dem raum noch nicht beigetreten.",
     "params_not_specified": "Parameter nicht angegeben",
     "invalid_stream_state": "Ungültiger Stream-Statusübergang von \"{{ invalidState.oldState }}\" nach \"{{ invalidState.newState }}\"."

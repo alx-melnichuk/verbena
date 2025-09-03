@@ -80,6 +80,7 @@
     "finish_date_less_start_date" : "Кінцева дата \"{{ invalidPeriod.streamPeriodFinish }}\" менша за дату початку \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Помилка десеріалізації поля \"tag\".",
     "session_not_found": "Сеанс для цього користувача не знайдено.",
+    "profile_not_found": "Профіль цього користувача не знайдено.",
     "was_no_join_command": "Користувач ще не приєднався до кімнати.",
     "params_not_specified": "Параметри не вказані",
     "invalid_stream_state": "Недійсний перехід стану потоку з \"{{ invalidState.oldState }}\" до \"{{ invalidState.newState }}\"."
