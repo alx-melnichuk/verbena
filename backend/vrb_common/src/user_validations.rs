@@ -92,3 +92,20 @@ pub fn validate_inequality(value1: &str, value2: &str) -> Result<(), ValidationE
     }
     Ok(())
 }
+
+// ** Section: "descript" **
+
+pub const DESCRIPT_MIN: u8 = 2;
+pub const DESCRIPT_MAX: u16 = 2048; // 2*1024
+
+// ** Section: "theme" **
+
+pub const THEME_MIN: u8 = 2;
+pub const THEME_MAX: u8 = 32;
+
+// ** Section: "locale" **
+
+pub const LOCALE_MIN: u8 = 2;
+pub const LOCALE_MAX: u8 = 32;
+
+// ** - **
