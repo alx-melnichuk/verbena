@@ -18,7 +18,7 @@ mod tests {
 
     use crate::{
         config_jwt,
-        user_models::UserMock,
+        user_mock::UserMock,
         user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
         user_recovery_controller::{
             confirm_recovery, recovery, recovery_clear_for_expired, tests as RcvCtTest, MSG_RECOVERY_NOT_FOUND, MSG_USER_NOT_FOUND,

@@ -4,6 +4,8 @@ pub mod config_jwt;
 pub mod user_authent_controller;
 pub mod user_authent_models;
 pub mod user_authent_test;
+#[cfg(any(test, feature = "mockdata"))]
+pub mod user_mock;
 pub mod user_models;
 pub mod user_orm;
 pub mod user_recovery_controller;
