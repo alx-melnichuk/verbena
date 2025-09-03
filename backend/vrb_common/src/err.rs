@@ -32,8 +32,10 @@ pub const MSG_USER_NOT_FOUND: &str = "user_not_found";
 // 404 Not Found - ChatMessage not found
 pub const MSG_CHAT_MESSAGE_NOT_FOUND: &str = "chat_message_not_found";
 
-// 406 Not Acceptable - There is no session for this user. (authentication, profile_auth_controller)
+// 406 Not Acceptable - There is no session for this user. (authentication, user_authent_controller)
 pub const MSG_SESSION_NOT_FOUND: &str = "session_not_found";
+// 406 Not Acceptable - There is no profile for this user. (user_authent_controller)
+pub const MSG_PROFILE_NOT_FOUND: &str = "profile_not_found";
 // 406 Not Acceptable - None of the parameters are specified.
 pub const MSG_PARAMS_NOT_SPECIFIED: &str = "params_not_specified";
 // 406 Not Acceptable - The parameter value is unacceptable.

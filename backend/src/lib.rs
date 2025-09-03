@@ -16,7 +16,7 @@ use vrb_authent::{
 };
 use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
 use vrb_dbase::dbase;
-use vrb_profiles::{config_prfl, profile_auth_controller, profile_controller, profile_orm};
+use vrb_profiles::{config_prfl, profile_controller, profile_orm};
 use vrb_streams::{config_strm, stream_controller, stream_orm};
 #[cfg(not(feature = "mockdata"))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
@@ -105,7 +105,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
 
         // used: user_recovery_controller, user_registr_controller, static_controller
         let config_app = web::Data::new(config_app0);
-        // used: profile_auth_controller, user_recovery_controller, user_registr_controller
+        // used: user_authent_controller, user_recovery_controller, user_registr_controller
         let config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
         // Used "actix-multipart" to upload files. TempFileConfig.from_req()
         let temp_file_config = web::Data::new(temp_file_config0);
@@ -160,7 +160,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .configure(user_recovery_controller::configure())
             .configure(user_registr_controller::configure())
             .configure(user_authent_controller::configure())
-            .configure(profile_auth_controller::configure())
             .configure(stream_controller::configure())
             .configure(profile_controller::configure())
             .configure(static_controller::configure())
