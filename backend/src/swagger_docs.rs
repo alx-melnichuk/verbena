@@ -9,7 +9,7 @@ use vrb_authent::{
 use vrb_chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use vrb_common::api_error;
 use vrb_dbase::{enm_stream_state, enm_user_role};
-use vrb_profiles::{profile_auth_controller, profile_controller, profile_models};
+use vrb_profiles::{profile_controller, profile_models};
 use vrb_streams::{stream_controller, stream_models};
 
 #[derive(OpenApi)]
@@ -32,7 +32,6 @@ use vrb_streams::{stream_controller, stream_models};
         profile_controller::put_profile_new_password,
         profile_controller::delete_profile,
         profile_controller::delete_profile_current,
-        profile_auth_controller::login,
         //
         stream_controller::get_streams,
         stream_controller::get_stream_by_id,
@@ -80,9 +79,6 @@ use vrb_streams::{stream_controller, stream_models};
             profile_models::ProfileDto, // ::put_profile
             profile_models::ModifyProfileDto, // ::put_stream
             profile_models::NewPasswordProfileDto, // ::put_profile_new_password,
-            // profile_auth_controller
-            profile_models::LoginProfileDto, profile_models::LoginProfileResponseDto, // ::login
-            profile_models::ProfileTokensDto, // ::login,
 
             // stream_controller
             enm_stream_state::StreamState,
