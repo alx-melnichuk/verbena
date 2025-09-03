@@ -4,7 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { LocalStorageUtil } from '../utils/local-storage.util';
 
 import {
-    LoginProfileResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileTokensDto, TokenUpdate, UniquenessDto
+    LoginResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, TokenUserResponseDto, TokenUpdate, UniquenessDto,
+    ProfileDtoUtil
 } from './profile-api.interface';
 import { ProfileApiService } from './profile-api.service';
 
@@ -16,7 +17,7 @@ export const REFRESH_TOKEN = 'refreshToken';
 })
 export class ProfileService implements TokenUpdate {
     public profileDto: ProfileDto | null = null;
-    public profileTokensDto: ProfileTokensDto | null = null;
+    public profileTokensDto: TokenUserResponseDto | null = null;
 
     constructor(private profileApiService: ProfileApiService) {
         this.profileTokensDto = this.getProfileTokensDtoFromLocalStorage();
@@ -28,10 +29,10 @@ export class ProfileService implements TokenUpdate {
     public setProfileDto(profileDto: ProfileDto | null = null): void {
         this.profileDto = profileDto;
     }
-    public getProfileTokensDto(): ProfileTokensDto | null {
+    public getProfileTokensDto(): TokenUserResponseDto | null {
         return this.profileTokensDto != null ? { ...this.profileTokensDto } : null;
     }
-    public setProfileTokensDto(profileTokensDto: ProfileTokensDto | null = null): void {
+    public setProfileTokensDto(profileTokensDto: TokenUserResponseDto | null = null): void {
         this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(profileTokensDto);
     }
 
@@ -53,18 +54,18 @@ export class ProfileService implements TokenUpdate {
         return this.profileApiService.recovery({ email });
     }
 
-    public login(nickname: string, password: string): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
+    public login(nickname: string, password: string): Promise<LoginResponseDto | HttpErrorResponse | undefined> {
         if (!nickname || !password) {
             return Promise.reject();
         }
 
         this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(null);
         return this.profileApiService.login({ nickname, password })
-            .then((response: LoginProfileResponseDto | HttpErrorResponse | undefined) => {
-                let profileResponseDto: LoginProfileResponseDto = response as LoginProfileResponseDto;
-                this.profileDto = { ...profileResponseDto.profileDto } as ProfileDto;
-                this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(profileResponseDto.profileTokensDto);
-                return profileResponseDto;
+            .then((response: LoginResponseDto | HttpErrorResponse | undefined) => {
+                let loginResponseDto: LoginResponseDto = response as LoginResponseDto;
+                this.profileDto = ProfileDtoUtil.new(loginResponseDto.userProfileDto);
+                this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(loginResponseDto.tokenUserResponseDto);
+                return loginResponseDto;
             });
     }
 
@@ -90,15 +91,15 @@ export class ProfileService implements TokenUpdate {
     public getAccessToken(): string | null {
         return this.profileTokensDto?.accessToken || null;
     }
-    public refreshToken(): Promise<ProfileTokensDto | HttpErrorResponse> {
+    public refreshToken(): Promise<TokenUserResponseDto | HttpErrorResponse> {
         if (!this.profileTokensDto?.refreshToken) {
             return Promise.reject();
         }
         return this.profileApiService
             .refreshToken({ token: this.profileTokensDto.refreshToken })
-            .then((response: HttpErrorResponse | ProfileTokensDto | undefined) => {
-                this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(response as ProfileTokensDto);
-                return response as ProfileTokensDto;
+            .then((response: HttpErrorResponse | TokenUserResponseDto | undefined) => {
+                this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(response as TokenUserResponseDto);
+                return response as TokenUserResponseDto;
             })
             .catch((error) => {
                 // Remove "Token" values in LocalStorage.
@@ -141,14 +142,14 @@ export class ProfileService implements TokenUpdate {
             }
         }
     }
-    private setProfileTokensDtoToLocalStorage(profileTokensDto: ProfileTokensDto | null): ProfileTokensDto | null {
+    private setProfileTokensDtoToLocalStorage(profileTokensDto: TokenUserResponseDto | null): TokenUserResponseDto | null {
         LocalStorageUtil.update(ACCESS_TOKEN, profileTokensDto?.accessToken || null);
         LocalStorageUtil.update(REFRESH_TOKEN, profileTokensDto?.refreshToken || null);
 
         return !!profileTokensDto ? { ...profileTokensDto } : null;
     }
-    private getProfileTokensDtoFromLocalStorage(): ProfileTokensDto | null {
-        let result: ProfileTokensDto | null = null;
+    private getProfileTokensDtoFromLocalStorage(): TokenUserResponseDto | null {
+        let result: TokenUserResponseDto | null = null;
         const accessToken = localStorage.getItem(ACCESS_TOKEN);
         const refreshToken = localStorage.getItem(REFRESH_TOKEN);
         if (!!accessToken && !!refreshToken) {

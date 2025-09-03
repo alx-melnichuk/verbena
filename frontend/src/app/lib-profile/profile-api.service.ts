@@ -7,7 +7,7 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 
 import {
-    LoginProfileDto, LoginProfileResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, ProfileTokensDto,
+    LoginProfileDto, LoginResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, TokenUserResponseDto,
     RecoveryProfileDto,
     RegistrProfileDto,
     TokenDto, UniquenessDto
@@ -38,9 +38,9 @@ export class ProfileApiService {
         return lastValueFrom(this.http.post<null | HttpErrorResponse>(url, recoveryProfileDto));
     }
 
-    public login(loginProfileDto: LoginProfileDto): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
+    public login(loginProfileDto: LoginProfileDto): Promise<LoginResponseDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://login');
-        return lastValueFrom(this.http.post<LoginProfileResponseDto | HttpErrorResponse>(url, loginProfileDto));
+        return lastValueFrom(this.http.post<LoginResponseDto | HttpErrorResponse>(url, loginProfileDto));
     }
 
     public logout(): Promise<void | HttpErrorResponse | undefined> {
@@ -52,9 +52,9 @@ export class ProfileApiService {
         return method === 'POST' && url === Uri.appUri('appApi://token');
     }
 
-    public refreshToken(tokenDto: TokenDto): Promise<ProfileTokensDto | HttpErrorResponse | undefined> {
+    public refreshToken(tokenDto: TokenDto): Promise<TokenUserResponseDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://token');
-        return lastValueFrom(this.http.post<ProfileTokensDto | HttpErrorResponse>(url, tokenDto));
+        return lastValueFrom(this.http.post<TokenUserResponseDto | HttpErrorResponse>(url, tokenDto));
     }
 
     public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {

@@ -25,9 +25,22 @@ export interface LoginProfileDto {
     password: string;
 }
 
-export interface LoginProfileResponseDto {
-    profileDto: ProfileDto;
-    profileTokensDto: ProfileTokensDto;
+export interface LoginUserProfileDto {
+    id: number;
+    nickname: string; // max_len: 255
+    email: string; // max_len: 255
+    role: string; // UserRole ["User","Admin"]
+    avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
+    descript: string; // optional, default ""
+    theme: string; // Default color theme. ["light","dark"], min_len=2 max_len=32
+    locale: string; // Default locale. ["default"], min_len=2 max_len=32
+    createdAt: string; // DateTime<Utc> "rfc2822z"
+    updatedAt: string; // DateTime<Utc> "rfc2822z"
+}
+
+export interface LoginResponseDto {
+    userProfileDto: LoginUserProfileDto;
+    tokenUserResponseDto: TokenUserResponseDto;
 }
 
 // ** UniquenessDto **
@@ -40,13 +53,13 @@ export interface UniquenessDto {
 
 export interface ProfileDto {
     id: number;
-    nickname: string;
-    email: string;
+    nickname: string; // max_len: 255
+    email: string; // max_len: 255
     role: string; // UserRole ["User","Admin"]
-    avatar: string | undefined | null; // Link to user avatar, optional
+    avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
     descript: string;
-    theme: string; // Default color theme. ["light","dark"]
-    locale: string; // Default locale. ["default"]
+    theme: string; // Default color theme. ["light","dark"], min_len=2 max_len=32
+    locale: string; // Default locale. ["default"], min_len=2 max_len=32
     createdAt: string; // DateTime<Utc> "rfc2822z"
     updatedAt: string; // DateTime<Utc> "rfc2822z"
 }
@@ -84,7 +97,7 @@ export class ProfileDtoUtil {
 
 // ** Profile Tokens **
 
-export interface ProfileTokensDto {
+export interface TokenUserResponseDto {
     accessToken: string;
     refreshToken: string;
 }
@@ -102,7 +115,7 @@ export interface TokenUpdate {
     isCheckRefreshToken(method: string, url: string): boolean;
     isExistRefreshToken(): boolean;
     getAccessToken(): string | null;
-    refreshToken(): Promise<ProfileTokensDto | HttpErrorResponse>;
+    refreshToken(): Promise<TokenUserResponseDto | HttpErrorResponse>;
 }
 
 // ** ModifyProfileDto **
