@@ -7,8 +7,8 @@ use crate::profile_orm::tests::ProfileOrmApp;
 use crate::{
     config_prfl::{self, ConfigPrfl},
     profile_models::{
-        ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileConfigDto, ProfileDto, UniquenessProfileDto,
-        UniquenessProfileResponseDto, PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
+        ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileConfigDto, ProfileDto, 
+        PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
     },
     profile_orm::ProfileOrm,
 };
