@@ -12,23 +12,18 @@ use vrb_common::{
 };
 use vrb_dbase::{enm_user_role::UserRole, schema};
 
-pub const DESCRIPT_MIN: u8 = 2;
 pub const MSG_DESCRIPT_MIN_LENGTH: &str = "descript:min_length";
-pub const DESCRIPT_MAX: u16 = 2048; // 2*1024
 pub const MSG_DESCRIPT_MAX_LENGTH: &str = "descript:max_length";
 
-pub const THEME_MIN: u8 = 2;
 pub const MSG_THEME_MIN_LENGTH: &str = "theme:min_length";
-pub const THEME_MAX: u8 = 32;
 pub const MSG_THEME_MAX_LENGTH: &str = "theme:max_length";
 
-pub const LOCALE_MIN: u8 = 2;
 pub const MSG_LOCALE_MIN_LENGTH: &str = "locale:min_length";
-pub const LOCALE_MAX: u8 = 32;
 pub const MSG_LOCALE_MAX_LENGTH: &str = "locale:max_length";
 
 pub const MSG_USER_ROLE_INVALID_VALUE: &str = "user_role:invalid_value";
 
+// #
 pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
     if value.contains("@") {
         user_validations::validate_email(&value).map_err(|err| err)?;
@@ -39,20 +34,20 @@ pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
 }
 // MIN=2, MAX=2048
 pub fn validate_descript(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
+    ValidationChecks::min_length(value, user_validations::DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, user_validations::DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
     Ok(())
 }
 // MIN=2, MAX=32
 pub fn validate_theme(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, THEME_MIN.into(), MSG_THEME_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, THEME_MAX.into(), MSG_THEME_MAX_LENGTH)?;
+    ValidationChecks::min_length(value, user_validations::THEME_MIN.into(), MSG_THEME_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, user_validations::THEME_MAX.into(), MSG_THEME_MAX_LENGTH)?;
     Ok(())
 }
 // MIN=2, MAX=32
 pub fn validate_locale(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, LOCALE_MIN.into(), MSG_LOCALE_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, LOCALE_MAX.into(), MSG_LOCALE_MAX_LENGTH)?;
+    ValidationChecks::min_length(value, user_validations::LOCALE_MIN.into(), MSG_LOCALE_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, user_validations::LOCALE_MAX.into(), MSG_LOCALE_MAX_LENGTH)?;
     Ok(())
 }
 pub fn validate_role(value: &str) -> Result<(), ValidationError> {
@@ -449,14 +444,14 @@ pub struct StreamLogo {
 // * * * * Section: models for the "profile_auth_controller". * * * *
 
 // ** Model Dto: "LoginProfileDto". Used: in "profile_auth_controller::login()". **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginProfileDto {
     pub nickname: String,
     pub password: String,
 }
-
+// #
 impl Validator for LoginProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
@@ -470,7 +465,7 @@ impl Validator for LoginProfileDto {
 }
 
 // ** Model Dto: "LoginProfileResponseDto". Used: in "profile_auth_controller::login()". **
-
+// #
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginProfileResponseDto {
