@@ -1,6 +1,6 @@
 use vrb_dbase::dbase::DbPool;
 
-use crate::user_models::{CreateUser, ModifyUser, Session, User};
+use crate::user_models::{CreateUser, ModifyUser, Profile, Session, User};
 
 pub trait UserOrm {
     /// Get an entity (user) by ID.
@@ -27,6 +27,9 @@ pub trait UserOrm {
 
     /// Delete an entity (user).
     fn delete_user(&self, id: i32) -> Result<Option<User>, String>;
+
+    /// Get an entity (profile) by USER_ID.
+    fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String>;
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -46,7 +49,7 @@ pub mod impls {
     use log::{info, log_enabled, Level::Info};
     use vrb_dbase::{dbase, schema};
 
-    use crate::user_models::{CreateUser, ModifyUser, Session, User};
+    use crate::user_models::{CreateUser, ModifyUser, Profile, Session, User};
     use crate::user_orm::UserOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
@@ -235,6 +238,24 @@ pub mod impls {
             }
             Ok(result)
         }
+
+        /// Get an entity (profile) by USER_ID.
+        fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            // Run query using Diesel to find user by id and return it.
+            let opt_profile: Option<Profile> = schema::profiles::table
+                .filter(schema::profiles::dsl::user_id.eq(user_id))
+                .first::<Profile>(&mut conn)
+                .optional()
+                .map_err(|e| format!("get_profile_by_id: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("get_profile_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(opt_profile)
+        }
     }
 }
 
@@ -246,7 +267,7 @@ pub mod tests {
     use vrb_tools::token_coding;
 
     use crate::config_jwt;
-    use crate::user_models::{CreateUser, ModifyUser, Session, User};
+    use crate::user_models::{CreateUser, ModifyUser, Profile, Session, User};
     use crate::user_orm::UserOrm;
 
     pub const ADMIN: u8 = 0;
@@ -457,6 +478,24 @@ pub mod tests {
 
             Ok(user_opt.map(|u| u.clone()))
         }
+
+        /// Get an entity (profile) by USER_ID.
+        fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
+            let opt_user: Option<User> = self.user_vec.iter().find(|user| user.id == user_id).map(|user| user.clone());
+
+            let opt_profile = opt_user.map(|user| {
+                let profile1 = UserOrmTest::profile(user.id);
+                Profile::new(
+                    user.id,
+                    profile1.avatar,
+                    profile1.descript,
+                    profile1.theme,
+                    profile1.locale,
+                )
+            });
+
+            Ok(opt_profile)
+        }
     }
 
     pub struct UserOrmTest {}
@@ -515,6 +554,38 @@ pub mod tests {
             move |config: &mut web::ServiceConfig| {
                 let data_user_orm = web::Data::new(UserOrmApp::create(&data_p.0, &data_p.1));
                 config.app_data(web::Data::clone(&data_user_orm));
+            }
+        }
+        pub fn get_avatar(_user_id: i32) -> Option<String> {
+            None
+        }
+        pub fn get_descript(user_id: i32) -> Option<String> {
+            Some(format!("descript_{}", user_id))
+        }
+        pub fn get_theme(user_id: i32) -> Option<String> {
+            if user_id % 2 == 0 {
+                Some("light".to_owned())
+            } else {
+                Some("dark".to_owned())
+            }
+        }
+        pub fn get_locale(user_id: i32) -> Option<String> {
+            if user_id % 2 == 0 {
+                Some("en-US".to_owned())
+            } else {
+                Some("default".to_owned())
+            }
+        }
+        pub fn profile(user_id: i32) -> Profile {
+            let now = Utc::now();
+            Profile {
+                user_id,
+                avatar: Self::get_avatar(user_id),
+                descript: Self::get_descript(user_id),
+                theme: Self::get_theme(user_id),
+                locale: Self::get_locale(user_id),
+                created_at: now.clone(),
+                updated_at: now,
             }
         }
     }
