@@ -606,7 +606,7 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::{Duration, DateTime, Timelike, Utc};
-    use vrb_common::consts_test::UserOrmTest;
+    use vrb_common::consts_user_test::UserOrmTest;
     use vrb_dbase::enm_stream_state::StreamState;
 
     use crate::config_strm;
