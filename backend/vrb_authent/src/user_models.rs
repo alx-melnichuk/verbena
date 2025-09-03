@@ -79,7 +79,7 @@ impl ModifyUser {
     }
 }
 
-// * * * *   * * * *
+// * * UserMock * *
 
 #[cfg(all(test, feature = "mockdata"))]
 pub struct UserMock {}
@@ -146,3 +146,35 @@ impl Session {
         Session { user_id, num_token }
     }
 }
+
+// ** Model: "Profile". **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName, Queryable, Selectable)]
+#[diesel(table_name = schema::profiles)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Profile {
+    pub user_id: i32,
+    pub avatar: Option<String>,
+    pub descript: Option<String>,
+    pub theme: Option<String>,
+    pub locale: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl Profile {
+    pub fn new(user_id: i32, avatar: Option<String>, descript: Option<String>, theme: Option<String>, locale: Option<String>) -> Self {
+        let now = Utc::now();
+        Profile {
+            user_id,
+            avatar,
+            descript,
+            theme,
+            locale,
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        }
+    }
+}
+
+// * * * *   * * * *
