@@ -1,7 +1,7 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, ops::Deref, time::Instant as tm};
 
-use actix_web::{get, http::StatusCode, web, HttpResponse};
-use log::error;
+use actix_web::{get, cookie::time::Duration as ActixWebDuration, cookie::Cookie, http::StatusCode, post, web, HttpResponse};
+use log::{error, info, log_enabled, Level::Info};
 use serde_json::json;
 use utoipa;
 use vrb_common::{
@@ -10,6 +10,7 @@ use vrb_common::{
 };
 
 use crate::{
+    authentication::{Authenticated, RequireAuth},
     user_authent_models::{UserUniquenessDto, UserUniquenessResponseDto},
     user_orm::UserOrm,
     user_registr_orm::UserRegistrOrm,
@@ -25,7 +26,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         config
             // GET /api/users_uniqueness
-            .service(users_uniqueness);
+            .service(users_uniqueness)
+            // POST /api/logout
+            .service(logout);
     }
 }
 
@@ -73,6 +76,8 @@ pub async fn users_uniqueness(
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     query_params: web::Query<UserUniquenessDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
     // Get search parameters.
     let uniqueness_user_dto: UserUniquenessDto = query_params.clone().into_inner();
 
@@ -123,8 +128,81 @@ pub async fn users_uniqueness(
     let uniqueness = opt_search.is_none();
 
     let response_dto = UserUniquenessResponseDto::new(uniqueness);
-
+    
+    if let Some(timer) = timer {
+        info!("users_uniqueness() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
     Ok(HttpResponse::Ok().json(response_dto)) // 200
+}
+
+/// logout
+///
+/// Exit from the authorized state.
+///
+/// Close the session for the current user.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/logout
+/// ```
+///
+/// Return the response with status 200.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Session is closed."),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
+        (status = 406, description = "Error session not found.", body = ApiError,
+            example = json!(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, "user_id: 1"))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::new(506, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::new(507, "Error while querying the database."))),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp>) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+    // Get user ID.
+    let user = authenticated.deref().clone();
+
+    // Clear "num_token" value.
+    let opt_session = web::block(move || {
+        // Modify the entity (session) with new data. Result <Option<Session>>.
+        let res_session = user_orm.modify_session(user.id, None).map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        });
+        res_session
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })??;
+
+    if opt_session.is_none() {
+        let msg = format!("user_id: {}", user.id);
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg);
+        return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg)); // 406
+    }
+
+    // If a cookie has expired, the browser will delete the existing cookie.
+    let cookie = Cookie::build(TOKEN_NAME, "")
+        .path("/")
+        .max_age(ActixWebDuration::new(-1, 0))
+        .http_only(true)
+        .finish();
+
+    if let Some(timer) = timer {
+        info!("logout() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
+    Ok(HttpResponse::Ok().cookie(cookie).body(()))
 }
 
 #[cfg(all(test, feature = "mockdata"))]
