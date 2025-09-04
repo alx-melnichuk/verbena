@@ -10,9 +10,13 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_mock::{UserMock, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_orm::tests::UserOrmTest as User_Test,
     };
-    use vrb_common::{api_error::{code_to_str, ApiError}, err};
+    use vrb_common::{
+        api_error::{code_to_str, ApiError},
+        err,
+    };
 
     use crate::{
         config_strm,
@@ -37,7 +41,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_by_id_invalid_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let stream_id_bad = format!("{}a", stream_id);
@@ -66,7 +70,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_by_id_valid_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_dto = streams.get(0).unwrap().clone();
         #[rustfmt::skip]
@@ -94,7 +98,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_by_id_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
@@ -113,7 +117,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         let streams = Strm_Test::streams(&[0, 1]);
         let mut stream2 = streams.get(1).unwrap().clone();
         stream2.is_my_stream = false;
@@ -142,7 +146,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user_by_admin() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN, USER]);
+        let data_u = UserMock::users(&[ADMIN, USER]);
         let streams = Strm_Test::streams(&[USER1, USER2]);
         let mut stream2 = streams.get(1).unwrap().clone();
         stream2.is_my_stream = false;
@@ -174,7 +178,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1 and user2.
         let streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER2]);
@@ -212,7 +216,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_page_limit_without_user_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1 and user2.
         let streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER2]);
         // Select streams with indices: 0,1.
@@ -251,7 +255,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_page2() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1 and user2.
         let streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
@@ -291,7 +295,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_user() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
@@ -323,7 +327,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_admin() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN, USER]);
+        let data_u = UserMock::users(&[ADMIN, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
         let mut streams = Strm_Test::streams(&[USER2, USER2]);
@@ -363,7 +367,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_live() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         let live = true;
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
@@ -407,7 +411,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_is_future() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
@@ -456,7 +460,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_is_not_future() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
@@ -505,7 +509,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_asc() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
         let now = Utc::now();
@@ -553,7 +557,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_desc() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
         let now = Utc::now();
@@ -604,7 +608,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_config_data() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let config_strm = config_strm::get_test_config();
         #[rustfmt::skip]
         let stream_config_dto = StreamConfigDto::new(
@@ -640,7 +644,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_user_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
@@ -689,7 +693,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_without_user_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER1]);
         let dt = Local::now();
@@ -738,7 +742,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_page2() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
         let dt = Local::now();
@@ -785,7 +789,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_bad_starttime() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
         let dt = Local::now();
@@ -827,7 +831,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_another_user_id_with_role_user() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user1.
@@ -868,7 +872,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_another_user_id_with_role_admin() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN, USER]);
+        let data_u = UserMock::users(&[ADMIN, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2]);
@@ -918,7 +922,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_less_start() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
@@ -951,7 +955,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_more_on_2_month() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
@@ -1002,7 +1006,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_user_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let (streams, start, finish, period) = get_streams2(USER1);
         #[rustfmt::skip]
@@ -1030,7 +1034,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_without_user_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let (streams, start, finish, period) = get_streams2(USER1);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1058,7 +1062,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_user() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user2_id = data_u.0.get(1).unwrap().id;
         let (streams, start, finish, _period) = get_streams2(USER2);
@@ -1089,7 +1093,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_admin_99() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN, USER]);
+        let data_u = UserMock::users(&[ADMIN, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         let (streams, start, finish, period) = get_streams2(USER2);
         #[rustfmt::skip]

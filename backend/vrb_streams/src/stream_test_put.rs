@@ -13,7 +13,8 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_mock::{UserMock, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -41,7 +42,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_stream_no_form() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -68,7 +69,7 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new().build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -101,7 +102,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -139,7 +140,7 @@ mod tests {
             .with_text("title", "".to_string()).build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -168,7 +169,7 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamModelsTest::title_min()).build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -195,7 +196,7 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamModelsTest::title_max()).build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -224,7 +225,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -253,7 +254,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -283,7 +284,7 @@ mod tests {
             .with_text("starttime", starttime_s).build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -312,7 +313,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -341,7 +342,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -374,7 +375,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -404,7 +405,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -434,7 +435,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -464,7 +465,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -493,7 +494,7 @@ mod tests {
             .with_text("tags", "aaa").build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -524,7 +525,7 @@ mod tests {
             .with_text("tags", "[\"tag\"").build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
@@ -559,7 +560,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let mut config_strm = config_strm::get_test_config();
         config_strm.strm_logo_max_size = 160;
         let strm_logo_max_size = config_strm.strm_logo_max_size;
@@ -600,7 +601,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let config_strm = config_strm::get_test_config();
         let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         #[rustfmt::skip]
@@ -636,7 +637,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
@@ -663,7 +664,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER]);
+        let data_u = UserMock::users(&[USER, USER]);
         let streams = Strm_Test::streams(&[USER1, USER2]);
         let stream2_id = streams.get(1).unwrap().id.clone();
         #[rustfmt::skip]
@@ -691,7 +692,7 @@ mod tests {
             .build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN, USER]);
+        let data_u = UserMock::users(&[ADMIN, USER]);
         let streams = Strm_Test::streams(&[USER1, USER2]);
         let stream2 = streams.get(1).unwrap().clone();
         let app = test::init_service(
@@ -722,7 +723,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_stream_valid_data_without_file() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get(0).unwrap().clone();
 
@@ -797,7 +798,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
@@ -855,7 +856,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
@@ -928,7 +929,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
@@ -993,7 +994,7 @@ mod tests {
             .with_text("title", "title1".to_string())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias.clone());
@@ -1043,7 +1044,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias);
@@ -1084,7 +1085,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
@@ -1114,7 +1115,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_no_data() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
@@ -1138,7 +1139,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_empty_json_object() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
@@ -1163,7 +1164,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_invalid_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let stream_id_bad = format!("{}a", stream_id);
@@ -1195,7 +1196,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id2 = streams.get(0).unwrap().id.clone() + 1;
         let new_state = streams.get(0).unwrap().state.clone();
@@ -1218,7 +1219,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_invalid_state() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let new_state = streams.get(0).unwrap().state.clone();
@@ -1266,7 +1267,7 @@ mod tests {
         ];
         for (old_state, new_state) in buff {
             let token1 = User_Test::get_token(USER1_ID);
-            let data_u = User_Test::users(&[USER]);
+            let data_u = UserMock::users(&[USER]);
             let mut streams = Strm_Test::streams(&[USER1]);
 
             let stream = streams.get_mut(0).unwrap();
@@ -1303,7 +1304,7 @@ mod tests {
         let old_state = StreamState::Waiting;
         let new_state = StreamState::Preparing;
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1, USER1]);
         let stream1 = streams.get_mut(0).unwrap();
 
@@ -1351,7 +1352,7 @@ mod tests {
         ];
         for (old_state, new_state) in buff {
             let token1 = User_Test::get_token(USER1_ID);
-            let data_u = User_Test::users(&[USER]);
+            let data_u = UserMock::users(&[USER]);
             let mut streams = Strm_Test::streams(&[USER1]);
             let stream = streams.get_mut(0).unwrap();
             stream.state = old_state;

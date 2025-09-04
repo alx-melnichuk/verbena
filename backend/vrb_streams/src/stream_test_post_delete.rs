@@ -13,7 +13,8 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, USER, USER1, USER1_ID},
+        user_mock::{UserMock, USER, USER1, USER1_ID},
+        user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -38,7 +39,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_stream_no_form() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -66,7 +67,7 @@ mod tests {
         let (header, body) = form_builder.build();
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -96,7 +97,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -127,7 +128,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -158,7 +159,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -190,7 +191,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -222,7 +223,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -255,7 +256,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -287,7 +288,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -318,7 +319,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -350,7 +351,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -381,7 +382,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -413,7 +414,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -445,7 +446,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -475,7 +476,7 @@ mod tests {
             .with_text("tags", "aaa")
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -512,7 +513,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let strm_logo_max_size = 160;
         let mut config_strm = config_strm::get_test_config();
         config_strm.strm_logo_max_size = strm_logo_max_size;
@@ -554,7 +555,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/bmp", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
@@ -599,7 +600,7 @@ mod tests {
             .with_text("tags", &tags_s)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let stream1_id = streams.get(0).unwrap().id.clone();
@@ -651,7 +652,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let stream1_id = streams.get(0).unwrap().id.clone();
@@ -722,7 +723,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let stream1_id = streams.get(0).unwrap().id.clone();
@@ -771,7 +772,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
 
@@ -833,7 +834,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_stream_invalid_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id_bad = format!("{}a", streams.get(0).unwrap().id);
         #[rustfmt::skip]
@@ -862,7 +863,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_stream_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream1_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
@@ -882,7 +883,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_stream_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get(0).unwrap().clone();
         #[rustfmt::skip]
@@ -918,7 +919,7 @@ mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get_mut(0).unwrap();
         stream1.logo = Some(path_name0_alias);
@@ -960,7 +961,7 @@ mod tests {
         let path_name0_logo = format!("/not_alias{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get_mut(0).unwrap();
         stream1.logo = Some(path_name0_logo);
