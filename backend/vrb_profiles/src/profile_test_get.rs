@@ -30,7 +30,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_by_id_invalid_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let profiles = ProflTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
@@ -38,7 +38,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -59,7 +59,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_by_id_valid_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN, USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
@@ -67,7 +67,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -87,7 +87,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_by_id_non_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN, USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
@@ -95,7 +95,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -110,7 +110,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_config_data() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let cfg_prfl = config_prfl::get_test_config();
         #[rustfmt::skip]
@@ -124,7 +124,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_config)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
@@ -146,14 +146,14 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_current_valid_token() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile1_dto = ProfileDto::from(profiles.get(0).unwrap().clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;

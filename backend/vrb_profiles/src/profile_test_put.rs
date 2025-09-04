@@ -45,13 +45,13 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_no_form() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -73,13 +73,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_empty_form() {
         let (header, body) = MultiPartFormDataBuilder::new().build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -107,13 +107,13 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile1", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -143,13 +143,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_nickname_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_min()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -173,13 +173,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_nickname_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_max()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -205,13 +205,13 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("nickname", ProfileTest::nickname_wrong())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -237,13 +237,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_email_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_min()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -267,13 +267,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_email_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_max()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -297,13 +297,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_email_wrong() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_wrong()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -327,13 +327,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_role_wrong() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("role", ProfileTest::role_wrong()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -356,13 +356,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_descript_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_min()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -385,13 +385,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_descript_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_max()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -414,13 +414,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_theme_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_min()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -443,13 +443,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_theme_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_max()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -472,13 +472,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_locale_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_min()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -501,13 +501,13 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_locale_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_max()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -530,7 +530,7 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_users() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
@@ -538,7 +538,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -560,7 +560,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_email_exists_in_users() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let email1 = data_u.0.get(0).unwrap().email.clone();
@@ -568,7 +568,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -590,7 +590,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_registr() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let registr = RegisTest::registrs(true);
@@ -599,7 +599,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -621,7 +621,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_email_exists_in_registr() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let registr = RegisTest::registrs(true);
@@ -630,7 +630,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -659,7 +659,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let mut config_prfl = config_prfl::get_test_config();
@@ -668,7 +668,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl))
@@ -700,13 +700,13 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/bmp", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -732,7 +732,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_valid_data_without_file() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
 
@@ -754,7 +754,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -795,7 +795,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile1_id = profiles.get(0).unwrap().user_id;
@@ -803,7 +803,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -850,7 +850,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
 
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
@@ -864,7 +864,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl))
@@ -923,7 +923,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -932,7 +932,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -985,7 +985,7 @@ pub mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", "descript1".to_string()).build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -993,7 +993,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -1035,7 +1035,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1043,7 +1043,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -1076,13 +1076,13 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -1106,13 +1106,13 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_new_password_no_data() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1132,13 +1132,13 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_empty_json_object() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1159,13 +1159,13 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_empty() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1189,13 +1189,13 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_min() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1219,13 +1219,13 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_max() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1249,13 +1249,13 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_wrong() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1280,7 +1280,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_empty() {
         let old_password = "passwdP1C1".to_string();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1288,7 +1288,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1313,7 +1313,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_min() {
         let old_password = "passwdP1C1".to_string();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1321,7 +1321,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1346,7 +1346,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_max() {
         let old_password = "passwdP1C1".to_string();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1354,7 +1354,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1379,7 +1379,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_wrong() {
         let old_password = "passwdP1C1".to_string();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1387,7 +1387,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1411,7 +1411,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_equal_old_value() {
         let old_password = "passwdP1C1".to_string();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1419,7 +1419,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1443,7 +1443,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_hash_password() {
         let old_password = "passwdP1C1".to_string();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1451,7 +1451,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1475,7 +1475,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_password() {
         let old_password = "passwdP1C1".to_string();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1483,7 +1483,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;
@@ -1507,7 +1507,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_valid_data() {
         let old_password = "passwdP1C1".to_string();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -1516,7 +1516,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
         ).await;

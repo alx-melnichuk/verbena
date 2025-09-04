@@ -39,14 +39,14 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_delete_profile_invalid_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile_id_bad = format!("{}a", data_u.0.get(0).unwrap().id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -68,14 +68,14 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_delete_profile_non_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let profiles = ProflTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -88,7 +88,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_delete_profile_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
@@ -97,7 +97,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -126,7 +126,7 @@ pub mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -136,7 +136,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -169,7 +169,7 @@ pub mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -179,7 +179,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -204,7 +204,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_delete_profile_with_stream_img() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -221,7 +221,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl))
@@ -251,7 +251,7 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_delete_profile_current_without_img() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
@@ -259,7 +259,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -288,7 +288,7 @@ pub mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -297,7 +297,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -330,7 +330,7 @@ pub mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -339,7 +339,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
@@ -364,7 +364,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_delete_profile_current_with_stream_img() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
@@ -379,7 +379,7 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ProflTest::cfg_profile_orm(profiles))
                 .configure(ProflTest::cfg_config_prfl(config_prfl))
