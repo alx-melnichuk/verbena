@@ -13,7 +13,7 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_mock::{UserMock, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_models::{UserMock, ADMIN, USER, USER1, USER1_ID, USER2},
         user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::{
