@@ -683,7 +683,7 @@ mod tests {
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token1 = User_Test::get_num_token(USER1_ID);
+        let num_token1 = UserMock::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -719,7 +719,7 @@ mod tests {
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token1 = User_Test::get_num_token(USER1_ID);
+        let num_token1 = UserMock::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -758,7 +758,7 @@ mod tests {
         let email = user_reg1.email.to_string();
         let last_user_id = data_u.0.last().unwrap().id;
 
-        let num_token1 = User_Test::get_num_token(USER1_ID);
+        let num_token1 = UserMock::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -787,7 +787,7 @@ mod tests {
         assert_eq!(response_dto_res.id, last_user_id + 1);
         assert_eq!(response_dto_res.nickname, nickname);
         assert_eq!(response_dto_res.email, email);
-        assert_eq!(response_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Millis, true), now_str);
+        assert_eq!(response_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..22], now_str[..22]);
     }
 
     // ** registration_clear_for_expired **

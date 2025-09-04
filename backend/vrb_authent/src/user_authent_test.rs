@@ -844,7 +844,7 @@ mod tests {
     async fn test_logout_valid_token_non_existent_user() {
         let mut data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
-        data_u.1 = vec![Session::new(user2_id, Some(User_Test::get_num_token(user2_id)))];
+        data_u.1 = vec![Session::new(user2_id, Some(UserMock::get_num_token(user2_id)))];
         let token2 = User_Test::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -869,7 +869,7 @@ mod tests {
     async fn test_logout_valid_token_non_existent_num() {
         let mut data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
-        data_u.1 = vec![Session::new(user2_id, Some(User_Test::get_num_token(USER1_ID)))];
+        data_u.1 = vec![Session::new(user2_id, Some(UserMock::get_num_token(USER1_ID)))];
         let token2 = User_Test::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(

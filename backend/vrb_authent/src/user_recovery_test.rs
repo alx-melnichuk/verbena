@@ -459,7 +459,7 @@ mod tests {
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
 
-        let num_token1 = User_Test::get_num_token(USER1_ID);
+        let num_token1 = UserMock::get_num_token(USER1_ID);
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
@@ -495,7 +495,7 @@ mod tests {
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone() + 1;
 
-        let num_token1 = User_Test::get_num_token(USER1_ID);
+        let num_token1 = UserMock::get_num_token(USER1_ID);
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
@@ -536,7 +536,7 @@ mod tests {
         let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
         recovery1.final_date = final_date_utc;
 
-        let num_token1 = User_Test::get_num_token(USER1_ID);
+        let num_token1 = UserMock::get_num_token(USER1_ID);
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = token_coding::encode_token(recovery1.id, num_token1, jwt_secret, recovery_duration).unwrap();
@@ -575,7 +575,7 @@ mod tests {
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
 
-        let num_token1 = User_Test::get_num_token(USER1_ID);
+        let num_token1 = UserMock::get_num_token(USER1_ID);
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = token_coding::encode_token(recovery1_id, num_token1, jwt_secret, recovery_duration).unwrap();
