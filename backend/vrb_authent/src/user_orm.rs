@@ -269,6 +269,7 @@ pub mod tests {
     use crate::config_jwt;
     use crate::user_models::{CreateUser, ModifyUser, Profile, Session, User};
     use crate::user_orm::UserOrm;
+    use crate::user_profile_mock::UserProfileMock;
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
@@ -484,7 +485,7 @@ pub mod tests {
             let opt_user: Option<User> = self.user_vec.iter().find(|user| user.id == user_id).map(|user| user.clone());
 
             let opt_profile = opt_user.map(|user| {
-                let profile1 = UserOrmTest::profile(user.id);
+                let profile1 = UserProfileMock::profile(user.id);
                 Profile::new(
                     user.id,
                     profile1.avatar,
@@ -554,38 +555,6 @@ pub mod tests {
             move |config: &mut web::ServiceConfig| {
                 let data_user_orm = web::Data::new(UserOrmApp::create(&data_p.0, &data_p.1));
                 config.app_data(web::Data::clone(&data_user_orm));
-            }
-        }
-        pub fn get_avatar(_user_id: i32) -> Option<String> {
-            None
-        }
-        pub fn get_descript(user_id: i32) -> Option<String> {
-            Some(format!("descript_{}", user_id))
-        }
-        pub fn get_theme(user_id: i32) -> Option<String> {
-            if user_id % 2 == 0 {
-                Some("light".to_owned())
-            } else {
-                Some("dark".to_owned())
-            }
-        }
-        pub fn get_locale(user_id: i32) -> Option<String> {
-            if user_id % 2 == 0 {
-                Some("en-US".to_owned())
-            } else {
-                Some("default".to_owned())
-            }
-        }
-        pub fn profile(user_id: i32) -> Profile {
-            let now = Utc::now();
-            Profile {
-                user_id,
-                avatar: Self::get_avatar(user_id),
-                descript: Self::get_descript(user_id),
-                theme: Self::get_theme(user_id),
-                locale: Self::get_locale(user_id),
-                created_at: now.clone(),
-                updated_at: now,
             }
         }
     }

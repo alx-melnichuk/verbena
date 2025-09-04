@@ -23,6 +23,7 @@ mod tests {
         user_mock::UserMock,
         user_models::{Session},
         user_orm::tests::{UserOrmTest as User_Test, USER, USER1_ID},
+        user_profile_mock::UserProfileMock,
         user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
     };
 
@@ -705,7 +706,7 @@ mod tests {
         user1.password = hash_tools::encode_hash(password).unwrap(); // hashed
         
         let mut user_profile_ser = LoginUserProfileDto::from(user1.clone());
-        let profile1 = User_Test::profile(user1.id);
+        let profile1 = UserProfileMock::profile(user1.id);
         user_profile_ser.avatar = profile1.avatar;
         user_profile_ser.descript = profile1.descript;
         user_profile_ser.theme = profile1.theme;
