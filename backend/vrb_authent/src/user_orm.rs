@@ -264,12 +264,13 @@ pub mod tests {
     use actix_web::web;
     use chrono::Utc;
     use vrb_dbase::enm_user_role::UserRole;
-    use vrb_tools::token_coding;
 
-    use crate::config_jwt;
-    use crate::user_models::{CreateUser, ModifyUser, Profile, Session, User};
-    use crate::user_orm::UserOrm;
-    use crate::user_profile_mock::UserProfileMock;
+    use crate::{
+        config_jwt,
+        user_models::{CreateUser, ModifyUser, Profile, Session, User, UserMock},
+        user_orm::UserOrm,
+        user_profile_mock::UserProfileMock,
+    };
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
@@ -304,45 +305,6 @@ pub mod tests {
                 user_vec: Vec::new(),
                 session_vec: Vec::new(),
             }
-        }
-        /// Create a new instance with the specified user list.
-        /// Sessions are taken from "sessions", if it is empty, they are created automatically.
-        pub fn create(users: &[User], sessions: &[Session]) -> Self {
-            let mut user_vec: Vec<User> = Vec::new();
-            let mut session_vec: Vec<Session> = Vec::new();
-            let mut sessions2: Vec<Session> = sessions.to_vec();
-            for (idx, user) in users.iter().enumerate() {
-                let delta: i32 = idx.try_into().unwrap();
-                let user_id = USER1_ID + delta;
-                let mut user2 = Self::new_user(user_id, &user.nickname, &user.email, &user.password, user.role);
-                user2.created_at = user.created_at;
-                user2.updated_at = user.updated_at;
-                user_vec.push(user2);
-
-                if sessions2.len() > 0 {
-                    let opt_session = sessions2.iter_mut().find(|v| (*v).user_id == user.id);
-                    if let Some(session) = opt_session {
-                        session_vec.push(Session::new(user_id, session.num_token));
-                        session.user_id = 0;
-                    }
-                } else {
-                    session_vec.push(Session::new(user_id, None));
-                }
-            }
-            for session in sessions2.iter() {
-                if USER1_ID <= session.user_id {
-                    session_vec.push(Session::new(session.user_id, session.num_token));
-                }
-            }
-
-            UserOrmApp {
-                user_vec: user_vec,
-                session_vec,
-            }
-        }
-        /// Create a new instance of the User entity.
-        pub fn new_user(id: i32, nickname: &str, email: &str, password: &str, role: UserRole) -> User {
-            User::new(id, &nickname.to_lowercase(), &email.to_lowercase(), password, role.clone())
         }
         /// Create a new instance of the Session entity.
         pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
@@ -486,13 +448,7 @@ pub mod tests {
 
             let opt_profile = opt_user.map(|user| {
                 let profile1 = UserProfileMock::profile(user.id);
-                Profile::new(
-                    user.id,
-                    profile1.avatar,
-                    profile1.descript,
-                    profile1.theme,
-                    profile1.locale,
-                )
+                Profile::new(user.id, profile1.avatar, profile1.descript, profile1.theme, profile1.locale)
             });
 
             Ok(opt_profile)
@@ -515,16 +471,7 @@ pub mod tests {
             }
             .to_string()
         }
-        pub fn get_num_token(user_id: i32) -> i32 {
-            40000 + user_id
-        }
-        pub fn get_token(user_id: i32) -> String {
-            let config_jwt = config_jwt::get_test_config();
-            let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-            let num_token = Self::get_num_token(user_id);
-            token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap()
-        }
-        pub fn users(roles: &[u8]) -> (Vec<User>, Vec<Session>) {
+        pub fn users2(roles: &[u8]) -> (Vec<User>, Vec<Session>) {
             let mut user_vec: Vec<User> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
             let user_ids = UserOrmTest::user_ids();
@@ -538,7 +485,7 @@ pub mod tests {
 
                 let user = User::new(user_id, &nickname, &email, "", role);
                 user_vec.push(user);
-                let num_token = if user_id == USER1_ID { Some(Self::get_num_token(user_id)) } else { None };
+                let num_token = if user_id == USER1_ID { Some(UserMock::get_num_token(user_id)) } else { None };
                 session_vec.push(Session { user_id, num_token });
             }
             let user_orm_app = UserOrmApp { user_vec, session_vec };
@@ -553,7 +500,11 @@ pub mod tests {
         }
         pub fn cfg_user_orm(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
-                let data_user_orm = web::Data::new(UserOrmApp::create(&data_p.0, &data_p.1));
+                let mut user_orm_app = UserOrmApp::new();
+                user_orm_app.user_vec.extend(data_p.0);
+                user_orm_app.session_vec.extend(data_p.1);
+
+                let data_user_orm = web::Data::new(user_orm_app);
                 config.app_data(web::Data::clone(&data_user_orm));
             }
         }

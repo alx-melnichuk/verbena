@@ -16,8 +16,7 @@ mod tests {
     use crate::{
         authentication::RequireAuth,
         config_jwt,
-        user_mock::UserMock,
-        user_models::Session,
+        user_models::{Session, UserMock},
         user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
     };
 

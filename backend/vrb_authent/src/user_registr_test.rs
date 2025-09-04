@@ -18,7 +18,7 @@ mod tests {
 
     use crate::{
         config_jwt,
-        user_mock::{UserMock, ADMIN, USER, USER1_ID},
+        user_models::{UserMock, ADMIN, USER, USER1_ID},
         user_orm::tests::UserOrmTest as User_Test,
         user_registr_controller::{
             confirm_registration, registration, registration_clear_for_expired, tests as RgsCtTest, MSG_REGISTR_NOT_FOUND,

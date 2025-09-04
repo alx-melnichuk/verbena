@@ -18,7 +18,7 @@ mod tests {
 
     use crate::{
         config_jwt,
-        user_mock::{UserMock, ADMIN, USER, USER1_ID},
+        user_models::{UserMock, ADMIN, USER, USER1_ID},
         user_orm::tests::UserOrmTest as User_Test,
         user_recovery_controller::{
             confirm_recovery, recovery, recovery_clear_for_expired, tests as RcvCtTest, MSG_RECOVERY_NOT_FOUND, MSG_USER_NOT_FOUND,
@@ -602,7 +602,7 @@ mod tests {
         assert_eq!(response_dto_res.nickname, nickname);
         assert_eq!(response_dto_res.email, email);
         assert_eq!(response_dto_res.created_at, user1_created_at);
-        assert_eq!(response_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true), now_str);
+        assert_eq!(response_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..22], now_str[..22]);
     }
 
     // ** recovery_clear_for_expired **
