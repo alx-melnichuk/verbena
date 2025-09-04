@@ -34,7 +34,6 @@ mockdata = []
 # To test a web form with data and a file.
 actix-multipart-test = "0.0.3"
 vrb_authent = { version = "0.1", path="../vrb_authent", features = ["mockdata"] }
-vrb_common = { version = "0.1", path="../vrb_common", features = ["mockdata"] }
 
 [profile.dev]
 debug = 1
