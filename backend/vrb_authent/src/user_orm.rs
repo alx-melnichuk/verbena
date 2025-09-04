@@ -290,8 +290,6 @@ pub mod tests {
     pub const USER3_NAME: &str = "mary_williams";
     pub const USER4_NAME: &str = "ava_wilson";
 
-    pub const USER1_NUM_TOKEN: i32 = 20000 + USER1_ID; //  1234;
-
     #[derive(Debug, Clone)]
     pub struct UserOrmApp {
         pub user_vec: Vec<User>,
