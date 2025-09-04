@@ -42,7 +42,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
@@ -68,7 +68,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
@@ -93,7 +93,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
@@ -120,7 +120,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
@@ -147,7 +147,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
@@ -174,7 +174,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
@@ -202,7 +202,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
@@ -233,7 +233,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
@@ -253,7 +253,7 @@ mod tests {
         assert_eq!(user_recov_res.id, user_recovery1_id);
         assert_eq!(user_recov_res.email, user1_email.to_string());
 
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
@@ -272,7 +272,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(recovery)
                 .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
@@ -292,7 +292,7 @@ mod tests {
         assert_eq!(user_recov_res.id, user_recovery1_id);
         assert_eq!(user_recov_res.email, user1_email.to_string());
 
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
@@ -304,7 +304,7 @@ mod tests {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserMock::users(&[USER]);
         let user1_email = data_u.0.get(0).unwrap().email.clone();
-        let mut config_jwt = config_jwt::get_test_config();
+        let mut config_jwt = config_jwt::tests::get_config();
         config_jwt.jwt_secret = "".to_string();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -338,7 +338,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -362,7 +362,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -386,7 +386,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -410,7 +410,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -434,7 +434,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
         ).await;
@@ -459,8 +459,8 @@ mod tests {
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
 
-        let num_token1 = UserMock::get_num_token(USER1_ID);
-        let config_jwt = config_jwt::get_test_config();
+        let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
         let config_app = config_app::get_test_config();
@@ -469,7 +469,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
@@ -495,8 +495,8 @@ mod tests {
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone() + 1;
 
-        let num_token1 = UserMock::get_num_token(USER1_ID);
-        let config_jwt = config_jwt::get_test_config();
+        let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
         let config_app = config_app::get_test_config();
@@ -505,7 +505,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
@@ -536,14 +536,14 @@ mod tests {
         let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
         recovery1.final_date = final_date_utc;
 
-        let num_token1 = UserMock::get_num_token(USER1_ID);
-        let config_jwt = config_jwt::get_test_config();
+        let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = token_coding::encode_token(recovery1.id, num_token1, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
@@ -575,14 +575,14 @@ mod tests {
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
 
-        let num_token1 = UserMock::get_num_token(USER1_ID);
-        let config_jwt = config_jwt::get_test_config();
+        let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = token_coding::encode_token(recovery1_id, num_token1, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;
@@ -609,7 +609,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_recovery_clear_for_expired() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let user1_id = data_u.0.get(0).unwrap().id;
 
@@ -622,7 +622,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery_clear_for_expired)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RecovTest::cfg_recovery_orm(recoveries))
         ).await;

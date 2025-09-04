@@ -42,7 +42,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -67,7 +67,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -93,7 +93,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -120,7 +120,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -144,7 +144,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -169,7 +169,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(registr))
         ).await;
@@ -194,7 +194,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(registr))
         ).await;
@@ -218,7 +218,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -242,7 +242,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
         ).await;
@@ -268,7 +268,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::post().uri("/api/login").to_request();
@@ -287,7 +287,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::post().uri("/api/login").set_json(json!({})).to_request();
@@ -305,7 +305,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -327,7 +327,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -349,7 +349,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -371,7 +371,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -393,7 +393,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -415,7 +415,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -437,7 +437,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -459,7 +459,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -481,7 +481,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -503,7 +503,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -525,7 +525,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -548,7 +548,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -571,7 +571,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -597,7 +597,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -624,7 +624,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -648,7 +648,7 @@ mod tests {
         let user1 = data_u.0.get_mut(0).unwrap();
         user1.nickname = nickname.clone().to_lowercase();
         user1.password = hash_tools::encode_hash(password).unwrap(); // hashed
-        let mut config_jwt = config_jwt::get_test_config();
+        let mut config_jwt = config_jwt::tests::get_config();
         config_jwt.jwt_secret = "".to_string();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -683,7 +683,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -714,11 +714,11 @@ mod tests {
         user_profile_ser.theme = profile1.theme;
         user_profile_ser.locale = profile1.locale;
 
-        let jwt_access = config_jwt::get_test_config().jwt_access;
+        let jwt_access = config_jwt::tests::get_config().jwt_access;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -778,7 +778,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -799,7 +799,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -820,11 +820,11 @@ mod tests {
     async fn test_logout_valid_token_session_non_exist() {
         let data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
-        let token2 = User_Test::get_token(user2_id);
+        let token2 = config_jwt::tests::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -844,12 +844,12 @@ mod tests {
     async fn test_logout_valid_token_non_existent_user() {
         let mut data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
-        data_u.1 = vec![Session::new(user2_id, Some(UserMock::get_num_token(user2_id)))];
-        let token2 = User_Test::get_token(user2_id);
+        data_u.1 = vec![Session::new(user2_id, Some(config_jwt::tests::get_num_token(user2_id)))];
+        let token2 = config_jwt::tests::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -869,12 +869,12 @@ mod tests {
     async fn test_logout_valid_token_non_existent_num() {
         let mut data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
-        data_u.1 = vec![Session::new(user2_id, Some(UserMock::get_num_token(USER1_ID)))];
-        let token2 = User_Test::get_token(user2_id);
+        data_u.1 = vec![Session::new(user2_id, Some(config_jwt::tests::get_num_token(USER1_ID)))];
+        let token2 = config_jwt::tests::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -892,12 +892,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_logout_valid_token() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -927,12 +927,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_update_token_no_data() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -950,12 +950,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_empty_json_object() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -973,12 +973,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_empty() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -997,12 +997,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_invalid() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -1021,9 +1021,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret = config_jwt.jwt_secret.as_bytes();
         let user_id_bad = data_u.0.get(0).unwrap().id + 1;
         let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
@@ -1031,7 +1031,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -1050,17 +1050,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_num() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret = config_jwt.jwt_secret.as_bytes();
         let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
         let token_bad = token_coding::encode_token(user1_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -1079,10 +1079,10 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_valid_dto_token() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_access = config_jwt.jwt_access;
         let jwt_secret = config_jwt.jwt_secret.as_bytes();
         let num_token = data_u.1.get(0).unwrap().num_token.unwrap();
@@ -1090,7 +1090,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]

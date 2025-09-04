@@ -42,7 +42,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -65,7 +65,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -89,7 +89,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -120,7 +120,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -151,7 +151,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -182,7 +182,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -213,7 +213,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -244,7 +244,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -275,7 +275,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -306,7 +306,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -337,7 +337,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -368,7 +368,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -399,7 +399,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -430,7 +430,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -463,7 +463,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -494,7 +494,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -526,7 +526,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(registrs))
@@ -558,7 +558,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(registrs))
@@ -583,7 +583,7 @@ mod tests {
     async fn test_registration_err_jsonwebtoken_encode() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserMock::users(&[USER]);
-        let mut config_jwt = config_jwt::get_test_config();
+        let mut config_jwt = config_jwt::tests::get_config();
         config_jwt.jwt_secret = "".to_string();
         let nickname = "Mary_Williams".to_string();
         #[rustfmt::skip]
@@ -621,7 +621,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(registration)
                 .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
@@ -645,7 +645,7 @@ mod tests {
         assert_eq!(user_registr1.nickname, registr_profile_resp.nickname);
         assert_eq!(user_registr1.email, registr_profile_resp.email);
 
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let (user_registr_id, _) = token_coding::decode_token(&registr_profile_resp.registr_token, jwt_secret).unwrap();
         assert_eq!(user_registr1.id, user_registr_id);
@@ -659,7 +659,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
@@ -683,18 +683,18 @@ mod tests {
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token1 = UserMock::get_num_token(USER1_ID);
+        let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token = token_coding::encode_token(user_reg1_id, num_token1, jwt_secret, -reg_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RegisTest::cfg_registr_orm(registrs))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
@@ -719,11 +719,11 @@ mod tests {
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token1 = UserMock::get_num_token(USER1_ID);
+        let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let user_reg_id = user_reg1_id + 1;
         let registr_token = token_coding::encode_token(user_reg_id, num_token1, jwt_secret, reg_duration).unwrap();
@@ -731,7 +731,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RegisTest::cfg_registr_orm(registrs))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
@@ -758,18 +758,18 @@ mod tests {
         let email = user_reg1.email.to_string();
         let last_user_id = data_u.0.last().unwrap().id;
 
-        let num_token1 = UserMock::get_num_token(USER1_ID);
+        let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token = token_coding::encode_token(user_reg1.id, num_token1, jwt_secret, reg_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(RegisTest::cfg_registr_orm(registrs))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
@@ -794,7 +794,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_registration_clear_for_expired() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let config_app = config_app::get_test_config();
 
@@ -806,7 +806,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration_clear_for_expired)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(RegisTest::cfg_registr_orm(registrs))
         ).await;

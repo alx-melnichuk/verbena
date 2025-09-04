@@ -39,12 +39,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token1)).to_request();
@@ -54,12 +54,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token_with_cookie() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().cookie(Cookie::new("token", token1)).to_request();
@@ -69,12 +69,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middleware_access_admin_only_endpoint_success() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_require_only_admin)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token1)).to_request();
@@ -88,7 +88,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().to_request();
@@ -108,7 +108,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth("invalid_token123")).to_request();
@@ -125,7 +125,7 @@ mod tests {
     #[actix_web::test]
     async fn test_authentication_middelware_expired_token() {
         let data_u = UserMock::users(&[USER]);
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let user1_id = data_u.0.get(0).unwrap().id;
         let num_token1 = data_u.1.get(0).unwrap().num_token.unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
@@ -151,11 +151,11 @@ mod tests {
     async fn test_authentication_middelware_valid_token_session_non_exist() {
         let data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
-        let token2 = User_Test::get_token(user2_id);
+        let token2 = config_jwt::tests::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token2)).to_request();
@@ -172,12 +172,12 @@ mod tests {
     async fn test_authentication_middelware_valid_token_non_existent_user() {
         let mut data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
-        data_u.1 = vec![Session::new(user2_id, Some(UserMock::get_num_token(user2_id)))];
-        let token2 = User_Test::get_token(user2_id);
+        data_u.1 = vec![Session::new(user2_id, Some(config_jwt::tests::get_num_token(user2_id)))];
+        let token2 = config_jwt::tests::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token2)).to_request();
@@ -194,12 +194,12 @@ mod tests {
     async fn test_authentication_middelware_valid_token_non_existent_num() {
         let mut data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
-        data_u.1 = vec![Session::new(user2_id, Some(UserMock::get_num_token(USER1_ID)))];
-        let token2 = User_Test::get_token(user2_id);
+        data_u.1 = vec![Session::new(user2_id, Some(config_jwt::tests::get_num_token(USER1_ID)))];
+        let token2 = config_jwt::tests::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token2)).to_request();
@@ -214,12 +214,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middleware_failure_access_only_admin() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_require_only_admin)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
         ).await;
         let req = test::TestRequest::get().insert_header(header_auth(&token1)).to_request();
