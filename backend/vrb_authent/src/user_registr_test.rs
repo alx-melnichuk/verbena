@@ -11,7 +11,8 @@ mod tests {
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json::json;
     use vrb_common::{
-        api_error::{code_to_str, ApiError}, consts, err, user_validations
+        api_error::{code_to_str, ApiError},
+        consts, err, user_validations,
     };
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
@@ -36,7 +37,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_no_data() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -59,7 +60,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_empty_json_object() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -83,7 +84,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_empty() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -114,7 +115,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_min() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -145,7 +146,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_max() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -176,7 +177,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_wrong() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -207,7 +208,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_empty() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -238,7 +239,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_min() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -269,7 +270,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_max() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -300,7 +301,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_wrong() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -331,7 +332,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_empty() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -362,7 +363,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_min() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -393,7 +394,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_max() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -424,7 +425,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_wrong() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -455,7 +456,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let email1 = data_u.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
@@ -486,7 +487,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let email1 = data_u.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
@@ -517,7 +518,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let registrs = RegisTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
         let email1 = registrs.get(0).unwrap().email.clone();
@@ -549,7 +550,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let registrs = RegisTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
         let email1 = registrs.get(0).unwrap().email.clone();
@@ -581,7 +582,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_err_jsonwebtoken_encode() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
         let nickname = "Mary_Williams".to_string();
@@ -615,7 +616,7 @@ mod tests {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let registrs = RegisTest::registrs(true);
         let user_registr1 = registrs.get(0).unwrap().clone();
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
@@ -654,7 +655,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_confirm_registration_invalid_registr_token() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
@@ -677,7 +678,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_final_date_has_expired() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let registrs = RegisTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
@@ -713,7 +714,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_no_exists_in_user_regist() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let registrs = RegisTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
@@ -750,7 +751,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_exists_in_user_regist() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let registrs = RegisTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let nickname = user_reg1.nickname.to_string();
@@ -794,7 +795,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_clear_for_expired() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let config_app = config_app::get_test_config();
 
         let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
