@@ -343,8 +343,10 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::{DateTime, Duration, SubsecRound, Timelike, Utc};
+    use vrb_authent::{
+        user_mock::{USER1_ID, USER1_NAME, USER2_ID, USER2_NAME, USER3_ID, USER3_NAME, USER4_ID, USER4_NAME},
+    };
     use vrb_common::{
-        consts_user_test::{USER1_ID, USER1_NAME, USER2_ID, USER2_NAME, USER3_ID, USER3_NAME, USER4_ID, USER4_NAME},
         validators::Validator
     };
 

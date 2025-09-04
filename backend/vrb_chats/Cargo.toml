@@ -37,7 +37,6 @@ mockdata = []
 # To perform testing of websocket interaction.
 actix-test = "0.1"
 vrb_authent = { version = "0.1", path="../vrb_authent", features = ["mockdata"] }
-vrb_common = { version = "0.1", path="../vrb_common", features = ["mockdata"] }
 
 [profile.dev]
 debug = 1
