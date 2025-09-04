@@ -10,7 +10,8 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, USER, USER1_ID},
+        user_mock::{UserMock, USER, USER1_ID},
+        user_orm::tests::UserOrmTest as User_Test,
     };
 
     use crate::{
@@ -26,7 +27,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
@@ -58,7 +59,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
@@ -91,7 +92,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_part1() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
@@ -126,7 +127,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_part2() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
@@ -163,7 +164,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des_part1() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
@@ -198,7 +199,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des_part2() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]

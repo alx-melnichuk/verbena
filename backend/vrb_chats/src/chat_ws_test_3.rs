@@ -6,7 +6,8 @@ mod tests {
     use serde_json::to_string;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, USER},
+        user_mock::{UserMock, USER},
+        user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::err;
 
@@ -27,7 +28,7 @@ mod tests {
     async fn test_get_ws_chat_ews_msg_rmv_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = User_Test::users(&[USER, USER, USER, USER]);
+            let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
             data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
@@ -42,7 +43,7 @@ mod tests {
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER, USER, USER]);
+        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(2);
 
         // -- Test: 1. "'msgRmv' parameter not defined" --
@@ -111,7 +112,7 @@ mod tests {
     async fn test_get_ws_chat_ews_msg_rmv_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = User_Test::users(&[USER, USER]);
+            let mut data_u = UserMock::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
             data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
@@ -126,7 +127,7 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER]);
+        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER]);
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg_id = data_cm.0.first().unwrap().id;
@@ -189,7 +190,7 @@ mod tests {
     async fn test_get_ws_chat_ews_block_ews_unblock_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = User_Test::users(&[USER, USER, USER]);
+            let mut data_u = UserMock::users(&[USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2, user4.
             data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
@@ -204,7 +205,7 @@ mod tests {
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER, USER]);
+        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER, USER]);
 
         // -- Test: 1. "'id' parameter not defined" --
         let msg_text = MessageText("{ \"block\": \"\" }".into());
@@ -268,7 +269,7 @@ mod tests {
     async fn test_get_ws_chat_ews_block_ews_unblock_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = User_Test::users(&[USER, USER, USER, USER]);
+            let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user2, user4.
@@ -284,7 +285,7 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER, USER, USER]);
+        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER, USER, USER]);
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
 
         let user1_id = profile_vec.get(0).unwrap().id;

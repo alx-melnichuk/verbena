@@ -10,9 +10,13 @@ mod tests {
     use serde_json::json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
+        user_mock::{UserMock, ADMIN, USER, USER1_ID},
+        user_orm::tests::UserOrmTest as User_Test,
     };
-    use vrb_common::{api_error::{code_to_str, ApiError}, err};
+    use vrb_common::{
+        api_error::{code_to_str, ApiError},
+        err,
+    };
 
     use crate::{
         chat_message_controller::{post_chat_message, put_chat_message, tests as ChtCtTest},
@@ -30,7 +34,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_no_form() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -55,7 +59,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_empty_json() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -81,7 +85,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_msg_min() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
@@ -109,7 +113,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_msg_max() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
@@ -137,7 +141,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id_wrong = data_cm.0.get(0).unwrap().stream_id.clone() - 1;
         let msg = MessgTest::message_norm();
@@ -171,7 +175,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_valid_data() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -212,7 +216,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_no_form() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         #[rustfmt::skip]
@@ -238,7 +242,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_invald_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let ch_msg_id_bad = format!("{}a", last_msg_id);
@@ -270,7 +274,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_empty_json() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         #[rustfmt::skip]
@@ -297,7 +301,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_msg_max() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let msg = MessgTest::message_max();
@@ -326,7 +330,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let user_id1 = data_u.0.get(0).unwrap().id;
@@ -362,7 +366,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_msg_another_user_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg_id = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().id.clone();
@@ -397,7 +401,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_valid_data() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg = data_cm.0.get(0).unwrap().clone();
         let msg = MessgTest::message_norm();
@@ -437,7 +441,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_invald_user_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
@@ -469,7 +473,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_user_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN, USER]);
+        let data_u = UserMock::users(&[ADMIN, USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id2 = data_u.0.get(1).unwrap().id;
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -505,7 +509,7 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_user_valid_data() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();

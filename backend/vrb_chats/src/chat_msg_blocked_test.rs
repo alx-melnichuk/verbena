@@ -10,7 +10,8 @@ mod tests {
     use serde_json::{self, json};
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, USER, USER1_ID},
+        user_mock::{UserMock, USER, USER1_ID},
+        user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -33,7 +34,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_exist_blocked_users() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
@@ -72,7 +73,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_not_exist_blocked_users() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let mut data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
@@ -103,7 +104,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_no_form() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -127,7 +128,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_empty_json() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -159,7 +160,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_min_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_min();
         let len1 = blocked_nickname.len();
@@ -192,7 +193,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_max_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_max();
         let len1 = blocked_nickname.len();
@@ -225,7 +226,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.last().unwrap().id + 1;
         #[rustfmt::skip]
@@ -246,7 +247,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = format!("{}a", data_u.0.last().unwrap().nickname);
         #[rustfmt::skip]
@@ -267,7 +268,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         let blocked_id = data_u.0.get(1).unwrap().id;
@@ -301,7 +302,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         let blocked_id = data_u.0.get(1).unwrap().id;
@@ -335,7 +336,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
@@ -371,7 +372,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
@@ -410,7 +411,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_no_form() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -433,7 +434,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_empty_json() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -464,7 +465,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_min_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_min();
         let len1 = blocked_nickname.len();
@@ -497,7 +498,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_max_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_max();
         let len1 = blocked_nickname.len();
@@ -530,7 +531,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.last().unwrap().id + 1;
         #[rustfmt::skip]
@@ -551,7 +552,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = format!("{}a", data_u.0.last().unwrap().nickname);
         #[rustfmt::skip]
@@ -572,7 +573,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(1).unwrap().id;
         #[rustfmt::skip]
@@ -593,7 +594,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = data_u.0.get(1).unwrap().nickname.clone();
         #[rustfmt::skip]
@@ -614,7 +615,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
@@ -650,7 +651,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_nickname() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.

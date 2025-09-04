@@ -6,14 +6,15 @@ mod tests {
     use serde_json::to_string;
     use vrb_authent::{
         config_jwt,
+        user_mock::{UserMock, USER, USER1_ID},
         user_models::Session,
-        user_orm::tests::{UserOrmTest as User_Test, USER, USER1_ID},
+        user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::{crypto::CRT_WRONG_STRING_BASE64URL, err};
     use vrb_tools::token_coding;
 
     use crate::{
-        chat_event_ws::{CountEWS, LeaveEWS, JoinEWS},
+        chat_event_ws::{CountEWS, JoinEWS, LeaveEWS},
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
@@ -29,7 +30,7 @@ mod tests {
     async fn test_get_ws_chat_ews_echo_ews_name() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(|| {
-            let data_u = User_Test::users(&[]);
+            let data_u = UserMock::users(&[]);
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
@@ -75,7 +76,7 @@ mod tests {
     async fn test_get_ws_chat_ews_join_ews_leave_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = User_Test::users(&[USER, USER]);
+            let mut data_u = UserMock::users(&[USER, USER]);
             let session1 = data_u.1.get(0).unwrap().clone();
             let user3_id = USER1_ID + 2;
             let session3 = Session::new(user3_id, Some(User_Test::get_num_token(user3_id + 1)));
@@ -205,7 +206,7 @@ mod tests {
     async fn test_get_ws_chat_ews_join_ews_leave_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = User_Test::users(&[USER, USER, USER, USER]);
+            let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
             data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
@@ -223,7 +224,7 @@ mod tests {
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER, USER, USER]);
+        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER, USER, USER]);
 
         // -- Test: 1. "Join user1 as owner."" --
         let user1_id = profile_vec.get(0).unwrap().id;
@@ -354,7 +355,7 @@ mod tests {
     async fn test_get_ws_chat_ews_count() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = User_Test::users(&[USER, USER]);
+            let mut data_u = UserMock::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
             data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
@@ -376,7 +377,7 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER]);
+        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER]);
 
         let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
