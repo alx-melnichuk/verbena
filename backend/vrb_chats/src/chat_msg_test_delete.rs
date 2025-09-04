@@ -30,7 +30,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_chat_message_invald_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_ch_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -39,7 +39,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -62,7 +62,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_non_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
@@ -72,7 +72,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -98,7 +98,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_msg_another_user_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
@@ -107,7 +107,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -133,7 +133,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_valid_data() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg = data_cm.0.get(0).unwrap().clone();
@@ -141,7 +141,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -169,7 +169,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_invald_user_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
@@ -177,7 +177,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -199,7 +199,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user_non_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN, USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id2 = data_u.0.get(1).unwrap().id;
@@ -209,7 +209,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -235,7 +235,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user_valid_data() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
@@ -243,7 +243,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;

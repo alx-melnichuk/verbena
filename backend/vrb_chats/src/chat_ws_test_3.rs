@@ -31,11 +31,11 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
-            data_u.1.get_mut(3).unwrap().num_token = Some(UserMock::get_num_token(user4_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
@@ -63,7 +63,7 @@ mod tests {
         // -- Test: 3. "There is a block on sending messages." --
         let user4_id = profile_vec.get(3).unwrap().id;
         let member4 = profile_vec.get(3).unwrap().nickname.clone();
-        let token4 = User_Test::get_token(user4_id);
+        let token4 = config_jwt::tests::get_token(user4_id);
         // Join user4.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token4).into());
@@ -83,7 +83,7 @@ mod tests {
         // -- Test: 4. Removing another user's message. --
         let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = User_Test::get_token(user1_id);
+        let token1 = config_jwt::tests::get_token(user1_id);
         let ch_msg_id = data_cm.0.get(1).unwrap().id; // Message user2.
 
         // Open a websocket connection to the test server.
@@ -115,11 +115,11 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
@@ -135,7 +135,7 @@ mod tests {
         // -- Test: 1. "Delete message user1."  --
         let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = User_Test::get_token(user1_id);
+        let token1 = config_jwt::tests::get_token(user1_id);
         // Join user1.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
@@ -151,7 +151,7 @@ mod tests {
 
         let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = User_Test::get_token(user2_id);
+        let token2 = config_jwt::tests::get_token(user2_id);
         // Join user2.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
@@ -193,11 +193,11 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2, user4.
-            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
@@ -236,7 +236,7 @@ mod tests {
         // -- Test: 3. "stream_owner_rights_missing" --
         let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = User_Test::get_token(user2_id);
+        let token2 = config_jwt::tests::get_token(user2_id);
 
         // Join user2.
         #[rustfmt::skip]
@@ -273,12 +273,12 @@ mod tests {
             let user2_id = data_u.0.get(1).unwrap().id;
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user2, user4.
-            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
-            data_u.1.get_mut(3).unwrap().num_token = Some(UserMock::get_num_token(user4_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
@@ -290,7 +290,7 @@ mod tests {
 
         let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = User_Test::get_token(user1_id);
+        let token1 = config_jwt::tests::get_token(user1_id);
 
         // Join user1.
         #[rustfmt::skip]
@@ -353,7 +353,7 @@ mod tests {
 
         let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = User_Test::get_token(user2_id);
+        let token2 = config_jwt::tests::get_token(user2_id);
 
         // Join user2.
         #[rustfmt::skip]
@@ -409,7 +409,7 @@ mod tests {
 
         let user4_id = profile_vec.get(3).unwrap().id;
         let member4 = profile_vec.get(3).unwrap().nickname.clone();
-        let token4 = User_Test::get_token(user4_id);
+        let token4 = config_jwt::tests::get_token(user4_id);
 
         // Join user4.
         #[rustfmt::skip]

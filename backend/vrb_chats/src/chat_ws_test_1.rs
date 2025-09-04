@@ -34,7 +34,7 @@ mod tests {
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
@@ -79,12 +79,12 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER]);
             let session1 = data_u.1.get(0).unwrap().clone();
             let user3_id = USER1_ID + 2;
-            let session3 = Session::new(user3_id, Some(UserMock::get_num_token(user3_id + 1)));
+            let session3 = Session::new(user3_id, Some(config_jwt::tests::get_num_token(user3_id + 1)));
             data_u.1 = vec![session1, session3];
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
@@ -94,7 +94,7 @@ mod tests {
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
 
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
 
         // -- Test: 1. "There was no 'join' command." --
         let msg_text = MessageText(format!("{{ \"leave\": 0 }}").into());
@@ -154,9 +154,9 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401(b):Unauthorized
 
         // -- Test: 8. "expired_token" --
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let num_token1b = UserMock::get_num_token(USER1_ID);
+        let num_token1b = config_jwt::tests::get_num_token(USER1_ID);
         let token1b = token_coding::encode_token(USER1_ID, num_token1b, &jwt_secret, -config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1b).into());
@@ -168,7 +168,7 @@ mod tests {
 
         // -- Test: 9. "session_not_found" (session_non_exist) --
         let user2a_id = USER1_ID + 1;
-        let token2a = User_Test::get_token(user2a_id);
+        let token2a = config_jwt::tests::get_token(user2a_id);
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2a).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
@@ -179,7 +179,7 @@ mod tests {
 
         // -- Test: 10. "unacceptable_token_num" (session found, but 'num_token' does not match) --
         let user3a_id = USER1_ID + 2;
-        let token3a = User_Test::get_token(user3a_id);
+        let token3a = config_jwt::tests::get_token(user3a_id);
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3a).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
@@ -189,10 +189,10 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err401c).unwrap()))); // 401(c):Unauthorized
 
         // -- Test: 11. "unacceptable_token_id" (session found, and 'num_token' does match, but user exist) --
-        let config_jwt = config_jwt::get_test_config();
+        let config_jwt = config_jwt::tests::get_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let user3b_id = USER1_ID + 2;
-        let num_token3b = UserMock::get_num_token(user3b_id + 1);
+        let num_token3b = config_jwt::tests::get_num_token(user3b_id + 1);
         let token3b = token_coding::encode_token(user3b_id, num_token3b, &jwt_secret, config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3b).into());
@@ -209,14 +209,14 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
-            data_u.1.get_mut(3).unwrap().num_token = Some(UserMock::get_num_token(user4_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
@@ -229,7 +229,7 @@ mod tests {
         // -- Test: 1. "Join user1 as owner."" --
         let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = User_Test::get_token(user1_id);
+        let token1 = config_jwt::tests::get_token(user1_id);
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
@@ -282,7 +282,7 @@ mod tests {
         // -- Test: 4. "Join user2 authorized."" --
         let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = User_Test::get_token(user2_id);
+        let token2 = config_jwt::tests::get_token(user2_id);
         // Join user2.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
@@ -313,7 +313,7 @@ mod tests {
         // -- Test: 5. "Join user4 is blocked."" --
         let user4_id = profile_vec.get(3).unwrap().id;
         let member4 = profile_vec.get(3).unwrap().nickname.clone();
-        let token4 = User_Test::get_token(user4_id);
+        let token4 = config_jwt::tests::get_token(user4_id);
         // Join user4.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token4).into());
@@ -358,11 +358,11 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
@@ -381,7 +381,7 @@ mod tests {
 
         let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = User_Test::get_token(user1_id);
+        let token1 = config_jwt::tests::get_token(user1_id);
         // Join user1.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
@@ -404,7 +404,7 @@ mod tests {
 
         let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = User_Test::get_token(user2_id);
+        let token2 = config_jwt::tests::get_token(user2_id);
         // Join user2.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());

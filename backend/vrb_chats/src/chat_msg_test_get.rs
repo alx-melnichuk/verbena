@@ -26,7 +26,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -36,7 +36,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -58,7 +58,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -68,7 +68,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -91,7 +91,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_part1() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -103,7 +103,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -126,7 +126,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_part2() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -140,7 +140,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -163,7 +163,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des_part1() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -175,7 +175,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -198,7 +198,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des_part2() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -212,7 +212,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;

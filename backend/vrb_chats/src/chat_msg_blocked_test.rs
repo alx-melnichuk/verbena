@@ -33,7 +33,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_blocked_users_exist_blocked_users() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let data_cm = ChMesTest::chat_messages(1);
@@ -45,7 +45,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_blocked_users)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -72,7 +72,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_blocked_users_not_exist_blocked_users() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let mut data_cm = ChMesTest::chat_messages(1);
@@ -83,7 +83,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_blocked_users)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -103,13 +103,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_post_blocked_user_no_form() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -127,13 +127,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_empty_json() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -159,7 +159,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_min_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = ChMsgMock::blocked_nickname_min();
@@ -168,7 +168,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -192,7 +192,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_max_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = ChMsgMock::blocked_nickname_max();
@@ -201,7 +201,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -225,14 +225,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.last().unwrap().id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -246,14 +246,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = format!("{}a", data_u.0.last().unwrap().nickname);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -267,7 +267,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
@@ -276,7 +276,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -301,7 +301,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
@@ -310,7 +310,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -335,7 +335,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
@@ -346,7 +346,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -371,7 +371,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
@@ -382,7 +382,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -410,13 +410,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_blocked_user_no_form() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -433,13 +433,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_empty_json() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -464,7 +464,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_min_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = ChMsgMock::blocked_nickname_min();
@@ -473,7 +473,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -497,7 +497,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_max_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = ChMsgMock::blocked_nickname_max();
@@ -506,7 +506,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -530,14 +530,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.last().unwrap().id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -551,14 +551,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = format!("{}a", data_u.0.last().unwrap().nickname);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -572,14 +572,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(1).unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -593,14 +593,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = data_u.0.get(1).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -614,7 +614,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
@@ -625,7 +625,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
@@ -650,7 +650,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_nickname() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
@@ -661,7 +661,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
