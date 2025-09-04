@@ -543,25 +543,3 @@ impl ChatMessageMock {
         (0..(BLOCKED_NICKNAME_MAX + 1)).map(|_| 'a').collect()
     }
 }
-
-/*#[cfg(all(test, feature = "mockdata"))]
-pub struct ChatMessageTest {}
-
-#[cfg(all(test, feature = "mockdata"))]
-impl ChatMessageTest {
-    pub fn message_min() -> String {
-        (0..(MESSAGE_MIN - 1)).map(|_| 'a').collect()
-    }
-    pub fn message_norm() -> String {
-        (0..(MESSAGE_MIN + 1)).map(|_| 'a').collect()
-    }
-    pub fn message_max() -> String {
-        (0..(MESSAGE_MAX + 1)).map(|_| 'a').collect()
-    }
-    pub fn blocked_nickname_min() -> String {
-        (0..(BLOCKED_NICKNAME_MIN - 1)).map(|_| 'a').collect()
-    }
-    pub fn blocked_nickname_max() -> String {
-        (0..(BLOCKED_NICKNAME_MAX + 1)).map(|_| 'a').collect()
-    }
-}*/
