@@ -37,7 +37,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_no_data() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
@@ -63,7 +63,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_empty_json_object() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
@@ -88,7 +88,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_empty() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
@@ -115,7 +115,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_min() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
@@ -142,7 +142,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_max() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
@@ -169,7 +169,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_wrong() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
@@ -196,7 +196,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_if_user_with_email_not_exist() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let email = format!("A{}", data_u.0.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
@@ -224,7 +224,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_not_exist() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user1_email = data_u.0.get(0).unwrap().email.clone();
         let recoveries = RecovTest::recoveries(Some(user1_id));
@@ -263,7 +263,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_already_exists() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user1_email = data_u.0.get(0).unwrap().email.clone();
         let recoveries = RecovTest::recoveries(Some(user1_id));
@@ -302,7 +302,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_err_jsonwebtoken_encode() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_email = data_u.0.get(0).unwrap().email.clone();
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
@@ -334,7 +334,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_empty() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
@@ -358,7 +358,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_min() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
@@ -382,7 +382,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_max() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
@@ -406,7 +406,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_wrong() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
@@ -430,7 +430,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_recovery_token() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
@@ -454,7 +454,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_final_date_has_expired() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
@@ -490,7 +490,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user_recovery() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone() + 1;
@@ -526,7 +526,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id + 1;
         let mut recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1 = recoveries.get_mut(0).unwrap();
@@ -563,7 +563,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_success() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user1 = data_u.0.get(0).unwrap();
         let user1_id = user1.id.clone();
         let nickname = user1.nickname.clone();
@@ -610,7 +610,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_clear_for_expired() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let user1_id = data_u.0.get(0).unwrap().id;
 
         let config_app = config_app::get_test_config();
