@@ -33,3 +33,27 @@ pub fn get_test_config() -> ConfigJwt {
         jwt_refresh: 240,
     }
 }
+
+#[cfg(any(test, feature = "mockdata"))]
+pub mod tests {
+    use vrb_tools::token_coding;
+
+    use crate::config_jwt::ConfigJwt;
+
+    pub fn get_config() -> ConfigJwt {
+        ConfigJwt {
+            jwt_secret: "my-jwt-secret".to_string(),
+            jwt_access: 120,
+            jwt_refresh: 240,
+        }
+    }
+    pub fn get_num_token(user_id: i32) -> i32 {
+        40000 + user_id
+    }
+    pub fn get_token(user_id: i32) -> String {
+        let config_jwt = get_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let num_token = get_num_token(user_id);
+        token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap()
+    }    
+}
