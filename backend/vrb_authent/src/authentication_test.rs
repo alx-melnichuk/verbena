@@ -7,13 +7,19 @@ mod tests {
         test, App, HttpResponse,
     };
     use serde_json;
-    use vrb_common::{api_error::{code_to_str, ApiError}, err};
+    use vrb_common::{
+        api_error::{code_to_str, ApiError},
+        err,
+    };
     use vrb_tools::{token_coding, token_data};
 
-    use crate::authentication::RequireAuth;
-    use crate::config_jwt;
-    use crate::user_models::Session;
-    use crate::user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID};
+    use crate::{
+        authentication::RequireAuth,
+        config_jwt,
+        user_mock::UserMock,
+        user_models::Session,
+        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
+    };
 
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
     const MSG_FAILED_TO_DESER: &str = "Failed to deserialize JSON string";
@@ -34,7 +40,7 @@ mod tests {
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
@@ -49,7 +55,7 @@ mod tests {
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token_with_cookie() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
@@ -64,7 +70,7 @@ mod tests {
     #[actix_web::test]
     async fn test_authentication_middleware_access_admin_only_endpoint_success() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_require_only_admin)
@@ -78,7 +84,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middleware_missing_token() {
-        let data_u = User_Test::users(&[]);
+        let data_u = UserMock::users(&[]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
@@ -98,7 +104,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middleware_invalid_token() {
-        let data_u = User_Test::users(&[]);
+        let data_u = UserMock::users(&[]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth)
@@ -118,7 +124,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middelware_expired_token() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let config_jwt = config_jwt::get_test_config();
         let user1_id = data_u.0.get(0).unwrap().id;
         let num_token1 = data_u.1.get(0).unwrap().num_token.unwrap();
@@ -143,7 +149,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token_session_non_exist() {
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
         let token2 = User_Test::get_token(user2_id);
         #[rustfmt::skip]
@@ -164,7 +170,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
-        let mut data_u = User_Test::users(&[USER]);
+        let mut data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
         data_u.1 = vec![Session::new(user2_id, Some(User_Test::get_num_token(user2_id)))];
         let token2 = User_Test::get_token(user2_id);
@@ -186,7 +192,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
-        let mut data_u = User_Test::users(&[USER]);
+        let mut data_u = UserMock::users(&[USER]);
         let user2_id = USER1_ID + 1;
         data_u.1 = vec![Session::new(user2_id, Some(User_Test::get_num_token(USER1_ID)))];
         let token2 = User_Test::get_token(user2_id);
@@ -209,7 +215,7 @@ mod tests {
     #[actix_web::test]
     async fn test_authentication_middleware_failure_access_only_admin() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_require_only_admin)
