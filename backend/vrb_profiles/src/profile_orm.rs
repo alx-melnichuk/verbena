@@ -207,36 +207,15 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::Utc;
-    use vrb_authent::{config_jwt, user_models::User};
+    use vrb_authent::{config_jwt, user_models::{User, USER1_ID}};
     use vrb_common::consts;
     use vrb_dbase::enm_user_role::UserRole;
-    use vrb_tools::token_coding;
 
     use crate::{
         config_prfl,
         profile_models::{self, Profile, Session},
         profile_orm::ProfileOrm,
     };
-
-    pub const ADMIN: u8 = 0;
-    pub const USER: u8 = 1;
-
-    pub const USER1: usize = 0;
-    pub const USER2: usize = 1;
-    pub const USER3: usize = 2;
-    pub const USER4: usize = 3;
-
-    pub const USER1_ID: i32 = 1100;
-    pub const USER2_ID: i32 = 1101;
-    pub const USER3_ID: i32 = 1102;
-    pub const USER4_ID: i32 = 1103;
-
-    pub const USER1_NAME: &str = "oliver_taylor";
-    pub const USER2_NAME: &str = "robert_brown";
-    pub const USER3_NAME: &str = "mary_williams";
-    pub const USER4_NAME: &str = "ava_wilson";
-
-    pub const USER1_NUM_TOKEN: i32 = 20000 + USER1_ID; //  1234;
 
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
@@ -259,14 +238,6 @@ pub mod tests {
                 profile_vec: profiles.to_vec(),
                 session_vec: Vec::new(),
             }
-        }
-        /// Create a new instance of the Profile entity.
-        pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
-            Profile::new(user_id, &nickname.to_lowercase(), &email.to_lowercase(), role.clone(), None, None, None, None)
-        }
-        /// Create a new instance of the Session entity.
-        pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
-            Session { user_id, num_token }
         }
         #[rustfmt::skip]
         pub fn stream_logo_alias(user_id: i32) -> Option<String> {
@@ -375,28 +346,6 @@ pub mod tests {
     pub struct ProfileOrmTest {}
 
     impl ProfileOrmTest {
-        pub fn user_ids() -> Vec<i32> {
-            vec![USER1_ID, USER2_ID, USER3_ID, USER4_ID]
-        }
-        pub fn get_user_name(user_id: i32) -> String {
-            match user_id {
-                USER1_ID => USER1_NAME,
-                USER2_ID => USER2_NAME,
-                USER3_ID => USER3_NAME,
-                USER4_ID => USER4_NAME,
-                _ => "",
-            }
-            .to_string()
-        }
-        pub fn get_num_token(user_id: i32) -> i32 {
-            40000 + user_id
-        }
-        pub fn get_token(user_id: i32) -> String {
-            let config_jwt = config_jwt::get_test_config();
-            let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-            let num_token = Self::get_num_token(user_id);
-            token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap()
-        }
         pub fn profiles(users: &[User]) -> Vec<Profile> {
             let profile_vec: Vec<Profile> = users.iter().map(|u| Profile::from(u.clone())).collect();
             profile_vec
