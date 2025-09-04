@@ -606,15 +606,13 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::{Duration, DateTime, Timelike, Utc};
-    use vrb_common::consts_user_test::UserOrmTest;
+    use vrb_authent::user_mock::USER_IDS;
     use vrb_dbase::enm_stream_state::StreamState;
 
     use crate::config_strm;
     use crate::stream_models::{self, CreateStream, ModifyStream, SearchStream, SearchStreamEvent, SearchStreamPeriod, Stream, StreamTagStreamId, StreamInfoDto};
 
     use crate::stream_orm::StreamOrm;
-
-    // use super::*;
 
     pub const STREAM_ID: i32 = 1400;
 
@@ -1056,7 +1054,7 @@ pub mod tests {
 
         pub fn streams(user_idxs: &[usize]) -> Vec<StreamInfoDto> {
             let mut stream_info_vec: Vec<StreamInfoDto> = Vec::new();
-            let user_ids = UserOrmTest::user_ids();
+            let user_ids = USER_IDS.clone();
             for (index, user_idx) in user_idxs.iter().enumerate() {
                 if let Some(user_id) = user_ids.get(*user_idx) {
                     let title = format!("title_{}_{}", index, *user_idx);
