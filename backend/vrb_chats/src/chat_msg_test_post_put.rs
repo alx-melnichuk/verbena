@@ -20,7 +20,7 @@ mod tests {
 
     use crate::{
         chat_message_controller::{post_chat_message, put_chat_message, tests as ChtCtTest},
-        chat_message_models::{self, ChatMessageDto, ChatMessageTest as MessgTest, CreateChatMessageDto, ModifyChatMessageDto},
+        chat_message_models::{self, ChatMessageDto, ChatMessageMock as ChMsgMock, CreateChatMessageDto, ModifyChatMessageDto},
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
     };
 
@@ -98,7 +98,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(ChtCtTest::header_auth(&token1))
-            .set_json(CreateChatMessageDto { stream_id, msg: MessgTest::message_min() })
+            .set_json(CreateChatMessageDto { stream_id, msg: ChMsgMock::message_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -126,7 +126,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(ChtCtTest::header_auth(&token1))
-            .set_json(CreateChatMessageDto { stream_id, msg: MessgTest::message_max() })
+            .set_json(CreateChatMessageDto { stream_id, msg: ChMsgMock::message_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -144,7 +144,7 @@ mod tests {
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id_wrong = data_cm.0.get(0).unwrap().stream_id.clone() - 1;
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message)
@@ -180,7 +180,7 @@ mod tests {
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let user1_name = data_u.0.get(0).unwrap().nickname.clone();
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message)
@@ -246,7 +246,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let ch_msg_id_bad = format!("{}a", last_msg_id);
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
@@ -304,7 +304,7 @@ mod tests {
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
-        let msg = MessgTest::message_max();
+        let msg = ChMsgMock::message_max();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
@@ -334,7 +334,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let user_id1 = data_u.0.get(0).unwrap().id;
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         let id_wrong = last_msg_id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -370,7 +370,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg_id = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().id.clone();
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
@@ -404,7 +404,7 @@ mod tests {
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg = data_cm.0.get(0).unwrap().clone();
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
@@ -445,7 +445,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
@@ -478,7 +478,7 @@ mod tests {
         let user_id2 = data_u.0.get(1).unwrap().id;
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let id_wrong = last_msg_id + 1;
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
@@ -513,7 +513,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)

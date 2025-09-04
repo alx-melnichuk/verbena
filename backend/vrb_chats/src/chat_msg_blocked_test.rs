@@ -21,7 +21,7 @@ mod tests {
     use crate::{
         chat_message_controller::{delete_blocked_user, get_blocked_users, post_blocked_user, tests as ChtCtTest},
         chat_message_models::{
-            self, BlockedUser, BlockedUserDto, ChatMessageTest as MdMesTest, CreateBlockedUserDto, DeleteBlockedUserDto,
+            self, BlockedUser, BlockedUserDto, ChatMessageMock as ChMsgMock, CreateBlockedUserDto, DeleteBlockedUserDto,
         },
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
     };
@@ -162,7 +162,7 @@ mod tests {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let blocked_nickname = MdMesTest::blocked_nickname_min();
+        let blocked_nickname = ChMsgMock::blocked_nickname_min();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
         #[rustfmt::skip]
@@ -195,7 +195,7 @@ mod tests {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let blocked_nickname = MdMesTest::blocked_nickname_max();
+        let blocked_nickname = ChMsgMock::blocked_nickname_max();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
         #[rustfmt::skip]
@@ -467,7 +467,7 @@ mod tests {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let blocked_nickname = MdMesTest::blocked_nickname_min();
+        let blocked_nickname = ChMsgMock::blocked_nickname_min();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
         #[rustfmt::skip]
@@ -500,7 +500,7 @@ mod tests {
         let token1 = User_Test::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let blocked_nickname = MdMesTest::blocked_nickname_max();
+        let blocked_nickname = ChMsgMock::blocked_nickname_max();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
         #[rustfmt::skip]

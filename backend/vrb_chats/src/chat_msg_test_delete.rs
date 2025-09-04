@@ -19,7 +19,7 @@ mod tests {
 
     use crate::{
         chat_message_controller::{delete_chat_message, tests as ChtCtTest},
-        chat_message_models::{ChatMessageDto, ChatMessageTest as MessgTest, ModifyChatMessageDto},
+        chat_message_models::{ChatMessageDto, ChatMessageMock as ChMsgMock, ModifyChatMessageDto},
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
     };
 
@@ -35,7 +35,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let last_ch_msg_id = data_cm.0.last().unwrap().id.clone();
         let ch_msg_id_bad = format!("{}a", last_ch_msg_id);
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
@@ -67,7 +67,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let last_ch_msg_id = data_cm.0.last().unwrap().id.clone();
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         let id_wrong = last_ch_msg_id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -103,7 +103,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
@@ -137,7 +137,7 @@ mod tests {
         let data_u = UserMock::users(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg = data_cm.0.get(0).unwrap().clone();
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
@@ -205,7 +205,7 @@ mod tests {
         let user_id2 = data_u.0.get(1).unwrap().id;
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let id_wrong = last_msg_id + 1;
-        let msg = MessgTest::message_norm();
+        let msg = ChMsgMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
