@@ -22,9 +22,9 @@ mod tests {
         user_authent_models::{
             LoginDto, LoginResponseDto, LoginUserProfileDto, TokenUserDto, TokenUserResponseDto, UserUniquenessResponseDto,
         },
-        user_mock::UserMock,
+        user_mock::{UserMock, USER, USER1_ID},
         user_models::Session,
-        user_orm::tests::{UserOrmTest as User_Test, USER, USER1_ID},
+        user_orm::tests::UserOrmTest as User_Test,
         user_profile_mock::UserProfileMock,
         user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
     };
