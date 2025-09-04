@@ -34,7 +34,7 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
-            data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(UserMock::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
@@ -92,7 +92,7 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
@@ -194,8 +194,8 @@ mod tests {
             let user2_id = data_u.0.get(1).unwrap().id;
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user2, user4.
-            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
-            data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(UserMock::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
@@ -285,7 +285,7 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
@@ -391,8 +391,8 @@ mod tests {
             let user2_id = data_u.0.get(1).unwrap().id;
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user2, user4.
-            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
-            data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(UserMock::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
@@ -477,8 +477,8 @@ mod tests {
             let user2_id = data_u.0.get(1).unwrap().id;
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user2, user4.
-            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
-            data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(UserMock::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)

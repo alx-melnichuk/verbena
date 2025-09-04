@@ -79,7 +79,7 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER]);
             let session1 = data_u.1.get(0).unwrap().clone();
             let user3_id = USER1_ID + 2;
-            let session3 = Session::new(user3_id, Some(User_Test::get_num_token(user3_id + 1)));
+            let session3 = Session::new(user3_id, Some(UserMock::get_num_token(user3_id + 1)));
             data_u.1 = vec![session1, session3];
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
@@ -156,7 +156,7 @@ mod tests {
         // -- Test: 8. "expired_token" --
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let num_token1b = User_Test::get_num_token(USER1_ID);
+        let num_token1b = UserMock::get_num_token(USER1_ID);
         let token1b = token_coding::encode_token(USER1_ID, num_token1b, &jwt_secret, -config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1b).into());
@@ -192,7 +192,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let user3b_id = USER1_ID + 2;
-        let num_token3b = User_Test::get_num_token(user3b_id + 1);
+        let num_token3b = UserMock::get_num_token(user3b_id + 1);
         let token3b = token_coding::encode_token(user3b_id, num_token3b, &jwt_secret, config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3b).into());
@@ -209,10 +209,10 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
-            data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(UserMock::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
@@ -358,7 +358,7 @@ mod tests {
             let mut data_u = UserMock::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(UserMock::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
