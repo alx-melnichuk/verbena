@@ -7,7 +7,7 @@ mod tests {
     use serde_json::{from_slice, to_string};
     use vrb_authent::{
         config_jwt,
-        user_mock::{UserMock, USER},
+        user_models::{UserMock, USER},
         user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::err;

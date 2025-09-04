@@ -6,8 +6,7 @@ mod tests {
     use serde_json::to_string;
     use vrb_authent::{
         config_jwt,
-        user_mock::{UserMock, USER, USER1_ID},
-        user_models::Session,
+        user_models::{Session, UserMock, USER, USER1_ID},
         user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::{crypto::CRT_WRONG_STRING_BASE64URL, err};
