@@ -635,21 +635,21 @@ impl ProfileTest {
         role[0..(role.len() - 1)].to_string()
     }
     pub fn descript_min() -> String {
-        (0..(DESCRIPT_MIN - 1)).map(|_| 'a').collect()
+        (0..(user_validations::DESCRIPT_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn descript_max() -> String {
-        (0..(DESCRIPT_MAX + 1)).map(|_| 'a').collect()
+        (0..(user_validations::DESCRIPT_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn theme_min() -> String {
-        (0..(THEME_MIN - 1)).map(|_| 'a').collect()
+        (0..(user_validations::THEME_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn theme_max() -> String {
-        (0..(THEME_MAX + 1)).map(|_| 'a').collect()
+        (0..(user_validations::THEME_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn locale_min() -> String {
-        (0..(LOCALE_MIN - 1)).map(|_| 'a').collect()
+        (0..(user_validations::LOCALE_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn locale_max() -> String {
-        (0..(LOCALE_MAX + 1)).map(|_| 'a').collect()
+        (0..(user_validations::LOCALE_MAX + 1)).map(|_| 'a').collect()
     }
 }

@@ -11,7 +11,8 @@ pub mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
+        user_mock::{UserMock, ADMIN, USER, USER1_ID},
+        user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -39,7 +40,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_invalid_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile_id_bad = format!("{}a", data_u.0.get(0).unwrap().id);
         #[rustfmt::skip]
@@ -68,7 +69,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let profiles = ProflTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip]
@@ -88,7 +89,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_id = profile1.user_id;
@@ -126,7 +127,7 @@ pub mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
@@ -169,7 +170,7 @@ pub mod tests {
         let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
@@ -204,7 +205,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_with_stream_img() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
@@ -214,7 +215,7 @@ pub mod tests {
         let files_dir = config_prfl.prfl_avatar_files_dir.clone();
         env::set_var(consts::STRM_LOGO_FILES_DIR, &files_dir);
         let path_logo0_file = stream_logo_path(&files_dir, profile1_id).unwrap();
-        
+
         // Create a logo file for this user's stream.
         png_files::save_file_png(&(path_logo0_file.clone()), 1).unwrap();
         #[rustfmt::skip]
@@ -251,7 +252,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_current_without_img() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_dto = ProfileDto::from(profile1);
@@ -288,7 +289,7 @@ pub mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
@@ -330,7 +331,7 @@ pub mod tests {
         let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
@@ -364,7 +365,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_current_with_stream_img() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let mut profiles = ProflTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;

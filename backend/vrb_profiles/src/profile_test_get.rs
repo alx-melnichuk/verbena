@@ -9,8 +9,8 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest as User_Test, ADMIN, USER, USER1_ID},
-        user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
+        user_mock::{UserMock, ADMIN, USER, USER1_ID},
+        user_orm::tests::UserOrmTest as User_Test,
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -19,11 +19,11 @@ mod tests {
 
     use crate::{
         config_prfl,
-        profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, tests as RrfCtTest, uniqueness_check},
+        profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, tests as RrfCtTest},
         profile_models::{ProfileConfigDto, ProfileDto},
         profile_orm::tests::ProfileOrmTest as ProflTest,
     };
-    
+
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     // ** get_profile_by_id **
@@ -31,7 +31,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_invalid_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN]);
+        let data_u = UserMock::users(&[ADMIN]);
         let profiles = ProflTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         let user_id_bad = format!("{}a", user_id);
@@ -60,7 +60,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_valid_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN, USER]);
+        let data_u = UserMock::users(&[ADMIN, USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
@@ -88,7 +88,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_non_existent_id() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[ADMIN, USER]);
+        let data_u = UserMock::users(&[ADMIN, USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
@@ -111,7 +111,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_config_data() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let cfg_prfl = config_prfl::get_test_config();
         #[rustfmt::skip]
         let profile_config_dto = ProfileConfigDto::new(
@@ -147,7 +147,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_current_valid_token() {
         let token1 = User_Test::get_token(USER1_ID);
-        let data_u = User_Test::users(&[USER]);
+        let data_u = UserMock::users(&[USER]);
         let profiles = ProflTest::profiles(&data_u.0);
         let profile1_dto = ProfileDto::from(profiles.get(0).unwrap().clone());
         #[rustfmt::skip]
