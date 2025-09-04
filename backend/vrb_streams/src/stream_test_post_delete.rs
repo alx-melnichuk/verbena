@@ -38,12 +38,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_post_stream_no_form() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -66,12 +66,12 @@ mod tests {
         let form_builder = MultiPartFormDataBuilder::new();
         let (header, body) = form_builder.build();
 
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -96,12 +96,12 @@ mod tests {
             .with_text("title", "")
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -127,12 +127,12 @@ mod tests {
             .with_text("title", StreamModelsTest::title_min())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -158,12 +158,12 @@ mod tests {
             .with_text("title", StreamModelsTest::title_max())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -190,12 +190,12 @@ mod tests {
             .with_text("descript", StreamModelsTest::descript_min())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -222,12 +222,12 @@ mod tests {
             .with_text("descript", StreamModelsTest::descript_max())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -255,12 +255,12 @@ mod tests {
             .with_text("starttime", starttime_s)
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -287,12 +287,12 @@ mod tests {
             .with_text("source", StreamModelsTest::source_min())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -318,12 +318,12 @@ mod tests {
             .with_text("source", StreamModelsTest::source_max())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -350,12 +350,12 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -381,12 +381,12 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -413,12 +413,12 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -445,12 +445,12 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -475,12 +475,12 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", "aaa")
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -512,7 +512,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let strm_logo_max_size = 160;
         let mut config_strm = config_strm::get_test_config();
@@ -520,7 +520,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -554,12 +554,12 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .with_file(path_name1_file.clone(), "logofile", "image/bmp", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
@@ -599,7 +599,7 @@ mod tests {
             .with_text("source", &source_s)
             .with_text("tags", &tags_s)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
@@ -607,7 +607,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
@@ -651,7 +651,7 @@ mod tests {
             .with_text("tags", &tags_s)
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
@@ -659,7 +659,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
@@ -722,7 +722,7 @@ mod tests {
             .with_text("tags", &tags_s)
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
@@ -730,7 +730,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
@@ -771,7 +771,7 @@ mod tests {
             .with_text("tags", &tags_s)
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
@@ -785,7 +785,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
                 .configure(Strm_Test::cfg_stream_orm(streams))
@@ -833,14 +833,14 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_stream_invalid_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id_bad = format!("{}a", streams.get(0).unwrap().id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
@@ -862,14 +862,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_stream_non_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream1_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
@@ -882,14 +882,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_stream_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
@@ -918,7 +918,7 @@ mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get_mut(0).unwrap();
@@ -927,7 +927,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
@@ -960,7 +960,7 @@ mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_logo = format!("/not_alias{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get_mut(0).unwrap();
@@ -969,7 +969,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))

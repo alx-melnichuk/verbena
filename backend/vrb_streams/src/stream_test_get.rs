@@ -40,7 +40,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_stream_by_id_invalid_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
@@ -48,7 +48,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -69,14 +69,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_valid_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_dto = streams.get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -97,14 +97,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_non_existent_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -116,7 +116,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         let streams = Strm_Test::streams(&[0, 1]);
         let mut stream2 = streams.get(1).unwrap().clone();
@@ -124,7 +124,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -145,7 +145,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user_by_admin() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN, USER]);
         let streams = Strm_Test::streams(&[USER1, USER2]);
         let mut stream2 = streams.get(1).unwrap().clone();
@@ -153,7 +153,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -177,7 +177,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1 and user2.
@@ -189,7 +189,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -215,7 +215,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_page_limit_without_user_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1 and user2.
         let streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER2]);
@@ -226,7 +226,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -254,7 +254,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_page2() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1 and user2.
@@ -266,7 +266,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -294,7 +294,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_user() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user2_id = data_u.0.get(1).unwrap().id;
@@ -303,7 +303,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -326,7 +326,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_admin() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
@@ -340,7 +340,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -366,7 +366,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_live() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         let live = true;
         // Create streams for user1.
@@ -382,7 +382,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -410,7 +410,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_is_future() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1, USER1]);
@@ -432,7 +432,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -459,7 +459,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_is_not_future() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1, USER1]);
@@ -481,7 +481,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -508,7 +508,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_asc() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
@@ -528,7 +528,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -556,7 +556,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_desc() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
@@ -576,7 +576,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -607,7 +607,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_stream_config_data() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let config_strm = config_strm::get_test_config();
         #[rustfmt::skip]
@@ -621,7 +621,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_config)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
         ).await;
@@ -643,7 +643,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_streams_events_search_by_user_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1.
@@ -663,7 +663,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -692,7 +692,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_without_user_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER1]);
@@ -713,7 +713,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -741,7 +741,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_page2() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
@@ -761,7 +761,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -788,7 +788,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_bad_starttime() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
@@ -806,7 +806,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -830,7 +830,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_another_user_id_with_role_user() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user2_id = data_u.0.get(1).unwrap().id;
@@ -848,7 +848,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -871,7 +871,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_another_user_id_with_role_admin() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user1.
@@ -890,7 +890,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -921,7 +921,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_less_start() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let dt = Local::now();
@@ -932,7 +932,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -954,7 +954,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_more_on_2_month() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let dt = Local::now();
@@ -967,7 +967,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -1005,14 +1005,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_user_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let (streams, start, finish, period) = get_streams2(USER1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1033,13 +1033,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_without_user_id() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER]);
         let (streams, start, finish, period) = get_streams2(USER1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1061,7 +1061,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_user() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user2_id = data_u.0.get(1).unwrap().id;
@@ -1069,7 +1069,7 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1092,14 +1092,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_admin_99() {
-        let token1 = User_Test::get_token(USER1_ID);
+        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserMock::users(&[ADMIN, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         let (streams, start, finish, period) = get_streams2(USER2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(User_Test::cfg_user_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
