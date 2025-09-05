@@ -13,8 +13,7 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_models::{UserMock, ADMIN, USER, USER1, USER1_ID, USER2},
-        user_orm::tests::UserOrmTest as User_Test,
+        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1, USER1_ID, USER2},
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -26,10 +25,11 @@ mod tests {
     use crate::{
         config_strm,
         stream_controller::{
-            put_stream, put_toggle_state, tests as StrCtTest, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG, MSG_INVALID_STREAM_STATE,
+            put_stream, put_toggle_state, tests as StreamCtrlTest, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG,
+            MSG_INVALID_STREAM_STATE,
         },
-        stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamModelsTest, ToggleStreamStateDto},
-        stream_orm::tests::StreamOrmTest as Strm_Test,
+        stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamMock, ToggleStreamStateDto},
+        stream_orm::tests::StreamOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -42,18 +42,18 @@ mod tests {
     #[actix_web::test]
     async fn test_put_stream_no_form() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/1"))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -69,18 +69,18 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new().build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/1"))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -102,18 +102,18 @@ mod tests {
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/streams/1")
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -140,18 +140,18 @@ mod tests {
             .with_text("title", "".to_string()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", &stream_id_bad))
-            .insert_header(StrCtTest::header_auth(&token1)).insert_header(header).set_payload(body).to_request();
+            .insert_header(StreamCtrlTest::header_auth(&token1)).insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
@@ -166,20 +166,20 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_title_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamModelsTest::title_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamMock::title_min()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -189,24 +189,24 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TITLE_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TITLE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_title_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamModelsTest::title_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamMock::title_max()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -216,26 +216,26 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TITLE_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TITLE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_descript_min() {
         let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("descript", StreamModelsTest::descript_min())
+            .with_text("descript", StreamMock::descript_min())
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -245,26 +245,26 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_DESCRIPT_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_DESCRIPT_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_descript_max() {
         let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("descript", StreamModelsTest::descript_max())
+            .with_text("descript", StreamMock::descript_max())
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -274,7 +274,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_DESCRIPT_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_DESCRIPT_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_starttime_now() {
@@ -284,17 +284,17 @@ mod tests {
             .with_text("starttime", starttime_s).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -304,26 +304,26 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_MIN_VALID_STARTTIME]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_MIN_VALID_STARTTIME]);
     }
     #[actix_web::test]
     async fn test_put_stream_source_min() {
         let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("source", StreamModelsTest::source_min())
+            .with_text("source", StreamMock::source_min())
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -333,26 +333,26 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_SOURCE_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_SOURCE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_source_max() {
         let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("source", StreamModelsTest::source_max())
+            .with_text("source", StreamMock::source_max())
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -362,11 +362,11 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_SOURCE_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_SOURCE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_tags_min_amount() {
-        let tags = StreamModelsTest::tag_names_min();
+        let tags = StreamMock::tag_names_min();
         if tags.len() <= 0 {
             return;
         }
@@ -375,17 +375,17 @@ mod tests {
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -395,27 +395,27 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MIN_AMOUNT]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MIN_AMOUNT]);
     }
     #[actix_web::test]
     async fn test_put_stream_tags_max_amount() {
-        let tags = StreamModelsTest::tag_names_max();
+        let tags = StreamMock::tag_names_max();
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -425,27 +425,27 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MAX_AMOUNT]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MAX_AMOUNT]);
     }
     #[actix_web::test]
     async fn test_put_stream_tag_name_min() {
-        let tags: Vec<String> = vec![StreamModelsTest::tag_name_min()];
+        let tags: Vec<String> = vec![StreamMock::tag_name_min()];
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -455,27 +455,27 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_tag_name_max() {
-        let tags: Vec<String> = vec![StreamModelsTest::tag_name_max()];
+        let tags: Vec<String> = vec![StreamMock::tag_name_max()];
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -485,7 +485,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StrCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_invalid_tag() {
@@ -494,17 +494,17 @@ mod tests {
             .with_text("tags", "aaa").build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -525,17 +525,17 @@ mod tests {
             .with_text("tags", "[\"tag\"").build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -560,21 +560,21 @@ mod tests {
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let mut config_strm = config_strm::get_test_config();
         config_strm.strm_logo_max_size = 160;
         let strm_logo_max_size = config_strm.strm_logo_max_size;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/streams/1")
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -601,19 +601,19 @@ mod tests {
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let config_strm = config_strm::get_test_config();
         let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StrCtTest::header_auth(&token1))
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -633,24 +633,24 @@ mod tests {
     async fn test_put_stream_non_existent_id() {
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("title", format!("{}a", StreamModelsTest::title_min()))
+            .with_text("title", format!("{}a", StreamMock::title_min()))
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let streams = Strm_Test::streams(&[USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let streams = StreamOrmTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id + 1))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -660,24 +660,24 @@ mod tests {
     async fn test_put_stream_another_user() {
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("title", format!("{}a", StreamModelsTest::title_min()))
+            .with_text("title", format!("{}a", StreamMock::title_min()))
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER, USER]);
-        let streams = Strm_Test::streams(&[USER1, USER2]);
+        let data_u = UserOrmTest::users(&[USER, USER]);
+        let streams = StreamOrmTest::streams(&[USER1, USER2]);
         let stream2_id = streams.get(1).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream2_id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -685,28 +685,28 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_another_user_by_admin() {
-        let new_title = format!("{}b", StreamModelsTest::title_min());
+        let new_title = format!("{}b", StreamMock::title_min());
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("title", &new_title)
             .build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN, USER]);
-        let streams = Strm_Test::streams(&[USER1, USER2]);
+        let data_u = UserOrmTest::users(&[ADMIN, USER]);
+        let streams = StreamOrmTest::streams(&[USER1, USER2]);
         let stream2 = streams.get(1).unwrap().clone();
         let app = test::init_service(
             App::new()
                 .service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams)),
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams)),
         )
         .await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream2.id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -723,8 +723,8 @@ mod tests {
     #[actix_web::test]
     async fn test_put_stream_valid_data_without_file() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let streams = Strm_Test::streams(&[USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let streams = StreamOrmTest::streams(&[USER1]);
         let stream = streams.get(0).unwrap().clone();
 
         let user_id = stream.user_id;
@@ -748,14 +748,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream.id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -798,23 +798,23 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let streams = Strm_Test::streams(&[USER1]);
+        let streams = StreamOrmTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir.clone();
         #[rustfmt::skip]
             let app = test::init_service(
                 App::new().service(put_stream)
-                    .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                    .configure(User_Test::cfg_user_orm(data_u))
-                    .configure(Strm_Test::cfg_config_strm(config_strm))
-                    .configure(Strm_Test::cfg_stream_orm(streams))
+                    .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                    .configure(UserOrmTest::cfg_user_orm(data_u))
+                    .configure(StreamOrmTest::cfg_config_strm(config_strm))
+                    .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
             let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
-                .insert_header(StrCtTest::header_auth(&token1))
+                .insert_header(StreamCtrlTest::header_auth(&token1))
                 .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -856,9 +856,9 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let streams = Strm_Test::streams(&[USER1]);
+        let streams = StreamOrmTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
 
         let mut config_strm = config_strm::get_test_config();
@@ -870,14 +870,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
             let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
-                .insert_header(StrCtTest::header_auth(&token1))
+                .insert_header(StreamCtrlTest::header_auth(&token1))
                 .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -929,23 +929,23 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let mut streams = Strm_Test::streams(&[USER1]);
+        let mut streams = StreamOrmTest::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias);
         let stream_id = stream.id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -994,22 +994,22 @@ mod tests {
             .with_text("title", "title1".to_string())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut streams = Strm_Test::streams(&[USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut streams = StreamOrmTest::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias.clone());
         let stream_id = stream.id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1044,22 +1044,22 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut streams = Strm_Test::streams(&[USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut streams = StreamOrmTest::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias);
         let stream_id = stream.id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1085,20 +1085,20 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let streams = Strm_Test::streams(&[USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let streams = StreamOrmTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
@@ -1115,18 +1115,18 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_no_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[USER1])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[USER1])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/1"))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -1139,18 +1139,18 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_empty_json_object() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[USER1])))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[USER1])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/1"))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .set_json(serde_json::json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1164,22 +1164,22 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_invalid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let streams = Strm_Test::streams(&[USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let streams = StreamOrmTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let stream_id_bad = format!("{}a", stream_id);
         let new_state = streams.get(0).unwrap().state.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id_bad))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .set_json(ToggleStreamStateDto{ state: new_state })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1196,21 +1196,21 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let streams = Strm_Test::streams(&[USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let streams = StreamOrmTest::streams(&[USER1]);
         let stream_id2 = streams.get(0).unwrap().id.clone() + 1;
         let new_state = streams.get(0).unwrap().state.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id2))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .set_json(ToggleStreamStateDto{ state: new_state })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1219,22 +1219,22 @@ mod tests {
     #[actix_web::test]
     async fn test_put_toggle_state_invalid_state() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let streams = Strm_Test::streams(&[USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let streams = StreamOrmTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let new_state = streams.get(0).unwrap().state.clone();
         let old_state = new_state;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .set_json(ToggleStreamStateDto{ state: new_state })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1267,8 +1267,8 @@ mod tests {
         ];
         for (old_state, new_state) in buff {
             let token1 = config_jwt::tests::get_token(USER1_ID);
-            let data_u = UserMock::users(&[USER]);
-            let mut streams = Strm_Test::streams(&[USER1]);
+            let data_u = UserOrmTest::users(&[USER]);
+            let mut streams = StreamOrmTest::streams(&[USER1]);
 
             let stream = streams.get_mut(0).unwrap();
             stream.state = old_state;
@@ -1276,14 +1276,14 @@ mod tests {
             #[rustfmt::skip]
             let app = test::init_service(
                 App::new().service(put_toggle_state)
-                    .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                    .configure(User_Test::cfg_user_orm(data_u))
-                    .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                    .configure(Strm_Test::cfg_stream_orm(streams))
+                    .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                    .configure(UserOrmTest::cfg_user_orm(data_u))
+                    .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                    .configure(StreamOrmTest::cfg_stream_orm(streams))
             ).await;
             #[rustfmt::skip]
             let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id))
-                .insert_header(StrCtTest::header_auth(&token1))
+                .insert_header(StreamCtrlTest::header_auth(&token1))
                 .set_json(ToggleStreamStateDto{ state: new_state })
                 .to_request();
             let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1304,8 +1304,8 @@ mod tests {
         let old_state = StreamState::Waiting;
         let new_state = StreamState::Preparing;
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut streams = Strm_Test::streams(&[USER1, USER1]);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut streams = StreamOrmTest::streams(&[USER1, USER1]);
         let stream1 = streams.get_mut(0).unwrap();
 
         stream1.state = old_state;
@@ -1319,14 +1319,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                .configure(Strm_Test::cfg_stream_orm(streams))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream1_id))
-            .insert_header(StrCtTest::header_auth(&token1))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
             .set_json(ToggleStreamStateDto{ state: new_state })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1352,8 +1352,8 @@ mod tests {
         ];
         for (old_state, new_state) in buff {
             let token1 = config_jwt::tests::get_token(USER1_ID);
-            let data_u = UserMock::users(&[USER]);
-            let mut streams = Strm_Test::streams(&[USER1]);
+            let data_u = UserOrmTest::users(&[USER]);
+            let mut streams = StreamOrmTest::streams(&[USER1]);
             let stream = streams.get_mut(0).unwrap();
             stream.state = old_state;
             let stream_id = stream.id;
@@ -1362,14 +1362,14 @@ mod tests {
             #[rustfmt::skip]
             let app = test::init_service(
                 App::new().service(put_toggle_state)
-                    .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                    .configure(User_Test::cfg_user_orm(data_u))
-                    .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
-                    .configure(Strm_Test::cfg_stream_orm(streams))
+                    .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                    .configure(UserOrmTest::cfg_user_orm(data_u))
+                    .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
+                    .configure(StreamOrmTest::cfg_stream_orm(streams))
             ).await;
             #[rustfmt::skip]
             let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id))
-                .insert_header(StrCtTest::header_auth(&token1))
+                .insert_header(StreamCtrlTest::header_auth(&token1))
                 .set_json(ToggleStreamStateDto{ state: new_state })
                 .to_request();
             let resp: dev::ServiceResponse = test::call_service(&app, req).await;
