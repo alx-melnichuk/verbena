@@ -2,11 +2,10 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_common::{
-    user_validations,
-    validators::{ValidationError, Validator},
-};
+use vrb_common::validators::{ValidationError, Validator};
 use vrb_dbase::schema;
+
+use crate::user_models;
 
 // ** Section: "UserRecovery" **
 
@@ -39,7 +38,7 @@ impl Validator for RecoveryUserDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(user_validations::validate_email(&self.email).err());
+        errors.push(user_models::validate_email(&self.email).err());
 
         self.filter_errors(errors)
     }
@@ -80,7 +79,7 @@ impl Validator for RecoveryDataDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(user_validations::validate_password(&self.password).err());
+        errors.push(user_models::validate_password(&self.password).err());
 
         self.filter_errors(errors)
     }

@@ -4,11 +4,10 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_authent::user_models::User;
+use vrb_authent::user_models::{self, User};
 use vrb_common::{
     err, serial_datetime,
     validators::{ValidationChecks, ValidationError, Validator},
-    user_validations,
 };
 use vrb_dbase::{enm_user_role::UserRole, schema};
 
@@ -26,28 +25,28 @@ pub const MSG_USER_ROLE_INVALID_VALUE: &str = "user_role:invalid_value";
 // #
 pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
     if value.contains("@") {
-        user_validations::validate_email(&value).map_err(|err| err)?;
+        user_models::validate_email(&value).map_err(|err| err)?;
     } else {
-        user_validations::validate_nickname(&value).map_err(|err| err)?;
+        user_models::validate_nickname(&value).map_err(|err| err)?;
     }
     Ok(())
 }
 // MIN=2, MAX=2048
 pub fn validate_descript(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, user_validations::DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, user_validations::DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
+    ValidationChecks::min_length(value, user_models::DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, user_models::DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
     Ok(())
 }
 // MIN=2, MAX=32
 pub fn validate_theme(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, user_validations::THEME_MIN.into(), MSG_THEME_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, user_validations::THEME_MAX.into(), MSG_THEME_MAX_LENGTH)?;
+    ValidationChecks::min_length(value, user_models::THEME_MIN.into(), MSG_THEME_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, user_models::THEME_MAX.into(), MSG_THEME_MAX_LENGTH)?;
     Ok(())
 }
 // MIN=2, MAX=32
 pub fn validate_locale(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, user_validations::LOCALE_MIN.into(), MSG_LOCALE_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, user_validations::LOCALE_MAX.into(), MSG_LOCALE_MAX_LENGTH)?;
+    ValidationChecks::min_length(value, user_models::LOCALE_MIN.into(), MSG_LOCALE_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, user_models::LOCALE_MAX.into(), MSG_LOCALE_MAX_LENGTH)?;
     Ok(())
 }
 pub fn validate_role(value: &str) -> Result<(), ValidationError> {
@@ -340,10 +339,10 @@ impl Validator for ModifyProfileDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         if let Some(value) = &self.nickname {
-            errors.push(user_validations::validate_nickname(&value).err());
+            errors.push(user_models::validate_nickname(&value).err());
         }
         if let Some(value) = &self.email {
-            errors.push(user_validations::validate_email(&value).err());
+            errors.push(user_models::validate_email(&value).err());
         }
         if let Some(value) = &self.role {
             errors.push(validate_role(&value).err());
@@ -419,13 +418,13 @@ impl Validator for NewPasswordProfileDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(user_validations::validate_password(&self.password).err());
-        errors.push(user_validations::validate_new_password(&self.new_password).err());
+        errors.push(user_models::validate_password(&self.password).err());
+        errors.push(user_models::validate_new_password(&self.new_password).err());
 
         // Determine whether there are errors.
         let is_exist_error = errors.iter().any(|err| err.is_some());
         if !is_exist_error {
-            errors.push(user_validations::validate_inequality(&self.new_password, &self.password).err());
+            errors.push(user_models::validate_inequality(&self.new_password, &self.password).err());
         }
 
         self.filter_errors(errors)
@@ -458,7 +457,7 @@ impl Validator for LoginProfileDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         errors.push(validate_nickname_or_email(&self.nickname).err());
-        errors.push(user_validations::validate_password(&self.password).err());
+        errors.push(user_models::validate_password(&self.password).err());
 
         self.filter_errors(errors)
     }
@@ -508,9 +507,9 @@ impl Validator for RegistrProfileDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(user_validations::validate_nickname(&self.nickname).err());
-        errors.push(user_validations::validate_email(&self.email).err());
-        errors.push(user_validations::validate_password(&self.password).err());
+        errors.push(user_models::validate_nickname(&self.nickname).err());
+        errors.push(user_models::validate_email(&self.email).err());
+        errors.push(user_models::validate_password(&self.password).err());
 
         self.filter_errors(errors)
     }
@@ -539,7 +538,7 @@ impl Validator for RecoveryProfileDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(user_validations::validate_email(&self.email).err());
+        errors.push(user_models::validate_email(&self.email).err());
 
         self.filter_errors(errors)
     }
@@ -568,7 +567,7 @@ impl Validator for RecoveryDataDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(user_validations::validate_password(&self.password).err());
+        errors.push(user_models::validate_password(&self.password).err());
 
         self.filter_errors(errors)
     }
@@ -586,29 +585,29 @@ pub struct ClearForExpiredResponseDto {
 // * * * *   * * * *
 
 #[cfg(all(test, feature = "mockdata"))]
-pub struct ProfileTest {}
+pub struct ProfileMock {}
 
 #[cfg(all(test, feature = "mockdata"))]
-impl ProfileTest {
+impl ProfileMock {
     
     pub fn nickname_min() -> String {
-        (0..(user_validations::NICKNAME_MIN - 1)).map(|_| 'a').collect()
+        (0..(user_models::NICKNAME_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn nickname_max() -> String {
-        (0..(user_validations::NICKNAME_MAX + 1)).map(|_| 'a').collect()
+        (0..(user_models::NICKNAME_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn nickname_wrong() -> String {
-        let nickname: String = (0..(user_validations::NICKNAME_MIN - 1)).map(|_| 'a').collect();
+        let nickname: String = (0..(user_models::NICKNAME_MIN - 1)).map(|_| 'a').collect();
         format!("{}#", nickname)
     }
     pub fn email_min() -> String {
         let suffix = "@us".to_owned();
-        let email_min: usize = user_validations::EMAIL_MIN.into();
+        let email_min: usize = user_models::EMAIL_MIN.into();
         let email: String = (0..(email_min - 1 - suffix.len())).map(|_| 'a').collect();
         format!("{}{}", email, suffix)
     }
     pub fn email_max() -> String {
-        let email_max: usize = user_validations::EMAIL_MAX.into();
+        let email_max: usize = user_models::EMAIL_MAX.into();
         let prefix: String = (0..64).map(|_| 'a').collect();
         let domain = ".ua";
         let len = email_max - prefix.len() - domain.len() + 1;
@@ -617,39 +616,39 @@ impl ProfileTest {
     }
     pub fn email_wrong() -> String {
         let suffix = "@".to_owned();
-        let email_min: usize = user_validations::EMAIL_MIN.into();
+        let email_min: usize = user_models::EMAIL_MIN.into();
         let email: String = (0..(email_min - suffix.len())).map(|_| 'a').collect();
         format!("{}{}", email, suffix)
     }
     pub fn password_min() -> String {
-        (0..(user_validations::PASSWORD_MIN - 1)).map(|_| 'a').collect()
+        (0..(user_models::PASSWORD_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn password_max() -> String {
-        (0..(user_validations::PASSWORD_MAX + 1)).map(|_| 'a').collect()
+        (0..(user_models::PASSWORD_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn password_wrong() -> String {
-        (0..(user_validations::PASSWORD_MIN)).map(|_| 'a').collect()
+        (0..(user_models::PASSWORD_MIN)).map(|_| 'a').collect()
     }
     pub fn role_wrong() -> String {
         let role = UserRole::all_values().get(0).unwrap().to_string();
         role[0..(role.len() - 1)].to_string()
     }
     pub fn descript_min() -> String {
-        (0..(user_validations::DESCRIPT_MIN - 1)).map(|_| 'a').collect()
+        (0..(user_models::DESCRIPT_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn descript_max() -> String {
-        (0..(user_validations::DESCRIPT_MAX + 1)).map(|_| 'a').collect()
+        (0..(user_models::DESCRIPT_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn theme_min() -> String {
-        (0..(user_validations::THEME_MIN - 1)).map(|_| 'a').collect()
+        (0..(user_models::THEME_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn theme_max() -> String {
-        (0..(user_validations::THEME_MAX + 1)).map(|_| 'a').collect()
+        (0..(user_models::THEME_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn locale_min() -> String {
-        (0..(user_validations::LOCALE_MIN - 1)).map(|_| 'a').collect()
+        (0..(user_models::LOCALE_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn locale_max() -> String {
-        (0..(user_validations::LOCALE_MAX + 1)).map(|_| 'a').collect()
+        (0..(user_models::LOCALE_MAX + 1)).map(|_| 'a').collect()
     }
 }

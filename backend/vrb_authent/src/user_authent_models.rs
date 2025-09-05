@@ -3,18 +3,18 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use vrb_common::{
-    serial_datetime, user_validations,
+    serial_datetime,
     validators::{ValidationError, Validator},
 };
 use vrb_dbase::enm_user_role::UserRole;
 
-use crate::user_models::User;
+use crate::user_models::{self, User};
 
 pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
     if value.contains("@") {
-        user_validations::validate_email(&value).map_err(|err| err)?;
+        user_models::validate_email(&value).map_err(|err| err)?;
     } else {
-        user_validations::validate_nickname(&value).map_err(|err| err)?;
+        user_models::validate_nickname(&value).map_err(|err| err)?;
     }
     Ok(())
 }
@@ -61,7 +61,7 @@ impl Validator for LoginDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         errors.push(validate_nickname_or_email(&self.nickname).err());
-        errors.push(user_validations::validate_password(&self.password).err());
+        errors.push(user_models::validate_password(&self.password).err());
 
         self.filter_errors(errors)
     }
@@ -76,10 +76,10 @@ pub struct LoginUserProfileDto {
     pub nickname: String, // max_len: 255
     pub email: String,    // max_len: 255
     pub role: UserRole,
-    pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
+    pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
     pub descript: Option<String>, // type: Text default ""
-    pub theme: Option<String>, // min_len=2 max_len=32 default "light"
-    pub locale: Option<String>, // min_len=2 max_len=32 default "default"
+    pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
+    pub locale: Option<String>,   // min_len=2 max_len=32 default "default"
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "serial_datetime")]

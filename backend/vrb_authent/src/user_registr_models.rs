@@ -2,12 +2,10 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_common::{
-    user_validations,
-    /*err, serial_datetime,*/
-    validators::{/*ValidationChecks,*/ ValidationError, Validator},
-};
+use vrb_common::validators::{ValidationError, Validator};
 use vrb_dbase::schema;
+
+use crate::user_models;
 
 // * * * * Section: models for "UserRegistrOrm". * * * *
 
@@ -48,9 +46,9 @@ impl Validator for RegistrUserDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(user_validations::validate_nickname(&self.nickname).err());
-        errors.push(user_validations::validate_email(&self.email).err());
-        errors.push(user_validations::validate_password(&self.password).err());
+        errors.push(user_models::validate_nickname(&self.nickname).err());
+        errors.push(user_models::validate_email(&self.email).err());
+        errors.push(user_models::validate_password(&self.password).err());
 
         self.filter_errors(errors)
     }
