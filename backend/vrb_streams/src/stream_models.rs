@@ -864,10 +864,10 @@ mod tests {
 }
 
 #[cfg(all(test, feature = "mockdata"))]
-pub struct StreamModelsTest {}
+pub struct StreamMock {}
 
 #[cfg(all(test, feature = "mockdata"))]
-impl StreamModelsTest {
+impl StreamMock {
     pub fn title_min() -> String {
         (0..(TITLE_MIN - 1)).map(|_| 'a').collect()
     }
