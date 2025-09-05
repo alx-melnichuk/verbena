@@ -12,21 +12,21 @@ mod tests {
     use serde_json::json;
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts, err, user_validations,
+        consts, err,
     };
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
     use crate::{
         config_jwt,
-        user_models::{UserMock, ADMIN, USER, USER1_ID},
-        user_orm::tests::UserOrmTest as User_Test,
+        user_models::{self, UserMock},
+        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1_ID},
         user_registr_controller::{
-            confirm_registration, registration, registration_clear_for_expired, tests as RgsCtTest, MSG_REGISTR_NOT_FOUND,
+            confirm_registration, registration, registration_clear_for_expired, tests as UserRegistrCtrlTest, MSG_REGISTR_NOT_FOUND,
         },
         user_registr_models::{
             ConfirmRegistrUserResponseDto, RegistrUserDto, RegistrUserResponseDto, RegistrationClearForExpiredResponseDto,
         },
-        user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
+        user_registr_orm::tests::UserRegistrOrmTest,
     };
 
     const TEST_PATH_TEMPLATE: &str = "../templates";
@@ -37,15 +37,15 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_no_data() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration").to_request();
@@ -60,15 +60,15 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_empty_json_object() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration").set_json(json!({}))
@@ -84,15 +84,15 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_empty() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -110,20 +110,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_NICKNAME_REQUIRED]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_min() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -141,20 +141,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_NICKNAME_MIN_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_max() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -172,20 +172,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_NICKNAME_MAX_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_wrong() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -203,20 +203,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_NICKNAME_REGEX]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_REGEX]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_empty() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -234,20 +234,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_EMAIL_REQUIRED]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_min() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -265,20 +265,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_EMAIL_MIN_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_max() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -296,20 +296,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_EMAIL_MAX_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_wrong() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -327,20 +327,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_EMAIL_EMAIL_TYPE]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_empty() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -358,20 +358,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_PASSWORD_REQUIRED]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_min() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -389,20 +389,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_PASSWORD_MIN_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_max() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -420,20 +420,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_PASSWORD_MAX_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_wrong() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -451,22 +451,22 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RgsCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_PASSWORD_REGEX]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let email1 = data_u.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -487,17 +487,17 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let email1 = data_u.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -518,18 +518,18 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
-        let registrs = RegisTest::registrs(true);
+        let data_u = UserOrmTest::users(&[USER]);
+        let registrs = UserRegistrOrmTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
         let email1 = registrs.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(registrs))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -550,18 +550,18 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
-        let registrs = RegisTest::registrs(true);
+        let data_u = UserOrmTest::users(&[USER]);
+        let registrs = UserRegistrOrmTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
         let email1 = registrs.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(registrs))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -582,18 +582,18 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_err_jsonwebtoken_encode() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let mut config_jwt = config_jwt::tests::get_config();
         config_jwt.jwt_secret = "".to_string();
         let nickname = "Mary_Williams".to_string();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -614,17 +614,17 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_new_user() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let registrs = RegisTest::registrs(true);
+        let registrs = UserRegistrOrmTest::registrs(true);
         let user_registr1 = registrs.get(0).unwrap().clone();
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration)
-                .configure(RgsCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RgsCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(UserRegistrCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -655,13 +655,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_confirm_registration_invalid_registr_token() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
-                .configure(User_Test::cfg_user_orm(data_u))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", "invalid_registr_token"))
@@ -678,8 +678,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_final_date_has_expired() {
-        let data_u = UserMock::users(&[USER]);
-        let registrs = RegisTest::registrs(true);
+        let data_u = UserOrmTest::users(&[USER]);
+        let registrs = UserRegistrOrmTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
@@ -694,9 +694,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RegisTest::cfg_registr_orm(registrs))
-                .configure(User_Test::cfg_user_orm(data_u))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
@@ -714,8 +714,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_no_exists_in_user_regist() {
-        let data_u = UserMock::users(&[USER]);
-        let registrs = RegisTest::registrs(true);
+        let data_u = UserOrmTest::users(&[USER]);
+        let registrs = UserRegistrOrmTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
@@ -731,9 +731,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RegisTest::cfg_registr_orm(registrs))
-                .configure(User_Test::cfg_user_orm(data_u))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
@@ -751,8 +751,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_exists_in_user_regist() {
-        let data_u = UserMock::users(&[USER]);
-        let registrs = RegisTest::registrs(true);
+        let data_u = UserOrmTest::users(&[USER]);
+        let registrs = UserRegistrOrmTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let nickname = user_reg1.nickname.to_string();
         let email = user_reg1.email.to_string();
@@ -769,9 +769,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_registration)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RegisTest::cfg_registr_orm(registrs))
-                .configure(User_Test::cfg_user_orm(data_u))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
@@ -795,24 +795,24 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_clear_for_expired() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
+        let data_u = UserOrmTest::users(&[ADMIN]);
         let config_app = config_app::get_test_config();
 
         let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
-        let mut registrs = RegisTest::registrs(true);
+        let mut registrs = UserRegistrOrmTest::registrs(true);
         let registr1 = registrs.get_mut(0).unwrap();
         registr1.final_date = Utc::now() - Duration::seconds(registr_duration);
 
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration_clear_for_expired)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RegisTest::cfg_registr_orm(registrs))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&"/api/registration/clear_for_expired")
-            .insert_header(RgsCtTest::header_auth(&token1))
+            .insert_header(UserRegistrCtrlTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200

@@ -12,21 +12,22 @@ mod tests {
     use serde_json::json;
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts, err, user_validations,
+        consts, err,
     };
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
     use crate::{
         config_jwt,
-        user_models::{UserMock, ADMIN, USER, USER1_ID},
-        user_orm::tests::UserOrmTest as User_Test,
+        user_models::{self, UserMock},
+        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1_ID},
         user_recovery_controller::{
-            confirm_recovery, recovery, recovery_clear_for_expired, tests as RcvCtTest, MSG_RECOVERY_NOT_FOUND, MSG_USER_NOT_FOUND,
+            confirm_recovery, recovery, recovery_clear_for_expired, tests as UserRecoveryCtrlTest, MSG_RECOVERY_NOT_FOUND,
+            MSG_USER_NOT_FOUND,
         },
         user_recovery_models::{
             ConfirmRecoveryUserResponseDto, RecoveryClearForExpiredResponseDto, RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto,
         },
-        user_recovery_orm::tests::UserRecoveryOrmTest as RecovTest,
+        user_recovery_orm::tests::UserRecoveryOrmTest,
     };
 
     const TEST_PATH_TEMPLATE: &str = "../templates";
@@ -37,15 +38,15 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_no_data() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -63,15 +64,15 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_empty_json_object() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery").set_json(json!({}))
@@ -88,15 +89,15 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_empty() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -110,20 +111,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RcvCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_EMAIL_REQUIRED]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_min() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -137,20 +138,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RcvCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_EMAIL_MIN_LENGTH]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_max() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -164,20 +165,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RcvCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_EMAIL_MAX_LENGTH]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_wrong() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -191,21 +192,21 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RcvCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_EMAIL_EMAIL_TYPE]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
     }
     #[actix_web::test]
     async fn test_recovery_if_user_with_email_not_exist() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let email = format!("A{}", data_u.0.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -224,19 +225,19 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_not_exist() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user1_email = data_u.0.get(0).unwrap().email.clone();
-        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
         let user_recovery1_id = recoveries.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -263,19 +264,19 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_already_exists() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user1_email = data_u.0.get(0).unwrap().email.clone();
-        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
         let user_recovery1_id = recoveries.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-                .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -302,18 +303,18 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_err_jsonwebtoken_encode() {
         env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_email = data_u.0.get(0).unwrap().email.clone();
         let mut config_jwt = config_jwt::tests::get_config();
         config_jwt.jwt_secret = "".to_string();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery)
-            .configure(RcvCtTest::cfg_config_app(config_app::get_test_config()))
-            .configure(User_Test::cfg_config_jwt(config_jwt))
-            .configure(RcvCtTest::cfg_mailer(config_smtp::get_test_config()))
-            .configure(User_Test::cfg_user_orm(data_u))
-            .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+            .configure(UserRecoveryCtrlTest::cfg_config_app(config_app::get_test_config()))
+            .configure(config_jwt::tests::cfg_config_jwt(config_jwt))
+            .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
+            .configure(UserOrmTest::cfg_user_orm(data_u))
+            .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -334,13 +335,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_empty() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
@@ -354,17 +355,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RcvCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_PASSWORD_REQUIRED]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_min() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
@@ -378,17 +379,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RcvCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_PASSWORD_MIN_LENGTH]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_max() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
@@ -402,17 +403,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RcvCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_PASSWORD_MAX_LENGTH]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_wrong() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
@@ -426,17 +427,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RcvCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_PASSWORD_REGEX]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_recovery_token() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "invalid_recovery_token"))
@@ -454,9 +455,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_final_date_has_expired() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
 
         let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
@@ -469,9 +470,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(recoveries))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
@@ -490,9 +491,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user_recovery() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone() + 1;
 
         let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
@@ -505,9 +506,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(recoveries))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
@@ -526,9 +527,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id + 1;
-        let mut recoveries = RecovTest::recoveries(Some(user1_id));
+        let mut recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
         let recovery1 = recoveries.get_mut(0).unwrap();
 
         let config_app = config_app::get_test_config();
@@ -543,9 +544,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(recoveries))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
@@ -563,14 +564,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_success() {
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let user1 = data_u.0.get(0).unwrap();
         let user1_id = user1.id.clone();
         let nickname = user1.nickname.clone();
         let email = user1.email.clone();
         let user1_created_at = user1.created_at.clone();
 
-        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
@@ -582,9 +583,9 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(recoveries))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
@@ -610,25 +611,25 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_clear_for_expired() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
+        let data_u = UserOrmTest::users(&[ADMIN]);
         let user1_id = data_u.0.get(0).unwrap().id;
 
         let config_app = config_app::get_test_config();
 
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let mut recoveries = RecovTest::recoveries(Some(user1_id));
+        let mut recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
         let recovery1 = recoveries.get_mut(0).unwrap();
         recovery1.final_date = Utc::now() - Duration::seconds(recovery_duration);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery_clear_for_expired)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(RecovTest::cfg_recovery_orm(recoveries))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/recovery/clear_for_expired")
-            .insert_header(RcvCtTest::header_auth(&token1))
+            .insert_header(UserRecoveryCtrlTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
