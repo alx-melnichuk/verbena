@@ -28,6 +28,7 @@ impl ConfigJwt {
 
 #[cfg(any(test, feature = "mockdata"))]
 pub mod tests {
+    use actix_web::web;
     use vrb_tools::token_coding;
 
     use crate::config_jwt::ConfigJwt;
@@ -47,5 +48,11 @@ pub mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let num_token = get_num_token(user_id);
         token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap()
+    }
+    pub fn cfg_config_jwt(config_jwt: ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(config_jwt);
+            config.app_data(web::Data::clone(&data_config_jwt));
+        }
     }
 }
