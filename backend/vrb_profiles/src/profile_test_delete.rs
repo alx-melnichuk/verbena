@@ -11,8 +11,7 @@ pub mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_models::{UserMock, ADMIN, USER, USER1_ID},
-        user_orm::tests::UserOrmTest as User_Test,
+        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1_ID},
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -22,9 +21,9 @@ pub mod tests {
 
     use crate::{
         config_prfl,
-        profile_controller::{delete_profile, delete_profile_current, tests as RrfCtTest},
+        profile_controller::{delete_profile, delete_profile_current, tests as ProfileCtrlTest},
         profile_models::ProfileDto,
-        profile_orm::tests::ProfileOrmTest as ProflTest,
+        profile_orm::tests::ProfileOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -40,20 +39,20 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_invalid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile_id_bad = format!("{}a", data_u.0.get(0).unwrap().id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id_bad))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
@@ -69,42 +68,42 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", user_id + 1))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
     async fn test_delete_profile_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_id = profile1.user_id;
         let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -127,8 +126,8 @@ pub mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
@@ -136,14 +135,14 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -170,8 +169,8 @@ pub mod tests {
         let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
@@ -179,14 +178,14 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -205,8 +204,8 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_with_stream_img() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = ProfileDto::from(profile1.clone());
@@ -221,14 +220,14 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_logo0_file).exists();
@@ -252,21 +251,21 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_current_without_img() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -289,22 +288,22 @@ pub mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile_dto = ProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -331,22 +330,22 @@ pub mod tests {
         let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile_dto = ProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -365,8 +364,8 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_current_with_stream_img() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = ProfileDto::from(profile1.clone());
@@ -379,14 +378,14 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_logo0_file).exists();

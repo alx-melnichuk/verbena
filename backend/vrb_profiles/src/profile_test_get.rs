@@ -9,8 +9,7 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_models::{UserMock, ADMIN, USER, USER1_ID},
-        user_orm::tests::UserOrmTest as User_Test,
+        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1_ID},
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
@@ -19,9 +18,9 @@ mod tests {
 
     use crate::{
         config_prfl,
-        profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, tests as RrfCtTest},
+        profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, tests as ProfileCtrlTest},
         profile_models::{ProfileConfigDto, ProfileDto},
-        profile_orm::tests::ProfileOrmTest as ProflTest,
+        profile_orm::tests::ProfileOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -31,20 +30,20 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_invalid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         let user_id_bad = format!("{}a", user_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
@@ -60,20 +59,20 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_valid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN, USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN, USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", &profile2_id))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -88,20 +87,20 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[ADMIN, USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[ADMIN, USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", profile2_id + 1))
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
@@ -111,7 +110,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_config_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
+        let data_u = UserOrmTest::users(&[USER]);
         let cfg_prfl = config_prfl::get_test_config();
         #[rustfmt::skip]
         let profile_config_dto = ProfileConfigDto::new(
@@ -124,13 +123,13 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_config)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_config")
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -147,19 +146,19 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_current_valid_token() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1_dto = ProfileDto::from(profiles.get(0).unwrap().clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_current)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_current")
-            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 

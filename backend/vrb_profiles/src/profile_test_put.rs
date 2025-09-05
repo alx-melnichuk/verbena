@@ -12,23 +12,25 @@ pub mod tests {
     use chrono::{SecondsFormat, Utc};
     use serde_json;
     use vrb_authent::{
-        config_jwt,
-        user_models::{UserMock, USER, USER1_ID},
-        user_orm::tests::UserOrmTest as User_Test,
-        user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
+        config_jwt, user_models,
+        user_orm::tests::{UserOrmTest, USER, USER1_ID},
+        user_registr_orm::tests::UserRegistrOrmTest,
     };
     use vrb_common::{
         api_error::{code_to_str, ApiError},
-        consts, err, user_validations, validators,
+        consts, err, validators,
     };
     use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::{cdis::coding, hash_tools, png_files};
 
     use crate::{
         config_prfl,
-        profile_controller::{put_profile, put_profile_new_password, tests as RrfCtTest},
-        profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileTest},
-        profile_orm::tests::ProfileOrmTest as ProflTest,
+        profile_controller::{
+            put_profile, put_profile_new_password,
+            tests::{self as ProfileCtrlTest, check_app_err},
+        },
+        profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileMock},
+        profile_orm::tests::ProfileOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -46,20 +48,20 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_no_form() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -74,20 +76,20 @@ pub mod tests {
     async fn test_put_profile_empty_form() {
         let (header, body) = MultiPartFormDataBuilder::new().build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -108,20 +110,20 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile1", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -142,22 +144,22 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileMock::nickname_min()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -167,27 +169,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_NICKNAME_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileMock::nickname_max()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -197,29 +198,28 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_NICKNAME_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_wrong() {
         let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("nickname", ProfileTest::nickname_wrong())
+            .with_text("nickname", ProfileMock::nickname_wrong())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -228,30 +228,27 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        RrfCtTest::check_app_err(
-            app_err_vec,
-            &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_NICKNAME_REGEX],
-        );
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_REGEX]);
     }
     #[actix_web::test]
     async fn test_put_profile_email_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileMock::email_min()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -261,27 +258,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_EMAIL_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_email_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileMock::email_max()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -291,27 +287,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_EMAIL_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_email_wrong() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_wrong()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileMock::email_wrong()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -321,27 +316,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_EMAIL_EMAIL_TYPE]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
     }
     #[actix_web::test]
     async fn test_put_profile_role_wrong() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("role", ProfileTest::role_wrong()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("role", ProfileMock::role_wrong()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -351,26 +345,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_USER_ROLE_INVALID_VALUE]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_USER_ROLE_INVALID_VALUE]);
     }
     #[actix_web::test]
     async fn test_put_profile_descript_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileMock::descript_min()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -380,26 +374,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_DESCRIPT_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_DESCRIPT_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_descript_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileMock::descript_max()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -409,26 +403,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_DESCRIPT_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_DESCRIPT_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_theme_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileMock::theme_min()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -438,26 +432,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_THEME_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_THEME_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_theme_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileMock::theme_max()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -467,26 +461,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_THEME_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_THEME_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_locale_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileMock::locale_min()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -496,26 +490,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_LOCALE_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_LOCALE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_locale_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileMock::locale_max()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -525,28 +519,28 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_LOCALE_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_LOCALE_MAX_LENGTH]);
     }
 
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_users() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", nickname1).build();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -561,22 +555,22 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_if_email_exists_in_users() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let email1 = data_u.0.get(0).unwrap().email.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", email1).build();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(true)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(true)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -591,23 +585,23 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_registr() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
-        let registr = RegisTest::registrs(true);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let registr = UserRegistrOrmTest::registrs(true);
         let nickname1 = registr.get(0).unwrap().nickname.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", nickname1).build();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(registr))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(registr))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -622,23 +616,23 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_if_email_exists_in_registr() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
-        let registr = RegisTest::registrs(true);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let registr = UserRegistrOrmTest::registrs(true);
         let email1 = registr.get(0).unwrap().email.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", email1).build();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(registr))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(registr))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -660,23 +654,23 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let mut config_prfl = config_prfl::get_test_config();
         let prfl_avatar_max_size = 160;
         config_prfl.prfl_avatar_max_size = prfl_avatar_max_size;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -701,20 +695,20 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile", "image/bmp", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -733,8 +727,8 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_valid_data_without_file() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
 
         let profile = profiles.get(0).unwrap().clone();
         let nickname_s = format!("{}_a", profile.nickname.clone());
@@ -754,15 +748,15 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -796,22 +790,22 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1_id = profiles.get(0).unwrap().user_id;
         let prfl_avatar_files_dir = config_prfl::get_test_config().prfl_avatar_files_dir.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -852,8 +846,8 @@ pub mod tests {
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
 
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1_id = profiles.get(0).unwrap().user_id;
         let file_ext = "jpeg".to_string();
         let mut config_prfl = config_prfl::get_test_config();
@@ -864,15 +858,15 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -924,23 +918,23 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
         let profile1_id = profile1.user_id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -986,22 +980,22 @@ pub mod tests {
 
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", "descript1".to_string()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1036,22 +1030,22 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1077,20 +1071,20 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
-                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
@@ -1107,18 +1101,18 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_no_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -1133,18 +1127,18 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_empty_json_object() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(serde_json::json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1160,18 +1154,18 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_empty() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: "".to_string(), new_password: "passwdJ3S9".to_string()
             })
@@ -1184,26 +1178,25 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_PASSWORD_REQUIRED]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_min() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
-                password: ProfileTest::password_min(), new_password: "passwdJ3S9".to_string()
+                password: ProfileMock::password_min(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1214,26 +1207,25 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_PASSWORD_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_max() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
-                password: ProfileTest::password_max(), new_password: "passwdJ3S9".to_string()
+                password: ProfileMock::password_max(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1244,26 +1236,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_PASSWORD_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
+            &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_wrong() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
-                password: ProfileTest::password_wrong(), new_password: "passwdJ3S9".to_string()
+                password: ProfileMock::password_wrong(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1274,27 +1266,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
-            &[user_validations::MSG_PASSWORD_REGEX]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_empty() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: "".to_string()
             })
@@ -1307,29 +1298,28 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), 
-            &[user_validations::MSG_NEW_PASSWORD_REQUIRED]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_min() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
-                password: old_password, new_password: ProfileTest::password_min()
+                password: old_password, new_password: ProfileMock::password_min()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1340,29 +1330,28 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), 
-            &[user_validations::MSG_NEW_PASSWORD_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_max() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
-                password: old_password, new_password: ProfileTest::password_max()
+                password: old_password, new_password: ProfileMock::password_max()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1373,29 +1362,28 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), 
-            &[user_validations::MSG_NEW_PASSWORD_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_wrong() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
-                password: old_password, new_password: ProfileTest::password_wrong()
+                password: old_password, new_password: ProfileMock::password_wrong()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1406,26 +1394,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_NEW_PASSWORD_REGEX]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_equal_old_value() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password.clone(), new_password: old_password
             })
@@ -1438,26 +1426,26 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        RrfCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_validations::MSG_NEW_PASSWORD_EQUAL_OLD_VALUE]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_EQUAL_OLD_VALUE]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_hash_password() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.password = "invali_hash_password".to_string();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
             })
@@ -1476,20 +1464,20 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_password() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: format!("{}a", old_password), new_password: "passwdJ3S9".to_string()
             })
@@ -1508,21 +1496,21 @@ pub mod tests {
     async fn test_put_profile_new_password_valid_data() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let mut profiles = ProflTest::profiles(&data_u.0);
+        let data_u = UserOrmTest::users(&[USER]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
         let profile1_dto = ProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ProflTest::cfg_profile_orm(profiles))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
             })
