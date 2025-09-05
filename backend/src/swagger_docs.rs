@@ -60,8 +60,8 @@ use vrb_streams::{stream_controller, stream_models};
             // user_authent_controller
             user_authent_models::UserUniquenessDto, // ::users_uniqueness
             user_authent_models::UserUniquenessResponseDto, // ::users_uniqueness
-            user_authent_models::TokenUserDto, // ::update_token
-            user_authent_models::TokenUserResponseDto, // ::update_token
+            user_authent_models::UserTokenDto, // ::update_token
+            user_authent_models::UserTokenResponseDto, // ::update_token
             // user_registr_controller
             user_registr_models::RegistrUserDto, // ::registration
             user_registr_models::RegistrUserResponseDto, // ::registration
