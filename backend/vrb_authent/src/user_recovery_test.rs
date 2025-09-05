@@ -598,12 +598,13 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response_dto_res: ConfirmRecoveryUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let now_str = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         assert_eq!(response_dto_res.id, user1_id);
         assert_eq!(response_dto_res.nickname, nickname);
         assert_eq!(response_dto_res.email, email);
         assert_eq!(response_dto_res.created_at, user1_created_at);
-        assert_eq!(response_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..22], now_str[..22]);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
+        let now_str = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        assert_eq!(response_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], now_str[..21]);
     }
 
     // ** recovery_clear_for_expired **

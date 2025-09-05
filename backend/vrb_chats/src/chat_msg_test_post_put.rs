@@ -200,10 +200,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let chat_message_dto_res: ChatMessageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(chat_message_dto_res.id, last_msg_id + 1);
-        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
+        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
-        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], date_s[..21]);
         assert_eq!(chat_message_dto_res.member, user1_name);
         assert_eq!(chat_message_dto_res.msg, msg);
         assert_eq!(chat_message_dto_res.date_edt, None);
@@ -425,16 +425,16 @@ mod tests {
         let chat_message_dto_res: ChatMessageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(chat_message_dto_res.id, ch_msg.id);
         assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
-        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let date_crt = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Secs, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
+        let date_crt = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
-        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_crt);
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], date_crt[..21]);
         assert_eq!(chat_message_dto_res.msg, msg);
         assert!(chat_message_dto_res.date_edt.is_some());
-        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
+        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         let date_edt = chat_message_dto_res.date_edt.unwrap();
-        assert_eq!(date_edt.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        assert_eq!(date_edt.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], date_s[..21]);
         assert_eq!(chat_message_dto_res.date_rmv, None);
     }
     #[actix_web::test]
@@ -534,15 +534,15 @@ mod tests {
         let chat_message_dto_res: ChatMessageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(chat_message_dto_res.id, ch_msg.id);
         assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
-        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let date_crt = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Secs, true);
-        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_crt);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
+        let date_crt = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true);
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], date_crt[..21]);
         assert_eq!(chat_message_dto_res.msg, msg);
         assert!(chat_message_dto_res.date_edt.is_some());
-        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
+        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         let date_edt = chat_message_dto_res.date_edt.unwrap();
-        assert_eq!(date_edt.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        assert_eq!(date_edt.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], date_s[..21]);
         assert_eq!(chat_message_dto_res.date_rmv, None);
     }
 }

@@ -220,9 +220,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_descript_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("descript", StreamMock::descript_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", StreamMock::descript_min()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
@@ -249,9 +247,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_descript_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("descript", StreamMock::descript_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", StreamMock::descript_max()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
@@ -308,9 +304,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_source_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("source", StreamMock::source_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("source", StreamMock::source_min()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
@@ -337,9 +331,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_source_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("source", StreamMock::source_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("source", StreamMock::source_max()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
@@ -779,13 +771,13 @@ mod tests {
         assert_eq!(stream_dto_res.source, source_s);
         assert_eq!(stream_dto_res.tags, tags);
         assert_eq!(stream_dto_res.is_my_stream, stream.is_my_stream);
-        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let res_created_at = stream_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        let old_created_at = stream.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        assert_eq!(res_created_at, old_created_at);
-        let res_updated_at = stream_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        let old_updated_at = stream.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        assert_eq!(res_updated_at, old_updated_at);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
+        let old_created_at = stream.created_at.to_rfc3339_opts(SecondsFormat::Millis, true);
+        #[rustfmt::skip]
+        assert_eq!(stream_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], old_created_at[..21]);
+        let old_updated_at = stream.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true);
+        #[rustfmt::skip]
+        assert_eq!(stream_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], old_updated_at[..21]);
     }
     #[actix_web::test]
     async fn test_put_stream_a_with_old0_new1() {
