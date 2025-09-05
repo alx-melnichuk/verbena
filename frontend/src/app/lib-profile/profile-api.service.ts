@@ -7,10 +7,10 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 
 import {
-    LoginProfileDto, LoginResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, TokenUserResponseDto,
-    RecoveryProfileDto,
-    RegistrProfileDto,
-    TokenDto, UniquenessDto
+    LoginDto, LoginResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UserTokenResponseDto,
+    RecoveryUserDto,
+    RegistrUserDto,
+    UserTokenDto, UniquenessDto
 } from './profile-api.interface';
 
 @Injectable({
@@ -28,17 +28,17 @@ export class ProfileApiService {
             });
     }
 
-    public registration(registrProfileDto: RegistrProfileDto): Promise<null | HttpErrorResponse | undefined> {
+    public registration(registrProfileDto: RegistrUserDto): Promise<null | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://registration');
         return lastValueFrom(this.http.post<null | HttpErrorResponse>(url, registrProfileDto));
     }
 
-    public recovery(recoveryProfileDto: RecoveryProfileDto): Promise<null | HttpErrorResponse | undefined> {
+    public recovery(recoveryProfileDto: RecoveryUserDto): Promise<null | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://recovery');
         return lastValueFrom(this.http.post<null | HttpErrorResponse>(url, recoveryProfileDto));
     }
 
-    public login(loginProfileDto: LoginProfileDto): Promise<LoginResponseDto | HttpErrorResponse | undefined> {
+    public login(loginProfileDto: LoginDto): Promise<LoginResponseDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://login');
         return lastValueFrom(this.http.post<LoginResponseDto | HttpErrorResponse>(url, loginProfileDto));
     }
@@ -52,9 +52,9 @@ export class ProfileApiService {
         return method === 'POST' && url === Uri.appUri('appApi://token');
     }
 
-    public refreshToken(tokenDto: TokenDto): Promise<TokenUserResponseDto | HttpErrorResponse | undefined> {
+    public refreshToken(tokenDto: UserTokenDto): Promise<UserTokenResponseDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://token');
-        return lastValueFrom(this.http.post<TokenUserResponseDto | HttpErrorResponse>(url, tokenDto));
+        return lastValueFrom(this.http.post<UserTokenResponseDto | HttpErrorResponse>(url, tokenDto));
     }
 
     public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {

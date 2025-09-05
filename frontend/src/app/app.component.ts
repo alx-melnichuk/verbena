@@ -33,7 +33,7 @@ export class AppComponent implements OnInit {
             // If there is no authorization token in the storage, then the current session is closed.
             // Clear the authorization token value.
             this.profileService.setProfileDto();
-            this.profileService.setProfileTokensDto();
+            this.profileService.setUserTokensDto();
             // And you need to go to the "login" tab.
             window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
         }

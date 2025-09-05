@@ -12,7 +12,7 @@ import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-v
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { ProfileDto, TokenUserResponseDto } from 'src/app/lib-profile/profile-api.interface';
+import { ProfileDto, UserTokenResponseDto } from 'src/app/lib-profile/profile-api.interface';
 import { EventWS, EWSType, EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
@@ -57,7 +57,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     // An indication that this is the owner of the stream.
     public isStreamOwner = false;
     public profileDto: ProfileDto | null = null;
-    public profileTokensDto: TokenUserResponseDto | null = null;
+    public profileTokensDto: UserTokenResponseDto | null = null;
     // The interval for displaying the timer before starting (in minutes).
     // public showTimerBeforeStart: number | null | undefined;  // ??
     public streamDto: StreamDto | null = null;

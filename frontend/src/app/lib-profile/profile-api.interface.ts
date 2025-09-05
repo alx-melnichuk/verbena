@@ -1,6 +1,6 @@
 // ** Registration User **
 
-export interface RegistrProfileDto {
+export interface RegistrUserDto {
     nickname: string;
     email: string;
     password: string;
@@ -8,7 +8,7 @@ export interface RegistrProfileDto {
 
 // ** Recovery User **
 
-export interface RecoveryProfileDto {
+export interface RecoveryUserDto {
     email: string;
 }
 
@@ -16,7 +16,7 @@ export interface RecoveryProfileDto {
 
 import { HttpErrorResponse } from "@angular/common/http";
 
-export interface LoginProfileDto {
+export interface LoginDto {
     // nickname: MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
     // email: MIN=5,MAX=255,"email_type"
     nickname: string;
@@ -40,7 +40,7 @@ export interface LoginUserProfileDto {
 
 export interface LoginResponseDto {
     userProfileDto: LoginUserProfileDto;
-    tokenUserResponseDto: TokenUserResponseDto;
+    tokenUserResponseDto: UserTokenResponseDto;
 }
 
 // ** UniquenessDto **
@@ -97,14 +97,14 @@ export class ProfileDtoUtil {
 
 // ** Profile Tokens **
 
-export interface TokenUserResponseDto {
+export interface UserTokenResponseDto {
     accessToken: string;
     refreshToken: string;
 }
 
 // ** Refresh Token **
 
-export interface TokenDto {
+export interface UserTokenDto {
     // refreshToken
     token: string;
 }
@@ -115,7 +115,7 @@ export interface TokenUpdate {
     isCheckRefreshToken(method: string, url: string): boolean;
     isExistRefreshToken(): boolean;
     getAccessToken(): string | null;
-    refreshToken(): Promise<TokenUserResponseDto | HttpErrorResponse>;
+    refreshToken(): Promise<UserTokenResponseDto | HttpErrorResponse>;
 }
 
 // ** ModifyProfileDto **

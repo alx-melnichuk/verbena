@@ -43,7 +43,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
                 if (this.refreshTokenInProgress && this.tokenUpdateSrv.isCheckRefreshToken(request.method, request.url)) {
                     // Clear the authorization token value.
                     this.profileService.setProfileDto();
-                    this.profileService.setProfileTokensDto();
+                    this.profileService.setUserTokensDto();
                     // And you need to go to the "login" tab.
                     window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
                     return throwError(() => error);
