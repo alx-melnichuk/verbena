@@ -14,7 +14,7 @@ use vrb_tools::{hash_tools, token_coding, token_data::TOKEN_NAME};
 
 use crate::{
     authentication::{Authenticated, RequireAuth}, config_jwt, user_authent_models::{
-        LoginDto, LoginResponseDto, LoginUserProfileDto, TokenUserDto, TokenUserResponseDto, UserUniquenessDto, UserUniquenessResponseDto,
+        LoginDto, LoginResponseDto, LoginUserProfileDto, UserTokenDto, UserTokenResponseDto, UserUniquenessDto, UserUniquenessResponseDto,
     }, user_models::User, user_orm::UserOrm, user_registr_orm::UserRegistrOrm
 };
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -168,7 +168,7 @@ fn get_login_user_profile() -> LoginUserProfileDto {
 /// -H 'Content-Type: application/json'
 /// ```
 ///
-/// Returns (`LoginResponseDto`) the current user data (`LoginUserProfileDto`) and the open session token (`TokenUserResponseDto`)
+/// Returns (`LoginResponseDto`) the current user data (`LoginUserProfileDto`) and the open session token (`UserTokenResponseDto`)
 /// with status 200.
 ///
 #[utoipa::path(
@@ -181,7 +181,7 @@ fn get_login_user_profile() -> LoginUserProfileDto {
             body = LoginResponseDto,
             example = json!(LoginResponseDto {
                 user_profile_dto: get_login_user_profile(),
-                token_user_response_dto: TokenUserResponseDto { access_token: TOKEN2.to_owned(), refresh_token: TOKEN3.to_owned() },
+                token_user_response_dto: UserTokenResponseDto { access_token: TOKEN2.to_owned(), refresh_token: TOKEN3.to_owned() },
             })
         ),
         (status = 401, description = "The nickname or password is incorrect.", body = ApiError, examples(
@@ -317,7 +317,7 @@ pub async fn login(
     login_user_profile_dto.locale = profile.locale;
     login_user_profile_dto.updated_at = profile.updated_at;
 
-    let token_user_response_dto = TokenUserResponseDto {
+    let token_user_response_dto = UserTokenResponseDto {
         access_token: access_token.to_owned(),
         refresh_token,
     };
@@ -422,16 +422,16 @@ pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp
 /// -H 'Content-Type: application/json'
 /// ```
 ///
-/// Return the new session token (`TokenUserResponseDto`) with a status of 200.
+/// Return the new session token (`UserTokenResponseDto`) with a status of 200.
 ///
 #[utoipa::path(
-    request_body(content = TokenUserDto,
+    request_body(content = UserTokenDto,
         description = "The value of the \"refreshToken\" field that was received during login. `TokenUserDto`",
-        example = json!(TokenUserDto { token: TOKEN1.to_owned() })
+        example = json!(UserTokenDto { token: TOKEN1.to_owned() })
     ),
     responses(
-        (status = 200, description = "The new session token.", body = TokenUserResponseDto,
-            example = json!(TokenUserResponseDto { access_token: TOKEN2.to_owned(), refresh_token: TOKEN3.to_owned() })
+        (status = 200, description = "The new session token.", body = UserTokenResponseDto,
+            example = json!(UserTokenResponseDto { access_token: TOKEN2.to_owned(), refresh_token: TOKEN3.to_owned() })
         ),
         (status = 401, description = "Authorization required.", body = ApiError, examples(
             ("Token" = (summary = "Token is invalid or expired",
@@ -455,12 +455,12 @@ pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp
 pub async fn update_token(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
-    json_token_user_dto: web::Json<TokenUserDto>,
+    json_token_user_dto: web::Json<UserTokenDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
     // Get token from json.
-    let token_user_dto: TokenUserDto = json_token_user_dto.into_inner();
+    let token_user_dto: UserTokenDto = json_token_user_dto.into_inner();
     let token = token_user_dto.token;
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
@@ -542,7 +542,7 @@ pub async fn update_token(
         return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg));
     }
 
-    let token_user_response_dto = TokenUserResponseDto {
+    let token_user_response_dto = UserTokenResponseDto {
         access_token: access_token.to_owned(),
         refresh_token,
     };

@@ -20,7 +20,7 @@ mod tests {
         config_jwt,
         user_authent_controller::{login, logout, tests as AthCtTest, update_token, users_uniqueness},
         user_authent_models::{
-            LoginDto, LoginResponseDto, LoginUserProfileDto, TokenUserDto, TokenUserResponseDto, UserUniquenessResponseDto,
+            LoginDto, LoginResponseDto, LoginUserProfileDto, UserTokenDto, UserTokenResponseDto, UserUniquenessResponseDto,
         },
         user_models::{self, Session, UserMock},
         user_orm::tests::{UserOrmTest, USER, USER1_ID},
@@ -760,13 +760,13 @@ mod tests {
         assert_eq!(user_profile_res.descript, user_profile_ser.descript);
         assert_eq!(user_profile_res.theme, user_profile_ser.theme);
         assert_eq!(user_profile_res.locale, user_profile_ser.locale);
-        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let res_created_at = user_profile_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        let old_created_at = user_profile_ser.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        assert_eq!(res_created_at, old_created_at);
-        let res_updated_at = user_profile_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        let old_updated_at = user_profile_ser.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        assert_eq!(res_updated_at, old_updated_at);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
+        let res_created_at = user_profile_res.created_at.to_rfc3339_opts(SecondsFormat::Millis, true);
+        #[rustfmt::skip]
+        assert_eq!(res_created_at[..21], user_profile_ser.created_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21]);
+        let res_updated_at = user_profile_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true);
+        #[rustfmt::skip]
+        assert_eq!(res_updated_at[..21], user_profile_ser.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21]);
     }
 
     // ** logout **
@@ -983,7 +983,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
             .insert_header(AthCtTest::header_auth(&token1))
-            .set_json(TokenUserDto { token: "".to_string() })
+            .set_json(UserTokenDto { token: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
@@ -1007,7 +1007,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
             .insert_header(AthCtTest::header_auth(&token1))
-            .set_json(TokenUserDto { token: "invalid_token".to_string() })
+            .set_json(UserTokenDto { token: "invalid_token".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
@@ -1036,7 +1036,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
             .insert_header(AthCtTest::header_auth(&token1))
-            .set_json(TokenUserDto { token: token_bad })
+            .set_json(UserTokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
@@ -1065,7 +1065,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
             .insert_header(AthCtTest::header_auth(&token1))
-            .set_json(TokenUserDto { token: token_bad })
+            .set_json(UserTokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
@@ -1095,7 +1095,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
             .insert_header(AthCtTest::header_auth(&token1))
-            .set_json(TokenUserDto { token: token_refresh })
+            .set_json(UserTokenDto { token: token_refresh })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -1114,7 +1114,7 @@ mod tests {
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let token_user_resp: TokenUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let token_user_resp: UserTokenResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let access_token: String = token_user_resp.access_token;
         assert!(!access_token.is_empty());
         let refresh_token: String = token_user_resp.refresh_token;

@@ -109,14 +109,14 @@ impl From<User> for LoginUserProfileDto {
 #[serde(rename_all = "camelCase")]
 pub struct LoginResponseDto {
     pub user_profile_dto: LoginUserProfileDto,
-    pub token_user_response_dto: TokenUserResponseDto,
+    pub token_user_response_dto: UserTokenResponseDto,
 }
 
 // ** Used: in "user_authent_controller::update_token(). **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct TokenUserDto {
+pub struct UserTokenDto {
     // refreshToken
     pub token: String,
 }
@@ -125,7 +125,7 @@ pub struct TokenUserDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct TokenUserResponseDto {
+pub struct UserTokenResponseDto {
     pub access_token: String,
     pub refresh_token: String,
 }
