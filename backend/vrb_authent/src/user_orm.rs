@@ -267,7 +267,7 @@ pub mod tests {
 
     use crate::{
         config_jwt,
-        user_models::{CreateUser, ModifyUser, Profile, Session, User, UserMock},
+        user_models::{CreateUser, ModifyUser, Profile, Session, User},
         user_orm::UserOrm,
         user_profile_mock::UserProfileMock,
     };
@@ -290,6 +290,9 @@ pub mod tests {
     pub const USER3_NAME: &str = "mary_williams";
     pub const USER4_NAME: &str = "ava_wilson";
 
+    pub const USER_IDS: [i32; 4] = [USER1_ID, USER2_ID, USER3_ID, USER4_ID];
+    pub const USER_NAMES: [&str; 4] = [USER1_NAME, USER2_NAME, USER3_NAME, USER4_NAME];
+
     #[derive(Debug, Clone)]
     pub struct UserOrmApp {
         pub user_vec: Vec<User>,
@@ -303,10 +306,6 @@ pub mod tests {
                 user_vec: Vec::new(),
                 session_vec: Vec::new(),
             }
-        }
-        /// Create a new instance of the Session entity.
-        pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
-            Session { user_id, num_token }
         }
     }
 
@@ -399,7 +398,6 @@ pub mod tests {
 
             let idx: i32 = self.user_vec.len().try_into().unwrap();
             let user_id: i32 = USER1_ID + idx;
-            // id: i32, nickname: &str, email: &str, password: &str, role: UserRole
             let user = User::new(user_id, &nickname, &email, &create_user.password, create_user.role.unwrap_or(UserRole::User));
             Ok(user)
         }
@@ -456,45 +454,28 @@ pub mod tests {
     pub struct UserOrmTest {}
 
     impl UserOrmTest {
-        pub fn user_ids() -> Vec<i32> {
-            vec![USER1_ID, USER2_ID, USER3_ID, USER4_ID]
-        }
-        pub fn get_user_name(user_id: i32) -> String {
-            match user_id {
-                USER1_ID => USER1_NAME,
-                USER2_ID => USER2_NAME,
-                USER3_ID => USER3_NAME,
-                USER4_ID => USER4_NAME,
-                _ => "",
-            }
-            .to_string()
-        }
-        pub fn users2(roles: &[u8]) -> (Vec<User>, Vec<Session>) {
+        pub fn users(roles: &[u8]) -> (Vec<User>, Vec<Session>) {
             let mut user_vec: Vec<User> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
-            let user_ids = UserOrmTest::user_ids();
+            let user_ids = USER_IDS.clone();
+
             let len = if roles.len() > user_ids.len() { user_ids.len() } else { roles.len() };
             for index in 0..len {
                 let user_id = user_ids.get(index).unwrap().clone();
-                let nickname = Self::get_user_name(user_id).clone().to_lowercase();
-                let email = format!("{}@gmail.com", nickname);
+                let nickname = USER_NAMES.get(index).unwrap().to_lowercase();
                 #[rustfmt::skip]
-                let role = if roles.get(index).unwrap().clone() == ADMIN { UserRole::Admin } else { UserRole::User };
+                let role = if *(roles.get(index).unwrap()) == ADMIN { UserRole::Admin } else { UserRole::User };
 
-                let user = User::new(user_id, &nickname, &email, "", role);
+                let user = User::new(user_id, &nickname, &format!("{}@gmail.com", nickname), "", role);
                 user_vec.push(user);
-                let num_token = if user_id == USER1_ID { Some(UserMock::get_num_token(user_id)) } else { None };
+                let num_token = if user_id == USER1_ID {
+                    Some(config_jwt::tests::get_num_token(user_id))
+                } else {
+                    None
+                };
                 session_vec.push(Session { user_id, num_token });
             }
-            let user_orm_app = UserOrmApp { user_vec, session_vec };
-
-            (user_orm_app.user_vec, user_orm_app.session_vec)
-        }
-        pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_config_jwt = web::Data::new(config_jwt);
-                config.app_data(web::Data::clone(&data_config_jwt));
-            }
+            (user_vec, session_vec)
         }
         pub fn cfg_user_orm(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {

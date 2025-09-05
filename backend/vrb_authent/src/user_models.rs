@@ -238,43 +238,6 @@ impl Profile {
 // * * * *   * * * *
 
 #[cfg(any(test, feature = "mockdata"))]
-pub const ADMIN: u8 = 0;
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER: u8 = 1;
-
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER1: usize = 0;
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER2: usize = 1;
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER3: usize = 2;
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER4: usize = 3;
-
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER1_ID: i32 = 1100;
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER2_ID: i32 = 1101;
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER3_ID: i32 = 1102;
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER4_ID: i32 = 1103;
-
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER1_NAME: &str = "oliver_taylor";
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER2_NAME: &str = "robert_brown";
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER3_NAME: &str = "mary_williams";
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER4_NAME: &str = "ava_wilson";
-
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER_IDS: [i32; 4] = [USER1_ID, USER2_ID, USER3_ID, USER4_ID];
-#[cfg(any(test, feature = "mockdata"))]
-pub const USER_NAMES: [&str; 4] = [USER1_NAME, USER2_NAME, USER3_NAME, USER4_NAME];
-
-#[cfg(any(test, feature = "mockdata"))]
 pub struct UserMock {}
 
 #[cfg(any(test, feature = "mockdata"))]
@@ -321,27 +284,5 @@ impl UserMock {
     pub fn role_wrong() -> String {
         let role = UserRole::all_values().get(0).unwrap().to_string();
         role[0..(role.len() - 1)].to_string()
-    }
-    pub fn get_num_token(user_id: i32) -> i32 {
-        40000 + user_id
-    }
-    pub fn users(roles: &[u8]) -> (Vec<User>, Vec<Session>) {
-        let mut user_vec: Vec<User> = Vec::new();
-        let mut session_vec: Vec<Session> = Vec::new();
-        let user_ids = USER_IDS.clone();
-
-        let len = if roles.len() > user_ids.len() { user_ids.len() } else { roles.len() };
-        for index in 0..len {
-            let user_id = user_ids.get(index).unwrap().clone();
-            let nickname = USER_NAMES.get(index).unwrap().to_lowercase();
-            #[rustfmt::skip]
-            let role = if *(roles.get(index).unwrap()) == ADMIN { UserRole::Admin } else { UserRole::User };
-
-            let user = User::new(user_id, &nickname, &format!("{}@gmail.com", nickname), "", role);
-            user_vec.push(user);
-            let num_token = if user_id == USER1_ID { Some(Self::get_num_token(user_id)) } else { None };
-            session_vec.push(Session { user_id, num_token });
-        }
-        (user_vec, session_vec)
     }
 }
