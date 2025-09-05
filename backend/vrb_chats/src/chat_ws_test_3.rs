@@ -6,14 +6,13 @@ mod tests {
     use serde_json::to_string;
     use vrb_authent::{
         config_jwt,
-        user_models::{UserMock, USER},
-        user_orm::tests::UserOrmTest as User_Test,
+        user_orm::tests::{UserOrmTest, USER},
     };
     use vrb_common::err;
 
     use crate::{
         chat_event_ws::{BlockEWS, JoinEWS, LeaveEWS, MsgRmvEWS, UnblockEWS},
-        chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
+        chat_message_orm::tests::ChatMessageOrmTest,
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err403, get_err404, get_err406},
     };
@@ -28,23 +27,23 @@ mod tests {
     async fn test_get_ws_chat_ews_msg_rmv_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
+            let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
             data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-            let data_cm = ChMesTest::chat_messages(2);
+            let data_cm = ChatMessageOrmTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER, USER, USER]);
-        let data_cm = ChMesTest::chat_messages(2);
+        let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageOrmTest::chat_messages(2);
 
         // -- Test: 1. "'msgRmv' parameter not defined" --
         let msg_text = MessageText("{ \"msgRmv\": 0 }".into());
@@ -112,24 +111,24 @@ mod tests {
     async fn test_get_ws_chat_ews_msg_rmv_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = UserMock::users(&[USER, USER]);
+            let mut data_u = UserOrmTest::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
             data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
-            let data_cm = ChMesTest::chat_messages(2);
+            let data_cm = ChatMessageOrmTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         });
 
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER]);
-        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let data_cm = ChMesTest::chat_messages(2);
+        let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER]);
+        let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let data_cm = ChatMessageOrmTest::chat_messages(2);
         let ch_msg_id = data_cm.0.first().unwrap().id;
 
         // -- Test: 1. "Delete message user1."  --
@@ -190,22 +189,22 @@ mod tests {
     async fn test_get_ws_chat_ews_block_ews_unblock_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = UserMock::users(&[USER, USER, USER]);
+            let mut data_u = UserOrmTest::users(&[USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2, user4.
             data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
-            let data_cm = ChMesTest::chat_messages(2);
+            let data_cm = ChatMessageOrmTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER, USER]);
+        let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER, USER]);
 
         // -- Test: 1. "'id' parameter not defined" --
         let msg_text = MessageText("{ \"block\": \"\" }".into());
@@ -269,24 +268,24 @@ mod tests {
     async fn test_get_ws_chat_ews_block_ews_unblock_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
+            let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user2, user4.
             data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
             data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-            let data_cm = ChMesTest::chat_messages(2);
+            let data_cm = ChatMessageOrmTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER, USER, USER]);
-        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
 
         let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();

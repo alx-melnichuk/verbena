@@ -344,7 +344,7 @@ pub mod tests {
     use actix_web::web;
     use chrono::{DateTime, Duration, SubsecRound, Timelike, Utc};
     use vrb_authent::{
-        user_models::{USER1_ID, USER1_NAME, USER2_ID, USER2_NAME, USER3_ID, USER3_NAME, USER4_ID, USER4_NAME},
+        user_orm::tests::{USER1_ID, USER1_NAME, USER2_ID, USER2_NAME, USER3_ID, USER3_NAME, USER4_ID, USER4_NAME},
     };
     use vrb_common::{
         validators::Validator

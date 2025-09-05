@@ -10,14 +10,13 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_models::{UserMock, USER, USER1_ID},
-        user_orm::tests::UserOrmTest as User_Test,
+        user_orm::tests::{UserOrmTest, USER, USER1_ID},
     };
 
     use crate::{
-        chat_message_controller::{get_chat_message, tests as ChtCtTest},
+        chat_message_controller::{get_chat_message, tests as ChatMessageCtrlTest},
         chat_message_models::ChatMessageDto,
-        chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
+        chat_message_orm::tests::ChatMessageOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -27,8 +26,8 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let data_cm = ChMesTest::chat_messages(6);
+        let data_u = UserOrmTest::users(&[USER]);
+        let data_cm = ChatMessageOrmTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
         let ch_msg1_dto_vec: Vec<ChatMessageDto> = data_cm.0
@@ -36,14 +35,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}", stream_id))
-            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -59,8 +58,8 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let data_cm = ChMesTest::chat_messages(6);
+        let data_u = UserOrmTest::users(&[USER]);
+        let data_cm = ChatMessageOrmTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
         let ch_msg_dto_vec: Vec<ChatMessageDto> = data_cm.0
@@ -68,14 +67,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&isSortDes=true", stream_id))
-            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -92,8 +91,8 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_part1() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let data_cm = ChMesTest::chat_messages(6);
+        let data_u = UserOrmTest::users(&[USER]);
+        let data_cm = ChatMessageOrmTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
         let ch_msg_dto_vec: Vec<ChatMessageDto> = data_cm.0
@@ -103,14 +102,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&limit={}", stream_id, limit))
-            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -127,8 +126,8 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_part2() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let data_cm = ChMesTest::chat_messages(6);
+        let data_u = UserOrmTest::users(&[USER]);
+        let data_cm = ChatMessageOrmTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
         let ch_msg_dto_vec: Vec<ChatMessageDto> = data_cm.0
@@ -140,14 +139,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&minDate={}&limit={}", stream_id, min_date_str, limit))
-            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -164,8 +163,8 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des_part1() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let data_cm = ChMesTest::chat_messages(6);
+        let data_u = UserOrmTest::users(&[USER]);
+        let data_cm = ChatMessageOrmTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
         let ch_msg_dto_vec: Vec<ChatMessageDto> = data_cm.0
@@ -175,14 +174,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&isSortDes=true&limit={}", stream_id, limit))
-            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -199,8 +198,8 @@ mod tests {
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des_part2() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserMock::users(&[USER]);
-        let data_cm = ChMesTest::chat_messages(6);
+        let data_u = UserOrmTest::users(&[USER]);
+        let data_cm = ChatMessageOrmTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
         let ch_msg_dto_vec: Vec<ChatMessageDto> = data_cm.0
@@ -212,14 +211,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_chat_message)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&isSortDes=true&maxDate={}&limit={}", stream_id, max_date_str, limit))
-            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 

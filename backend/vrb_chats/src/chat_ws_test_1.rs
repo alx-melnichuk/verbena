@@ -6,15 +6,15 @@ mod tests {
     use serde_json::to_string;
     use vrb_authent::{
         config_jwt,
-        user_models::{Session, UserMock, USER, USER1_ID},
-        user_orm::tests::UserOrmTest as User_Test,
+        user_models::Session,
+        user_orm::tests::{UserOrmTest, USER, USER1_ID},
     };
     use vrb_common::{crypto::CRT_WRONG_STRING_BASE64URL, err};
     use vrb_tools::token_coding;
 
     use crate::{
         chat_event_ws::{CountEWS, JoinEWS, LeaveEWS},
-        chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
+        chat_message_orm::tests::ChatMessageOrmTest,
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
     };
@@ -29,13 +29,13 @@ mod tests {
     async fn test_get_ws_chat_ews_echo_ews_name() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(|| {
-            let data_u = UserMock::users(&[]);
-            let data_cm = ChMesTest::chat_messages(0);
+            let data_u = UserOrmTest::users(&[]);
+            let data_cm = ChatMessageOrmTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed = srv.ws_at(URL_WS).await.unwrap();
@@ -75,23 +75,23 @@ mod tests {
     async fn test_get_ws_chat_ews_join_ews_leave_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = UserMock::users(&[USER, USER]);
+            let mut data_u = UserOrmTest::users(&[USER, USER]);
             let session1 = data_u.1.get(0).unwrap().clone();
             let user3_id = USER1_ID + 2;
             let session3 = Session::new(user3_id, Some(config_jwt::tests::get_num_token(user3_id + 1)));
             data_u.1 = vec![session1, session3];
-            let data_cm = ChMesTest::chat_messages(0);
+            let data_cm = ChatMessageOrmTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         });
 
         // Open a websocket connection to the test server.
         let mut framed = srv.ws_at(URL_WS).await.unwrap();
 
-        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
 
@@ -110,7 +110,7 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: 3. "Stream with the specified id not found." (unauthorized) --
-        let stream_id_wrong = ChMesTest::stream_ids().last().unwrap().clone() + 1;
+        let stream_id_wrong = ChatMessageOrmTest::stream_ids().last().unwrap().clone() + 1;
         let msg_text = MessageText(format!("{{ \"join\": {} }}", stream_id_wrong).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -119,7 +119,7 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
 
         // -- Test: 4. "Stream with the specified id not found." (authorized) --
-        let stream_id_wrong2 = ChMesTest::stream_ids().last().unwrap().clone() + 1;
+        let stream_id_wrong2 = ChatMessageOrmTest::stream_ids().last().unwrap().clone() + 1;
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id_wrong2, token1.clone()).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -128,7 +128,7 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
 
         // -- Test: 5. "This stream is not active." (unauthorized) --
-        let stream3a_id = ChMesTest::stream_ids().get(2).unwrap().clone(); // live: false
+        let stream3a_id = ChatMessageOrmTest::stream_ids().get(2).unwrap().clone(); // live: false
         let msg_text = MessageText(format!("{{ \"join\":{} }}", stream3a_id).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -136,7 +136,7 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
 
         // -- Test: 6. "This stream is not active." (authorized) --
-        let stream3b_id = ChMesTest::stream_ids().get(2).unwrap().clone(); // live: false
+        let stream3b_id = ChatMessageOrmTest::stream_ids().get(2).unwrap().clone(); // live: false
         let msg_text = MessageText(format!("{{ \"join\":{}, \"access\": \"{}\"  }}", stream3b_id, token1.clone()).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -205,25 +205,25 @@ mod tests {
     async fn test_get_ws_chat_ews_join_ews_leave_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = UserMock::users(&[USER, USER, USER, USER]);
+            let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
             data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
             let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
             data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-            let data_cm = ChMesTest::chat_messages(0);
+            let data_cm = ChatMessageOrmTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER, USER, USER]);
+        let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER, USER, USER]);
 
         // -- Test: 1. "Join user1 as owner."" --
         let user1_id = profile_vec.get(0).unwrap().id;
@@ -354,16 +354,16 @@ mod tests {
     async fn test_get_ws_chat_ews_count() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_u = UserMock::users(&[USER, USER]);
+            let mut data_u = UserOrmTest::users(&[USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
             data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
-            let data_cm = ChMesTest::chat_messages(0);
+            let data_cm = ChatMessageOrmTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(User_Test::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(User_Test::cfg_user_orm(data_u))
-                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
@@ -375,8 +375,8 @@ mod tests {
         let err406 = get_err406(err::MSG_THERE_WAS_NO_JOIN);
         assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
-        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = UserMock::users(&[USER, USER]);
+        let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER]);
 
         let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
