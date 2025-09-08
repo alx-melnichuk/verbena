@@ -19,7 +19,7 @@ mod tests {
     use crate::{
         config_prfl,
         profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, tests as ProfileCtrlTest},
-        profile_models::{ProfileConfigDto, ProfileDto},
+        profile_models::{ProfileConfigDto, UserProfileDto},
         profile_orm::tests::ProfileOrmTest,
     };
 
@@ -61,7 +61,7 @@ mod tests {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[ADMIN, USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
+        let profile2_dto = UserProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -79,9 +79,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile2_dto).to_string();
-        let profile2b_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile2b_dto_ser: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile2b_dto_ser);
     }
     #[actix_web::test]
@@ -89,7 +89,7 @@ mod tests {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[ADMIN, USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile2_dto = ProfileDto::from(profiles.get(1).unwrap().clone());
+        let profile2_dto = UserProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -148,7 +148,7 @@ mod tests {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1_dto = ProfileDto::from(profiles.get(0).unwrap().clone());
+        let profile1_dto = UserProfileDto::from(profiles.get(0).unwrap().clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_current)
@@ -166,9 +166,9 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
 
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile1_dto).to_string();
-        let profile_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_ser: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(profile_dto_res, profile_dto_ser);
     }

@@ -22,7 +22,7 @@ pub mod tests {
     use crate::{
         config_prfl,
         profile_controller::{delete_profile, delete_profile_current, tests as ProfileCtrlTest},
-        profile_models::ProfileDto,
+        profile_models::UserProfileDto,
         profile_orm::tests::ProfileOrmTest,
     };
 
@@ -92,7 +92,7 @@ pub mod tests {
         let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_id = profile1.user_id;
-        let profile1_dto = ProfileDto::from(profile1);
+        let user_profile1_dto = UserProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
@@ -110,9 +110,9 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile1_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(user_profile1_dto).to_string();
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile_dto_org);
     }
     #[actix_web::test]
@@ -131,7 +131,7 @@ pub mod tests {
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
-        let profile_dto = ProfileDto::from(profile1.clone());
+        let profile_dto = UserProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
@@ -153,9 +153,9 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile_dto_org);
     }
     #[actix_web::test]
@@ -174,7 +174,7 @@ pub mod tests {
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
-        let profile_dto = ProfileDto::from(profile1.clone());
+        let profile_dto = UserProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
@@ -196,9 +196,9 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile_dto_org);
     }
     #[actix_web::test]
@@ -208,7 +208,7 @@ pub mod tests {
         let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
-        let profile_dto = ProfileDto::from(profile1.clone());
+        let profile_dto = UserProfileDto::from(profile1.clone());
 
         let config_prfl = config_prfl::get_test_config();
         let files_dir = config_prfl.prfl_avatar_files_dir.clone();
@@ -240,9 +240,9 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile_dto_org);
     }
 
@@ -254,7 +254,7 @@ pub mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
-        let profile1_dto = ProfileDto::from(profile1);
+        let profile1_dto = UserProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
@@ -272,9 +272,9 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile1_dto).to_string();
-        let profile1_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile1_dto_ser: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile1_dto_ser);
     }
     #[actix_web::test]
@@ -292,7 +292,7 @@ pub mod tests {
         let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
-        let profile_dto = ProfileDto::from(profile1.clone());
+        let profile_dto = UserProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
@@ -314,9 +314,9 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile_dto_org);
     }
     #[actix_web::test]
@@ -334,7 +334,7 @@ pub mod tests {
         let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
-        let profile_dto = ProfileDto::from(profile1.clone());
+        let profile_dto = UserProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
@@ -356,9 +356,9 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile_dto_org);
     }
     #[actix_web::test]
@@ -368,7 +368,7 @@ pub mod tests {
         let mut profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
-        let profile_dto = ProfileDto::from(profile1.clone());
+        let profile_dto = UserProfileDto::from(profile1.clone());
         let config_prfl = config_prfl::get_test_config();
         let files_dir = config_prfl.prfl_avatar_files_dir.clone();
         env::set_var(consts::STRM_LOGO_FILES_DIR, &files_dir);
@@ -398,9 +398,9 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile_dto_org);
     }
 }

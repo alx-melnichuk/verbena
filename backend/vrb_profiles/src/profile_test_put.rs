@@ -29,7 +29,7 @@ pub mod tests {
             put_profile, put_profile_new_password,
             tests::{self as ProfileCtrlTest, check_app_err},
         },
-        profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileMock},
+        profile_models::{self, ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileMock, UserProfile, UserProfileDto},
         profile_orm::tests::ProfileOrmTest,
     };
 
@@ -139,7 +139,7 @@ pub mod tests {
         let key = Cow::Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
         #[rustfmt::skip]
         let names1 = app_err.params.get(&key).unwrap().get("validNames").unwrap().as_str().unwrap();
-        let names2 = [ModifyProfileDto::valid_names(), vec!["avatarfile"]].concat().join(",");
+        let names2 = [ModifyUserProfileDto::valid_names(), vec!["avatarfile"]].concat().join(",");
         assert_eq!(names1, &names2);
     }
     #[actix_web::test]
@@ -764,7 +764,7 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(profile_dto_res.id, profile.user_id);
         assert_eq!(profile_dto_res.nickname, nickname_s);
@@ -815,7 +815,7 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let profile_dto_res_img = profile_dto_res.avatar.unwrap_or("".to_string());
         let img_name_full_path = profile_dto_res_img.replacen(consts::ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
         let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
@@ -876,7 +876,7 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let profile_dto_res_img = profile_dto_res.avatar.unwrap_or("".to_string());
         let img_name_full_path = profile_dto_res_img.replacen(consts::ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
         let path = path::Path::new(&img_name_full_path);
@@ -947,7 +947,7 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let profile_dto_res_img = profile_dto_res.avatar.unwrap_or("".to_string());
         let img_name_full_path = profile_dto_res_img.replacen(consts::ALIAS_AVATAR_FILES_DIR, &prfl_avatar_files_dir, 1);
         let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
@@ -1006,7 +1006,7 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let profile_dto_res_img = profile_dto_res.avatar.unwrap_or("".to_string());
         assert!(profile_dto_res_img.len() > 0);
         assert!(profile_dto_res_img.starts_with(consts::ALIAS_AVATAR_FILES_DIR));
@@ -1057,7 +1057,7 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert!(profile_dto_res.avatar.is_none());
     }
     #[actix_web::test]
@@ -1092,7 +1092,7 @@ pub mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert!(profile_dto_res.avatar.is_none());
     }
 
@@ -1166,7 +1166,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: "".to_string(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
@@ -1195,7 +1195,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: ProfileMock::password_min(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
@@ -1224,7 +1224,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: ProfileMock::password_max(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
@@ -1254,7 +1254,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: ProfileMock::password_wrong(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
@@ -1272,10 +1272,10 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_empty() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1 = profiles.get_mut(0).unwrap();
-        profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let mut data_u = UserOrmTest::users(&[USER]);
+        let user1 = data_u.0.get_mut(0).unwrap();
+        user1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
@@ -1286,7 +1286,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: old_password, new_password: "".to_string()
             })
             .to_request();
@@ -1304,10 +1304,10 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_min() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1 = profiles.get_mut(0).unwrap();
-        profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let mut data_u = UserOrmTest::users(&[USER]);
+        let user1 = data_u.0.get_mut(0).unwrap();
+        user1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
@@ -1318,7 +1318,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: old_password, new_password: ProfileMock::password_min()
             })
             .to_request();
@@ -1336,10 +1336,10 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_max() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1 = profiles.get_mut(0).unwrap();
-        profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let mut data_u = UserOrmTest::users(&[USER]);
+        let user1 = data_u.0.get_mut(0).unwrap();
+        user1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
@@ -1350,7 +1350,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: old_password, new_password: ProfileMock::password_max()
             })
             .to_request();
@@ -1368,10 +1368,10 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_wrong() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1 = profiles.get_mut(0).unwrap();
-        profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let mut data_u = UserOrmTest::users(&[USER]);
+        let user1 = data_u.0.get_mut(0).unwrap();
+        user1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
@@ -1382,7 +1382,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: old_password, new_password: ProfileMock::password_wrong()
             })
             .to_request();
@@ -1400,10 +1400,10 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_equal_old_value() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1 = profiles.get_mut(0).unwrap();
-        profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let mut data_u = UserOrmTest::users(&[USER]);
+        let user1 = data_u.0.get_mut(0).unwrap();
+        user1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
@@ -1414,7 +1414,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: old_password.clone(), new_password: old_password
             })
             .to_request();
@@ -1432,10 +1432,10 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_hash_password() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1 = profiles.get_mut(0).unwrap();
-        profile1.password = "invali_hash_password".to_string();
+        let mut data_u = UserOrmTest::users(&[USER]);
+        let user1 = data_u.0.get_mut(0).unwrap();
+        user1.password = "invali_hash_password".to_string();
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
@@ -1446,7 +1446,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
@@ -1464,10 +1464,10 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_password() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1 = profiles.get_mut(0).unwrap();
-        profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let mut data_u = UserOrmTest::users(&[USER]);
+        let user1 = data_u.0.get_mut(0).unwrap();
+        user1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
@@ -1478,7 +1478,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: format!("{}a", old_password), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
@@ -1496,11 +1496,12 @@ pub mod tests {
     async fn test_put_profile_new_password_valid_data() {
         let old_password = "passwdP1C1".to_string();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
-        let profile1 = profiles.get_mut(0).unwrap();
-        profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
-        let profile1_dto = ProfileDto::from(profile1.clone());
+        let mut data_u = UserOrmTest::users(&[USER]);
+        let user1 = data_u.0.get_mut(0).unwrap();
+        user1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
+        let user1_profile = UserProfile::from(user1.clone());
+        let user1_profile_dto = UserProfileDto::from(user1_profile);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password)
@@ -1511,7 +1512,7 @@ pub mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
-            .set_json(NewPasswordProfileDto {
+            .set_json(NewPasswordUserProfileDto {
                 password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
@@ -1522,10 +1523,10 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
 
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json = serde_json::json!(profile1_dto).to_string();
-        let profile_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(user1_profile_dto).to_string();
+        let profile_dto_ser: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(profile_dto_res.id, profile_dto_ser.id);
         assert_eq!(profile_dto_res.nickname, profile_dto_ser.nickname);
