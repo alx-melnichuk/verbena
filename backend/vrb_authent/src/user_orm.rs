@@ -267,9 +267,8 @@ pub mod tests {
 
     use crate::{
         config_jwt,
-        user_models::{CreateUser, ModifyUser, Profile, Session, User},
+        user_models::{CreateUser, ModifyUser, Profile, Profile1Mock, Session, User},
         user_orm::UserOrm,
-        user_profile_mock::UserProfileMock,
     };
 
     pub const ADMIN: u8 = 0;
@@ -443,7 +442,7 @@ pub mod tests {
             let opt_user: Option<User> = self.user_vec.iter().find(|user| user.id == user_id).map(|user| user.clone());
 
             let opt_profile = opt_user.map(|user| {
-                let profile1 = UserProfileMock::profile(user.id);
+                let profile1 = Profile1Mock::profile(user.id);
                 Profile::new(user.id, profile1.avatar, profile1.descript, profile1.theme, profile1.locale)
             });
 
