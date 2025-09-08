@@ -122,13 +122,13 @@ export class PgProfileComponent {
                 if (!response) {
                     this.errMsgsAccount = [this.translate.instant('pg-profile.error_delete_account', { nickname })];
                 } else {
+                    // Closing the session.
+                    this.profileService.setProfileDto(null);
+                    this.profileService.setUserTokensDto(null);
                     const title = this.translate.instant('pg-profile.dialog_title_delete');
                     const message = this.translate.instant('pg-profile.dialog_message_delete', { nickname });
                     this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' })
                         .finally(() => {
-                            // Closing the session.
-                            this.profileService.setProfileDto(null);
-                            this.profileService.setUserTokensDto(null);
                             window.setTimeout(() => this.router.navigate([ROUTE_LOGIN]), 0);
                         })
                 }
