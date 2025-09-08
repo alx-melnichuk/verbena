@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_authent::user_models::{self, User};
+use vrb_authent::user_models::{self, Profile, User};
 use vrb_common::{
     err, serial_datetime,
     validators::{ValidationChecks, ValidationError, Validator},
@@ -65,13 +65,13 @@ pub const PROFILE_LOCALE_DEF: &str = "default";
 
 // * * * * Section: models for "ProfileOrm". * * * *
 
-// ** Model: "Profile". Used to return user profile data. **
-// #
+// ** Used to return user profile data. **
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::profiles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(rename_all = "camelCase")]
-pub struct Profile {
+pub struct UserProfile {
     #[diesel(sql_type = diesel::sql_types::Integer)]
     #[diesel(column_name = "user_id")]
     pub user_id: i32,
@@ -81,9 +81,6 @@ pub struct Profile {
     #[diesel(sql_type = diesel::sql_types::Text)]
     #[diesel(column_name = "email")]
     pub email: String,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "password")]
-    pub password: String,
     #[diesel(sql_type = schema::sql_types::UserRole)]
     #[diesel(column_name = "role")]
     pub role: UserRole,
@@ -94,8 +91,8 @@ pub struct Profile {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
-// #
-impl Profile {
+
+impl UserProfile {
     pub fn new(
         user_id: i32,
         nickname: &str,
@@ -105,39 +102,12 @@ impl Profile {
         descript: Option<&str>,
         theme: Option<&str>,
         locale: Option<&str>,
-    ) -> Profile {
+    ) -> Self {
         let now = Utc::now();
-        Profile {
+        UserProfile {
             user_id,
             nickname: nickname.to_owned(),
             email: email.to_owned(),
-            password: "".to_owned(),
-            role,
-            avatar: avatar.map(|v| v.to_owned()),
-            descript: descript.map(|v| v.to_owned()),
-            theme: theme.map(|v| v.to_owned()),
-            locale: locale.map(|v| v.to_owned()),
-            created_at: now.clone(),
-            updated_at: now.clone(),
-        }
-    }
-    pub fn new2(
-        user_id: i32,
-        nickname: &str,
-        email: &str,
-        password: &str,
-        role: UserRole,
-        avatar: Option<&str>,
-        descript: Option<&str>,
-        theme: Option<&str>,
-        locale: Option<&str>,
-    ) -> Profile {
-        let now = Utc::now();
-        Profile {
-            user_id,
-            nickname: nickname.to_owned(),
-            email: email.to_owned(),
-            password: password.to_owned(),
             role,
             avatar: avatar.map(|v| v.to_owned()),
             descript: descript.map(|v| v.to_owned()),
@@ -148,14 +118,13 @@ impl Profile {
         }
     }
 }
-// #
-impl From<User> for Profile {
+
+impl From<User> for UserProfile {
     fn from(user: User) -> Self {
-        Profile {
+        UserProfile {
             user_id: user.id,
             nickname: user.nickname,
             email: user.email,
-            password: user.password,
             role: user.role,
             avatar: None,
             descript: None,
@@ -167,10 +136,10 @@ impl From<User> for Profile {
     }
 }
 
-// ** Model: "ModifyProfile". Used: ProfileOrm::modify_profile() **
-// #
+// ** Used: ProfileOrm::modify_user_profile() **
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct ModifyProfile {
+pub struct ModifyUserProfile {
     pub nickname: Option<String>,       // min_len=3,max_len=64
     pub email: Option<String>,          // min_len=5,max_len=254,"email:email_type"
     pub password: Option<String>,       // min_len=6,max_len=64
@@ -183,12 +152,11 @@ pub struct ModifyProfile {
 
 // * * * * Section: models for the "profile_get_controller". * * * *
 
-// ** Model Dto: "ProfileDto". Used: in "profile_get_controller::get_profile_by_id()" and many other methods. **
-// **                          Used: in "profile_controller::put_profile()" and many other methods. **
-// #
+// ** Used: in "profile_controller::put_profile()" and many other methods. **
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct ProfileDto {
+pub struct UserProfileDto {
     pub id: i32,
     pub nickname: String,
     pub email: String,
@@ -206,10 +174,20 @@ pub struct ProfileDto {
     #[serde(with = "serial_datetime")]
     pub updated_at: DateTime<Utc>,
 }
-// #
-impl From<Profile> for ProfileDto {
-    fn from(profile: Profile) -> Self {
-        ProfileDto {
+
+impl UserProfileDto {
+    pub fn update_profile(&mut self, profile: Profile) -> &mut Self {
+        self.avatar = profile.avatar;
+        self.descript = profile.descript;
+        self.theme = profile.theme;
+        self.locale = profile.locale;
+        self
+    }
+}
+
+impl From<UserProfile> for UserProfileDto {
+    fn from(profile: UserProfile) -> Self {
+        UserProfileDto {
             id: profile.user_id,
             nickname: profile.nickname,
             email: profile.email,
@@ -224,7 +202,7 @@ impl From<Profile> for ProfileDto {
     }
 }
 
-// ** Model Dto: "ProfileConfigDto". Used: in "profile_get_controller::get_profile_config()". **
+// ** Used: in "profile_get_controller::get_profile_config()". **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -267,11 +245,11 @@ impl ProfileConfigDto {
 
 // * * * * Section: models for the "profile_controller". * * * *
 
-// ** Model Dto: "ModifyProfileDto". Used: in "profile_controller::put_profile()" **
+// ** Used: in "profile_controller::put_profile()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct ModifyProfileDto {
+pub struct ModifyUserProfileDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nickname: Option<String>, // min_len=3,max_len=64
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -286,13 +264,13 @@ pub struct ModifyProfileDto {
     pub locale: Option<String>, // min_len=2,max_len=32 default "default"
 }
 
-impl ModifyProfileDto {
+impl ModifyUserProfileDto {
     pub fn valid_names<'a>() -> Vec<&'a str> {
         vec!["nickname", "email", "role", "descript", "theme", "locale"]
     }
 }
 
-impl Validator for ModifyProfileDto {
+impl Validator for ModifyUserProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
@@ -333,7 +311,7 @@ impl Validator for ModifyProfileDto {
             self.theme.is_some(),
             self.locale.is_some(),
         ];
-        let valid_names = ModifyProfileDto::valid_names().join(",");
+        let valid_names = Self::valid_names().join(",");
         #[rustfmt::skip]
         errors.push(
             ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err()
@@ -343,14 +321,14 @@ impl Validator for ModifyProfileDto {
     }
 }
 
-impl Into<ModifyProfile> for ModifyProfileDto {
-    fn into(self) -> ModifyProfile {
+impl Into<ModifyUserProfile> for ModifyUserProfileDto {
+    fn into(self) -> ModifyUserProfile {
         let role = if let Some(role1) = self.role {
             UserRole::try_from(role1.as_str()).ok()
         } else {
             None
         };
-        ModifyProfile {
+        ModifyUserProfile {
             nickname: self.nickname.clone(),
             email: self.email.clone(),
             password: None,
@@ -363,16 +341,16 @@ impl Into<ModifyProfile> for ModifyProfileDto {
     }
 }
 
-// ** Model Dto: "NewPasswordProfileDto". Used: in "profile_controller::put_profile_new_password()" **
+// ** Used: in "profile_controller::put_profile_new_password()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct NewPasswordProfileDto {
+pub struct NewPasswordUserProfileDto {
     pub password: String,
     pub new_password: String,
 }
 
-impl Validator for NewPasswordProfileDto {
+impl Validator for NewPasswordUserProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
@@ -390,7 +368,7 @@ impl Validator for NewPasswordProfileDto {
     }
 }
 
-// ** Model Dto: "NewPasswordProfileDto". Used: in "profile_controller::delete_profile()" **
+// ** Used: in "profile_controller::delete_profile()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 pub struct StreamLogo {
