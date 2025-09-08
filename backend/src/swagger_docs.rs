@@ -76,9 +76,9 @@ use vrb_streams::{stream_controller, stream_models};
             // profile_controller
             profile_models::ProfileConfigDto, // ::get_profile_config
             // profile_controller
-            profile_models::ProfileDto, // ::put_profile
-            profile_models::ModifyProfileDto, // ::put_stream
-            profile_models::NewPasswordProfileDto, // ::put_profile_new_password,
+            profile_models::UserProfileDto, // ::put_profile
+            profile_models::ModifyUserProfileDto, // ::put_stream
+            profile_models::NewPasswordUserProfileDto, // ::put_profile_new_password,
 
             // stream_controller
             enm_stream_state::StreamState,
