@@ -1,22 +1,14 @@
+use vrb_authent::user_models::Profile;
 use vrb_dbase::dbase::DbPool;
 
-use crate::profile_models::{ModifyProfile, Profile};
+use crate::profile_models::{ModifyUserProfile, UserProfile};
 
 pub trait ProfileOrm {
-    /// Get an entity (profile + user) by ID.
-    fn get_profile_user_by_id(&self, user_id: i32, is_password: bool) -> Result<Option<Profile>, String>;
-
-    /// Find for an entity (profile) by nickname or email.
-    #[rustfmt::skip]
-    fn find_profile_by_nickname_or_email(
-        &self, nickname: Option<&str>, email: Option<&str>, is_password: bool,
-    ) -> Result<Option<Profile>, String>;
+    /// Get an entity (profile) by ID.
+    fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String>;
 
     /// Modify an entity (profile, user).
-    fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String>;
-
-    /// Delete an entity (profile).
-    fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String>;
+    fn modify_user_profile(&self, user_id: i32, modify_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String>;
 
     /// Filter for the list of stream logos by user ID.
     fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String>;
@@ -37,9 +29,10 @@ pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
+    use vrb_authent::user_models::Profile;
     use vrb_dbase::{dbase, schema};
 
-    use crate::profile_models::{ModifyProfile, Profile, StreamLogo};
+    use crate::profile_models::{ModifyUserProfile, UserProfile, StreamLogo};
 
     use super::ProfileOrm;
 
@@ -60,67 +53,27 @@ pub mod impls {
     }
 
     impl ProfileOrm for ProfileOrmApp {
-        /// Get an entity (profile + user) by ID.
-        fn get_profile_user_by_id(&self, user_id: i32, is_password: bool) -> Result<Option<Profile>, String> {
+
+        /// Get an entity (profile) by ID.
+        fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query("select * from find_profile_user($1, NULL, NULL, $2);")
-                .bind::<sql_types::Integer, _>(user_id)
-                .bind::<sql_types::Bool, _>(is_password);
-
-            // Run query using Diesel to find user by id (and user_id) and return it.
-            let opt_profile = query
-                .get_result::<Profile>(&mut conn)
+            // Run query using Diesel to find user by id and return it.
+            let opt_profile: Option<Profile> = schema::profiles::table
+                .filter(schema::profiles::dsl::user_id.eq(user_id))
+                .first::<Profile>(&mut conn)
                 .optional()
-                .map_err(|e| format!("find_profile_user: {}", e.to_string()))?;
+                .map_err(|e| format!("get_profile_by_id: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
-                info!("get_profile_user_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+                info!("get_profile_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             Ok(opt_profile)
         }
 
-        /// Find for an entity (profile) by nickname or email.
-        fn find_profile_by_nickname_or_email(
-            &self,
-            nickname: Option<&str>,
-            email: Option<&str>,
-            is_password: bool,
-        ) -> Result<Option<Profile>, String> {
-            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-
-            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
-            let nickname2_len = nickname2.len();
-            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
-            let email2_len = email2.len();
-            if nickname2_len == 0 && email2_len == 0 {
-                return Ok(None);
-            }
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query("select * from find_profile_user(NULL, $1, $2, $3);")
-                .bind::<sql_types::Text, _>(nickname2)
-                .bind::<sql_types::Text, _>(email2)
-                .bind::<sql_types::Bool, _>(is_password);
-
-            // Run query using Diesel to find user by id (and user_id) and return it.
-            let opt_profile = query
-                .get_result::<Profile>(&mut conn)
-                .optional()
-                .map_err(|e| format!("find_profile_user: {}", e.to_string()))?;
-
-            if let Some(timer) = timer {
-                #[rustfmt::skip]
-                info!("find_profile_by_nickname_or_email() time: {}", format!("{:.2?}", timer.elapsed()));
-            }
-            Ok(opt_profile)
-        }
-
-        /// Modify an entity (profile, user).
-        fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
+        /// Modify an entity (user, profile).
+        fn modify_user_profile(&self, user_id: i32, modify_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let nickname = modify_profile.nickname.map(|v| v.to_lowercase());
@@ -136,7 +89,7 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from modify_profile_user($1,$2,$3,$4,$5,$6,$7,$8,$9);")
+            let query = diesel::sql_query("select * from modify_user_profile($1,$2,$3,$4,$5,$6,$7,$8,$9);")
                 .bind::<sql_types::Integer, _>(user_id) // $1
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(nickname) // $2
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(email) // $3
@@ -149,7 +102,7 @@ pub mod impls {
 
             // Run a query with Diesel to create a new user and return it.
             let profile_user = query
-                .get_result::<Profile>(&mut conn)
+                .get_result::<UserProfile>(&mut conn)
                 .optional()
                 .map_err(|e| format!("modify_profile_user: {}", e.to_string()))?;
 
@@ -157,27 +110,6 @@ pub mod impls {
                 info!("modify_profile() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             Ok(profile_user)
-        }
-
-        /// Delete an entity (profile).
-        fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {
-            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            #[rustfmt::skip]
-            let query =
-                diesel::sql_query("select * from delete_profile_user($1);").bind::<sql_types::Integer, _>(user_id);
-
-            // Run a query using Diesel to delete the "profile" entity by ID and return the data for that entity.
-            let opt_profile = query
-                .get_result::<Profile>(&mut conn)
-                .optional()
-                .map_err(|e| format!("delete_profile_user: {}", e.to_string()))?;
-
-            if let Some(timer) = timer {
-                info!("delete_profile() time: {}", format!("{:.2?}", timer.elapsed()));
-            }
-            Ok(opt_profile)
         }
 
         /// Filter for the list of stream logos by user ID.
@@ -207,18 +139,18 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::Utc;
-    use vrb_authent::{config_jwt, user_models::{User, Session}, user_orm::tests::USER1_ID};
+    use vrb_authent::{config_jwt, user_models::{Profile, Session, User}, user_orm::tests::USER1_ID};
     use vrb_common::consts;
 
     use crate::{
         config_prfl,
-        profile_models::{self, Profile},
+        profile_models::{ModifyUserProfile, UserProfile},
         profile_orm::ProfileOrm,
     };
 
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
-        pub profile_vec: Vec<Profile>,
+        pub user_profile_vec: Vec<UserProfile>,
         pub session_vec: Vec<Session>,
     }
 
@@ -226,15 +158,15 @@ pub mod tests {
         /// Create a new instance.
         pub fn new() -> Self {
             ProfileOrmApp {
-                profile_vec: Vec::new(),
+                user_profile_vec: Vec::new(),
                 session_vec: Vec::new(),
             }
         }
         /// Create a new instance with the specified profile list.
         /// Sessions are taken from "sessions", if it is empty, they are created automatically.
-        pub fn create(profiles: &[Profile]) -> Self {
+        pub fn create(user_profiles: &[UserProfile]) -> Self {
             ProfileOrmApp {
-                profile_vec: profiles.to_vec(),
+                user_profile_vec: user_profiles.to_vec(),
                 session_vec: Vec::new(),
             }
         }
@@ -246,74 +178,42 @@ pub mod tests {
     }
 
     impl ProfileOrm for ProfileOrmApp {
-        /// Get an entity (profile + user) by ID.
-        fn get_profile_user_by_id(&self, user_id: i32, is_password: bool) -> Result<Option<Profile>, String> {
-            let opt_profile = self
-                .profile_vec
+
+        /// Get an entity (profile) by ID.
+        fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
+            let opt_user_profile = self
+                .user_profile_vec
                 .iter()
-                .find(|profile_user| profile_user.user_id == user_id)
-                .map(|profile_user| profile_user.clone());
+                .find(|profile| profile.user_id == user_id)
+                .map(|profile| profile.clone());
 
-            let result = match opt_profile {
-                Some(mut profile) if !is_password => {
-                    profile.password = "".to_string();
-                    Some(profile)
+            let opt_profile = opt_user_profile.map(|user_profile|
+                Profile {
+                    user_id: user_profile.user_id,
+                    avatar: user_profile.avatar,
+                    descript: user_profile.descript,
+                    theme: user_profile.theme,
+                    locale: user_profile.locale,
+                    created_at: user_profile.created_at,
+                    updated_at: user_profile.updated_at,
                 }
-                Some(v) => Some(v),
-                None => None,
-            };
-
-            Ok(result)
-        }
-
-        /// Find for an entity (profile) by nickname or email.
-        fn find_profile_by_nickname_or_email(
-            &self,
-            nickname: Option<&str>,
-            email: Option<&str>,
-            is_password: bool,
-        ) -> Result<Option<Profile>, String> {
-            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
-            let nickname2_len = nickname2.len();
-            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
-            let email2_len = email2.len();
-
-            if nickname2_len == 0 && email2_len == 0 {
-                return Ok(None);
-            }
-
-            let opt_profile = self
-                .profile_vec
-                .iter()
-                .find(|profile| (nickname2_len > 0 && profile.nickname == nickname2) || (email2_len > 0 && profile.email == email2))
-                .map(|user| user.clone());
-
-            let result = match opt_profile {
-                Some(mut profile) if !is_password => {
-                    profile.password = "".to_string();
-                    Some(profile)
-                }
-                Some(v) => Some(v),
-                None => None,
-            };
-
-            Ok(result)
+            );
+            Ok(opt_profile)
         }
 
         /// Modify an entity (profile, user).
-        fn modify_profile(&self, user_id: i32, modify_profile: profile_models::ModifyProfile) -> Result<Option<Profile>, String> {
-            let opt_profile = self.profile_vec.iter().find(|profile| (*profile).user_id == user_id);
-            let opt_profile3: Option<Profile> = if let Some(profile) = opt_profile {
-                let profile2 = Profile {
+        fn modify_user_profile(&self, user_id: i32, modify_user_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String> {
+            let opt_profile = self.user_profile_vec.iter().find(|profile| (*profile).user_id == user_id);
+            let opt_profile3: Option<UserProfile> = if let Some(profile) = opt_profile {
+                let profile2 = UserProfile {
                     user_id: profile.user_id,
-                    nickname: modify_profile.nickname.unwrap_or(profile.nickname.clone()),
-                    email: modify_profile.email.unwrap_or(profile.email.clone()),
-                    password: modify_profile.password.unwrap_or(profile.password.clone()),
-                    role: modify_profile.role.unwrap_or(profile.role.clone()),
-                    avatar: modify_profile.avatar.unwrap_or(profile.avatar.clone()),
-                    descript: modify_profile.descript.or(profile.descript.clone()),
-                    theme: modify_profile.theme.or(profile.theme.clone()),
-                    locale: modify_profile.locale.or(profile.locale.clone()),
+                    nickname: modify_user_profile.nickname.unwrap_or(profile.nickname.clone()),
+                    email: modify_user_profile.email.unwrap_or(profile.email.clone()),
+                    role: modify_user_profile.role.unwrap_or(profile.role.clone()),
+                    avatar: modify_user_profile.avatar.unwrap_or(profile.avatar.clone()),
+                    descript: modify_user_profile.descript.or(profile.descript.clone()),
+                    theme: modify_user_profile.theme.or(profile.theme.clone()),
+                    locale: modify_user_profile.locale.or(profile.locale.clone()),
                     created_at: profile.created_at,
                     updated_at: Utc::now(),
                 };
@@ -322,13 +222,6 @@ pub mod tests {
                 None
             };
             Ok(opt_profile3)
-        }
-
-        /// Delete an entity (profile).
-        fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {
-            let opt_profile = self.profile_vec.iter().find(|profile| profile.user_id == user_id);
-
-            Ok(opt_profile.map(|u| u.clone()))
         }
 
         /// Filter for the list of stream logos by user ID.
@@ -345,8 +238,8 @@ pub mod tests {
     pub struct ProfileOrmTest {}
 
     impl ProfileOrmTest {
-        pub fn profiles(users: &[User]) -> Vec<Profile> {
-            let profile_vec: Vec<Profile> = users.iter().map(|u| Profile::from(u.clone())).collect();
+        pub fn profiles(users: &[User]) -> Vec<UserProfile> {
+            let profile_vec: Vec<UserProfile> = users.iter().map(|u| UserProfile::from(u.clone())).collect();
             profile_vec
         }
         pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
@@ -361,11 +254,11 @@ pub mod tests {
                 config.app_data(web::Data::clone(&data_config_prfl));
             }
         }
-        pub fn cfg_profile_orm(data_p: Vec<Profile>) -> impl FnOnce(&mut web::ServiceConfig) {
+        pub fn cfg_profile_orm(data_p: Vec<UserProfile>) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
-                let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p));
+                let data_user_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p));
 
-                config.app_data(web::Data::clone(&data_profile_orm));
+                config.app_data(web::Data::clone(&data_user_profile_orm));
             }
         }
     }
