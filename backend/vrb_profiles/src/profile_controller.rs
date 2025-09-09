@@ -20,6 +20,7 @@ use vrb_common::{
     alias_path::{alias_path_profile, alias_path_stream},
     api_error::{code_to_str, ApiError},
     consts, err, parser,
+    profile::{PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
     validators::{self, msg_validation, ValidationChecks, Validator},
 };
 use vrb_dbase::enm_user_role::UserRole;
@@ -32,8 +33,8 @@ use crate::profile_orm::tests::ProfileOrmApp;
 use crate::{
     config_prfl::{self, ConfigPrfl},
     profile_models::{
-        ModifyUserProfile, ModifyUserProfileDto, NewPasswordUserProfileDto, /*Profile,*/ ProfileConfigDto, UserProfile,
-        UserProfileDto, PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
+        ModifyUserProfile, ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileConfigDto, UserProfile,
+        UserProfileDto,
     },
     profile_orm::ProfileOrm,
 };
