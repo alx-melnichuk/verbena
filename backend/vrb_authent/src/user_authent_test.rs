@@ -22,7 +22,7 @@ mod tests {
         user_authent_models::{
             LoginDto, LoginResponseDto, LoginUserProfileDto, UserTokenDto, UserTokenResponseDto, UserUniquenessResponseDto,
         },
-        user_models::{self, Profile1Mock, Session, UserMock},
+        user_models::{self, Session, UserMock},
         user_orm::tests::{UserOrmTest, USER, USER1_ID},
         user_registr_orm::tests::UserRegistrOrmTest,
     };
@@ -706,7 +706,7 @@ mod tests {
         user1.password = hash_tools::encode_hash(password).unwrap(); // hashed
 
         let mut user_profile_ser = LoginUserProfileDto::from(user1.clone());
-        let profile1 = Profile1Mock::profile(user1.id);
+        let profile1 = UserOrmTest::profile(user1.id);
         user_profile_ser.avatar = profile1.avatar;
         user_profile_ser.descript = profile1.descript;
         user_profile_ser.theme = profile1.theme;
