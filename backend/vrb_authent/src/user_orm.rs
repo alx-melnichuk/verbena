@@ -263,11 +263,12 @@ pub mod impls {
 pub mod tests {
     use actix_web::web;
     use chrono::Utc;
+    use vrb_common::profile::{PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF};
     use vrb_dbase::enm_user_role::UserRole;
 
     use crate::{
         config_jwt,
-        user_models::{CreateUser, ModifyUser, Profile, Profile1Mock, Session, User},
+        user_models::{CreateUser, ModifyUser, Profile, Session, User},
         user_orm::UserOrm,
     };
 
@@ -441,10 +442,7 @@ pub mod tests {
         fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let opt_user: Option<User> = self.user_vec.iter().find(|user| user.id == user_id).map(|user| user.clone());
 
-            let opt_profile = opt_user.map(|user| {
-                let profile1 = Profile1Mock::profile(user.id);
-                Profile::new(user.id, profile1.avatar, profile1.descript, profile1.theme, profile1.locale)
-            });
+            let opt_profile = opt_user.map(|user| UserOrmTest::profile(user.id));
 
             Ok(opt_profile)
         }
@@ -485,6 +483,14 @@ pub mod tests {
                 let data_user_orm = web::Data::new(user_orm_app);
                 config.app_data(web::Data::clone(&data_user_orm));
             }
+        }
+        pub fn profile(user_id: i32) -> Profile {
+            let descript = format!("descript_{}", user_id);
+            #[rustfmt::skip]
+            let theme = if user_id % 2 == 0 { PROFILE_THEME_DARK.to_owned() } else { PROFILE_THEME_LIGHT_DEF.to_owned() };
+            #[rustfmt::skip]
+            let locale = if user_id % 2 == 0 { PROFILE_LOCALE_DEF.to_owned() } else { "en-US".to_owned() };
+            Profile::new(user_id, None, Some(descript), Some(theme), Some(locale))
         }
     }
 }

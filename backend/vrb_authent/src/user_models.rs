@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use vrb_common::validators::{ValidationChecks, ValidationError};
 use vrb_dbase::{enm_user_role::UserRole, schema};
 
-// ** Section: "nickname" **
+// ** Section: "User.nickname" **
 
 pub const NICKNAME_MIN: u8 = 3;
 pub const NICKNAME_MAX: u8 = 64;
@@ -25,7 +25,7 @@ pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-// ** Section: "email" **
+// ** Section: "User.email" **
 
 pub const EMAIL_MIN: u8 = 5;
 // https://stackoverflow.com/questions/386294/what-is-the-maximum-length-of-a-valid-email-address
@@ -46,7 +46,7 @@ pub fn validate_email(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-// ** Section: "password" **
+// ** Section: "User.password" **
 
 pub const PASSWORD_MIN: u8 = 6;
 pub const PASSWORD_MAX: u8 = 64;
@@ -70,7 +70,7 @@ pub fn validate_password(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-// ** Section: "new_password" **
+// ** Section: "User.new_password" **
 
 pub const MSG_NEW_PASSWORD_REQUIRED: &str = "new_password:required";
 pub const MSG_NEW_PASSWORD_MIN_LENGTH: &str = "new_password:min_length";
@@ -97,20 +97,17 @@ pub fn validate_inequality(value1: &str, value2: &str) -> Result<(), ValidationE
     Ok(())
 }
 
-// ** Section: "descript" **
+// ** Section: "User.role" **
 
-pub const DESCRIPT_MIN: u8 = 2;
-pub const DESCRIPT_MAX: u16 = 2048; // 2*1024
+pub const MSG_USER_ROLE_INVALID_VALUE: &str = "user_role:invalid_value";
 
-// ** Section: "theme" **
-
-pub const THEME_MIN: u8 = 2;
-pub const THEME_MAX: u8 = 32;
-
-// ** Section: "locale" **
-
-pub const LOCALE_MIN: u8 = 2;
-pub const LOCALE_MAX: u8 = 32;
+pub fn validate_role(value: &str) -> Result<(), ValidationError> {
+    let res_user_role = UserRole::try_from(value);
+    if res_user_role.is_err() {
+        ValidationChecks::valid_value(value, &[], MSG_USER_ROLE_INVALID_VALUE)?;
+    }
+    Ok(())
+}
 
 // * * * * Section: models for "UserOrm". * * * *
 
@@ -283,45 +280,6 @@ impl UserMock {
     pub fn role_wrong() -> String {
         let role = UserRole::all_values().get(0).unwrap().to_string();
         role[0..(role.len() - 1)].to_string()
-    }
-}
-
-// * * * *  Profile1Mock  * * * *
-
-pub struct Profile1Mock {}
-
-impl Profile1Mock {
-    pub fn get_avatar(_user_id: i32) -> Option<String> {
-        None
-    }
-    pub fn get_descript(user_id: i32) -> Option<String> {
-        Some(format!("descript_{}", user_id))
-    }
-    pub fn get_theme(user_id: i32) -> Option<String> {
-        if user_id % 2 == 0 {
-            Some("dark".to_owned())
-        } else {
-            Some("light".to_owned())
-        }
-    }
-    pub fn get_locale(user_id: i32) -> Option<String> {
-        if user_id % 2 == 0 {
-            Some("default".to_owned())
-        } else {
-            Some("en-US".to_owned())
-        }
-    }
-    pub fn profile(user_id: i32) -> Profile {
-        let now = Utc::now();
-        Profile {
-            user_id,
-            avatar: Self::get_avatar(user_id),
-            descript: Self::get_descript(user_id),
-            theme: Self::get_theme(user_id),
-            locale: Self::get_locale(user_id),
-            created_at: now.clone(),
-            updated_at: now,
-        }
     }
 }
 

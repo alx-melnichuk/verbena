@@ -6,21 +6,9 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use vrb_authent::user_models::{self, Profile, User};
 use vrb_common::{
-    err, serial_datetime,
-    validators::{ValidationChecks, ValidationError, Validator},
+    err, profile, serial_datetime, validators::{ValidationChecks, ValidationError, Validator}
 };
 use vrb_dbase::{enm_user_role::UserRole, schema};
-
-pub const MSG_DESCRIPT_MIN_LENGTH: &str = "descript:min_length";
-pub const MSG_DESCRIPT_MAX_LENGTH: &str = "descript:max_length";
-
-pub const MSG_THEME_MIN_LENGTH: &str = "theme:min_length";
-pub const MSG_THEME_MAX_LENGTH: &str = "theme:max_length";
-
-pub const MSG_LOCALE_MIN_LENGTH: &str = "locale:min_length";
-pub const MSG_LOCALE_MAX_LENGTH: &str = "locale:max_length";
-
-pub const MSG_USER_ROLE_INVALID_VALUE: &str = "user_role:invalid_value";
 
 // #
 pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
@@ -31,37 +19,6 @@ pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
     }
     Ok(())
 }
-// MIN=2, MAX=2048
-pub fn validate_descript(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, user_models::DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, user_models::DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
-    Ok(())
-}
-// MIN=2, MAX=32
-pub fn validate_theme(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, user_models::THEME_MIN.into(), MSG_THEME_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, user_models::THEME_MAX.into(), MSG_THEME_MAX_LENGTH)?;
-    Ok(())
-}
-// MIN=2, MAX=32
-pub fn validate_locale(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, user_models::LOCALE_MIN.into(), MSG_LOCALE_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, user_models::LOCALE_MAX.into(), MSG_LOCALE_MAX_LENGTH)?;
-    Ok(())
-}
-pub fn validate_role(value: &str) -> Result<(), ValidationError> {
-    let res_user_role = UserRole::try_from(value);
-    if res_user_role.is_err() {
-        ValidationChecks::valid_value(value, &[], MSG_USER_ROLE_INVALID_VALUE)?;
-    }
-    Ok(())
-}
-
-// * * * * Section: "database". * * * *
-
-pub const PROFILE_THEME_LIGHT_DEF: &str = "light";
-pub const PROFILE_THEME_DARK: &str = "dark";
-pub const PROFILE_LOCALE_DEF: &str = "default";
 
 // * * * * Section: models for "ProfileOrm". * * * *
 
@@ -282,24 +239,24 @@ impl Validator for ModifyUserProfileDto {
             errors.push(user_models::validate_email(&value).err());
         }
         if let Some(value) = &self.role {
-            errors.push(validate_role(&value).err());
+            errors.push(user_models::validate_role(&value).err());
         }
         if let Some(value) = &self.descript {
             if value.len() > 0 {
                 // If the string is empty, the DB will assign NULL.
-                errors.push(validate_descript(&value).err());
+                errors.push(profile::validate_descript(&value).err());
             }
         }
         if let Some(value) = &self.theme {
             if value.len() > 0 {
                 // If the string is empty, the DB will assign NULL.
-                errors.push(validate_theme(&value).err());
+                errors.push(profile::validate_theme(&value).err());
             }
         }
         if let Some(value) = &self.locale {
             if value.len() > 0 {
                 // If the string is empty, the DB will assign NULL.
-                errors.push(validate_locale(&value).err());
+                errors.push(profile::validate_locale(&value).err());
             }
         }
 
@@ -377,73 +334,31 @@ pub struct StreamLogo {
     pub logo: String,
 }
 
-// * * * *   * * * *
+// * * * *  ProfileMock  * * * *
 
-#[cfg(all(test, feature = "mockdata"))]
+#[cfg(any(test, feature = "mockdata"))]
 pub struct ProfileMock {}
 
-#[cfg(all(test, feature = "mockdata"))]
+#[cfg(any(test, feature = "mockdata"))]
 impl ProfileMock {
-    
-    pub fn nickname_min() -> String {
-        (0..(user_models::NICKNAME_MIN - 1)).map(|_| 'a').collect()
-    }
-    pub fn nickname_max() -> String {
-        (0..(user_models::NICKNAME_MAX + 1)).map(|_| 'a').collect()
-    }
-    pub fn nickname_wrong() -> String {
-        let nickname: String = (0..(user_models::NICKNAME_MIN - 1)).map(|_| 'a').collect();
-        format!("{}#", nickname)
-    }
-    pub fn email_min() -> String {
-        let suffix = "@us".to_owned();
-        let email_min: usize = user_models::EMAIL_MIN.into();
-        let email: String = (0..(email_min - 1 - suffix.len())).map(|_| 'a').collect();
-        format!("{}{}", email, suffix)
-    }
-    pub fn email_max() -> String {
-        let email_max: usize = user_models::EMAIL_MAX.into();
-        let prefix: String = (0..64).map(|_| 'a').collect();
-        let domain = ".ua";
-        let len = email_max - prefix.len() - domain.len() + 1;
-        let suffix: String = (0..len).map(|_| 'a').collect();
-        format!("{}@{}{}", prefix, suffix, domain)
-    }
-    pub fn email_wrong() -> String {
-        let suffix = "@".to_owned();
-        let email_min: usize = user_models::EMAIL_MIN.into();
-        let email: String = (0..(email_min - suffix.len())).map(|_| 'a').collect();
-        format!("{}{}", email, suffix)
-    }
-    pub fn password_min() -> String {
-        (0..(user_models::PASSWORD_MIN - 1)).map(|_| 'a').collect()
-    }
-    pub fn password_max() -> String {
-        (0..(user_models::PASSWORD_MAX + 1)).map(|_| 'a').collect()
-    }
-    pub fn password_wrong() -> String {
-        (0..(user_models::PASSWORD_MIN)).map(|_| 'a').collect()
-    }
-    pub fn role_wrong() -> String {
-        let role = UserRole::all_values().get(0).unwrap().to_string();
-        role[0..(role.len() - 1)].to_string()
-    }
     pub fn descript_min() -> String {
-        (0..(user_models::DESCRIPT_MIN - 1)).map(|_| 'a').collect()
+        (0..(profile::DESCRIPT_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn descript_max() -> String {
-        (0..(user_models::DESCRIPT_MAX + 1)).map(|_| 'a').collect()
+        (0..(profile::DESCRIPT_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn theme_min() -> String {
-        (0..(user_models::THEME_MIN - 1)).map(|_| 'a').collect()
+        (0..(profile::THEME_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn theme_max() -> String {
-        (0..(user_models::THEME_MAX + 1)).map(|_| 'a').collect()
+        (0..(profile::THEME_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn locale_min() -> String {
-        (0..(user_models::LOCALE_MIN - 1)).map(|_| 'a').collect()
+        (0..(profile::LOCALE_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn locale_max() -> String {
-        (0..(user_models::LOCALE_MAX + 1)).map(|_| 'a').collect()
+        (0..(profile::LOCALE_MAX + 1)).map(|_| 'a').collect()
     }
 }
+
+// * * * *    * * * *
