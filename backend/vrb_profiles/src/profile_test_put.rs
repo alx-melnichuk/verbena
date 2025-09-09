@@ -13,12 +13,12 @@ pub mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt, user_models,
+        user_models::UserMock,
         user_orm::tests::{UserOrmTest, USER, USER1_ID},
         user_registr_orm::tests::UserRegistrOrmTest,
     };
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
-        consts, err, validators,
+        api_error::{code_to_str, ApiError}, consts, err, profile, validators
     };
     use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::{cdis::coding, hash_tools, png_files};
@@ -29,7 +29,7 @@ pub mod tests {
             put_profile, put_profile_new_password,
             tests::{self as ProfileCtrlTest, check_app_err},
         },
-        profile_models::{self, ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileMock, UserProfile, UserProfileDto},
+        profile_models::{ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileMock, UserProfile, UserProfileDto},
         profile_orm::tests::ProfileOrmTest,
     };
 
@@ -43,6 +43,7 @@ pub mod tests {
         let three_secs = Duration::from_millis(milli_secs);
         sleep(three_secs);
     }
+
     // ** put_profile **
 
     #[actix_web::test]
@@ -144,7 +145,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileMock::nickname_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", UserMock::nickname_min()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -173,7 +174,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileMock::nickname_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", UserMock::nickname_max()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -202,9 +203,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_wrong() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("nickname", ProfileMock::nickname_wrong())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", UserMock::nickname_wrong()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -233,7 +232,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_email_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileMock::email_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", UserMock::email_min()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -262,7 +261,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_email_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileMock::email_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", UserMock::email_max()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -291,7 +290,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_email_wrong() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileMock::email_wrong()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", UserMock::email_wrong()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -320,7 +319,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_role_wrong() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("role", ProfileMock::role_wrong()).build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("role", UserMock::role_wrong()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -345,11 +344,13 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_USER_ROLE_INVALID_VALUE]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_USER_ROLE_INVALID_VALUE]);
     }
     #[actix_web::test]
     async fn test_put_profile_descript_min() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileMock::descript_min()).build();
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("descript", ProfileMock::descript_min())
+            .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -374,11 +375,13 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_DESCRIPT_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_DESCRIPT_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_descript_max() {
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileMock::descript_max()).build();
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("descript", ProfileMock::descript_max())
+            .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -403,7 +406,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_DESCRIPT_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_DESCRIPT_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_theme_min() {
@@ -432,7 +435,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_THEME_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_THEME_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_theme_max() {
@@ -461,7 +464,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_THEME_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_THEME_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_locale_min() {
@@ -490,7 +493,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_LOCALE_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_LOCALE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_locale_max() {
@@ -519,7 +522,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_LOCALE_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_LOCALE_MAX_LENGTH]);
     }
 
     #[actix_web::test]
@@ -1196,7 +1199,7 @@ pub mod tests {
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordUserProfileDto {
-                password: ProfileMock::password_min(), new_password: "passwdJ3S9".to_string()
+                password: UserMock::password_min(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1225,7 +1228,7 @@ pub mod tests {
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordUserProfileDto {
-                password: ProfileMock::password_max(), new_password: "passwdJ3S9".to_string()
+                password: UserMock::password_max(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1255,7 +1258,7 @@ pub mod tests {
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordUserProfileDto {
-                password: ProfileMock::password_wrong(), new_password: "passwdJ3S9".to_string()
+                password: UserMock::password_wrong(), new_password: "passwdJ3S9".to_string()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1319,7 +1322,7 @@ pub mod tests {
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordUserProfileDto {
-                password: old_password, new_password: ProfileMock::password_min()
+                password: old_password, new_password: UserMock::password_min()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1351,7 +1354,7 @@ pub mod tests {
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordUserProfileDto {
-                password: old_password, new_password: ProfileMock::password_max()
+                password: old_password, new_password: UserMock::password_max()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1383,7 +1386,7 @@ pub mod tests {
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(ProfileCtrlTest::header_auth(&token1))
             .set_json(NewPasswordUserProfileDto {
-                password: old_password, new_password: ProfileMock::password_wrong()
+                password: old_password, new_password: UserMock::password_wrong()
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
