@@ -72,6 +72,8 @@ BEFORE UPDATE ON streams
 FOR EACH ROW
 EXECUTE FUNCTION modify_stream_set_live();
 
+
+
 /* Create "stream_tags" table. */
 CREATE TABLE stream_tags (
     id SERIAL PRIMARY KEY NOT NULL,
@@ -82,6 +84,7 @@ CREATE TABLE stream_tags (
 );
 
 CREATE UNIQUE INDEX uq_idx_stream_tags_user_id_name ON stream_tags(user_id, "name");
+
 
 
 /* Create "link_stream_tags_to_streams" table. */
@@ -95,6 +98,7 @@ CREATE TABLE link_stream_tags_to_streams (
 );
 
 CREATE INDEX idx_link_stream_tags_to_streams_stream_id_stream_tag_id ON link_stream_tags_to_streams(stream_id, stream_tag_id);
+
 
 
 /* Stored procedures for working with data from the "stream_tags" table. */
@@ -226,3 +230,76 @@ AS $$
   ORDER BY
     L.stream_id ASC, T.user_id  ASC, T.id ASC;
 $$;
+
+/* Create a stored function to get information about the live of the stream. */
+CREATE OR REPLACE FUNCTION get_stream_live(
+  IN _stream_id INTEGER,
+  OUT stream_id INTEGER,
+  OUT stream_live BOOLEAN
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  rec1 RECORD;
+BEGIN
+  IF (_stream_id IS NULL) THEN
+    RETURN;
+  END IF;
+
+  SELECT s.id AS stream_id, s.live AS stream_live
+  FROM streams s
+  WHERE s.id = _stream_id
+  INTO rec1;
+
+  IF rec1.stream_live IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY SELECT
+    rec1.stream_id,
+    rec1.stream_live;
+END;
+$$;
+
+-- **
+
+/* Create a stored function that will filter "stream" entities by the specified parameters. */
+CREATE OR REPLACE FUNCTION filter_streams(
+  IN _id INTEGER,
+  IN _user_id INTEGER,
+  IN _is_logo BOOLEAN,
+  IN _is_live BOOLEAN,
+  OUT id INTEGER,
+  OUT user_id INTEGER,
+  OUT title VARCHAR,
+  OUT descript TEXT,
+  OUT logo VARCHAR,
+  OUT starttime TIMESTAMP WITH TIME ZONE,
+  OUT live BOOLEAN,
+  OUT state stream_state,
+  OUT started TIMESTAMP WITH TIME ZONE,
+  OUT stopped TIMESTAMP WITH TIME ZONE,
+  OUT source VARCHAR,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF _id IS NULL AND _user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+    SELECT s.id, s.user_id, s.title, s.descript, s.logo, s.starttime, s.live, s.state,
+      s.started, s.stopped, s.source, s.created_at, s.updated_at
+    FROM streams s
+    WHERE s.id = COALESCE(_id, s.id)
+      AND s.user_id = COALESCE(_user_id, s.user_id)
+      AND CASE WHEN _is_logo = true THEN LENGTH(COALESCE(s.logo, '')) > 0
+          ELSE CASE WHEN _is_logo = false THEN LENGTH(COALESCE(s.logo, '')) = 0 ELSE true END
+          END
+      AND s.live = COALESCE(_is_live, s.live)
+    ORDER BY s.id ASC;
+END;
+$$;
+
+-- **
