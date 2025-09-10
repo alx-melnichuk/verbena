@@ -89,6 +89,8 @@ export class PgStreamListComponent implements OnInit {
         try {
             // Get the next page of the "Future Stream".
             await this.futureStreamHdlr.searchNextStream();
+            // Refresh view for "panel-stream-event".
+            this.isRefreshStreamEvent = !this.isRefreshStreamEvent ? true : undefined;
         } catch (error) {
             this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_future_streams');
             throw error;
@@ -101,6 +103,8 @@ export class PgStreamListComponent implements OnInit {
         try {
             // Get the next page of "Past Stream".
             await this.pastStreamHdlr.searchNextStream();
+            // Refresh view for "panel-stream-event".
+            this.isRefreshStreamEvent = !this.isRefreshStreamEvent ? true : undefined;
         } catch (error) {
             this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_past_streams');
             throw error;
