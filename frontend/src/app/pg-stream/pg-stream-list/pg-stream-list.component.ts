@@ -3,12 +3,17 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 import { StreamCalendarService } from 'src/app/lib-stream/stream-calendar.service';
-import { StreamListService } from 'src/app/lib-stream/stream-list.service';
 import { CN_DELETE_STREAM, StreamListComponent } from 'src/app/lib-stream/stream-list/stream-list.component';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
+
+import { StreamHandler } from './stream-handler';
+
+const CN_DEFAULT_LIMIT = 7;
+const CN_INTERVAL_MINUTES = 5;
 
 @Component({
     selector: 'app-pg-stream-list',
@@ -24,14 +29,21 @@ export class PgStreamListComponent implements OnInit {
     public isRefreshStreamEvent: boolean | null | undefined;
     public profileDto: ProfileDto | null;
 
+    // "Future Streams"
+    public futureStreamHdlr: StreamHandler;
+    // "Past Streams"
+    public pastStreamHdlr: StreamHandler;
+
     constructor(
         private changeDetector: ChangeDetectorRef,
         private route: ActivatedRoute,
+        private alertService: AlertService,
         private streamService: StreamService,
-        public streamListService: StreamListService,
         public streamCalendarService: StreamCalendarService,
     ) {
         this.profileDto = this.route.snapshot.data['profileDto'];
+        this.futureStreamHdlr = new StreamHandler(this.streamService, true, CN_DEFAULT_LIMIT, CN_INTERVAL_MINUTES);
+        this.pastStreamHdlr = new StreamHandler(this.streamService, false, CN_DEFAULT_LIMIT, CN_INTERVAL_MINUTES);
     }
 
     async ngOnInit(): Promise<void> {
@@ -76,9 +88,10 @@ export class PgStreamListComponent implements OnInit {
     public async doSearchNextFutureStream(): Promise<void> {
         try {
             // Get the next page of the "Future Stream".
-            await this.streamListService.searchNextFutureStream();
-            // Refresh view for "panel-stream-event".
-            this.isRefreshStreamEvent = !this.isRefreshStreamEvent ? true : undefined;
+            await this.futureStreamHdlr.searchNextStream();
+        } catch (error) {
+            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_future_streams');
+            throw error;
         } finally {
             this.changeDetector.markForCheck();
         }
@@ -87,9 +100,10 @@ export class PgStreamListComponent implements OnInit {
     public async doSearchNextPastStream(): Promise<void> {
         try {
             // Get the next page of "Past Stream".
-            await this.streamListService.searchNextPastStream();
-            // Refresh view for "panel-stream-event".
-            this.isRefreshStreamEvent = !this.isRefreshStreamEvent ? true : undefined;
+            await this.pastStreamHdlr.searchNextStream();
+        } catch (error) {
+            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_past_streams');
+            throw error;
         } finally {
             this.changeDetector.markForCheck();
         }
@@ -117,18 +131,18 @@ export class PgStreamListComponent implements OnInit {
 
     private async loadFutureAndPastStreamsAndSchedule(): Promise<void> {
         // Clear array of "Future Stream"
-        this.streamListService.clearFutureStream();
+        this.futureStreamHdlr.clearStream();
         // Clear array of "Past Stream"
-        this.streamListService.clearPastStream();
+        this.pastStreamHdlr.clearStream();
 
         const buffPromise: Promise<unknown>[] = [];
         const now = new Date();
         now.setHours(0, 0, 0, 0);
 
         // Get the next page of the "Future Stream".
-        buffPromise.push(this.streamListService.searchNextFutureStream());
+        buffPromise.push(this.futureStreamHdlr.searchNextStream());
         // Get the next page of "Past Stream".
-        buffPromise.push(this.streamListService.searchNextPastStream());
+        buffPromise.push(this.pastStreamHdlr.searchNextStream());
         const selectedDate = this.streamCalendarService.eventsOfDaySelected || now;
         // Get a list of short streams for the selected date.
         buffPromise.push(this.streamCalendarService.getListEventsForDate(selectedDate, 1));
@@ -149,7 +163,7 @@ export class PgStreamListComponent implements OnInit {
         this.changeDetector.markForCheck();
         try {
             // Delete a stream by its ID.
-            await this.streamListService.deleteDataStream(streamId);
+            await this.futureStreamHdlr.deleteDataStream(streamId);
             // Update the list of next and past streams.
             await this.loadFutureAndPastStreamsAndSchedule();
         } catch (error) {

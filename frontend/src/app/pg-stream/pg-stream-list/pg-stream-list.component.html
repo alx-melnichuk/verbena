@@ -4,13 +4,13 @@
   [calendarMarkedDates]="streamCalendarService.calendarMarkedDates"
   [calendarMinDate]="streamCalendarService.calendarMinDate"
   [calendarMaxDate]="streamCalendarService.calendarMaxDate"
-  [futureStreams]="streamListService.futureStreamsDto"
+  [futureStreams]="futureStreamHdlr.streamsDto"
   [isLoadStreams]="streamCalendarService.calendarLoading
                 || streamCalendarService.eventsOfDayLoading
-                || streamListService.futureStreamLoading
-                || streamListService.pastStreamLoading"
+                || futureStreamHdlr.streamLoading
+                || pastStreamHdlr.streamLoading"
   [isRefreshStreamEvent]="isRefreshStreamEvent"
-  [pastStreams]="streamListService.pastStreamsDto"
+  [pastStreams]="pastStreamHdlr.streamsDto"
   [profileDto]="profileDto"
   [streamEventsForDay]="streamCalendarService.eventsOfDay"
   (calendarForPeriod)="doCalendarForPeriod($event)"
