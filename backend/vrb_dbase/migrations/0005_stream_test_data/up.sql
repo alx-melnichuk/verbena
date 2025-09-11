@@ -71,8 +71,8 @@ DECLARE
   idx INTEGER := 0;
   txt VARCHAR := '';
   year_str VARCHAR := '';
-  starttime1 TIMESTAMP WITH TIME ZONE := '2024-01-10T10:00:00+02';
-  starttime2 TIMESTAMP WITH TIME ZONE := '2024-01-07T10:00:00+02';
+  starttime1 TIMESTAMP WITH TIME ZONE;
+  starttime2 TIMESTAMP WITH TIME ZONE;
 BEGIN
   RAISE NOTICE 'Start';
   name_list := ARRAY[
@@ -102,8 +102,8 @@ BEGIN
     
     CALL add_stream_tag(user_id, 'tourism', tourism_tag_id);
 
-    starttime1:= '2024-03-10T10:00:00+02';
-    starttime2:= '2024-02-02T10:00:00+02';
+    starttime1:= '2026-03-10T10:00:00+02';
+    starttime2:= '2026-02-02T10:00:00+02';
 
     trip_index := ARRAY_LENGTH(trip_list, 1);
     WHILE trip_index > 0 LOOP
@@ -177,7 +177,7 @@ DECLARE
   txt VARCHAR := '';
   year_str VARCHAR := '';
   year_idx INTEGER := 0;
-  startdate1 TIMESTAMP WITH TIME ZONE := '2024-01-10T10:00:00+02';
+  startdate1 TIMESTAMP WITH TIME ZONE;
 BEGIN
   RAISE NOTICE 'Start';
   name_list := ARRAY['Logan_Lewis', 'Evelyn_Allen'];
@@ -227,8 +227,8 @@ BEGIN
       idx := idx + 1;
     END LOOP;
 
-    year_idx := 2024;
-    WHILE year_idx < 2035 LOOP
+    year_idx := 2026;
+    WHILE year_idx < 2037 LOOP
       startdate1 := to_timestamp(CONCAT(year_idx,'/01/01 08:00:00'), 'YYYY/MM/DD HH24:MI:SS');
 
       -- For each element in the trips array.
