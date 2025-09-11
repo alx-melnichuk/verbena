@@ -1,18 +1,16 @@
 <app-stream-list
   [errObj]="errObj"
-  [calendarDaySelected]="streamCalendarService.eventsOfDaySelected"
-  [calendarMarkedDates]="streamCalendarService.calendarMarkedDates"
-  [calendarMinDate]="streamCalendarService.calendarMinDate"
-  [calendarMaxDate]="streamCalendarService.calendarMaxDate"
+  [calendarDaySelected]="calendarHdlr.eventsOfDaySelected"
+  [calendarMarkedDates]="calendarHdlr.calendarMarkedDates"
+  [calendarMinDate]="calendarHdlr.calendarMinDate"
+  [calendarMaxDate]="calendarHdlr.calendarMaxDate"
   [futureStreams]="futureStreamHdlr.streamsDto"
-  [isLoadStreams]="streamCalendarService.calendarLoading
-                || streamCalendarService.eventsOfDayLoading
-                || futureStreamHdlr.streamLoading
-                || pastStreamHdlr.streamLoading"
+  [isLoadStreams]="calendarHdlr.calendarLoading || calendarHdlr.eventsOfDayLoading
+    || futureStreamHdlr.streamLoading || pastStreamHdlr.streamLoading"
   [isRefreshStreamEvent]="isRefreshStreamEvent"
   [pastStreams]="pastStreamHdlr.streamsDto"
   [profileDto]="profileDto"
-  [streamEventsForDay]="streamCalendarService.eventsOfDay"
+  [streamEventsForDay]="calendarHdlr.eventsOfDay"
   (calendarForPeriod)="doCalendarForPeriod($event)"
   (futureNextPage)="doSearchNextFutureStream()"
   (pastNextPage)="doSearchNextPastStream()"
