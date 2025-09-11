@@ -36,7 +36,6 @@ export class PanelStreamEventComponent {
     @Output()
     readonly editStream: EventEmitter<number> = new EventEmitter();
 
-    readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'short' };
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'short', timeStyle: 'short' };
 
     @HostBinding('class.global-scroll')
