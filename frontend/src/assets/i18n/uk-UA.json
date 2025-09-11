@@ -259,7 +259,8 @@
     "error_get_streams_for_active_period": "Помилка отримання потоків за активний період",
     "error_delete_stream": "Помилка під час видалення потоку",
     "error_get_future_streams": "Помилка під час отримання майбутніх трансляцій",
-    "error_get_past_streams": "Помилка під час отримання минулих трансляцій"
+    "error_get_past_streams": "Помилка під час отримання минулих трансляцій",
+    "error_retrieving_data": "Помилка отримання даних."
   },
   "demo": {
   },

@@ -259,7 +259,8 @@
     "error_get_streams_for_active_period": "Fehler beim Abrufen der Streams für den aktiven Zeitraum",
     "error_delete_stream": "Fehler beim löschen des streams",
     "error_get_future_streams": "Fehler beim abrufen zukünftiger streams",
-    "error_get_past_streams": "Fehler beim abrufen vergangener streams"
+    "error_get_past_streams": "Fehler beim abrufen vergangener streams",
+    "error_retrieving_data": "Fehler beim abrufen der daten."
   },
   "demo": {
   },

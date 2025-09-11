@@ -259,7 +259,8 @@
     "error_get_streams_for_active_period": "Error getting streams for the active period",
     "error_delete_stream": "Error while deleting stream",
     "error_get_future_streams": "Error while getting future streams",
-    "error_get_past_streams": "Error while getting past streams"
+    "error_get_past_streams": "Error while getting past streams",
+    "error_retrieving_data": "Error retrieving data."
   },
   "panel-stream-mini": {
     "buttons": {
