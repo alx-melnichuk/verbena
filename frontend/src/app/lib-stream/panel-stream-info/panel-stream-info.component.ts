@@ -57,7 +57,6 @@ export class PanelStreamInfoComponent {
     @Output()
     readonly actionDelete: EventEmitter<{ id: number, title: string }> = new EventEmitter();
 
-    readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'long' };
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'long', timeStyle: 'short' };
 
     @HostBinding('class.global-scroll')
