@@ -11,6 +11,8 @@ export class StreamHandler {
     readonly orderDirection: 'asc' | 'desc';
     readonly searchParam: 'futureStarttime' | 'pastStarttime';
 
+    private searchDate: Date = new Date();
+
     constructor(
         private streamService: StreamService,
         readonly isFuture: boolean,
@@ -26,15 +28,22 @@ export class StreamHandler {
     public clearStream(): void {
         this.clearStreamInfo(this.limit, this.orderDirection);
     }
+    /** Checking if the data needs to be updated. */
+    public isNeedRefreshData(): boolean {
+        const currentDate = this.datetimeByIntervals(new Date());
+        return currentDate.getTime() > this.searchDate.getTime();
+    }
     /** Execute a query to retrieve data from the next page of the "Stream". */
     public async searchNextStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
-        const nextPage = ((new Date()).getMinutes() % this.interval == 0 ? 1 : this.getNextPage(this.pageInfo));
+        const valueMinutes = (new Date()).getMinutes() % this.interval;
+        const nextPage = (valueMinutes == 0 ? 1 : this.getNextPage(this.pageInfo));
         if (!nextPage) {
             return Promise.resolve(undefined);
         }
+        this.searchDate = this.datetimeByIntervals(new Date());
         const searchStream: SearchStreamDto = {
             userId,
-            [this.searchParam]: this.datetimeByIntervals(new Date()).toISOString(),
+            [this.searchParam]: this.searchDate.toISOString(),
             orderDirection: this.orderDirection,
             page: nextPage,
             limit: this.limit
@@ -45,7 +54,10 @@ export class StreamHandler {
             result = await this.streamService.getStreams(searchStream);
             const streams = (result as StreamListDto);
             this.pageInfo = PageInfoUtil.create(streams);
-            this.streamsDto = (nextPage > 1 ? this.streamsDto.concat(streams.list) : streams.list);
+            if (this.pageInfo.page == 1) {
+                this.streamsDto = [];
+            }
+            this.streamsDto = this.streamsDto.concat(streams.list)
         } finally {
             this.streamLoading = false;
         }
