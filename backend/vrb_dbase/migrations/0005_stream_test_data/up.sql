@@ -227,7 +227,7 @@ BEGIN
       idx := idx + 1;
     END LOOP;
 
-    year_idx := 2026;
+    year_idx := 2025;
     WHILE year_idx < 2037 LOOP
       startdate1 := to_timestamp(CONCAT(year_idx,'/01/01 08:00:00'), 'YYYY/MM/DD HH24:MI:SS');
 
