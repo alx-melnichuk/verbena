@@ -11,7 +11,7 @@ use vrb_authent::{
     user_orm::UserOrm,
 };
 use vrb_common::{
-    api_error::{code_to_str, ApiError},
+    api_error::{ApiError, code_to_str},
     err,
 };
 use vrb_tools::token_coding;

@@ -1,21 +1,20 @@
 use std::{borrow::Cow, collections::HashMap, ops::Deref, time::Instant as tm};
 
 use actix_web::{
-    delete, get,
+    HttpResponse, delete, get,
     http::StatusCode,
     post, put,
     web::{self, Query},
-    HttpResponse,
 };
 use chrono::{DateTime, Duration, TimeZone, Utc};
-use log::{error, info, log_enabled, Level::Info};
+use log::{Level::Info, error, info, log_enabled};
 use serde_json::json;
 use utoipa;
 use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
-    api_error::{code_to_str, ApiError},
+    api_error::{ApiError, code_to_str},
     err, parser,
-    validators::{msg_validation, Validator},
+    validators::{Validator, msg_validation},
 };
 use vrb_dbase::enm_user_role::UserRole;
 
@@ -26,8 +25,8 @@ use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
     chat_message_models::{
         BlockedUser, BlockedUserDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage,
-        CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage,
-        SearchChatMessageDto, MESSAGE_MAX,
+        CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto,
+        SearchChatMessage, SearchChatMessageDto,
     },
     chat_message_orm::ChatMessageOrm,
 };

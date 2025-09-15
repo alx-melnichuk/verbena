@@ -1,16 +1,16 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        self, body, dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        self, App, body, dev,
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use chrono::SecondsFormat;
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest, USER, USER1_ID},
+        user_orm::tests::{USER, USER1_ID, UserOrmTest},
     };
 
     use crate::{

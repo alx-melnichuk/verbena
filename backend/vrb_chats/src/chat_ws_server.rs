@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use actix::prelude::*;
 use actix_broker::BrokerSubscribe;
 use log::debug;
-use serde_json::to_string;
 use rand;
+use serde_json::to_string;
 
 use crate::{
     chat_event_ws::{JoinEWS, LeaveEWS},

@@ -1,13 +1,13 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{web::Bytes, App};
+    use actix_web::{App, web::Bytes};
     use actix_web_actors::ws::{Frame::Text as FrameText, Message::Text as MessageText};
     use futures_util::{SinkExt, StreamExt}; // this is needed for "send" method in Framed.
     use serde_json::to_string;
     use vrb_authent::{
         config_jwt,
         user_models::Session,
-        user_orm::tests::{UserOrmTest, USER, USER1_ID},
+        user_orm::tests::{USER, USER1_ID, UserOrmTest},
     };
     use vrb_common::{crypto::CRT_WRONG_STRING_BASE64URL, err};
     use vrb_tools::token_coding;

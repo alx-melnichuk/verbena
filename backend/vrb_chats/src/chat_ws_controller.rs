@@ -1,4 +1,4 @@
-use actix_web::{get, web, HttpResponse};
+use actix_web::{HttpResponse, get, web};
 use actix_web_actors::ws;
 use utoipa;
 use vrb_authent::config_jwt;

@@ -1,4 +1,4 @@
-use log::{debug, log_enabled, Level::Debug};
+use log::{Level::Debug, debug, log_enabled};
 
 use actix::prelude::*;
 use actix_broker::BrokerIssue;

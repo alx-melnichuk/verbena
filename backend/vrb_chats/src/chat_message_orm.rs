@@ -51,7 +51,7 @@ pub mod impls {
     use std::time::Instant as tm;
 
     use diesel::{self, prelude::*, sql_types};
-    use log::{info, log_enabled, Level::Info};
+    use log::{Level::Info, info, log_enabled};
     use vrb_common::validators::Validator;
     use vrb_dbase::dbase;
 
@@ -343,12 +343,8 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::{DateTime, Duration, SubsecRound, Timelike, Utc};
-    use vrb_authent::{
-        user_orm::tests::{USER1_ID, USER1_NAME, USER2_ID, USER2_NAME, USER3_ID, USER3_NAME, USER4_ID, USER4_NAME},
-    };
-    use vrb_common::{
-        validators::Validator
-    };
+    use vrb_authent::user_orm::tests::{USER1_ID, USER1_NAME, USER2_ID, USER2_NAME, USER3_ID, USER3_NAME, USER4_ID, USER4_NAME};
+    use vrb_common::validators::Validator;
 
     use crate::{
         chat_message_models::{
