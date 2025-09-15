@@ -29,5 +29,4 @@ pub const STRM_LOGO_EXT: &str = "STRM_LOGO_EXT";
 pub const STRM_LOGO_MAX_WIDTH: &str = "STRM_LOGO_MAX_WIDTH";
 pub const STRM_LOGO_MAX_HEIGHT: &str = "STRM_LOGO_MAX_HEIGHT";
 
-
 // **  **

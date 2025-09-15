@@ -1,12 +1,12 @@
 use std::{borrow, collections::BTreeMap, error, fmt};
 
 use actix_web::{
-    http::{header, StatusCode},
     HttpResponse,
+    http::{StatusCode, header},
 };
 use mime;
 use serde::{Deserialize, Serialize};
-use serde_json::{to_string, to_value, Value};
+use serde_json::{Value, to_string, to_value};
 use utoipa::ToSchema;
 
 use crate::validators::ValidationError;
@@ -293,7 +293,7 @@ impl actix_web::ResponseError for ApiError {
 mod tests {
     use actix_web::{
         body,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        http::header::{CONTENT_TYPE, HeaderValue},
     };
     use serde_json::json;
 

@@ -4,7 +4,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use email_address;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, to_value, Value};
+use serde_json::{Value, json, to_value};
 
 pub const NM_NO_FIELDS_TO_UPDATE: &str = "noFieldsToUpdate";
 pub const NM_ONE_OPTIONAL_FIELDS_MUST_PRESENT: &str = "oneOptionalFieldMustPresent";

@@ -50,9 +50,9 @@ mod tests {
     async fn test_alias_path_single_alias_single_path() {
         let alias = "alias1".to_string();
         let path = "path1".to_string();
-    
+
         let adp = AliasPath::new(&alias, &path);
-        
+
         let file_name1 = "file_name1.txt".to_string();
 
         let res1 = adp.path_to_alias(&format!("{}/{}", &path, &file_name1));
@@ -65,9 +65,9 @@ mod tests {
     async fn test_alias_path_single_alias_without_path() {
         let alias = "alias1".to_string();
         let path = "path1".to_string();
-    
+
         let adp = AliasPath::new(&alias, &path);
-        
+
         let file_name1 = "file_name1.txt".to_string();
 
         let path_file1 = format!("test{}/{}", &path, &file_name1);
@@ -81,9 +81,9 @@ mod tests {
     async fn test_alias_path_simple_alias_simple_path() {
         let alias = "/alias1".to_string();
         let path = "/path1".to_string();
-    
+
         let adp = AliasPath::new(&alias, &path);
-        
+
         let file_name1 = "file_name1.txt".to_string();
 
         let res1 = adp.path_to_alias(&format!("{}/{}", &path, &file_name1));
@@ -96,9 +96,9 @@ mod tests {
     async fn test_alias_path_complex_alias_complex_path() {
         let alias = "/alias1/test1".to_string();
         let path = "/path1/demo1".to_string();
-    
+
         let adp = AliasPath::new(&alias, &path);
-        
+
         let file_name1 = "file_name1.txt".to_string();
 
         let res1 = adp.path_to_alias(&format!("{}/{}", &path, &file_name1));
@@ -111,9 +111,9 @@ mod tests {
     async fn test_alias_path_complex_alias_dir_complex_path_dir() {
         let alias = "/alias1/test1/".to_string();
         let path = "/path1/demo1/".to_string();
-    
+
         let adp = AliasPath::new(&alias, &path);
-        
+
         let file_name1 = "file_name1.txt".to_string();
 
         let res1 = adp.path_to_alias(&format!("{}{}", &path, &file_name1));
@@ -126,9 +126,9 @@ mod tests {
     async fn test_alias_path_simple_alias_dir_complex_path_dir() {
         let alias = "/alias1/".to_string();
         let path = "/path1/demo1/".to_string();
-    
+
         let adp = AliasPath::new(&alias, &path);
-        
+
         let file_name1 = "file_name1.txt".to_string();
 
         let res1 = adp.path_to_alias(&format!("{}{}", &path, &file_name1));
@@ -141,9 +141,9 @@ mod tests {
     async fn test_alias_path_simple_alias_dir_complex_path_dir_file_dir() {
         let alias = "/alias1/".to_string();
         let path = "/path1/demo1/".to_string();
-    
+
         let adp = AliasPath::new(&alias, &path);
-        
+
         let file_name1 = "test/file_name1.txt".to_string();
 
         let res1 = adp.path_to_alias(&format!("{}{}", &path, &file_name1));

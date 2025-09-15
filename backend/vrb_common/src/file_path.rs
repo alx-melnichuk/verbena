@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
+use std::path::{MAIN_SEPARATOR_STR, Path, PathBuf};
 
 /// Get the full path of a directory without the final separator.
 pub fn path_directory(path_dir: impl AsRef<Path>) -> String {
@@ -17,8 +17,7 @@ pub fn path_complete(path_dir: impl AsRef<Path>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{path_directory, path_complete};
-
+    use super::{path_complete, path_directory};
 
     #[actix_web::test]
     async fn test_path_directory() {

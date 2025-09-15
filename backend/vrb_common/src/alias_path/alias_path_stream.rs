@@ -9,7 +9,9 @@ pub struct AliasStrm {
 impl AliasStrm {
     // env::var(consts::STRM_LOGO_FILES_DIR).unwrap_or(consts::LOGO_FILES_DIR.to_string())
     pub fn new(path: &str) -> Self {
-        AliasStrm { adapter_alias: AliasPath::new(consts::ALIAS_LOGO_FILES_DIR, path) }
+        AliasStrm {
+            adapter_alias: AliasPath::new(consts::ALIAS_LOGO_FILES_DIR, path),
+        }
     }
 }
 

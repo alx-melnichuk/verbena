@@ -44,4 +44,3 @@ pub fn validate_locale(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::max_length(value, LOCALE_MAX.into(), MSG_LOCALE_MAX_LENGTH)?;
     Ok(())
 }
-
