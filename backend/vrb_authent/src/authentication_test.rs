@@ -1,14 +1,15 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
+        App, HttpResponse,
         cookie::Cookie,
         dev, get,
-        http::{header, StatusCode},
-        test, App, HttpResponse,
+        http::{StatusCode, header},
+        test,
     };
     use serde_json;
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
+        api_error::{ApiError, code_to_str},
         err,
     };
     use vrb_tools::{token_coding, token_data};
@@ -17,7 +18,7 @@ mod tests {
         authentication::RequireAuth,
         config_jwt,
         user_models::Session,
-        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1_ID},
+        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
     };
 
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";

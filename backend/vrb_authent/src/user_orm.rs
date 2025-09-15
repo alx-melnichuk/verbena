@@ -46,7 +46,7 @@ pub mod impls {
     use std::time::Instant as tm;
 
     use diesel::{self, prelude::*, sql_types};
-    use log::{info, log_enabled, Level::Info};
+    use log::{Level::Info, info, log_enabled};
     use vrb_dbase::{dbase, schema};
 
     use crate::user_models::{CreateUser, ModifyUser, Profile, Session, User};

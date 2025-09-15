@@ -1,21 +1,26 @@
 use std::{borrow::Cow, ops::Deref, time::Instant as tm};
 
-use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, get, http::StatusCode, post, web, HttpResponse};
-use log::{error, info, log_enabled, Level::Info};
+use actix_web::{HttpResponse, cookie::Cookie, cookie::time::Duration as ActixWebDuration, get, http::StatusCode, post, web};
+use log::{Level::Info, error, info, log_enabled};
 use serde_json::json;
 use utoipa;
 use vrb_common::{
-    api_error::{code_to_str, ApiError},
+    api_error::{ApiError, code_to_str},
     err,
-    validators::{msg_validation, Validator},
+    validators::{Validator, msg_validation},
 };
 use vrb_dbase::enm_user_role::UserRole;
 use vrb_tools::{hash_tools, token_coding, token_data::TOKEN_NAME};
 
 use crate::{
-    authentication::{Authenticated, RequireAuth}, config_jwt, user_authent_models::{
+    authentication::{Authenticated, RequireAuth},
+    config_jwt,
+    user_authent_models::{
         LoginDto, LoginResponseDto, LoginUserProfileDto, UserTokenDto, UserTokenResponseDto, UserUniquenessDto, UserUniquenessResponseDto,
-    }, user_models::User, user_orm::UserOrm, user_registr_orm::UserRegistrOrm
+    },
+    user_models::User,
+    user_orm::UserOrm,
+    user_registr_orm::UserRegistrOrm,
 };
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegistrOrmApp};

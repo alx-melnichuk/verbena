@@ -34,7 +34,7 @@ pub mod impls {
 
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
-    use log::{info, log_enabled, Level::Info};
+    use log::{Level::Info, info, log_enabled};
     use vrb_dbase::{
         dbase,
         schema::{self, user_recovery::dsl},
@@ -188,7 +188,7 @@ pub mod tests {
 
     use crate::user_recovery_models::{CreateUserRecovery, UserRecovery};
 
-    use super::{UserRecoveryOrm, DURATION_IN_DAYS};
+    use super::{DURATION_IN_DAYS, UserRecoveryOrm};
 
     pub const USER_RECOVERY_ID: i32 = 1300;
 

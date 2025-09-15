@@ -36,14 +36,14 @@ pub mod impls {
 
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
-    use log::{info, log_enabled, Level::Info};
+    use log::{Level::Info, info, log_enabled};
     use vrb_dbase::{
         dbase,
         schema::{self, user_registration::dsl},
     };
 
     use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
-    use crate::user_registr_orm::{UserRegistrOrm, DURATION_IN_DAYS};
+    use crate::user_registr_orm::{DURATION_IN_DAYS, UserRegistrOrm};
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
@@ -211,7 +211,7 @@ pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
     use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
-    use crate::user_registr_orm::{UserRegistrOrm, DURATION_IN_DAYS};
+    use crate::user_registr_orm::{DURATION_IN_DAYS, UserRegistrOrm};
 
     pub const USER_REGISTR_ID: i32 = 1200;
 

@@ -1,13 +1,13 @@
 use std::time::Instant as tm;
 
-use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
+use actix_web::{HttpResponse, get, http::StatusCode, post, put, web};
 use chrono::{Duration, Utc};
-use log::{error, info, log_enabled, Level::Info};
+use log::{Level::Info, error, info, log_enabled};
 use utoipa;
 use vrb_common::{
-    api_error::{code_to_str, ApiError},
+    api_error::{ApiError, code_to_str},
     err,
-    validators::{msg_validation, Validator},
+    validators::{Validator, msg_validation},
 };
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_tools::send_email::mailer::impls::MailerApp;

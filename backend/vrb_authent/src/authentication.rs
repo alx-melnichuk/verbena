@@ -1,13 +1,13 @@
 use std::{rc::Rc, time::Instant as tm};
 
-use actix_web::{dev, error, http::StatusCode, web, FromRequest, HttpMessage};
+use actix_web::{FromRequest, HttpMessage, dev, error, http::StatusCode, web};
 use futures_util::{
-    future::{ready, LocalBoxFuture, Ready},
     FutureExt,
+    future::{LocalBoxFuture, Ready, ready},
 };
-use log::{error, info, log_enabled, Level::Info};
+use log::{Level::Info, error, info, log_enabled};
 use vrb_common::{
-    api_error::{code_to_str, ApiError},
+    api_error::{ApiError, code_to_str},
     err,
 };
 use vrb_dbase::enm_user_role::UserRole;
