@@ -2,10 +2,10 @@ use std::env;
 
 use actix_cors::Cors;
 use actix_multipart::form::tempfile::TempFileConfig;
-use actix_web::{http, middleware, web, App, HttpServer};
+use actix_web::{App, HttpServer, http, middleware, web};
 use dotenv;
 use env_logger;
-use log::{info, log_enabled, Level::Info};
+use log::{Level::Info, info, log_enabled};
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};

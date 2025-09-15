@@ -1,6 +1,6 @@
 use utoipa::{
-    openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
+    openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
 };
 use vrb_authent::{
     user_authent_controller, user_authent_models, user_recovery_controller, user_recovery_models, user_registr_controller,

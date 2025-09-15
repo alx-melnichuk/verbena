@@ -1,7 +1,7 @@
 use std::{env, io::Error, path};
 
 use actix_files::Files;
-use actix_web::{get, http, web, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, get, http, web};
 use vrb_common::{consts, file_path};
 use vrb_profiles::config_prfl;
 use vrb_tools::config_app;
