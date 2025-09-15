@@ -3,7 +3,6 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum, ToSchema)]
 #[ExistingTypePath = "crate::schema::sql_types::StreamState"]
 #[DbValueStyle = "snake_case"] // BazQuxx => "baz_quxx"
@@ -27,4 +26,3 @@ impl StreamState {
         stream_state == StreamState::Preparing || stream_state == StreamState::Started || stream_state == StreamState::Paused
     }
 }
-
