@@ -1,17 +1,17 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        body,
+        App, body,
         cookie::time::Duration as ActixWebDuration,
         dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json::json;
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
+        api_error::{ApiError, code_to_str},
         err,
     };
     use vrb_tools::{hash_tools, token_coding, token_data::TOKEN_NAME};
@@ -23,7 +23,7 @@ mod tests {
             LoginDto, LoginResponseDto, LoginUserProfileDto, UserTokenDto, UserTokenResponseDto, UserUniquenessResponseDto,
         },
         user_models::{self, Session, UserMock},
-        user_orm::tests::{UserOrmTest, USER, USER1_ID},
+        user_orm::tests::{USER, USER1_ID, UserOrmTest},
         user_registr_orm::tests::UserRegistrOrmTest,
     };
 

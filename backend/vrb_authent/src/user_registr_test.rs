@@ -1,27 +1,24 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use std::env;
-
     use actix_web::{
-        body, dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        App, body, dev,
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json::json;
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
-        consts, err,
+        api_error::{code_to_str, ApiError}, consts, env_var, err
     };
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
     use crate::{
         config_jwt,
         user_models::{self, UserMock},
-        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1_ID},
+        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
         user_registr_controller::{
-            confirm_registration, registration, registration_clear_for_expired, tests as UserRegistrCtrlTest, MSG_REGISTR_NOT_FOUND,
+            MSG_REGISTR_NOT_FOUND, confirm_registration, registration, registration_clear_for_expired, tests as UserRegistrCtrlTest,
         },
         user_registr_models::{
             ConfirmRegistrUserResponseDto, RegistrUserDto, RegistrUserResponseDto, RegistrationClearForExpiredResponseDto,
@@ -36,7 +33,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_registration_no_data() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -59,7 +56,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_empty_json_object() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -83,7 +80,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_empty() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -114,7 +111,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_min() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -145,7 +142,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_max() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -176,7 +173,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_wrong() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -207,7 +204,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_empty() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -238,7 +235,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_min() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -269,7 +266,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_max() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -300,7 +297,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_wrong() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -331,7 +328,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_empty() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -362,7 +359,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_min() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -393,7 +390,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_max() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -424,7 +421,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_wrong() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -455,7 +452,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let email1 = data_u.0.get(0).unwrap().email.clone();
@@ -486,7 +483,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let nickname1 = data_u.0.get(0).unwrap().nickname.clone();
         let email1 = data_u.0.get(0).unwrap().email.clone();
@@ -517,7 +514,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let registrs = UserRegistrOrmTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
@@ -549,7 +546,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let registrs = UserRegistrOrmTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
@@ -581,7 +578,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_err_jsonwebtoken_encode() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let mut config_jwt = config_jwt::tests::get_config();
         config_jwt.jwt_secret = "".to_string();
@@ -613,7 +610,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_new_user() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let registrs = UserRegistrOrmTest::registrs(true);
         let user_registr1 = registrs.get(0).unwrap().clone();
         let data_u = UserOrmTest::users(&[USER]);

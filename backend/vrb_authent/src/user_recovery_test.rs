@@ -1,7 +1,5 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use std::env;
-
     use actix_web::{
         body, dev,
         http::header::{HeaderValue, CONTENT_TYPE},
@@ -11,8 +9,7 @@ mod tests {
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json::json;
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
-        consts, err,
+        api_error::{code_to_str, ApiError}, consts, env_var, err
     };
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
@@ -37,7 +34,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_recovery_no_data() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -63,7 +60,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_empty_json_object() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -88,7 +85,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_empty() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -115,7 +112,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_min() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -142,7 +139,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_max() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -169,7 +166,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_wrong() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -196,7 +193,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_if_user_with_email_not_exist() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let email = format!("A{}", data_u.0.get(0).unwrap().email.clone());
         #[rustfmt::skip]
@@ -224,7 +221,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_not_exist() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user1_email = data_u.0.get(0).unwrap().email.clone();
@@ -263,7 +260,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_already_exists() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user1_email = data_u.0.get(0).unwrap().email.clone();
@@ -302,7 +299,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_err_jsonwebtoken_encode() {
-        env::set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
+        env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
         let user1_email = data_u.0.get(0).unwrap().email.clone();
         let mut config_jwt = config_jwt::tests::get_config();
