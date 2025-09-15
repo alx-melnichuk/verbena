@@ -59,6 +59,7 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         "email_address = \"0.2.9\"",
         "env_logger = \"0.11.8\"",
         "futures-util = \"0.3.31\"",
+        "getrandom = \"0.3\"",
         "handlebars = \"6.3.2\"",
         "image = \"0.25.6\"",
         "jsonwebtoken = \"9.3.1\"",
