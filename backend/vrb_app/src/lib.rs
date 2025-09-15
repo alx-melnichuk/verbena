@@ -36,7 +36,9 @@ pub async fn server_run() -> std::io::Result<()> {
     dotenv::dotenv().expect("Failed to read .env file");
 
     if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "warn,actix_web=info,verbena=info");
+        unsafe {
+            env::set_var("RUST_LOG", "warn,actix_web=info,verbena=info");
+        }
     }
 
     env_logger::init();
