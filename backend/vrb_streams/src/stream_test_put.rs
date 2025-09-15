@@ -4,19 +4,19 @@ mod tests {
 
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
-        self, body, dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        self, App, body, dev,
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_orm::tests::{ADMIN, USER, USER1, USER1_ID, USER2, UserOrmTest},
     };
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
+        api_error::{ApiError, code_to_str},
         consts, err, validators,
     };
     use vrb_dbase::enm_stream_state::StreamState;
@@ -25,8 +25,8 @@ mod tests {
     use crate::{
         config_strm,
         stream_controller::{
-            put_stream, put_toggle_state, tests as StreamCtrlTest, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG,
-            MSG_INVALID_STREAM_STATE,
+            MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG, MSG_INVALID_STREAM_STATE, put_stream, put_toggle_state,
+            tests as StreamCtrlTest,
         },
         stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamMock, ToggleStreamStateDto},
         stream_orm::tests::StreamOrmTest,

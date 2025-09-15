@@ -1,28 +1,28 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        self, body, dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        self, App, body, dev,
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1, USER1_ID, USER2},
+        user_orm::tests::{ADMIN, USER, USER1, USER1_ID, USER2, UserOrmTest},
     };
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
+        api_error::{ApiError, code_to_str},
         err,
     };
 
     use crate::{
         config_strm,
         stream_controller::{
-            get_stream_by_id, get_stream_config, get_streams, get_streams_events, get_streams_period, tests as StreamCtrlTest,
             MSG_FINISH_EXCEEDS_LIMIT, MSG_FINISH_LESS_START, MSG_GET_LIST_OTHER_USER_STREAMS, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS,
-            MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, PERIOD_MAX_NUMBER_DAYS,
+            MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, PERIOD_MAX_NUMBER_DAYS, get_stream_by_id, get_stream_config, get_streams,
+            get_streams_events, get_streams_period, tests as StreamCtrlTest,
         },
         stream_models::{self, StreamConfigDto, StreamEventDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto},
         stream_orm::tests::StreamOrmTest,

@@ -4,26 +4,26 @@ mod tests {
 
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
-        self, body, dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        self, App, body, dev,
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest, USER, USER1, USER1_ID},
+        user_orm::tests::{USER, USER1, USER1_ID, UserOrmTest},
     };
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
+        api_error::{ApiError, code_to_str},
         consts, err,
     };
     use vrb_tools::{cdis::coding, png_files};
 
     use crate::{
         config_strm,
-        stream_controller::{delete_stream, post_stream, tests as StreamCtrlTest, MSG_INVALID_FIELD_TAG},
+        stream_controller::{MSG_INVALID_FIELD_TAG, delete_stream, post_stream, tests as StreamCtrlTest},
         stream_models::{self, StreamInfoDto, StreamMock},
         stream_orm::tests::StreamOrmTest,
     };

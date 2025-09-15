@@ -62,7 +62,7 @@ pub mod impls {
 
     use chrono::{Duration, Timelike};
     use diesel::{self, prelude::*, sql_types};
-    use log::{info, log_enabled, Level::Info};
+    use log::{Level::Info, info, log_enabled};
     use vrb_dbase::dbase;
     use vrb_dbase::schema::{self, streams::dsl as streams_dsl};
 
@@ -473,11 +473,7 @@ pub mod impls {
             if let Some(timer) = timer {
                 info!("get_stream_logo_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            if let Some(stream) = opt_stream {
-                Ok(stream.logo)
-            } else {
-                Ok(None)
-            }
+            if let Some(stream) = opt_stream { Ok(stream.logo) } else { Ok(None) }
         }
 
         /// Modify an entity (stream).
@@ -605,12 +601,14 @@ pub mod tests {
     use std::cmp::Ordering;
 
     use actix_web::web;
-    use chrono::{Duration, DateTime, Timelike, Utc};
+    use chrono::{DateTime, Duration, Timelike, Utc};
     use vrb_authent::user_orm::tests::USER_IDS;
     use vrb_dbase::enm_stream_state::StreamState;
 
     use crate::config_strm;
-    use crate::stream_models::{self, CreateStream, ModifyStream, SearchStream, SearchStreamEvent, SearchStreamPeriod, Stream, StreamTagStreamId, StreamInfoDto};
+    use crate::stream_models::{
+        self, CreateStream, ModifyStream, SearchStream, SearchStreamEvent, SearchStreamPeriod, Stream, StreamInfoDto, StreamTagStreamId,
+    };
 
     use crate::stream_orm::StreamOrm;
 
