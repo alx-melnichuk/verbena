@@ -4,21 +4,22 @@ pub mod tests {
 
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
-        body, dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        App, body, dev,
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json;
     use vrb_authent::{
         config_jwt, user_models,
         user_models::UserMock,
-        user_orm::tests::{UserOrmTest, USER, USER1_ID},
+        user_orm::tests::{USER, USER1_ID, UserOrmTest},
         user_registr_orm::tests::UserRegistrOrmTest,
     };
     use vrb_common::{
-        api_error::{code_to_str, ApiError}, consts, err, profile, validators
+        api_error::{ApiError, code_to_str},
+        consts, err, profile, validators,
     };
     use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::{cdis::coding, hash_tools, png_files};
@@ -348,9 +349,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_descript_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("descript", ProfileMock::descript_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileMock::descript_min()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
@@ -379,9 +378,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_descript_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("descript", ProfileMock::descript_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileMock::descript_max()).build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);

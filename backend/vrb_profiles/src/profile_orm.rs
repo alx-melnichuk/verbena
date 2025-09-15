@@ -28,11 +28,11 @@ pub mod impls {
     use std::time::Instant as tm;
 
     use diesel::{self, prelude::*, sql_types};
-    use log::{info, log_enabled, Level::Info};
+    use log::{Level::Info, info, log_enabled};
     use vrb_authent::user_models::Profile;
     use vrb_dbase::{dbase, schema};
 
-    use crate::profile_models::{ModifyUserProfile, UserProfile, StreamLogo};
+    use crate::profile_models::{ModifyUserProfile, StreamLogo, UserProfile};
 
     use super::ProfileOrm;
 
@@ -53,7 +53,6 @@ pub mod impls {
     }
 
     impl ProfileOrm for ProfileOrmApp {
-
         /// Get an entity (profile) by ID.
         fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -139,7 +138,11 @@ pub mod tests {
 
     use actix_web::web;
     use chrono::Utc;
-    use vrb_authent::{config_jwt, user_models::{Profile, Session, User}, user_orm::tests::USER1_ID};
+    use vrb_authent::{
+        config_jwt,
+        user_models::{Profile, Session, User},
+        user_orm::tests::USER1_ID,
+    };
     use vrb_common::consts;
 
     use crate::{
@@ -178,7 +181,6 @@ pub mod tests {
     }
 
     impl ProfileOrm for ProfileOrmApp {
-
         /// Get an entity (profile) by ID.
         fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let opt_user_profile = self
@@ -187,17 +189,15 @@ pub mod tests {
                 .find(|profile| profile.user_id == user_id)
                 .map(|profile| profile.clone());
 
-            let opt_profile = opt_user_profile.map(|user_profile|
-                Profile {
-                    user_id: user_profile.user_id,
-                    avatar: user_profile.avatar,
-                    descript: user_profile.descript,
-                    theme: user_profile.theme,
-                    locale: user_profile.locale,
-                    created_at: user_profile.created_at,
-                    updated_at: user_profile.updated_at,
-                }
-            );
+            let opt_profile = opt_user_profile.map(|user_profile| Profile {
+                user_id: user_profile.user_id,
+                avatar: user_profile.avatar,
+                descript: user_profile.descript,
+                theme: user_profile.theme,
+                locale: user_profile.locale,
+                created_at: user_profile.created_at,
+                updated_at: user_profile.updated_at,
+            });
             Ok(opt_profile)
         }
 

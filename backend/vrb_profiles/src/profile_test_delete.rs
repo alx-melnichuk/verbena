@@ -3,18 +3,18 @@ pub mod tests {
     use std::{env, fs, path};
 
     use actix_web::{
-        body, dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        App, body, dev,
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1_ID},
+        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
     };
     use vrb_common::{
-        api_error::{code_to_str, ApiError},
+        api_error::{ApiError, code_to_str},
         consts, err,
     };
     use vrb_tools::png_files;

@@ -1,9 +1,9 @@
 use std::{borrow::Cow, env, fs, ops::Deref, path, time::Instant as tm};
 
-use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{delete, get, http::StatusCode, put, web, HttpResponse};
+use actix_multipart::form::{MultipartForm, tempfile::TempFile, text::Text};
+use actix_web::{HttpResponse, delete, get, http::StatusCode, put, web};
 use chrono::{DateTime, Utc};
-use log::{error, info, log_enabled, Level::Info};
+use log::{Level::Info, error, info, log_enabled};
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
@@ -18,10 +18,10 @@ use vrb_authent::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegi
 use vrb_authent::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
 use vrb_common::{
     alias_path::{alias_path_profile, alias_path_stream},
-    api_error::{code_to_str, ApiError},
+    api_error::{ApiError, code_to_str},
     consts, err, parser,
     profile::{PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
-    validators::{self, msg_validation, ValidationChecks, Validator},
+    validators::{self, ValidationChecks, Validator, msg_validation},
 };
 use vrb_dbase::enm_user_role::UserRole;
 use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image};
@@ -32,10 +32,7 @@ use crate::profile_orm::impls::ProfileOrmApp;
 use crate::profile_orm::tests::ProfileOrmApp;
 use crate::{
     config_prfl::{self, ConfigPrfl},
-    profile_models::{
-        ModifyUserProfile, ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileConfigDto, UserProfile,
-        UserProfileDto,
-    },
+    profile_models::{ModifyUserProfile, ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileConfigDto, UserProfile, UserProfileDto},
     profile_orm::ProfileOrm,
 };
 

@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use vrb_authent::user_models::{self, Profile, User};
 use vrb_common::{
-    err, profile, serial_datetime, validators::{ValidationChecks, ValidationError, Validator}
+    err, profile, serial_datetime,
+    validators::{ValidationChecks, ValidationError, Validator},
 };
 use vrb_dbase::{enm_user_role::UserRole, schema};
 
