@@ -11,11 +11,14 @@ chain_width = 90
 
 # Specifies which edition is used by the parser.
 # Default: "2015"
-edition = "2021"
+edition = "2024"
 
 # Maximum width of the args of a function call before falling back to vertical formatting.
 # Default: 60 (%)
 fn_call_width = 97
+
+# Don't reformat anything.
+ignore = ["schema.rs", "vrb_dbase/src/schema.rs"]
 
 # Maximum width of each line.
 # Default: 100
