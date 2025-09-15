@@ -1,11 +1,15 @@
 [package]
 name = "vrb_app"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Library for assembling a binary file."
 keywords = ["vrb_app"]
 license = { workspace = true }
 rust-version = { workspace = true }
+
+[[bin]]
+name = "verbena"
+path = "src/main.rs"
 
 [lib]
 path = "src/lib.rs"
