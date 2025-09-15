@@ -3,28 +3,26 @@ name = "vrb_tools"
 version = "0.1.0"
 edition = "2021"
 description = "Tool library for the Verbena project."
-rust-version = "1.87.0"
 keywords = ["vrb_tools", "send_email", "consts", "err"]
-license = "MIT"
+license = { workspace = true }
+rust-version = { workspace = true }
 
 [lib]
 path = "src/lib.rs"
 
 [dependencies]
-actix-web = { version = "4.11.0", features = ["openssl"] }
-argon2 = { version = "0.5.3", features = ["std"] }
-chrono = { version = "0.4.41", features = ["serde"] }
-handlebars = "6.3.2"
-#image = "0.24.9" # this is a working version. 0.25.1, 0.25.2 - bad
-image = "0.25.6"
-jsonwebtoken = "9.3.1"
-lettre = { version = "0.11.16", features = ["tokio1", "tokio1-native-tls"] }
-log = "0.4.27"
-openssl = "0.10.72"
-rand = "0.9.1"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
+actix-web = { workspace = true }
+argon2 = { workspace = true }
+chrono = { workspace = true }
+getrandom = { workspace = true }
+handlebars = { workspace = true }
+image = { workspace = true }
+jsonwebtoken = { workspace = true }
+lettre = { workspace = true }
+log = { workspace = true }
+openssl = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 vrb_common = { version = "0.1", path="../vrb_common" }
 
-[profile.dev]
-debug = 1

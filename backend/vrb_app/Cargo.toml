@@ -3,25 +3,25 @@ name = "vrb_app"
 version = "0.1.0"
 edition = "2021"
 description = "Library for assembling a binary file."
-rust-version = "1.87.0"
 keywords = ["vrb_app"]
-license = "MIT"
+license = { workspace = true }
+rust-version = { workspace = true }
 
 [lib]
 path = "src/lib.rs"
 
 [dependencies]
-actix-cors = "0.7.1"
-actix-files = "0.6.6"
-actix-multipart = "0.7.2"
-actix-web = { version = "4.11.0", features = ["openssl"] }
-dotenv = "0.15.0"
-env_logger = "0.11.8"
-log = "0.4.27"
-utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] } # use in "vrb_dbase"
-utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web"] }
-utoipa-redoc = { version = "6.0.0", features = ["actix-web"] }
-utoipa-rapidoc = { version = "6.0.0", features = ["actix-web"] }
+actix-cors = { workspace = true }
+actix-files = { workspace = true }
+actix-multipart = { workspace = true }
+actix-web = { workspace = true }
+dotenv = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+utoipa-redoc = { workspace = true }
+utoipa-rapidoc = { workspace = true }
 vrb_authent = { version = "0.1", path="../vrb_authent" }
 vrb_chats = { version = "0.1", path="../vrb_chats" }
 vrb_common = { version = "0.1", path="../vrb_common" }
@@ -35,5 +35,3 @@ vrb_tools = { version = "0.1", path="../vrb_tools" }
 test=[]
 mockdata = []
 
-[profile.dev]
-debug = 1

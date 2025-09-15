@@ -1,49 +1,53 @@
-[package]
-name = "verbena"
+[workspace]
+members = [
+    "vrb_app",
+    "vrb_authent",
+    "vrb_chats",
+    "vrb_common",
+    "vrb_dbase",
+    "vrb_profiles",
+    "vrb_streams",
+    "vrb_tools",
+]
+resolver = "3"
+
+[workspace.package]
 version = "0.3.0"
-edition = "2021"
+authors = ["alx.melnichuk"]
+rust-version = "1.87.0"
+license = "MIT"
 
-[[bin]]
-name = "verbena"
-path = "src/main.rs"
-
-[lib]
-name = "verbena"
-path = "src/lib.rs"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[workspace.dependencies]
 actix = "0.13.5"
 actix-broker = "0.4.3"
 actix-cors = "0.7.1"
 actix-files = "0.6.6"
 actix-multipart = "0.7.2"
 actix-web = { version = "4.11.0", features = ["openssl"] }
-actix-web-actors = "4.3.1" # // use in "vrb_chat"
-# argon2 = "0.5.3" // use in "vrb_tools"
+actix-web-actors = "4.3.1"
+argon2 = "0.5.3"
 chrono = { version = "0.4.41", features = ["serde"] }
-diesel = { version = "2.2.10", features = ["postgres", "r2d2", "chrono"] } # use in "vrb_dbase"
-diesel-derive-enum = { version = "2.1.0", features = ["postgres"] } # use in "vrb_dbase"
-diesel_migrations = "2.2.0" # use in "vrb_dbase"
+diesel = { version = "2.2.10", features = ["postgres", "r2d2", "chrono"] }
+diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
+diesel_migrations = "2.2.0"
 dotenv = "0.15.0"
-# email_address = "0.2.9" # // use in "vrb_common"
+email_address = "0.2.9"
 env_logger = "0.11.8"
 futures-util = "0.3.31"
-# handlebars = "6.3.2" // use in "vrb_tools"
-#image = "0.24.9" # this is a working version. 0.25.1, 0.25.2 - bad
-# image = "0.25.6"  // use in "vrb_tools"
-# jsonwebtoken = "9.3.1" // use in "vrb_tools"
-# lettre = { version = "0.11.16", features = ["tokio1", "tokio1-native-tls"] } // use in "vrb_tools"
+getrandom = "0.3"
+handlebars = "6.3.2"
+image = "0.25.6"
+jsonwebtoken = "9.3.1"
+lettre = { version = "0.11.16", features = ["tokio1", "tokio1-native-tls"] }
 log = "0.4.27"
 mime = "0.3.17"
 openssl = "0.10.72"
-r2d2 = "0.8.10" # use in "vrb_dbase"
-rand = "0.9.1" # // use in "vrb_tools", "vrb_chat"
-# regex = "1.11.1" # // use in "vrb_common"
-serde = { version = "1.0.219", features = ["derive"] } # use in "vrb_dbase"
-serde_json = "1.0.140" # use in "vrb_dbase"
-utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] } # use in "vrb_dbase"
+r2d2 = "0.8.10"
+rand = "0.9.1"
+regex = "1.11.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] }
 utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web"] }
 utoipa-redoc = { version = "6.0.0", features = ["actix-web"] }
 utoipa-rapidoc = { version = "6.0.0", features = ["actix-web"] }
@@ -55,17 +59,6 @@ vrb_dbase = { version = "0.1", path="./vrb_dbase" }
 vrb_profiles = { version = "0.1", path="./vrb_profiles" }
 vrb_streams = { version = "0.1", path="./vrb_streams" }
 vrb_tools = { version = "0.1", path="./vrb_tools" }
-
-[features]
-# default = ["test", "mockdata"]
-test=[]
-mockdata = []
-
-[dev-dependencies]
-# To test a web form with data and a file.
-actix-multipart-test = "0.0.3"
-# To perform testing of websocket interaction.
-actix-test = "0.1"
 
 [profile.dev]
 debug = 1

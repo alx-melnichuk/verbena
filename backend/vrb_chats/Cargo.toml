@@ -3,26 +3,26 @@ name = "vrb_chats"
 version = "0.1.0"
 edition = "2021"
 description = "Library for chat functions."
-rust-version = "1.87.0"
 keywords = ["vrb_chats", "web_chat"]
-license = "MIT"
+license = { workspace = true }
+rust-version = { workspace = true }
 
 [lib]
 path = "src/lib.rs"
 
 [dependencies]
-actix = "0.13.5"
-actix-broker = "0.4.3"
-actix-web = { version = "4.11.0", features = ["openssl"] }
-actix-web-actors = "4.3.1"
-chrono = { version = "0.4.41", features = ["serde"] }
-diesel = { version = "2.2.10", features = ["postgres", "r2d2", "chrono"] }
-futures-util = "0.3.31"
-log = "0.4.27"
-rand = "0.9.1"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] }
+actix = { workspace = true }
+actix-broker = { workspace = true }
+actix-web = { workspace = true }
+actix-web-actors = { workspace = true }
+chrono = { workspace = true }
+diesel = { workspace = true }
+futures-util = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }
 vrb_authent = { version = "0.1", path="../vrb_authent" }
 vrb_common = { version = "0.1", path="../vrb_common" }
 vrb_dbase = { version = "0.1", path="../vrb_dbase" }
@@ -37,6 +37,3 @@ mockdata = []
 # To perform testing of websocket interaction.
 actix-test = "0.1"
 vrb_authent = { version = "0.1", path="../vrb_authent", features = ["mockdata"] }
-
-[profile.dev]
-debug = 1
