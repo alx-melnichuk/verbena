@@ -2,6 +2,7 @@ pub mod alias_path;
 pub mod api_error;
 pub mod consts;
 pub mod crypto;
+pub mod env_var;
 pub mod err;
 pub mod file_path;
 pub mod parser;
