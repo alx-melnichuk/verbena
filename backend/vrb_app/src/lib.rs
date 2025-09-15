@@ -15,6 +15,7 @@ use vrb_authent::{
     user_registr_orm,
 };
 use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
+use vrb_common::env_var;
 use vrb_dbase::dbase;
 use vrb_profiles::{config_prfl, profile_controller, profile_orm};
 use vrb_streams::{config_strm, stream_controller, stream_orm};
@@ -36,9 +37,7 @@ pub async fn server_run() -> std::io::Result<()> {
     dotenv::dotenv().expect("Failed to read .env file");
 
     if env::var("RUST_LOG").is_err() {
-        unsafe {
-            env::set_var("RUST_LOG", "warn,actix_web=info,verbena=info");
-        }
+        env_var::env_set_var("RUST_LOG", "warn,actix_web=info,verbena=info");
     }
 
     env_logger::init();
