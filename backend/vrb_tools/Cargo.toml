@@ -1,7 +1,7 @@
 [package]
 name = "vrb_tools"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Tool library for the Verbena project."
 keywords = ["vrb_tools", "send_email", "consts", "err"]
 license = { workspace = true }

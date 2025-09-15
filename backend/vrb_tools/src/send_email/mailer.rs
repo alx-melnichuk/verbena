@@ -35,7 +35,7 @@ pub trait Mailer {
 pub mod impls {
     use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
 
-    use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport};
+    use lettre::{Message, SmtpTransport, Transport, message::header::ContentType, transport::smtp};
 
     use crate::send_email::config_smtp::ConfigSmtp;
     use crate::template_rendering;
@@ -252,7 +252,6 @@ pub mod tests {
             params.insert("target", target);
             let registr_duration_val = registr_duration.to_string();
             params.insert("registr_duration", &registr_duration_val);
-
 
             let path_verification_code: PathBuf = [path_template, "verification_code.hbs"].iter().collect();
             let path_basic_layout: PathBuf = [path_template, "basic_layout.hbs"].iter().collect();

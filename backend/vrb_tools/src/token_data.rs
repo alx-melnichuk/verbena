@@ -1,4 +1,4 @@
-use actix_web::{http, HttpRequest};
+use actix_web::{HttpRequest, http};
 
 pub const BEARER: &str = "Bearer ";
 pub const TOKEN_NAME: &str = "token";
