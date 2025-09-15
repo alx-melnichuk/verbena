@@ -1,7 +1,8 @@
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, Salt, SaltString},
     Argon2,
 };
+use getrandom;
 
 pub const MAX_PARAM_LENGTH: usize = 64;
 pub const ERR_PARAM_EMPTY: &str = "Parameter is empty.";
@@ -20,7 +21,10 @@ pub fn encode_hash(param: impl Into<String>) -> Result<String, String> {
         return Err(format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH));
     }
 
-    let salt = SaltString::generate(&mut OsRng);
+    let mut bytes = [0u8; Salt::RECOMMENDED_LENGTH];
+    let _ = getrandom::fill(&mut bytes);
+    let salt = SaltString::encode_b64(&bytes).unwrap();
+
     let param_hash = Argon2::default()
         .hash_password(param.as_bytes(), &salt)
         .map_err(|e| format!("{}{}", ERR_HASHING_ERR, e.to_string()))?
