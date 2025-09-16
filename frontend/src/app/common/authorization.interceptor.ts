@@ -49,7 +49,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
                     return throwError(() => error);
                 }
                 // 401 Unauthorized, 403 Forbidden
-                if ([401, 403].includes(error?.status) && this.tokenUpdateSrv.isExistRefreshToken()) {
+                if (error?.status == 401 && this.tokenUpdateSrv.isExistRefreshToken()) {
                     // the errors will most likely occur because we have an expired token that we need to refresh.
                     if (!this.refreshTokenInProgress) {
                         this.refreshTokenInProgress = true;
