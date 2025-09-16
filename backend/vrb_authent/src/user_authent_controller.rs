@@ -1,6 +1,12 @@
 use std::{borrow::Cow, ops::Deref, time::Instant as tm};
 
-use actix_web::{HttpResponse, cookie::Cookie, cookie::time::Duration as ActixWebDuration, get, http::StatusCode, post, web};
+use actix_web::{
+    HttpResponse,
+    cookie::{Cookie, SameSite, time::Duration as ActixWebDuration},
+    get,
+    http::StatusCode,
+    post, web,
+};
 use log::{Level::Info, error, info, log_enabled};
 use serde_json::json;
 use utoipa;
@@ -336,6 +342,8 @@ pub async fn login(
         .path("/")
         .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
         .http_only(true)
+        // Forbid sending cookies via cross-origin requests
+        .same_site(SameSite::Strict)
         .finish();
 
     if let Some(timer) = timer {
