@@ -153,7 +153,7 @@ pub mod impls {
             }
             // Add an exclusion condition for the specified IDs.
             if exclude_ids.len() > 0 {
-                query_list = query_list.filter(streams_dsl::user_id.ne_all(exclude_ids));
+                query_list = query_list.filter(streams_dsl::id.ne_all(exclude_ids));
             }
 
             // Run query using Diesel to find user by id (and user_id) and return it.
