@@ -37,12 +37,16 @@
         @if (!chatMsg.dateRmv) {
           <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
             {{ chatMsg.msg }}
-            <!-- <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" /> -->
+            @if (pc_debug) {
+                <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" />
+            }
           </div>
         } @else {
           <div class="pc-item-msg-rmv">
             <i>{{ 'panel-chat.message_deleted' | translate }}</i>
-            <!-- <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" /> -->
+            @if (pc_debug) {
+                <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" />
+            }
           </div>
         }
       </div>
@@ -65,11 +69,12 @@
   </div>
 }
 
-<!-- <ng-template #templateShowInfo let-chatMsg="chatMsg2">
-  <sub style="color: var(--sys-secondary);">
-    id:{{ chatMsg.id }} E:{{ !!chatMsg.dateEdt ? 1 : 0 }} R:{{ !!chatMsg.dateRmv ? 1 : 0 }}
-  </sub>
-</ng-template> -->
+<ng-template #templateShowInfo let-chatMsg="chatMsg2">
+    <sub style="color: var(--sys-secondary);">
+        id:{{ chatMsg.id }} E:{{ !!chatMsg.dateEdt ? 1 : 0 }} R:{{ !!chatMsg.dateRmv ? 1 : 0 }}
+    </sub>
+</ng-template>
+
 
 <div class="pc-sepr"></div>
 

@@ -123,6 +123,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public minLenVal: number = MESSAGE_MIN_LENGTH;
     public msgMarked: ChatMessageDto | null = null;
     public msgEditing: ChatMessageDto | null = null;
+    public pc_debug = false;
 
     readonly blockedUserSet: Set<string> = new Set();
     readonly chatMsgMap: ChatMsgMap = new Map();
@@ -139,6 +140,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     constructor() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const pc_debug = urlParams.get('pc_debug');
+        this.pc_debug = pc_debug == 'true' || pc_debug == '';
     }
 
     @HostListener('window:resize', ['$event'])
