@@ -335,6 +335,7 @@
         "email_address": "- Email verification",
         "env_logger": "- A logging implementation for `log`",
         "futures-util": "- Common utilities and extension traits for the futures-rs library",
+        "getrandom": "- Library for obtaining random data from sources (operating) system",
         "handlebars": "- Templating implemented",
         "image": "- An Image Processing Library",
         "jsonwebtoken": "- Create and parses JWT (JSON Web Tokens)",
