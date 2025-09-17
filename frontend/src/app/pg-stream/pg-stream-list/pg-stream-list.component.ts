@@ -151,23 +151,25 @@ export class PgStreamListComponent implements OnInit {
     // ** Private API **
 
     private async loadFutureAndPastStreamsAndSchedule(): Promise<void> {
-        // Clear array of "Future Stream"
-        this.futureStreamHdlr.clearStream();
-        // Clear array of "Past Stream"
-        this.pastStreamHdlr.clearStream();
-
         const buffPromise: Promise<unknown>[] = [];
         const now = new Date();
         now.setHours(0, 0, 0, 0);
 
+        this.futureStreamHdlr.clearStream();
         // Get the next page of the "Future Stream".
         buffPromise.push(this.futureStreamHdlr.searchNextStream());
+
+        this.pastStreamHdlr.clearStream();
         // Get the next page of "Past Stream".
         buffPromise.push(this.pastStreamHdlr.searchNextStream());
+
+        this.calendarHdlr.clearStreamsEvent();
         // Get a list of short streams for the selected date.
-        buffPromise.push(this.calendarHdlr.getListEventsForDate(now, 1));
+        buffPromise.push(this.calendarHdlr.getListEventsForDate(this.calendarHdlr.eventsOfDaySelected || now, 1));
+
         // Get a list of events (streams) for a specified date.
-        buffPromise.push(this.calendarHdlr.getCalendarInfoForPeriod(now, true));
+        const calendarMonth = this.calendarHdlr.calendarMonth || now;
+        buffPromise.push(this.calendarHdlr.getCalendarInfoForPeriod(calendarMonth, true));
 
         this.changeDetector.markForCheck();
         try {
