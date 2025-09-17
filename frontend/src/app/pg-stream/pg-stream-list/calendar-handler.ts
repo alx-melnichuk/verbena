@@ -88,7 +88,9 @@ export class CalendarHandler {
         if (!start || (this.eventsOfDaySelected == start && page > 1 && page > this.eventsOfDayPageInfo.pages)) {
             return Promise.resolve(undefined);
         }
-        this.eventsOfDaySelected = start;
+        const dateStart: Date = new Date(start);
+        dateStart.setHours(0, 0, 0, 0);
+        this.eventsOfDaySelected = dateStart;
         const starttime = start.toISOString();
         this.eventsOfDayLoading = true;
         try {
