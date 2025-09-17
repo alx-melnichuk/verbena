@@ -10,6 +10,8 @@ import { ScrollElemUtil } from 'src/app/utils/scroll-elem.util';
 
 import { StreamDtoUtil, StreamEventDto } from '../stream-api.interface';
 
+const CN_ScrollPanelTimeout = 200; // milliseconds
+
 @Component({
     selector: 'app-panel-stream-event',
     standalone: true,
@@ -41,13 +43,23 @@ export class PanelStreamEventComponent {
     @HostBinding('class.global-scroll')
     public get isGlobalScroll(): boolean { return true; }
 
-    @HostListener('scrollend', ['$event'])
+    private timerScrollPanel: any = null;
+
+    @HostListener('scroll', ['$event'])
     public doScrollPanel(event: Event): void {
         event.preventDefault();
         event.stopPropagation();
         const elem: Element | null = event.target as Element;
-        if (ScrollElemUtil.relativeOffset(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight) > 0.98) {
-            this.requestNextPage.emit();
+        if (elem != null) {
+            if (this.timerScrollPanel !== null) {
+                clearTimeout(this.timerScrollPanel);
+            }
+            this.timerScrollPanel = setTimeout(() => {
+                this.timerScrollPanel = null;
+                if (ScrollElemUtil.relativeOffset(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight) > 0.98) {
+                    this.requestNextPage.emit();
+                }
+            }, CN_ScrollPanelTimeout);
         }
     }
 
