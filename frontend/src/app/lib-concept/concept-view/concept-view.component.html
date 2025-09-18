@@ -45,7 +45,7 @@
 
     <div class="cv-cnt-params">
         
-      <div class="cv-cnt-nickname cv-cnt-prm" style9="outline: 1px dashed cadetblue;">
+      <div class="cv-cnt-nickname cv-cnt-prm">
         <app-avatar cv-mr-rg0_5 class="cv-cnt-avatar"
           [avatar]="avatar">
         </app-avatar>
@@ -60,7 +60,7 @@
         </div>
       </div>
 
-      <div class="cv-cnt-prm cv-cnt-actions" style9="outline: 1px dashed green;">
+      <div class="cv-cnt-prm cv-cnt-actions">
         @if (isStreamOwner) {
           <app-panel-stream-actions
             [state]="streamDto?.state"
@@ -70,7 +70,7 @@
         }
       </div>
 
-      <div class="cv-cnt-prm" style9="outline: 1px dashed orangered;">
+      <div class="cv-cnt-prm">
         <app-panel-stream-params
           [countOfViewer]="countOfViewer"
           [isShowTimer]="isShowTimer"

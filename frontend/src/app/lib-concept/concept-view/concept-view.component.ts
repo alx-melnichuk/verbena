@@ -132,7 +132,6 @@ export class ConceptViewComponent implements AfterContentInit {
     }
 
     public doChangeState(newState: StreamState | undefined): void {
-        console.log(`doChangeState(newState: ${newState})`) // #
         this.changeState.emit(newState);
     }
 
