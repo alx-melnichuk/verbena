@@ -6,7 +6,7 @@
   [chatNewMsgs]="chatNewMsgs"
   [chatRmvIds]="chatRmvIds"
   [chatIsBlocked]="chatSocketService.isBlocked()"
-  [chatIsEditable]="isStreamActive && chatSocketService.isJoined()"
+  [chatIsEditable]="isStreamAvailable(streamDto?.state) && chatSocketService.isJoined()"
   [chatIsLoadData]="chatIsLoadData"
   [chatIsOwner]="chatSocketService.isOwner()"
   [chatMaxLen]="chatMaxLen"
@@ -17,7 +17,7 @@
   
   [countOfViewer]="chatSocketService.countOfMembers"
   [isLoadStream]="isLoadStream"
-  [isShowTimer]="isShowTimer"
+  [isShowTimer]="!!streamDto?.live"
   [isStreamOwner]="isStreamOwner"
   [nickname]="profileDto?.nickname || null"
   

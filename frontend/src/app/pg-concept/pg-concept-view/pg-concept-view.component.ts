@@ -14,7 +14,7 @@ import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.c
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto, UserTokenResponseDto } from 'src/app/lib-profile/profile-api.interface';
 import { EventWS, EWSType, EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
-import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
+import { StreamDto, StreamSateType, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 import { environment } from 'src/environments/environment';
@@ -51,9 +51,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
 
     public isLoadStream = false;
-    public isShowTimer: boolean = false;
-    // An indication that the stream is in active status. ([preparing, started, paused]) 
-    public isStreamActive: boolean = false;
     // An indication that this is the owner of the stream.
     public isStreamOwner = false;
     public profileDto: ProfileDto | null = null;
@@ -84,7 +81,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             }
         }
         this.isStreamOwner = (this.streamDto?.userId || -1) == (this.profileDto?.id || 0);
-        this.isStreamActive = !!this.streamDto?.live;
 
         const nickname: string = this.profileDto?.nickname || '';
         const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
@@ -100,44 +96,18 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.handlReceiveChat(val);
             this.changeDetector.markForCheck();
         };
-        // Connect to the server web socket chat.
-        this.socketConnection(this.profileDto?.nickname, this.streamDto?.id, !!this.streamDto?.live);
-
-        /*setTimeout(() => {
-            this.chatRmvIds = [605, 603];
+        this.chatSocketService.handlOnOpen = () => {
+            console.log(`# chatSocketService.handlOnOpen()`); // #
             this.changeDetector.markForCheck();
-        }, 2000);*/
-        /*setTimeout(() => {
-            this.chatPastMsgs = this.demo1();
-            this.changeDetector.markForCheck();
-        }, 3000);*/
-        /*setTimeout(() => {
-            this.chatNewMsgs = [
-                // { id: 607, date: "2024-03-17T01:00:00.000Z", member: "ava_wilson", msg: "Demo message 137ver.2", dateEdt: "2025-06-26T16:30:02.798Z" },
-                // { id: 609, date: "2024-03-17T03:00:00.000Z", member: "mila_davis", msg: "Demo message 139ver.2", dateEdt: "2025-06-26T16:30:02.799Z" },
-                { id: 51, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 51" },
-                { id: 52, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 52" }
-            ];
-            this.changeDetector.markForCheck();
-            console.log(`this.chatNewMsgs`); // #
-        }, 4000);*/
+        };
+        if (this.isStreamAvailable(this.streamDto?.state)) {
+            console.log(`# chatSocketService.connect()`); // #
+            // Connect to the server web socket chat.
+            this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
+        }
     }
-    /*demo1(): any[] {
-        return [
-            { "id": 600, "date": "2024-03-16T18:00:00.000Z", "member": "evelyn_allen", "msg": "Demo message 130ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
-            { "id": 599, "date": "2024-03-16T17:00:00.000Z", "member": "mila_davis", "msg": "Demo message 129" },
-            { "id": 598, "date": "2024-03-16T16:00:00.000Z", "member": "james_miller", "msg": "Demo message 128ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
-            { "id": 597, "date": "2024-03-16T15:00:00.000Z", "member": "ava_wilson", "msg": "Demo message 127" },
-            { "id": 596, "date": "2024-03-16T14:00:00.000Z", "member": "ethan_brown", "msg": "Demo message 126 ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
-            { "id": 595, "date": "2024-03-16T13:00:00.000Z", "member": "evelyn_allen", "msg": "Demo message 125" },
-            { "id": 594, "date": "2024-03-16T12:00:00.000Z", "member": "mila_davis", "msg": "Demo message 124ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
-            { "id": 593, "date": "2024-03-16T11:00:00.000Z", "member": "james_miller", "msg": "Demo message 123" },
-            { "id": 592, "date": "2024-03-16T10:00:00.000Z", "member": "ava_wilson", "msg": "Demo message 122 ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
-            { "id": 591, "date": "2024-03-16T09:00:00.000Z", "member": "ethan_brown", "msg": "Demo message 121" },
-        ];
-    }*/
+
     ngOnInit(): void {
-        this.updateParams(this.streamDto, this.profileDto);
     }
 
     ngOnDestroy(): void {
@@ -155,6 +125,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     }
 
     // Section: "Chat"
+
+    public isStreamAvailable(state: StreamState | undefined): boolean {
+        return (state || 'stopped') != 'stopped';
+    }
 
     public doBlockUser(user_name: string): void {
         if (!!user_name) {
@@ -198,14 +172,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     // ** Private API **
 
-    private updateParams(streamDto: StreamDto | null, profileDto: ProfileDto | null): void {
-        let isShowTimer = false;
-        if (!!streamDto) {
-            isShowTimer = streamDto.live;
-        }
-        this.isShowTimer = isShowTimer;
-    }
-
     // Section: "panel stream admin"
 
     private toggleStreamState(isStreamOwner: boolean, streamId: number | null, streamState: StreamState | null): void {
@@ -216,9 +182,15 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.streamService.toggleStreamState(streamId, streamState)
             .then((response: StreamDto | HttpErrorResponse) => {
                 this.streamDto = (response as StreamDto);
-                this.updateParams(this.streamDto, this.profileDto);
-                // Connect to the server web socket chat.
-                this.socketConnection(this.profileDto?.nickname, this.streamDto?.id, !!this.streamDto?.live);
+                if (this.isStreamAvailable(this.streamDto?.state) && !this.chatSocketService.isJoined()) {
+                    // Connect to the server web socket chat.
+                    this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
+                }
+                if (!this.isStreamAvailable(this.streamDto?.state) && this.chatSocketService.isJoined()) {
+                    console.log(`chatSocketService.sendData('{close:-1}');`); // #
+                    this.chatSocketService.sendData('{"close":-1}');
+                    // !this.socketDisconnect();
+                }
             })
             .catch((error: HttpErrorResponse) => {
                 const appError = (typeof (error?.error || '') == 'object' ? error.error : {});
@@ -246,13 +218,19 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     // Section: "Chat"
 
-    private socketConnection(nickname: string | undefined, streamId: number | undefined, isStreamActive: boolean) {
-        if (!this.chatSocketService.hasConnect() && nickname != null && !!nickname && streamId != null && streamId > 0 && isStreamActive) {
+    private socketConnection(nickname: string | undefined, streamId: number | undefined, state: StreamSateType | undefined) {
+        const isStateStopped = (state || 'stopped') == 'stopped';
+        if (!this.chatSocketService.hasConnect() && nickname != null && !!nickname && streamId != null && streamId > 0 && !isStateStopped) {
             // Connect to the server web socket chat.
-            console.log(`PgConceptView.openSocket() socketSrv.connect()`); // #
             this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
         }
     }
+    // private socketDisconnect() {
+    //     if (this.chatSocketService.hasConnect()) {
+    //         // Disconnect from the websocket chat server.
+    //         this.chatSocketService.disconnect();
+    //     }
+    // }
     private handlReceiveChat = (val: string): void => {
         const eventWS = EventWS.parse(val);
         if (!eventWS) {
@@ -287,22 +265,18 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
     };
     private addChatMsg(val: string): void {
-        console.log(`PgConceptView.loadDataFromSocket(${val})`); // #
         const obj = JSON.parse(val);
         const chatMsg = ChatMessageDtoUtil.create(obj);
         if (chatMsg.id > 0 && !!chatMsg.member && !!chatMsg.date) {
             this.chatNewMsgs = [chatMsg]; // List of new chat messages.
-            console.log(`PgConceptView() 2 chatNewMsgs:`, this.chatNewMsgs); // #
         }
     }
     private removedChatMsg(id: number): void {
         if (id > 0) { // List of IDs of permanently deleted chat messages.
             this.chatRmvIds = [id];
-            console.log(`PgConceptView() 4 chatRmvIds:`, this.chatRmvIds); // #
         }
     }
     private updateBlockedUsers(blockedUsers: string[], isBlock: boolean, blockUser: string): string[] {
-        console.log(`PgConceptView.updateBlockedUsers(isBlock: ${isBlock}, blockUser: ${blockUser});`); // #
         const userSet: Set<string> = new Set(blockedUsers);
         if (isBlock) {
             userSet.add(blockUser);
@@ -312,7 +286,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         return Array.from(userSet);
     }
     private getPastChatMsgs(streamId: number | null, isSortDes?: boolean, maxDate?: StringDateTime, limit?: number): void {
-        console.log(`PgConceptView.getPastChatMsgs(isSortDes: ${isSortDes}, maxDate: ${maxDate})...`); // #
         if (!streamId || streamId < 0) {
             return;
         }
