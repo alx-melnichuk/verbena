@@ -142,10 +142,10 @@ impl ChatWsAssistant {
     }
 
     /** Get information about the live of the stream. */
-    pub async fn get_stream_live(&self, stream_id: i32) -> Result<Option<bool>, ApiError> {
+    pub async fn get_stream_available(&self, stream_id: i32) -> Result<Option<bool>, ApiError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
 
-        chat_message_orm.get_stream_live(stream_id).map_err(|e| {
+        chat_message_orm.get_stream_available(stream_id).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507 // 507
         })
