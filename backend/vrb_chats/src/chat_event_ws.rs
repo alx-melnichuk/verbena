@@ -17,6 +17,7 @@ pub const SERIALIZATION: &str = "Serialization: ";
 #[serde(rename_all = "camelCase")]
 pub enum EWSType {
     Block,
+    Close,
     Count,
     Echo,
     Err,
@@ -32,8 +33,9 @@ pub enum EWSType {
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 12] = [
+        static LIST: [EWSType; 13] = [
             EWSType::Block,
+            EWSType::Close,
             EWSType::Count,
             EWSType::Echo,
             EWSType::Err,
@@ -163,6 +165,11 @@ fn parse_json_to_i32(json_value: &serde_json::Value) -> Result<i32, &'static str
 pub struct BlockEWS {
     pub block: String,
     pub is_in_chat: bool, // The user is in chat now.
+}
+
+// ** Close sessions for all users (owner only). **
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct CloseEWS {
 }
 
 // ** Count of clients in the room. **

@@ -8,8 +8,8 @@ use serde_json::to_string;
 use vrb_common::{api_error::code_to_str, err};
 
 use crate::{
-    chat_event_ws::{BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS},
-    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
+    chat_event_ws::{BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, LeaveEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS},
+    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CloseRoom, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
     chat_ws_assistant::ChatWsAssistant,
     chat_ws_server::ChatWsServer,
 };
@@ -66,7 +66,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
                 self.handle_text_messages(text.trim(), ctx);
             }
             ws::Message::Close(reason) => {
-                // Send message about "leave"
+                // Send message about "leave".
                 let _ = self.handle_ews_leave(ctx);
                 ctx.close(reason);
                 ctx.stop();
@@ -150,6 +150,12 @@ impl ChatWsSession {
                 // {"block": "User2"}
                 let block = event.get_string("block").unwrap_or("".to_owned());
                 if let Err(err) = self.handle_ews_block_add_task(&block, true, ctx) {
+                    ctx.text(to_string(&err).unwrap());
+                }
+            }
+            EWSType::Close => {
+                // {"close": -1}
+                if let Err(err) = self.handle_ews_close(ctx) {
                     ctx.text(to_string(&err).unwrap());
                 }
             }
@@ -264,6 +270,23 @@ impl ChatWsSession {
         Ok(())
     }
 
+    // ** Close sessions for all users (owner only). **
+    pub fn handle_ews_close(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
+        debug!("handle_ews_close() room_id: {}, user_name: {}", self.room_id, self.user_name);
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+        // Check if the user is the owner of the stream.
+        self.check_is_owner_room()?;
+
+        let close_room_srv = CloseRoom(self.room_id, self.id, self.user_name.clone());
+        self.issue_system_sync(close_room_srv, ctx);
+        // Reset room name.
+        self.room_id = i32::default();
+        self.is_owner = false;
+        self.is_blocked = false;
+        Ok(())
+    }
+
     // ** Count of clients in the room. (Session -> Server) **
     pub fn handle_ews_count(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
         // Check if there is an joined room
@@ -325,8 +348,8 @@ impl ChatWsSession {
                     return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
                 }
                 let chat_access = opt_chat_access.unwrap();
-                // Check stream activity. (live: "state" IN ('preparing', 'started', 'paused'))
-                if !chat_access.stream_live {
+                // Check stream activity. ("state" IN ('waiting', 'preparing', 'started', 'paused') != 'stopped')
+                if !chat_access.stream_available {
                     let message = err::MSG_STREAM_NOT_ACTIVE.to_string();
                     return addr.do_send(AsyncResultError(409, code_to_str(StatusCode::CONFLICT), message));
                 }
@@ -344,18 +367,18 @@ impl ChatWsSession {
             // Start an additional asynchronous task.
             actix_web::rt::spawn(async move {
                 // Get information about the live of the stream.
-                let result = assistant.get_stream_live(room_id).await;
+                let result = assistant.get_stream_available(room_id).await;
                 if let Err(err) = result {
                     return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
                 }
-                let opt_stream_live = result.unwrap();
-                if opt_stream_live.is_none() {
+                let opt_stream_available = result.unwrap();
+                if opt_stream_available.is_none() {
                     let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, room_id);
                     return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
                 }
-                let stream_live = opt_stream_live.unwrap();
-                // Check stream activity. (live: "state" IN ('preparing', 'started', 'paused'))
-                if !stream_live {
+                let stream_available = opt_stream_available.unwrap();
+                // Check stream activity. ("state" IN ('waiting', 'preparing', 'started', 'paused') != 'stopped')
+                if !stream_available {
                     let message = err::MSG_STREAM_NOT_ACTIVE.to_string();
                     return addr.do_send(AsyncResultError(409, code_to_str(StatusCode::CONFLICT), message));
                 }
@@ -665,6 +688,7 @@ impl Handler<CommandSrv> for ChatWsSession {
         match command {
             CommandSrv::Block(block) => self.handle_block_client(block, ctx),
             CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
+            CommandSrv::Close() => self.handle_close(ctx),
         }
 
         MessageResult(())
@@ -690,6 +714,26 @@ impl ChatWsSession {
     // Handler for "CommandSrv::Chat(ChatMessageSsn)".
     fn handle_chat_message_ssn(&mut self, chat_msg: ChatMsgSsn, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.text(chat_msg.0);
+    }
+
+    //
+    fn handle_close(&mut self, ctx: &mut ws::WebsocketContext<Self>) {
+        let user_name = self.user_name.clone();
+        debug!("handler<CommandSrv::Close>() user_name: {user_name}");
+
+        let leave = self.room_id;
+        let member = self.user_name.clone();
+        let leave_str = to_string(&LeaveEWS { leave, member, count: 0 }).unwrap();
+
+        ctx.text(leave_str.to_owned());
+        debug!("handler<CommandSrv::Close>() ctx.text(leave_str.to_owned());");
+
+        // Reset room name.
+        self.room_id = i32::default();
+        self.is_owner = false;
+        self.is_blocked = false;
+        
+        debug!("handler<CommandSrv::Close>() ctx.close(None);");
     }
 }
 
