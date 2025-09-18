@@ -466,7 +466,7 @@ CREATE OR REPLACE FUNCTION get_chat_access(
   IN _user_id INTEGER,
   OUT stream_id INTEGER,
   OUT stream_owner INTEGER,
-  OUT stream_live BOOLEAN,
+  OUT stream_available BOOLEAN,
   OUT is_blocked BOOLEAN
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
@@ -478,7 +478,7 @@ BEGIN
     RETURN;
   END IF;
 
-  SELECT s.id AS stream_id, s.user_id AS stream_owner, s.live AS stream_live
+  SELECT s.id AS stream_id, s.user_id AS stream_owner, s.state != 'stopped' AS stream_available
   FROM streams s 
   WHERE s.id = _stream_id
   INTO rec1;
@@ -495,7 +495,7 @@ BEGIN
   RETURN QUERY SELECT
     rec1.stream_id,
     rec1.stream_owner,
-    rec1.stream_live,
+    rec1.stream_available,
     CASE WHEN rec1.stream_owner = _user_id THEN FALSE ELSE (blocked_id IS NOT NULL) END AS is_blocked;
 END;
 $$;
