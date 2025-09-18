@@ -3,28 +3,27 @@
   <span psp-mr-r0_5>{{ (started || start)  | dateTimeFormat:locale:formatDateTime }} </span>
 </div>
 
-@if (!stopped) {
-  @if (isShowTimer && (!!started || !!start)) {
-    <div class="psp-param">
-      <span psp-mr-r0_5>
+<div class="psp-param">
+    <span psp-mr-r0_5>
         <svg psp-mr-r0_5 class="psp-icon-users psp-middle">
-          <use href="assets/icons/lib-concept/panel-stream-params/users-group-bin.svg#users-group-bin"></use>
+            <use href="assets/icons/lib-concept/panel-stream-params/users-group-bin.svg#users-group-bin"></use>
         </svg>
         <span class="psp-middle">{{ countOfViewer || 0 }}</span>
-      </span>
-        
-      <span psp-mr-r0_5 class="psp-clock">
-        <svg psp-mr-r0_5 class="psp-icon-clock">
-          <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
-        </svg>
-        <app-date-time-timer
-          [isActive]="true"
-          [startDate]="started || start">
-        </app-date-time-timer>
-      </span>
-    </div>
-  }
-} @else {
+    </span>
+    @if (isShowTimer && (!!started || !!start)) {
+        <span psp-mr-r0_5 class="psp-clock">
+            <svg psp-mr-r0_5 class="psp-icon-clock">
+                <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
+            </svg>
+            <app-date-time-timer
+                [isActive]="true"
+                [startDate]="started || start">
+            </app-date-time-timer>
+        </span>
+    }
+</div>
+
+@if (!!stopped) {
   <div class="psp-param">
     <span psp-mr-r0_5>{{ 'panel-stream-params.stopped' | translate }}</span>
     <span psp-mr-r0_5>{{ stopped | dateTimeFormat:locale:formatDateTime }} </span>
