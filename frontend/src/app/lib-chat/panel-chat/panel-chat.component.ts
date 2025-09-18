@@ -173,7 +173,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 // To correct, scrollBottom = 0.
                 if (!this.scrollItem || this.scrollItem.nativeElement.scrollHeight == this.scrollItem.nativeElement.clientHeight) {
                     Promise.resolve().then(() => {
-                        console.log(`setScrollBottom(0);`);
                         this.setScrollBottom(0);
                     });
                 }
@@ -402,7 +401,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 if (!!index && chatMsgOld?.id == chatMsg.id) {
                     chatMsgList[index] = chatMsg;
                 } else {
-                    console.log(`Error processing update - id: ${chatMsg.id}`);
+                    console.error(`Error processing update - id: ${chatMsg.id}`);
                 }
             }
         }
