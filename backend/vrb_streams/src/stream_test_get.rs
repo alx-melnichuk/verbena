@@ -118,7 +118,7 @@ mod tests {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         let streams = StreamOrmTest::streams(&[0, 1]);
-        let mut stream2 = streams.get(1).unwrap().clone();
+        let stream2 = streams.get(1).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
@@ -146,7 +146,7 @@ mod tests {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[ADMIN, USER]);
         let streams = StreamOrmTest::streams(&[USER1, USER2]);
-        let mut stream2 = streams.get(1).unwrap().clone();
+        let stream2 = streams.get(1).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
