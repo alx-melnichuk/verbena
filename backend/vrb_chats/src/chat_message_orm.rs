@@ -597,9 +597,10 @@ pub mod tests {
             let idx_stream_id = opt_idx_stream_id.unwrap();
 
             let stream_owner = ChatMessageOrmTest::user_ids().get(idx_stream_id).unwrap().clone();
-            // let stream_live = idx_stream_id != 2;
-            let stream_live = stream_id != ChatMessageOrmTest::stream_ids().get(2).unwrap().clone();
             
+            let stream2_id = ChatMessageOrmTest::stream_ids().get(2).unwrap().clone();
+            let stream_state: String = if stream_id == stream2_id { "stopped".to_owned() } else { "preparing".to_owned() };
+
             let mut is_blocked = false;
             if let Some(user_id) = opt_user_id {
                 let opt_idx_user_id = ChatMessageOrmTest::user_ids().iter().position(|v| *v == user_id);
@@ -608,7 +609,7 @@ pub mod tests {
                 }
             }
              
-            Ok(Some(ChatAccess::new(stream_id, stream_owner, stream_live, is_blocked)))
+            Ok(Some(ChatAccess::new(stream_id, stream_owner, stream_state, is_blocked)))
         }
 
         /// Get a list of blocked users.
