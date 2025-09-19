@@ -63,9 +63,10 @@ mod tests {
             assert_eq!(blocked_user1.blocked_id, blocked_user2.blocked_id);
             assert_eq!(blocked_user1.blocked_nickname, blocked_user2.blocked_nickname);
             // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-            let block_date = blocked_user2.block_date.to_rfc3339_opts(SecondsFormat::Millis, true);
+            // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+            let block_date = blocked_user2.block_date.to_rfc3339_opts(SecondsFormat::Secs, true);
             #[rustfmt::skip]
-            assert_eq!(blocked_user1.block_date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], block_date[..21]);
+            assert_eq!(blocked_user1.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), block_date);
         }
     }
     #[actix_web::test]
@@ -293,9 +294,10 @@ mod tests {
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
         assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], now_date[..21]);
+        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_nickname() {
@@ -327,9 +329,10 @@ mod tests {
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
         assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], now_date[..21]);
+        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_id() {
@@ -363,9 +366,10 @@ mod tests {
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
         assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], now_date[..21]);
+        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_nickname() {
@@ -399,9 +403,10 @@ mod tests {
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
         assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], now_date[..21]);
+        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
 
     // ** delete_blocked_user **
@@ -642,9 +647,10 @@ mod tests {
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
         assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], now_date[..21]);
+        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_nickname() {
@@ -678,8 +684,9 @@ mod tests {
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
         assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], now_date[..21]);
+        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
 }
