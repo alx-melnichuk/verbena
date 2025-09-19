@@ -73,8 +73,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.chatPastMsgs = this.route.snapshot.data['chatMsgList'];
         const conceptResponse = this.route.snapshot.data['conceptResponse'];
-        this.streamDto = conceptResponse.streamDto;
-        const blockedUsers = conceptResponse.blockedUsersDto;
+        this.streamDto = conceptResponse?.streamDto;
+        const blockedUsers = conceptResponse?.blockedUsersDto || [];
         for (let idx = 0; idx < blockedUsers.length; idx++) {
             if (!!blockedUsers[idx].blockedNickname) {
                 this.chatBlockedUsers.push(blockedUsers[idx].blockedNickname);
@@ -100,11 +100,9 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             console.log(`# chatSocketService.handlOnOpen()`); // #
             this.changeDetector.markForCheck();
         };
-        if (this.isStreamAvailable(this.streamDto?.state)) {
-            console.log(`# chatSocketService.connect()`); // #
-            // Connect to the server web socket chat.
-            this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
-        }
+        console.log(`# chatSocketService.connect()`); // #
+        // Connect to the server web socket chat.
+        this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
     }
 
     ngOnInit(): void {
@@ -182,15 +180,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.streamService.toggleStreamState(streamId, streamState)
             .then((response: StreamDto | HttpErrorResponse) => {
                 this.streamDto = (response as StreamDto);
-                if (this.isStreamAvailable(this.streamDto?.state) && !this.chatSocketService.isJoined()) {
-                    // Connect to the server web socket chat.
-                    this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
-                }
-                if (!this.isStreamAvailable(this.streamDto?.state) && this.chatSocketService.isJoined()) {
-                    console.log(`chatSocketService.sendData('{close:-1}');`); // #
-                    this.chatSocketService.sendData('{"close":-1}');
-                    // !this.socketDisconnect();
-                }
             })
             .catch((error: HttpErrorResponse) => {
                 const appError = (typeof (error?.error || '') == 'object' ? error.error : {});
@@ -218,13 +207,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     // Section: "Chat"
 
-    private socketConnection(nickname: string | undefined, streamId: number | undefined, state: StreamSateType | undefined) {
-        const isStateStopped = (state || 'stopped') == 'stopped';
-        if (!this.chatSocketService.hasConnect() && nickname != null && !!nickname && streamId != null && streamId > 0 && !isStateStopped) {
-            // Connect to the server web socket chat.
-            this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
-        }
-    }
+    // private socketConnection(nickname: string | undefined, streamId: number | undefined, state: StreamSateType | undefined) {
+    //     const isStateStopped = (state || 'stopped') == 'stopped';
+    //     if (!this.chatSocketService.hasConnect() && nickname != null && !!nickname && streamId != null && streamId > 0 && !isStateStopped) {
+    //         // Connect to the server web socket chat.
+    //         this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
+    //     }
+    // }
     // private socketDisconnect() {
     //     if (this.chatSocketService.hasConnect()) {
     //         // Disconnect from the websocket chat server.
@@ -243,6 +232,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.alertService.showError(errMsg, 'pg-concept-view.error_socket');
         } else if (eventWS.et == EWSType.Echo) {
             const echo = eventWS.getStr('echo') || '';
+            console.log(`echo: ${echo}`);
         } else if (eventWS.et == EWSType.Msg) {
             this.addChatMsg(val);
         } else if (eventWS.et == EWSType.MsgRmv) {
