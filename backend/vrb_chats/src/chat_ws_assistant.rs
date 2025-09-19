@@ -60,7 +60,7 @@ impl ChatWsAssistant {
         token_coding::decode_token(token, jwt_secret).map_err(|e| format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e))
     }
     /** Check the correctness of the numeric token and get the user data. */
-    pub fn check_num_token_and_get_user(&self, user_id: i32, num_token: i32) -> Result<User, ApiError> {
+    pub async fn check_num_token_and_get_user(&self, user_id: i32, num_token: i32) -> Result<User, ApiError> {
         let user_orm: UserOrmApp = self.user_orm.clone();
 
         // Token verification:
@@ -141,23 +141,13 @@ impl ChatWsAssistant {
         }
     }
 
-    /** Get information about the live of the stream. */
-    pub async fn get_stream_available(&self, stream_id: i32) -> Result<Option<bool>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
-
-        chat_message_orm.get_stream_available(stream_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507 // 507
-        })
-    }
-
     /** Get chat access information. (ChatAccess) */
-    pub async fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, ApiError> {
+    pub async fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, ApiError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
 
-        chat_message_orm.get_chat_access(stream_id, user_id).map_err(|e| {
+        chat_message_orm.get_chat_access(stream_id, opt_user_id).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507 // 507
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
     }
 }
