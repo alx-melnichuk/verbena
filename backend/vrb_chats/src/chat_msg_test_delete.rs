@@ -159,9 +159,10 @@ mod tests {
         assert_eq!(chat_message_dto_res.id, ch_msg.id);
         assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let date_created = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let date_created = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], date_created[..21]);
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_created);
         assert_eq!(chat_message_dto_res.msg, ch_msg.msg.unwrap());
         assert_eq!(chat_message_dto_res.date_edt, ch_msg.date_changed);
         assert_eq!(chat_message_dto_res.date_rmv, ch_msg.date_removed);
@@ -260,9 +261,10 @@ mod tests {
         assert_eq!(chat_message_dto_res.id, ch_msg.id);
         assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let date_created = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let date_created = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], date_created[..21]);
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_created);
         assert_eq!(chat_message_dto_res.msg, ch_msg.msg.unwrap());
         assert_eq!(chat_message_dto_res.date_edt, ch_msg.date_changed);
         assert_eq!(chat_message_dto_res.date_rmv, ch_msg.date_removed);
