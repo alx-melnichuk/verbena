@@ -466,7 +466,7 @@ CREATE OR REPLACE FUNCTION get_chat_access(
   IN _user_id INTEGER,
   OUT stream_id INTEGER,
   OUT stream_owner INTEGER,
-  OUT stream_available BOOLEAN,
+  OUT stream_state VARCHAR,
   OUT is_blocked BOOLEAN
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
@@ -474,29 +474,35 @@ DECLARE
   rec1 RECORD;
   blocked_id INTEGER;
 BEGIN
-  IF (_stream_id IS NULL OR _user_id IS NULL) THEN
+  IF _stream_id IS NULL THEN
     RETURN;
   END IF;
 
-  SELECT s.id AS stream_id, s.user_id AS stream_owner, s.state != 'stopped' AS stream_available
+  SELECT s.id AS stream_id, s.user_id AS stream_owner, CAST(s.state AS VARCHAR) AS stream_state
   FROM streams s 
   WHERE s.id = _stream_id
   INTO rec1;
- 
+
   IF rec1.stream_id IS NULL THEN 
     RETURN;
   END IF;
 
-  SELECT bu.id
-  FROM blocked_users bu 
-  WHERE bu.user_id = rec1.stream_owner AND bu.blocked_id = _user_id
-  INTO blocked_id;
+  IF _user_id IS NOT NULL THEN
+    SELECT bu.id
+    FROM blocked_users bu 
+    WHERE bu.user_id = rec1.stream_owner AND bu.blocked_id = _user_id
+    INTO blocked_id;
+  ELSE
+    blocked_id := -1;
+  END IF;
 
   RETURN QUERY SELECT
     rec1.stream_id,
     rec1.stream_owner,
-    rec1.stream_available,
-    CASE WHEN rec1.stream_owner = _user_id THEN FALSE ELSE (blocked_id IS NOT NULL) END AS is_blocked;
+    rec1.stream_state,
+    CASE WHEN rec1.stream_owner = _user_id THEN FALSE 
+    ELSE blocked_id IS NOT NULL 
+    END AS is_blocked;
 END;
 $$;
 
