@@ -52,7 +52,7 @@
         <div class="cv-cnt-name-tags">
           <div>{{ nickname }}</div>
           <div class="cv-cnt-tags">
-            <span cv-mr-rg0_5>{{ 'Tags:' | translate }}</span>
+            <span cv-mr-rg0_5>{{ 'concept-view.tags' | translate }}</span>
             @for (tag of (streamDto?.tags || []); track tag) {
               <span cv-mr-rg0_5>#{{ tag }}</span>
             }
@@ -61,6 +61,9 @@
       </div>
 
       <div class="cv-cnt-prm cv-cnt-actions">
+        <span>{{ 'concept-view.state' | translate }} 
+            @if (!!streamDto) {  {{ ('concept-view.' + streamDto.state) | translate }}  }
+        </span>
         @if (isStreamOwner) {
           <app-panel-stream-actions
             [state]="streamDto?.state"

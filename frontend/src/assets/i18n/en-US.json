@@ -409,8 +409,15 @@
     "error_socket": "Socket error"
   },
   "concept-view": {
-    "chat_title": "Stream chat",
     "title": "Title:",
+    "tags": "Tags:",
+    "state": "State:",
+    "waiting": "waiting",
+    "preparing": "preparing",
+    "started": "started",
+    "paused": "paused",
+    "stopped": "stopped",
+    "chat_title": "Stream chat",
     "sure_you_want_delete_message": "Are you sure you want to delete the message: \"{{message}}\" ?",
     "sure_you_want_permanently_delete_message": "Are you sure you want to permanently delete the message?"
   },

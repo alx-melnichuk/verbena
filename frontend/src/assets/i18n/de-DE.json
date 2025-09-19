@@ -411,8 +411,15 @@
     "error_socket": "Socket fehler"
   },
   "concept-view": {
-    "chat_title": "Stream-Chat",
     "title": "Titel:",
+    "tags": "Schlagwörter:",
+    "state": "Status:",
+    "waiting": "warten",
+    "preparing": "vorbereiten",
+    "started": "gestartet",
+    "paused": "pausiert",
+    "stopped": "gestoppt",
+    "chat_title": "Stream-Chat",
     "sure_you_want_delete_message": "Möchten sie die nachricht \"{{message}}\" wirklich löschen ?",
     "sure_you_want_permanently_delete_message": "Möchten sie die nachricht wirklich dauerhaft löschen?"
   },

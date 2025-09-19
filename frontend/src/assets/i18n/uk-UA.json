@@ -411,8 +411,15 @@
     "error_socket": "Помилка сокета"
   },
   "concept-view": {
-    "chat_title": "Чат трансляції",
     "title": "Назва:",
+    "tags": "Теги:",
+    "state": "Стан:",
+    "waiting": "очикує",
+    "preparing": "підготовка",
+    "started": "розпочато",
+    "paused": "призупинено",
+    "stopped": "зупинено",
+    "chat_title": "Чат трансляції",
     "sure_you_want_delete_message": "Ви впевнені, що хочете видалити повідомлення: \"{{message}}\" ?",
     "sure_you_want_permanently_delete_message": "Ви впевнені, що хочете остаточно видалити повідомлення ?"
   },
