@@ -760,12 +760,13 @@ mod tests {
         assert_eq!(user_profile_res.theme, user_profile_ser.theme);
         assert_eq!(user_profile_res.locale, user_profile_ser.locale);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let res_created_at = user_profile_res.created_at.to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let res_created_at = user_profile_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(res_created_at[..21], user_profile_ser.created_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21]);
-        let res_updated_at = user_profile_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true);
+        assert_eq!(res_created_at, user_profile_ser.created_at.to_rfc3339_opts(SecondsFormat::Secs, true));
+        let res_updated_at = user_profile_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(res_updated_at[..21], user_profile_ser.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21]);
+        assert_eq!(res_updated_at, user_profile_ser.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true));
     }
 
     // ** logout **
