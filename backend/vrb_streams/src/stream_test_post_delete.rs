@@ -633,7 +633,6 @@ mod tests {
         assert_eq!(stream_dto_res.starttime.to_rfc3339_opts(SecondsFormat::Millis, true), starttime_s);
         assert_eq!(stream_dto_res.source, source_s);
         assert_eq!(stream_dto_res.tags, tags);
-        assert_eq!(stream_dto_res.is_my_stream, true);
     }
     #[actix_web::test]
     async fn test_post_stream_with_new_file() {

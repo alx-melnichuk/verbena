@@ -119,7 +119,6 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER, USER]);
         let streams = StreamOrmTest::streams(&[0, 1]);
         let mut stream2 = streams.get(1).unwrap().clone();
-        stream2.is_my_stream = false;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
@@ -148,7 +147,6 @@ mod tests {
         let data_u = UserOrmTest::users(&[ADMIN, USER]);
         let streams = StreamOrmTest::streams(&[USER1, USER2]);
         let mut stream2 = streams.get(1).unwrap().clone();
-        stream2.is_my_stream = false;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
@@ -329,9 +327,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[ADMIN, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
-        let mut streams = StreamOrmTest::streams(&[USER2, USER2]);
-        streams.get_mut(0).unwrap().is_my_stream = false;
-        streams.get_mut(1).unwrap().is_my_stream = false;
+        let streams = StreamOrmTest::streams(&[USER2, USER2]);
         // Select streams with indices: 2,3.
         let streams1b = &streams.clone();
         let limit = 2;

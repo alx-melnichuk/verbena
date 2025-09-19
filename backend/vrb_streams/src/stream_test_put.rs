@@ -770,7 +770,6 @@ mod tests {
         assert_eq!(stream_dto_res.stopped, stream.stopped);
         assert_eq!(stream_dto_res.source, source_s);
         assert_eq!(stream_dto_res.tags, tags);
-        assert_eq!(stream_dto_res.is_my_stream, stream.is_my_stream);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
         let old_created_at = stream.created_at.to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]

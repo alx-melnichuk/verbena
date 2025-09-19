@@ -180,7 +180,6 @@ pub struct StreamInfoDto {
     pub stopped: Option<DateTime<Utc>>,
     pub source: String,
     pub tags: Vec<String>,
-    pub is_my_stream: bool,
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "serial_datetime")]
@@ -189,7 +188,7 @@ pub struct StreamInfoDto {
 
 impl StreamInfoDto {
     #[allow(dead_code)]
-    pub fn convert(stream: Stream, user_id: i32, tags: &[String]) -> Self {
+    pub fn convert(stream: Stream, tags: &[String]) -> Self {
         StreamInfoDto {
             id: stream.id,
             user_id: stream.user_id,
@@ -203,13 +202,12 @@ impl StreamInfoDto {
             stopped: stream.stopped.clone(),
             source: stream.source.to_owned(),
             tags: tags.iter().map(|tag| tag.to_string()).collect(),
-            is_my_stream: stream.user_id == user_id,
             created_at: stream.created_at.to_owned(),
             updated_at: stream.updated_at.to_owned(),
         }
     }
     /// Merge a "stream" and a corresponding list of "tags".
-    pub fn merge_streams_and_tags(streams: &[Stream], stream_tags: &[StreamTagStreamId], user_id: i32) -> Vec<StreamInfoDto> {
+    pub fn merge_streams_and_tags(streams: &[Stream], stream_tags: &[StreamTagStreamId]) -> Vec<StreamInfoDto> {
         let mut result: Vec<StreamInfoDto> = Vec::new();
 
         let mut tags_map: HashMap<i32, Vec<String>> = HashMap::new();
@@ -233,7 +231,7 @@ impl StreamInfoDto {
             if let Some(tags_vec) = tags_opt {
                 tags.extend(tags_vec.clone());
             }
-            let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags);
+            let stream_info_dto = StreamInfoDto::convert(stream, &tags);
             result.push(stream_info_dto);
         }
         result
@@ -619,7 +617,7 @@ impl StreamInfoPageDto {
             let tags = &format!("tag01,tag{:0>2}", idx);
             let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
 
-            let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags1);
+            let stream_info_dto = StreamInfoDto::convert(stream, &tags1);
             result.push(stream_info_dto);
             idx += 1;
         }
@@ -774,9 +772,9 @@ mod tests {
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
             tag_id += 1;
         }
-        let streams_info: Vec<StreamInfoDto> = vec![StreamInfoDto::convert(stream, user_id, &tags)];
+        let streams_info: Vec<StreamInfoDto> = vec![StreamInfoDto::convert(stream, &tags)];
 
-        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, user_id);
+        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
 
         assert_eq!(result.len(), 1);
         assert_eq!(result, streams_info);
@@ -799,7 +797,7 @@ mod tests {
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
             tag_id += 1;
         }
-        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+        streams_info.push(StreamInfoDto::convert(stream, &tags));
 
         let stream = Stream::new(1, user_id, "title2", Utc::now());
         streams.push(stream.clone());
@@ -809,9 +807,9 @@ mod tests {
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
             tag_id += 1;
         }
-        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+        streams_info.push(StreamInfoDto::convert(stream, &tags));
 
-        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, user_id);
+        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
 
         assert_eq!(result.len(), 2);
         assert_eq!(result, streams_info);
@@ -834,7 +832,7 @@ mod tests {
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
             tag_id += 1;
         }
-        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+        streams_info.push(StreamInfoDto::convert(stream, &tags));
 
         let stream = Stream::new(1, user_id, "title2", Utc::now());
         streams.push(stream.clone());
@@ -844,7 +842,7 @@ mod tests {
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
             tag_id += 1;
         }
-        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+        streams_info.push(StreamInfoDto::convert(stream, &tags));
 
         let stream = Stream::new(2, user_id, "title3", Utc::now());
         streams.push(stream.clone());
@@ -854,9 +852,9 @@ mod tests {
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
             tag_id += 1;
         }
-        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+        streams_info.push(StreamInfoDto::convert(stream, &tags));
 
-        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, user_id);
+        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
 
         assert_eq!(result.len(), 3);
         assert_eq!(result, streams_info);
