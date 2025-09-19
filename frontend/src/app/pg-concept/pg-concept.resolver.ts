@@ -26,10 +26,6 @@ export const pgConceptResolver: ResolveFn<ConceptResponse | HttpErrorResponse | 
         const streamService: StreamService = inject(StreamService);
 
         const profileDto = profileService.profileDto;
-        if (!profileDto) {
-            return undefined;
-        }
-
         const url = route.url[0];
         const streamIdStr = route.paramMap.get(P_CONCEPT_ID);
         const streamId = parseInt(streamIdStr || '-1', 10);
@@ -38,7 +34,7 @@ export const pgConceptResolver: ResolveFn<ConceptResponse | HttpErrorResponse | 
             return streamService.getStream(streamId)
                 .then((response: StreamDto | HttpErrorResponse | undefined) => {
                     const streamDto: StreamDto = (response as StreamDto);
-                    if (streamDto.userId == profileDto.id) {
+                    if (!!profileDto?.id && profileDto.id == streamDto.userId) {
                         return chatMessageService.getBlockedUsers()
                             .then((response: BlockedUserDto[] | HttpErrorResponse | undefined) => {
                                 const blockedUsersDto: BlockedUserDto[] = (response as BlockedUserDto[]);
