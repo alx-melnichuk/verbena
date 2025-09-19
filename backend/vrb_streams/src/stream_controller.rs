@@ -104,8 +104,6 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
     responses(
         (status = 200, description = "A stream with the specified ID was found.", body = StreamInfoDto),
         (status = 204, description = "The stream with the specified ID was not found."),
-        (status = 401, description = "An authorization token is required.", body = ApiError,
-            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/streams/2a`", 
             body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
                 , "`id` - invalid digit found in string (2a)"))),
@@ -116,16 +114,13 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
     ),
     params(("id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
-)]#[rustfmt::skip]
-#[get("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+)]
+// Used to get information about a stream in chat without authorization. 
+#[get("/api/streams/{id}")]
 pub async fn get_stream_by_id(
-    authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
-    // Get current user details.
-    let user = authenticated.deref();
-    // let opt_user_id: Option<i32> = if user.role == UserRole::Admin { None } else { Some(user.user_id) };
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -158,7 +153,7 @@ pub async fn get_stream_by_id(
     let opt_stream_tag_dto = if let Some((stream, stream_tags)) = opt_data {
         let streams: Vec<stream_models::Stream> = vec![stream];
         // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, user.id);
+        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
         list.into_iter().nth(0)
     } else {
         None
@@ -300,7 +295,7 @@ pub async fn get_streams(
     let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
     // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, user.id);
+    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
 
     let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
 
@@ -903,7 +898,7 @@ pub async fn post_stream(
     }
     let (stream, stream_tags) = res_data?;
     // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags);
     let stream_info_dto = list[0].clone();
 
     Ok(HttpResponse::Created().json(stream_info_dto)) // 201
@@ -1202,7 +1197,7 @@ pub async fn put_stream(
 
     if let Some((stream, stream_tags)) = opt_data_stream {
         // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, user.id);
+        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags);
         let stream_info_dto: StreamInfoDto = list[0].clone();
 
         // If the file path starts with alice, then the file corresponds to the entity type.
@@ -1433,7 +1428,7 @@ pub async fn put_toggle_state(
     let (stream, tags) = opt_stream_tags.unwrap();
 
     // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &tags, user.id);
+    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &tags);
     let stream_info_dto: StreamInfoDto = list[0].clone();
     Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
 }
@@ -1521,7 +1516,7 @@ pub async fn delete_stream(
             }
         }
         // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, user.id);
+        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags);
         let stream_info_dto = list[0].clone();
         Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
