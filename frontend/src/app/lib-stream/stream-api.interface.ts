@@ -52,9 +52,6 @@ export interface StreamDto {
     // status: bool, 
     source: string;
     tags: string[];
-    isMyStream?: boolean;
-    // credentials: Credentials | null;
-    // publicTarget: string | null;
     createdAt: StringDateTime;
     updatedAt: StringDateTime;
 }
@@ -74,9 +71,6 @@ export class StreamDtoUtil {
             state: (streamDto?.state || StreamState.waiting),
             tags: (streamDto?.tags || []),
             source: (streamDto?.source || 'obs'),
-            isMyStream: (streamDto?.isMyStream),
-            // credentials: (streamDto?.credentials || null),
-            // publicTarget: (streamDto?.publicTarget || null)
             createdAt: (streamDto?.createdAt || ''),
             updatedAt: (streamDto?.updatedAt || ''),
         };
