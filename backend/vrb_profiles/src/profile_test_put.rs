@@ -773,12 +773,13 @@ pub mod tests {
         assert_eq!(profile_dto_res.descript, Some(descript_s));
         assert_eq!(profile_dto_res.theme, Some(theme_s));
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let old_created_at = profile.created_at.to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let old_created_at = profile.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(profile_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], old_created_at[..21]);
-        let old_updated_at = profile.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true);
+        assert_eq!(profile_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true), old_created_at);
+        let old_updated_at = profile.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(profile_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], old_updated_at[..21]);
+        assert_eq!(profile_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true), old_updated_at);
     }
     #[actix_web::test]
     async fn test_put_profile_a_with_old0_new1() {
