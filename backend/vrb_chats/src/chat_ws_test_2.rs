@@ -154,7 +154,8 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
 
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
         let msg_ews = MsgEWS { msg, id: ch_msg_id, member: member1.clone(), date, date_edt: None, date_rmv: None };
         let msg_ews2 = msg_ews.clone();
@@ -163,7 +164,7 @@ mod tests {
             assert_eq!(msg_ews_res.msg, msg_ews.msg);
             assert_eq!(msg_ews_res.id, msg_ews.id);
             assert_eq!(msg_ews_res.member, msg_ews.member);
-            assert_eq!(msg_ews_res.date[..21], msg_ews.date[..21]);
+            assert_eq!(msg_ews_res.date[..19], msg_ews.date[..19]);
             assert_eq!(msg_ews_res.date_edt.is_none(), msg_ews.date_edt.is_none());
             assert_eq!(msg_ews_res.date_rmv.is_none(), msg_ews.date_rmv.is_none());
         } else {
@@ -177,7 +178,7 @@ mod tests {
             assert_eq!(msg_ews_res.msg, msg_ews2.msg);
             assert_eq!(msg_ews_res.id, msg_ews2.id);
             assert_eq!(msg_ews_res.member, msg_ews2.member);
-            assert_eq!(msg_ews_res.date[0..20], msg_ews2.date[0..20]);
+            assert_eq!(msg_ews_res.date[0..19], msg_ews2.date[0..19]);
             assert_eq!(msg_ews_res.date_edt.is_none(), msg_ews2.date_edt.is_none());
             assert_eq!(msg_ews_res.date_rmv.is_none(), msg_ews2.date_rmv.is_none());
         } else {
@@ -350,8 +351,9 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
 
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let date = ch_msg1.date_created.to_rfc3339_opts(SecondsFormat::Millis, true);
-        let date_edt = Some(Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true));
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let date = ch_msg1.date_created.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let date_edt = Some(Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true));
         #[rustfmt::skip]
         let msg_ews = MsgEWS { msg, id: ch_msg1.id, member: member1.clone(), date, date_edt, date_rmv: None };
         let msg_ews2 = msg_ews.clone();
@@ -360,9 +362,9 @@ mod tests {
             assert_eq!(msg_ews_res.msg, msg_ews.msg);
             assert_eq!(msg_ews_res.id, msg_ews.id);
             assert_eq!(msg_ews_res.member, msg_ews.member);
-            assert_eq!(msg_ews_res.date[..21], msg_ews.date[..21]);
+            assert_eq!(msg_ews_res.date[..19], msg_ews.date[..19]);
             assert_eq!(msg_ews_res.date_edt.is_some(), msg_ews.date_edt.is_some());
-            assert_eq!(msg_ews_res.date_edt.unwrap()[..21], msg_ews.date_edt.unwrap()[..21]);
+            assert_eq!(msg_ews_res.date_edt.unwrap()[..19], msg_ews.date_edt.unwrap()[..19]);
             assert_eq!(msg_ews_res.date_rmv.is_none(), msg_ews.date_rmv.is_none());
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
@@ -375,9 +377,9 @@ mod tests {
             assert_eq!(msg_ews_res.msg, msg_ews2.msg);
             assert_eq!(msg_ews_res.id, msg_ews2.id);
             assert_eq!(msg_ews_res.member, msg_ews2.member);
-            assert_eq!(msg_ews_res.date[0..20], msg_ews2.date[0..20]);
+            assert_eq!(msg_ews_res.date[0..19], msg_ews2.date[0..19]);
             assert_eq!(msg_ews_res.date_edt.is_some(), msg_ews2.date_edt.is_some());
-            assert_eq!(msg_ews_res.date_edt.unwrap()[0..20], msg_ews2.date_edt.unwrap()[0..20]);
+            assert_eq!(msg_ews_res.date_edt.unwrap()[0..19], msg_ews2.date_edt.unwrap()[0..19]);
             assert_eq!(msg_ews_res.date_rmv.is_none(), msg_ews2.date_rmv.is_none());
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
@@ -545,8 +547,9 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
 
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let date = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true);
-        let date_rmv = Some(Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true));
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let date = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let date_rmv = Some(Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true));
         #[rustfmt::skip]
         let msg_ews = MsgEWS { msg, id: ch_msg.id, member: member1.clone(), date, date_edt: None, date_rmv };
         let msg_ews2 = msg_ews.clone();
@@ -555,10 +558,10 @@ mod tests {
             assert_eq!(msg_ews_res.msg, msg_ews.msg);
             assert_eq!(msg_ews_res.id, msg_ews.id);
             assert_eq!(msg_ews_res.member, msg_ews.member);
-            assert_eq!(msg_ews_res.date[..21], msg_ews.date[..21]);
+            assert_eq!(msg_ews_res.date[..19], msg_ews.date[..19]);
             assert_eq!(msg_ews_res.date_edt.is_none(), msg_ews.date_edt.is_none());
             assert_eq!(msg_ews_res.date_rmv.is_some(), msg_ews.date_rmv.is_some());
-            assert_eq!(msg_ews_res.date_rmv.unwrap()[..21], msg_ews.date_rmv.unwrap()[..21]);
+            assert_eq!(msg_ews_res.date_rmv.unwrap()[..19], msg_ews.date_rmv.unwrap()[..19]);
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
         }
@@ -570,10 +573,10 @@ mod tests {
             assert_eq!(msg_ews_res.msg, msg_ews2.msg);
             assert_eq!(msg_ews_res.id, msg_ews2.id);
             assert_eq!(msg_ews_res.member, msg_ews2.member);
-            assert_eq!(msg_ews_res.date[..21], msg_ews2.date[..21]);
+            assert_eq!(msg_ews_res.date[..19], msg_ews2.date[..19]);
             assert_eq!(msg_ews_res.date_edt.is_none(), msg_ews2.date_edt.is_none());
             assert_eq!(msg_ews_res.date_rmv.is_some(), msg_ews2.date_rmv.is_some());
-            assert_eq!(msg_ews_res.date_rmv.unwrap()[..21], msg_ews2.date_rmv.unwrap()[..21]);
+            assert_eq!(msg_ews_res.date_rmv.unwrap()[..19], msg_ews2.date_rmv.unwrap()[..19]);
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
         }
