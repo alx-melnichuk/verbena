@@ -1,6 +1,6 @@
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
-    use std::{env, fs, path};
+    use std::{fs, path};
 
     use actix_web::{
         App, body, dev,
@@ -15,7 +15,7 @@ pub mod tests {
     };
     use vrb_common::{
         api_error::{ApiError, code_to_str},
-        consts, err,
+        consts, env_var, err,
     };
     use vrb_tools::png_files;
 
@@ -212,7 +212,7 @@ pub mod tests {
 
         let config_prfl = config_prfl::get_test_config();
         let files_dir = config_prfl.prfl_avatar_files_dir.clone();
-        env::set_var(consts::STRM_LOGO_FILES_DIR, &files_dir);
+        env_var::env_set_var(consts::STRM_LOGO_FILES_DIR, &files_dir);
         let path_logo0_file = stream_logo_path(&files_dir, profile1_id).unwrap();
 
         // Create a logo file for this user's stream.
@@ -371,7 +371,7 @@ pub mod tests {
         let profile_dto = UserProfileDto::from(profile1.clone());
         let config_prfl = config_prfl::get_test_config();
         let files_dir = config_prfl.prfl_avatar_files_dir.clone();
-        env::set_var(consts::STRM_LOGO_FILES_DIR, &files_dir);
+        env_var::env_set_var(consts::STRM_LOGO_FILES_DIR, &files_dir);
         let path_logo0_file = stream_logo_path(&files_dir, profile1_id).unwrap();
         // Create a logo file for this user's stream.
         png_files::save_file_png(&(path_logo0_file.clone()), 1).unwrap();
