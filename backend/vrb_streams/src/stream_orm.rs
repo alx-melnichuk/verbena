@@ -1047,7 +1047,7 @@ pub mod tests {
         pub fn create_stream(idx: u8, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
             let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
             let stream = Stream::new(STREAM_ID + i32::from(idx), user_id, title, starttime);
-            StreamInfoDto::convert(stream, user_id, &tags1)
+            StreamInfoDto::convert(stream, &tags1)
         }
 
         pub fn streams(user_idxs: &[usize]) -> Vec<StreamInfoDto> {
