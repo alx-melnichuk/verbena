@@ -315,78 +315,63 @@ impl ChatWsSession {
         if self.room_id == room_id {
             return Err(get_err409(err::MSG_THERE_WAS_ALREADY_JOIN_TO_ROOM));
         }
-        // Spawn an async task.
-        let addr = ctx.address();
-        let assistant = self.assistant.clone();
-        // If "access" is specified, then get the user profile.
+        
+        let mut num_token: i32 = i32::default();
+        let mut opt_user_id: Option<i32> = None;
         if access.len() > 0 {
             // Decode the token. And unpack the two parameters from the token.
             #[rustfmt::skip]
-            let (user_id, num_token) =
+            let (user_id, num_token2) =
                 self.assistant.decode_and_verify_token(access).map_err(|err| get_err401(&err))?;
-            // Start an additional asynchronous task.
-            actix_web::rt::spawn(async move {
-                // Check the correctness of the numeric token and get the user data.
-                let result = assistant.check_num_token_and_get_user(user_id, num_token);
-                if let Err(err) = result {
-                    return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
-                }
-                let user = result.unwrap();
-                let user_id = user.id.clone();
-                let nickname = user.nickname.clone();
-                let user_name = nickname.clone();
-
-                // Get chat access information.
-                let result2 = assistant.get_chat_access(room_id, user_id).await;
-                if let Err(err) = result2 {
-                    return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
-                }
-                let opt_chat_access = result2.unwrap();
-                // If the stream with id = room_id is not found, then an error occurs.
-                if opt_chat_access.is_none() {
-                    let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, room_id);
-                    return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
-                }
-                let chat_access = opt_chat_access.unwrap();
-                // Check stream activity. ("state" IN ('waiting', 'preparing', 'started', 'paused') != 'stopped')
-                if !chat_access.stream_available {
-                    let message = err::MSG_STREAM_NOT_ACTIVE.to_string();
-                    return addr.do_send(AsyncResultError(409, code_to_str(StatusCode::CONFLICT), message));
-                }
-                // Determine if a user is the owner of a chat.
-                let is_owner = user.id == chat_access.stream_owner;
-                // Get the "block" value for the given user.
-                let is_blocked = chat_access.is_blocked;
-
-                debug!("handle_ews_join_add_task() room_id:{room_id}, user_name:{nickname}, is_owner:{is_owner}, is_blocked:{is_blocked}");
-                // Send the "AsyncResultEwsJoin" command for execution.
-                addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked));
-            });
-        } else {
-            let user_name = self.user_name.clone();
-            // Start an additional asynchronous task.
-            actix_web::rt::spawn(async move {
-                // Get information about the live of the stream.
-                let result = assistant.get_stream_available(room_id).await;
-                if let Err(err) = result {
-                    return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
-                }
-                let opt_stream_available = result.unwrap();
-                if opt_stream_available.is_none() {
-                    let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, room_id);
-                    return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
-                }
-                let stream_available = opt_stream_available.unwrap();
-                // Check stream activity. ("state" IN ('waiting', 'preparing', 'started', 'paused') != 'stopped')
-                if !stream_available {
-                    let message = err::MSG_STREAM_NOT_ACTIVE.to_string();
-                    return addr.do_send(AsyncResultError(409, code_to_str(StatusCode::CONFLICT), message));
-                }
-                debug!("handle_ews_join_add_task() room_id: {room_id}, user_name:, is_owner: false, is_blocked: true");
-                // Send the "AsyncResultEwsJoin" command for execution.
-                addr.do_send(AsyncResultEwsJoin(room_id, i32::default(), user_name, false, true));
-            });
+            opt_user_id = Some(user_id);
+            num_token = num_token2;
         }
+
+        // Spawn an async task.
+        let addr = ctx.address();
+        let assistant = self.assistant.clone();
+        
+        let mut user_name = self.user_name.clone();
+        // Start an additional asynchronous task.
+        actix_web::rt::spawn(async move {
+
+            if let Some(user_id) = opt_user_id {
+                // Check the correctness of the numeric token and get the user data.
+                let result = assistant.check_num_token_and_get_user(user_id, num_token).await;
+                if let Err(err) = result {
+                    return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+                }
+                user_name = result.unwrap().nickname.clone();
+            }
+
+            // Get chat access information.
+            let result = assistant.get_chat_access(room_id, opt_user_id).await;
+            if let Err(err) = result {
+                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+            }
+            
+            let opt_chat_access = result.unwrap();
+            // If the stream with id = room_id is not found, then an error occurs.
+            if opt_chat_access.is_none() {
+                let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, room_id);
+                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
+            }
+            let chat_access = opt_chat_access.unwrap();
+            // Check stream activity. ("state" IN ('waiting', 'preparing', 'started', 'paused') != 'stopped')
+            // if chat_access.stream_state == "stopped" {
+            //     let message = err::MSG_STREAM_NOT_ACTIVE.to_string();
+            //     return addr.do_send(AsyncResultError(409, code_to_str(StatusCode::CONFLICT), message));
+            // }
+            // Determine if a user is the owner of a chat.
+            let is_owner = if opt_user_id.is_some() { opt_user_id.unwrap() == chat_access.stream_owner } else { false };
+            // Get the "block" value for the given user.
+            let is_blocked = if opt_user_id.is_some() { chat_access.is_blocked } else { true };
+            
+            let user_id = opt_user_id.unwrap_or(i32::default());
+            debug!("handle_ews_join_add_task() room_id:{room_id}, user_name:{user_name}, is_owner:{is_owner}, is_blocked:{is_blocked}");
+            // Send the "AsyncResultEwsJoin" command for execution.
+            addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked));
+        });
         Ok(())
     }
 
