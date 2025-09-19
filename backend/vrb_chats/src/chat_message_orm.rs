@@ -21,11 +21,8 @@ pub trait ChatMessageOrm {
     /// Delete an entity (chat_message).
     fn delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, String>;
 
-    /// Get information about the live of the stream.
-    fn get_stream_available(&self, stream_id: i32) -> Result<Option<bool>, String>;
-
     /// Get chat access information. (ChatAccess)
-    fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String>;
+    fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, String>;
 
     /// Get a list of blocked users.
     fn get_blocked_users(&self, user_id: i32) -> Result<Vec<BlockedUser>, String>;
@@ -57,7 +54,7 @@ pub mod impls {
 
     use crate::{
         chat_message_models::{
-            BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, ChatStreamAvailable, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser,
+            BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser,
             ModifyChatMessage, SearchChatMessage,
         },
         chat_message_orm::ChatMessageOrm,
@@ -210,37 +207,15 @@ pub mod impls {
             Ok(opt_chat_message)
         }
 
-        /// Get information about the live of the stream.
-        fn get_stream_available(&self, stream_id: i32) -> Result<Option<bool>, String> {
-            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            #[rustfmt::skip]
-            let query =
-                diesel::sql_query("select * from get_stream_available($1);").bind::<sql_types::Integer, _>(stream_id);
-
-            let opt_stream_info = query
-                .get_result::<ChatStreamAvailable>(&mut conn)
-                .optional()
-                .map_err(|e| format!("get_stream_available: {}", e.to_string()))?;
-
-            let opt_stream_available = opt_stream_info.map(|v| v.stream_available.clone());
-
-            if let Some(timer) = timer {
-                info!("get_stream_available() time: {}", format!("{:.2?}", timer.elapsed()));
-            }
-            Ok(opt_stream_available)
-        }
-
         /// Get chat access information. (ChatAccess)
-        fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String> {
+        fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
             let query = diesel::sql_query("select * from get_chat_access($1,$2);")
-                .bind::<sql_types::Integer, _>(stream_id)
-                .bind::<sql_types::Integer, _>(user_id);
+                .bind::<sql_types::Integer, _>(stream_id) // $1
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(opt_user_id); // $2
 
             let opt_chat_access = query
                 .get_result::<ChatAccess>(&mut conn)
@@ -613,32 +588,26 @@ pub mod tests {
             Ok(opt_chat_message)
         }
 
-        /// Get information about the live of the stream.
-        fn get_stream_available(&self, stream_id: i32) -> Result<Option<bool>, String> {
-            let idx_stream_id = ChatMessageOrmTest::stream_ids().iter().position(|v| *v == stream_id);
-            if idx_stream_id.is_none() {
-                return Ok(None);
-            }
-            let stream_live = stream_id != ChatMessageOrmTest::stream_ids().get(2).unwrap().clone();
-
-            Ok(Some(stream_live))
-        }
-
         /// Get chat access information. (ChatAccess)
-        fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String> {
-            let idx_stream_id = ChatMessageOrmTest::stream_ids().iter().position(|v| *v == stream_id);
-            let idx_user_id = ChatMessageOrmTest::user_ids().iter().position(|v| *v == user_id);
-            if idx_stream_id.is_none() || idx_user_id.is_none() {
+        fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, String> {
+            let opt_idx_stream_id = ChatMessageOrmTest::stream_ids().iter().position(|v| *v == stream_id);
+            if opt_idx_stream_id.is_none() {
                 return Ok(None);
             }
-            let idx_stream_id = idx_stream_id.unwrap();
+            let idx_stream_id = opt_idx_stream_id.unwrap();
 
             let stream_owner = ChatMessageOrmTest::user_ids().get(idx_stream_id).unwrap().clone();
             // let stream_live = idx_stream_id != 2;
             let stream_live = stream_id != ChatMessageOrmTest::stream_ids().get(2).unwrap().clone();
-            #[rustfmt::skip]
-            let is_blocked = (*self.blocked_user_vec).borrow().iter().find(|v| v.blocked_id == user_id).is_some();
-
+            
+            let mut is_blocked = false;
+            if let Some(user_id) = opt_user_id {
+                let opt_idx_user_id = ChatMessageOrmTest::user_ids().iter().position(|v| *v == user_id);
+                if opt_idx_user_id.is_some() {
+                    is_blocked = (*self.blocked_user_vec).borrow().iter().find(|v| v.blocked_id == user_id).is_some();
+                }
+            }
+             
             Ok(Some(ChatAccess::new(stream_id, stream_owner, stream_live, is_blocked)))
         }
 
