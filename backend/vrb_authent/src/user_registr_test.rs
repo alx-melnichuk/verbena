@@ -784,8 +784,9 @@ mod tests {
         assert_eq!(response_dto_res.nickname, nickname);
         assert_eq!(response_dto_res.email, email);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
-        let now_str = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
-        assert_eq!(response_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Millis, true)[..21], now_str[..21]);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
+        let now_str = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(response_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true), now_str);
     }
 
     // ** registration_clear_for_expired **
