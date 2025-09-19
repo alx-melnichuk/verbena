@@ -61,7 +61,7 @@ export const AUTHORIZATION_REQUIRED = [
     ROUTE_ABOUT,
     ROUTE_PROFILE,
     ROUTE_STREAM,
-    ROUTE_CONCEPT,
+    // ROUTE_CONCEPT, // Authorization is not required.
     // ROUTE_FOLLOWERS,
     // ROUTE_FOLLOWS,
     // ROUTE_BANNED

@@ -33,7 +33,7 @@ export const APP_ROUTES: Routes = [
     {
         path: R_CONCEPT,
         loadChildren: () => import('./pg-concept/pg-concept.routers').then(c => c.PG_CONCEPT_ROUTES),
-        canActivate: [authenticationGuard],
+        // Authorization is not required.
     },
     { path: '**', redirectTo: R_ABOUT },
 ];
