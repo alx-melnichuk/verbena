@@ -128,20 +128,22 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
 
         // -- Test: 5. "This stream is not active." (unauthorized) --
-        let stream3a_id = ChatMessageOrmTest::stream_ids().get(2).unwrap().clone(); // live: false
-        let msg_text = MessageText(format!("{{ \"join\":{} }}", stream3a_id).into());
-        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
-        assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
+        // let stream3a_id = ChatMessageOrmTest::stream_ids().get(2).unwrap().clone(); // live: false
+        // let msg_text = MessageText(format!("{{ \"join\":{} }}", stream3a_id).into());
+        // framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        // let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        // let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
+        // assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
+        // Note! The socket is available for all stream statuses.
 
         // -- Test: 6. "This stream is not active." (authorized) --
-        let stream3b_id = ChatMessageOrmTest::stream_ids().get(2).unwrap().clone(); // live: false
-        let msg_text = MessageText(format!("{{ \"join\":{}, \"access\": \"{}\"  }}", stream3b_id, token1.clone()).into());
-        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
-        assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
+        // let stream3b_id = ChatMessageOrmTest::stream_ids().get(2).unwrap().clone(); // live: false
+        // let msg_text = MessageText(format!("{{ \"join\":{}, \"access\": \"{}\"  }}", stream3b_id, token1.clone()).into());
+        // framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        // let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        // let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
+        // assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
+        // Note! The socket is available for all stream statuses.
 
         // -- Test: 7. "Invalid token" --
         #[rustfmt::skip]
