@@ -15,7 +15,7 @@ export class ChatMessageService {
     public getChatMessages(
         streamId: number, isSortDes?: boolean, minDate?: StringDateTime, maxDate?: StringDateTime, limit?: number
     ): Promise<ChatMessageDto[] | HttpErrorResponse | undefined> {
-        return this.chatMessageApiService.getChatMessages({ streamId, isSortDes, minDate, maxDate/*, limit: 10*/ }) // TODO del "limit: 10"
+        return this.chatMessageApiService.getChatMessages({ streamId, isSortDes, minDate, maxDate })
     }
 
     public getBlockedUsers(): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
