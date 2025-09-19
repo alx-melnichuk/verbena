@@ -2,9 +2,6 @@
 /* Remove stored function that will filter "stream" entities by the specified parameters. */
 DROP FUNCTION IF EXISTS filter_streams;
 
-/* Remove stored function to get information about the live of the stream. */
-DROP FUNCTION IF EXISTS get_stream_available;
-
 /* Drop stored function to retrieve data from the "stream_tags" table. */
 DROP FUNCTION IF EXISTS get_stream_tags_names;
 

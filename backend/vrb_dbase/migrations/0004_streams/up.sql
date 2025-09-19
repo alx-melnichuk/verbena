@@ -231,34 +231,6 @@ AS $$
     L.stream_id ASC, T.user_id  ASC, T.id ASC;
 $$;
 
-/* Create a stored function to get information about the live of the stream. */
-CREATE OR REPLACE FUNCTION get_stream_available(
-  IN _stream_id INTEGER,
-  OUT stream_id INTEGER,
-  OUT stream_available BOOLEAN
-) RETURNS SETOF record LANGUAGE plpgsql
-AS $$
-DECLARE
-  rec1 RECORD;
-BEGIN
-  IF (_stream_id IS NULL) THEN
-    RETURN;
-  END IF;
-
-  SELECT s.id AS stream_id, s.state != 'stopped' AS stream_available
-  FROM streams s
-  WHERE s.id = _stream_id
-  INTO rec1;
-
-  IF rec1.stream_available IS NULL THEN
-    RETURN;
-  END IF;
-
-  RETURN QUERY SELECT
-    rec1.stream_id,
-    rec1.stream_available;
-END;
-$$;
 
 -- **
 
