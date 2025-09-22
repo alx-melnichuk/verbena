@@ -16,7 +16,7 @@ mod tests {
         chat_event_ws::{CountEWS, JoinEWS, LeaveEWS},
         chat_message_orm::tests::ChatMessageOrmTest,
         chat_ws_controller::get_ws_chat,
-        chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
+        chat_ws_tools::{get_err400, get_err401, get_err404, get_err406, get_err409},
     };
 
     const URL_WS: &str = "/ws";

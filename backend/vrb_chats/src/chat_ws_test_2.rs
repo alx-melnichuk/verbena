@@ -15,7 +15,7 @@ mod tests {
         chat_event_ws::{JoinEWS, MsgEWS},
         chat_message_orm::tests::ChatMessageOrmTest,
         chat_ws_controller::get_ws_chat,
-        chat_ws_session::{get_err400, get_err403, get_err404, get_err406},
+        chat_ws_tools::{get_err400, get_err403, get_err404, get_err406},
     };
 
     const URL_WS: &str = "/ws";
@@ -412,7 +412,7 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(2);
 
         // -- Test: 1. "'id' parameter not defined" --
-        let msg_text = MessageText("{ \"msgCut\": \"\", \"id\": 0 }".into());
+        let msg_text = MessageText("{ \"msgCut\": \"\", \"id\": \"\" }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "id"));
