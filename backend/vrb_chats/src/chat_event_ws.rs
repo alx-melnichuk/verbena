@@ -28,12 +28,15 @@ pub enum EWSType {
     MsgPut,
     MsgRmv,
     Name,
+    PrmBool,
+    PrmInt,
+    PrmStr,
     Unblock,
 }
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 13] = [
+        static LIST: [EWSType; 16] = [
             EWSType::Block,
             EWSType::Close,
             EWSType::Count,
@@ -46,6 +49,9 @@ impl EWSType {
             EWSType::MsgPut,
             EWSType::MsgRmv,
             EWSType::Name,
+            EWSType::PrmBool,
+            EWSType::PrmInt,
+            EWSType::PrmStr,
             EWSType::Unblock,
         ];
         LIST.iter()
@@ -140,6 +146,14 @@ impl EventWS {
         }
         result
     }
+
+    pub fn get_bool(&self, name: &str) -> Option<bool> {
+        if let Some(value) = self.params.get(name).map(|s| s.clone()) {
+            value.as_bool()
+        } else {
+            None
+        }
+    }
 }
 
 fn parse_json_to_i32(json_value: &serde_json::Value) -> Result<i32, &'static str> {
@@ -165,11 +179,6 @@ fn parse_json_to_i32(json_value: &serde_json::Value) -> Result<i32, &'static str
 pub struct BlockEWS {
     pub block: String,
     pub is_in_chat: bool, // The user is in chat now.
-}
-
-// ** Close sessions for all users (owner only). **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct CloseEWS {
 }
 
 // ** Count of clients in the room. **
@@ -274,6 +283,33 @@ pub struct MsgRmvEWS {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct NameEWS {
     pub name: String, // user_name
+}
+
+// ** Send a parameter with the name and type boolean. **
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct PrmBoolEWS {
+    pub prm_bool: String, // Parameter name.
+    pub val_bool: bool, // Parameter value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_owner: Option<bool>, // Indicates that the chat was sent by the owner.
+}
+
+// ** Send a parameter with the name and type integer (i32). **
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct PrmIntEWS {
+    pub prm_int: String, // Parameter name.
+    pub val_int: i32, // Parameter value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_owner: Option<bool>, // Indicates that the chat was sent by the owner.
+}
+
+// ** Send a parameter with the name and type string. **
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct PrmStrEWS {
+    pub prm_str: String, // Parameter name.
+    pub val_str: String, // Parameter value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_owner: Option<bool>, // Indicates that the chat was sent by the owner.
 }
 
 // ** Unblock clients in a room by name. **
