@@ -8,7 +8,7 @@ use serde_json::to_string;
 
 use crate::{
     chat_event_ws::{JoinEWS, LeaveEWS},
-    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CloseRoom, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
+    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
 };
 
 type Client = Recipient<CommandSrv>; // ChatMessage
@@ -94,8 +94,6 @@ impl Actor for ChatWsServer {
         self.subscribe_system_async::<SendMessage>(ctx);
         // Asynchronously subscribe to "LeaveRoom". (sending `BrokerIssue`.issue_system_sync())
         self.subscribe_system_async::<LeaveRoom>(ctx);
-        // Asynchronously subscribe to "CloseRoom". (sending `BrokerIssue`.issue_system_sync())
-        self.subscribe_system_async::<CloseRoom>(ctx);
     }
 }
 
@@ -123,31 +121,6 @@ impl Handler<BlockClient> for ChatWsServer {
         }
         debug!("handler<BlockClient>() room_id:{room_id}, user_name: {user_name}, is_block:{is_block}, is_in_chat:{is_in_chat}");
         MessageResult(is_in_chat)
-    }
-}
-
-impl Handler<CloseRoom> for ChatWsServer {
-    type Result = ();
-
-    fn handle(&mut self, msg: CloseRoom, _ctx: &mut Self::Context) {
-        let room_id = msg.0;
-        let client_id = msg.1;
-        let member = msg.2.clone();
-
-        if let Some(room) = self.room_map.get_mut(&room_id) {
-            // Remove the client from the room.
-            let recipient_opt = room.remove(&client_id);
-            // Get the number of clients in the room.
-            let leave_str = to_string(&LeaveEWS { leave: room_id, member, count: 0 }).unwrap();
-            // Send a chat message to all members.
-            // self.send_chat_message_to_clients(room_id, &leave_str, &[]);
-
-            if let Some(client_info) = recipient_opt {
-                let command_srv = CommandSrv::Chat(ChatMsgSsn(leave_str.to_owned()));
-                client_info.client.do_send(command_srv);
-            }
-            debug!("handler<CloseRoom>() room_id:{}, user_name: {}", room_id, msg.2);
-        }
     }
 }
 
