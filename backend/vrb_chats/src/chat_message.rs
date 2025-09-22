@@ -31,17 +31,7 @@ pub struct ChatMsgSsn(
 pub enum CommandSrv {
     Block(BlockSsn),
     Chat(ChatMsgSsn),
-    Close(),
 }
-
-// ** Close sessions for all users (owner only). (Session -> Server) **
-#[derive(Clone, Message)]
-#[rtype(result = "()")]
-pub struct CloseRoom(
-    pub i32,    // room_id
-    pub u64,    // client_id
-    pub String, // client_name
-);
 
 // ** Count of clients in the room. (Session -> Server) **
 #[derive(Clone, Message)]
