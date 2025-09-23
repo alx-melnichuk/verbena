@@ -13,6 +13,9 @@ export enum EWSType {
     MsgPut = 'msgPut',
     MsgRmv = 'MsgRmv',
     Name = 'name',
+    PrmBool = 'prmBool',
+    PrmInt = 'prmInt',
+    PrmStr = 'prmStr',
     Unblock = 'unblock',
 }
 
@@ -30,6 +33,9 @@ export class EWSTypeUtil {
             EWSType.MsgPut,
             EWSType.MsgRmv,
             EWSType.Name,
+            EWSType.PrmBool,
+            EWSType.PrmInt,
+            EWSType.PrmStr,
             EWSType.Unblock,
         ];
     }
@@ -80,6 +86,15 @@ export class EWSTypeUtil {
     }
     public static getNameEWS(name: string): string {
         return JSON.stringify({ name });
+    }
+    public static getPrmBoolEWS(prmBool: string, valBool: boolean): string {
+        return JSON.stringify({ prmBool, valBool });
+    }
+    public static getPrmIntEWS(prmInt: string, valInt: number): string {
+        return JSON.stringify({ prmInt, valInt });
+    }
+    public static getPrmStrEWS(prmStr: string, valStr: string): string {
+        return JSON.stringify({ prmStr, valStr });
     }
     public static getUnblockEWS(unblock: string): string {
         return JSON.stringify({ unblock });
