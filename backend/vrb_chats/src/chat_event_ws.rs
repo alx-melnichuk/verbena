@@ -17,7 +17,6 @@ pub const SERIALIZATION: &str = "Serialization: ";
 #[serde(rename_all = "camelCase")]
 pub enum EWSType {
     Block,
-    Close,
     Count,
     Echo,
     Err,
@@ -36,9 +35,8 @@ pub enum EWSType {
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 16] = [
+        static LIST: [EWSType; 15] = [
             EWSType::Block,
-            EWSType::Close,
             EWSType::Count,
             EWSType::Echo,
             EWSType::Err,
@@ -183,11 +181,13 @@ pub struct BlockEWS {
 
 // ** Count of clients in the room. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct CountEWS {
     pub count: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct EchoEWS {
     pub echo: String,
 }
@@ -214,6 +214,7 @@ impl ErrEWS {
 
 // ** Join the client to the chat room. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct JoinEWS {
     pub join: i32,
     pub member: String,
@@ -226,6 +227,7 @@ pub struct JoinEWS {
 
 // ** Leave the client from the chat room. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct LeaveEWS {
     pub leave: i32,
     pub member: String,
@@ -281,12 +283,14 @@ pub struct MsgRmvEWS {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct NameEWS {
     pub name: String, // user_name
 }
 
 // ** Send a parameter with the name and type boolean. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct PrmBoolEWS {
     pub prm_bool: String, // Parameter name.
     pub val_bool: bool, // Parameter value.
@@ -296,6 +300,7 @@ pub struct PrmBoolEWS {
 
 // ** Send a parameter with the name and type integer (i32). **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct PrmIntEWS {
     pub prm_int: String, // Parameter name.
     pub val_int: i32, // Parameter value.
@@ -305,6 +310,7 @@ pub struct PrmIntEWS {
 
 // ** Send a parameter with the name and type string. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct PrmStrEWS {
     pub prm_str: String, // Parameter name.
     pub val_str: String, // Parameter value.
@@ -314,6 +320,7 @@ pub struct PrmStrEWS {
 
 // ** Unblock clients in a room by name. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct UnblockEWS {
     pub unblock: String,
     pub is_in_chat: bool, // The user is in chat now.
