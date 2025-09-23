@@ -48,8 +48,6 @@ export interface StreamDto {
     started: StringDateTime | null; // Date | null;
     // Time when stream was stopped
     stopped: StringDateTime | null; // Date | null;
-    // Stream status, false means disabled
-    // status: bool, 
     source: string;
     tags: string[];
     createdAt: StringDateTime;
