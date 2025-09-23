@@ -14,7 +14,7 @@ import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.c
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto, UserTokenResponseDto } from 'src/app/lib-profile/profile-api.interface';
 import { EventWS, EWSType, EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
-import { StreamDto, StreamSateType, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
+import { StreamDto, StreamDtoUtil, StreamState } from 'src/app/lib-stream/stream-api.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 import { environment } from 'src/environments/environment';
@@ -51,6 +51,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
 
     public isLoadStream = false;
+    // An indication that the stream is in a chat-available status.
+    public isStreamAvailable = false;
     // An indication that this is the owner of the stream.
     public isStreamOwner = false;
     public profileDto: ProfileDto | null = null;
@@ -68,39 +70,34 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     private translateService: TranslateService = inject(TranslateService);
 
     constructor() {
-        // this.showTimerBeforeStart = 120; // minutes
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.chatPastMsgs = this.route.snapshot.data['chatMsgList'];
         const conceptResponse = this.route.snapshot.data['conceptResponse'];
-        this.streamDto = conceptResponse?.streamDto;
+        this.setStreamDto(conceptResponse?.streamDto || null, this.profileDto?.id || 0);
         const blockedUsers = conceptResponse?.blockedUsersDto || [];
         for (let idx = 0; idx < blockedUsers.length; idx++) {
             if (!!blockedUsers[idx].blockedNickname) {
                 this.chatBlockedUsers.push(blockedUsers[idx].blockedNickname);
             }
         }
-        this.isStreamOwner = (this.streamDto?.userId || -1) == (this.profileDto?.id || 0);
-
         const nickname: string = this.profileDto?.nickname || '';
-        const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
-        const access = this.profileTokensDto?.accessToken;
-
-        this.chatSocketService.config({ nickname, room: streamId, access });
 
         this.chatSocketService.handlOnError = (err: string) => {
             console.error(`SocketErr:`, err);
             this.changeDetector.markForCheck();
         };
         this.chatSocketService.handlReceive = (val: string) => {
-            this.handlReceiveChat(val);
+            this.handlReceiveChat(val, this.isStreamOwner, this.streamDto, this.profileDto);
             this.changeDetector.markForCheck();
         };
         this.chatSocketService.handlOnOpen = () => {
-            console.log(`# chatSocketService.handlOnOpen()`); // #
             this.changeDetector.markForCheck();
         };
-        console.log(`# chatSocketService.connect()`); // #
+
+        const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
+        const access = this.profileTokensDto?.accessToken;
+        this.chatSocketService.config({ nickname, room: streamId, access });
         // Connect to the server web socket chat.
         this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
     }
@@ -123,10 +120,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     }
 
     // Section: "Chat"
-
-    public isStreamAvailable(state: StreamState | undefined): boolean {
-        return (state || 'stopped') != 'stopped';
-    }
 
     public doBlockUser(user_name: string): void {
         if (!!user_name) {
@@ -179,7 +172,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.isLoadStream = true;
         this.streamService.toggleStreamState(streamId, streamState)
             .then((response: StreamDto | HttpErrorResponse) => {
-                this.streamDto = (response as StreamDto);
+                this.setStreamDto((response as StreamDto), this.profileDto?.id || 0);
+                console.log(`][ toggleStreamState() streamDto:`, this.streamDto); // #
+                if (!!this.streamDto) {
+                    Promise.resolve().then(() => {
+                        this.chatSocketService.sendData(EWSTypeUtil.getPrmStrEWS("streamDto", JSON.stringify(this.streamDto)));
+                    });
+                }
             })
             .catch((error: HttpErrorResponse) => {
                 const appError = (typeof (error?.error || '') == 'object' ? error.error : {});
@@ -220,7 +219,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     //         this.chatSocketService.disconnect();
     //     }
     // }
-    private handlReceiveChat = (val: string): void => {
+    private handlReceiveChat = (val: string, isStreamOwner: boolean, streamDto: StreamDto | null, profileDto: ProfileDto | null): void => {
         const eventWS = EventWS.parse(val);
         if (!eventWS) {
             return;
@@ -240,16 +239,24 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         } else if (eventWS.et == EWSType.Block || eventWS.et == EWSType.Unblock) {
             const isBlock = eventWS.et == EWSType.Block;
             const username = isBlock ? eventWS.getStr('block') : eventWS.getStr('unblock');
-            if (!!username && this.isStreamOwner) {
+            if (!!username && isStreamOwner) {
                 this.chatBlockedUsers = this.updateBlockedUsers(this.chatBlockedUsers, isBlock, username);
             }
-            const nickname = this.profileDto?.nickname || '';
-            if (!!username && (this.isStreamOwner || nickname == username)) {
+            const nickname = profileDto?.nickname || '';
+            if (!!username && (isStreamOwner || nickname == username)) {
                 const msg = this.translateService.instant(`pg-concept-view.user_${(!isBlock ? 'un' : '')}blocked`, { username });
-                if (isBlock) {
-                    this.alertService.showWarning(msg, 'pg-concept-view.chat_commands');
-                } else {
-                    this.alertService.showSuccess(msg, 'pg-concept-view.chat_commands');
+                this.alertService.showWarning(msg, 'pg-concept-view.chat_commands');
+            }
+        } else if (eventWS.et == EWSType.PrmStr) {
+            const prmStr = eventWS.getStr('prmStr') || '';
+            const valStr = eventWS.getStr('valStr') || '';
+            console.log(`][ handlReceiveChat() prmStr: ${prmStr}, valStr: ${valStr}, isOwner: ${eventWS.getBool('isOwner')}`)
+            if (!isStreamOwner && prmStr == 'streamDto' && !!valStr && eventWS.getBool('isOwner')) {
+                const obj = JSON.parse(valStr);
+                const streamDto2 = StreamDtoUtil.create(obj);
+                console.log(`][ handlReceiveChat() this.setStreamDto(streamDto);`)
+                if (streamDto != null && streamDto.id == streamDto2.id) {
+                    this.setStreamDto(streamDto2, profileDto?.id || 0);
                 }
             }
         }
@@ -291,5 +298,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.chatIsLoadData = false;
                 this.changeDetector.markForCheck();
             });
+    }
+    private setStreamDto(streamDto: StreamDto | null, profileId: number): void {
+        this.streamDto = streamDto;
+        this.isStreamOwner = (this.streamDto?.userId || -1) == profileId;
+        this.isStreamAvailable = (this.streamDto?.state || 'stopped') != 'stopped';
     }
 }

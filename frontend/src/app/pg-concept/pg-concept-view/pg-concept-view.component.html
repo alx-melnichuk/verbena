@@ -6,7 +6,7 @@
   [chatNewMsgs]="chatNewMsgs"
   [chatRmvIds]="chatRmvIds"
   [chatIsBlocked]="chatSocketService.isBlocked()"
-  [chatIsEditable]="!!profileDto?.id && isStreamAvailable(streamDto?.state) && chatSocketService.isJoined()"
+  [chatIsEditable]="!!profileDto?.id && isStreamAvailable && chatSocketService.isJoined()"
   [chatIsLoadData]="chatIsLoadData"
   [chatIsOwner]="chatSocketService.isOwner()"
   [chatMaxLen]="chatMaxLen"
