@@ -68,7 +68,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* (Reply to the initiator):<br/>
-/// `{ "join": 1, "member": "oliver_taylor", "count": 1, "is_owner": false, "is_blocked": false }`<br/>
+/// `{ "join": 1, "member": "oliver_taylor", "count": 1, "isOwner": false, "isBlocked": false }`<br/>
 ///
 /// *Server* (Reply to everyone else):<br/>
 /// `{ "join": 1, "member": "oliver_taylor", "count": 1 }`<br/>
@@ -78,8 +78,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "join": number,        // Stream ID.
 ///   "member": string,      // User nickname.
 ///   "count": number,       // Number of connected users.
-///   "is_owner": boolean,   // The user is the owner of the chat.
-///   "is_blocked": boolean, // The user has been blocked.
+///   "isOwner": boolean,   // The user is the owner of the chat.
+///   "isBlocked": boolean, // The user has been blocked.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -134,7 +134,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* (Reply to the initiator):<br/>
-/// `{ "join": 1, "member": "", "count": 1, "is_owner": false, "is_blocked": true }`<br/>
+/// `{ "join": 1, "member": "", "count": 1, "isOwner": false, "isBlocked": true }`<br/>
 ///
 /// *Server* (Reply to everyone else):<br/>
 /// `{ "join": 1, "member": "", "count": 1 }`<br/>
@@ -144,8 +144,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "join": number,        // Stream ID.
 ///   "member": string,      // User nickname.
 ///   "count": number,       // Number of connected users.
-///   "is_owner": boolean,   // The user is the owner of the chat. Always false.
-///   "is_blocked": boolean, // The user has been blocked. Always true.
+///   "isOwner": boolean,   // The user is the owner of the chat. Always false.
+///   "isBlocked": boolean, // The user has been blocked. Always true.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -393,12 +393,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* :<br/>
-/// `{ "block": "nickname", "is_in_chat": false }`<br/>
+/// `{ "block": "nickname", "isInChat": false }`<br/>
 ///
 /// ```text
 /// {
 ///   "block": string,       // The nickname of the user who was blocked.
-///   "is_in_chat": boolean, // Indication that the user is in a chat.
+///   "isInChat": boolean, // Indication that the user is in a chat.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -433,12 +433,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* :<br/>
-/// `{ "unblock": "nickname", "is_in_chat": false }`<br/>
+/// `{ "unblock": "nickname", "isInChat": false }`<br/>
 ///
 /// ```text
 /// {
 ///   "unblock": string,     // The nickname of the user who was unblocked.
-///   "is_in_chat": boolean, // Indication that the user is in a chat.
+///   "isInChat": boolean, // Indication that the user is in a chat.
 /// }
 /// ```
 /// *Client* :<br/>
