@@ -7,7 +7,7 @@ import { ProfileService } from '../lib-profile/profile.service';
 import { AuthorizationUtil } from '../utils/authorization.util';
 
 import { COLOR_SCHEME_LIST, ENV_IS_PROD, LOCALE_EN, LOCALE_LIST, SCHEME_DARK, SCHEME_LIGHT } from './constants';
-import { LocaleService } from './locale.service';
+import { LOCALE, LocaleService } from './locale.service';
 import { ROUTE_LOGIN } from './routes';
 
 const COLOR_SCHEME = 'color-scheme';
@@ -40,11 +40,20 @@ export class InitializationService {
         this.translate.addLangs(LOCALE_LIST);
         this.translate.setDefaultLang(LOCALE_EN);
 
-        const locale = this.currLocale || this.getBrowserLanguage(LOCALE_EN);
-        const index = LOCALE_LIST.findIndex((item: string) => item.toLowerCase() == locale.toLowerCase());
-        const language = (index != 1 ? LOCALE_LIST[index] : LOCALE_EN);
 
-        return this.localeService.setLocale(language);
+        let locale: string | null = this.currLocale || window.localStorage.getItem(LOCALE);
+        if (!!locale) {
+            locale = this.localeService.findLocale(LOCALE_LIST, locale);
+        }
+        if (!locale) {
+            const languages = this.getBrowserLanguages();
+            for (let index = 0; index < languages.length && !locale; index++) {
+                locale = this.localeService.findLocale(LOCALE_LIST, languages[index]);
+            }
+        }
+        locale = locale || LOCALE_EN;
+        console.log(`#initTranslate() localeService.setLocale(${locale});`); // #
+        return this.localeService.setLocale(locale);
     }
 
     public async initSession(): Promise<void> {
@@ -98,13 +107,7 @@ export class InitializationService {
 
     // ** Private Api **
 
-    private getBrowserLanguage(defaultValue: string): string {
-        if (typeof window === 'undefined' || typeof window.navigator === 'undefined') {
-            return defaultValue;
-        }
-        const wn = window.navigator as any;
-        const firstOnList = Array.isArray(wn.languages) ? wn.languages[0] : undefined;
-        const lang = wn.language || firstOnList || wn.browserLanguage || wn.userLanguage || defaultValue;
-        return lang;
+    private getBrowserLanguages(): string[] {
+        return (window.navigator as any).languages || [];
     }
 }
