@@ -49,6 +49,7 @@ export class ChatSocketService {
 
     /** Connect to the server web socket chat. */
     public connect(pathName: string, host?: string | null): void {
+        console.log(`@ chatSocketSrv.connect()`); // #
         if (!!this.socketService) {
             this.hasJoined = false;
             this.hasOwner = false;
@@ -111,7 +112,9 @@ export class ChatSocketService {
 
     /** Processing the "open" event of the Socket. */
     private innHandlOnOpen = (): void => {
+        console.log(`@ chatSocketSrv.innHandlOnOpen()`); // #
         if (!!this.chatConfig) {
+            console.log(`@ chatSocketSrv.innHandlOnOpen() !!this.chatConfig sendData(JoinEWS())`); // #
             // Join the chat room.
             this.sendData(EWSTypeUtil.getJoinEWS(
                 this.chatConfig.room,
@@ -132,10 +135,12 @@ export class ChatSocketService {
     };
     /** Processing the "send data" event of the Socket. */
     private innHandlSend = (val: string) => {
+        console.log(`@ chatSocketSrv.innHandlSend(=^ ${val})`); // #
         !!this.handlSend && this.handlSend(val);
     };
     /** Processing the "receive data" event of the Socket. */
     private innHandlReceive = (val: string) => {
+        console.log(`@ chatSocketSrv.innHandlReceive(=v ${val})`); // #
         this.eventAnalysis(EventWS.parse(val), this.chatConfig);
         !!this.handlReceive && this.handlReceive(val);
     };
@@ -155,8 +160,8 @@ export class ChatSocketService {
                 this.hasJoined = (room == chatConfig.room && member == chatConfig.nickname);
                 // If the user is successfully connected to the room
                 if (this.hasJoined) {
-                    this.hasOwner = eventWS.getBool('is_owner') || false;
-                    this.hasBlocked = eventWS.getBool('is_blocked') || false;
+                    this.hasOwner = eventWS.getBool('isOwner') || false;
+                    this.hasBlocked = eventWS.getBool('isBlocked') || false;
                 }
             }
             const count: number = parseInt((eventWS.getStr('count') || '-1'), 10) || -1;
