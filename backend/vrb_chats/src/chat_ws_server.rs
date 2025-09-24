@@ -37,7 +37,6 @@ impl ChatWsServer {
     // Add a client to the room.
     fn add_client_to_room(&mut self, room_id: i32, id: Option<u64>, client_info: ClientInfo) -> u64 {
         let mut id = id.unwrap_or_else(rand::random);
-
         if let Some(room) = self.room_map.get_mut(&room_id) {
             loop {
                 if room.contains_key(&id) {
@@ -46,38 +45,55 @@ impl ChatWsServer {
                     break;
                 }
             }
+            debug!("add_client_to_room() client_info.client.connected(): {}", client_info.client.connected());
             room.insert(id, client_info);
             return id;
         }
-
         // Create a new room for the first client
         let mut room: Room = HashMap::new();
-
         room.insert(id, client_info);
         self.room_map.insert(room_id, room);
-
         id
     }
     // Get the number of clients in the room.
     fn count_clients_in_room(&self, room_id: i32) -> usize {
-        self.room_map.get(&room_id).map(|room| room.len()).unwrap_or(0)
+        let mut count = 0;
+        let opt_room = self.room_map.get(&room_id);
+        if let Some(room) = opt_room {
+            eprint!("#count_clients_in_room() room_id: {}, members:", room_id);
+            for key in room.keys() {
+                let opt_value = room.get(&key);
+                if let Some(value) = opt_value {
+                    eprint!("(id: {}, name:\"{}\"),", key, value.name); count+=1;
+                }
+            }
+            eprintln!(" count: {}", count);
+        }
+        count = self.room_map.get(&room_id).map(|room| room.len()).unwrap_or(0);
+        debug!("count_clients_in_room() room_id: {room_id}, count: {}", count);
+        count
     }
-    // Send a chat message to all members.
-    fn send_chat_message_to_clients(&mut self, room_id: i32, msg: &str, exclude_ids: &[u64]) -> Option<()> {
-        let mut room = self.take_room(room_id)?;
-        debug!("send_chat_message() msg: \"{}\"", msg);
+    /** Send a chat message to all members. exclude - IDs of members to whom the message should not be sent.  */  
+    fn send_chat_message_to_clients(&mut self, room_id: i32, msg: &str, exclude: &[u64]) {
+        debug!("send_chat_message_to_clients() msg: \"{}\"", msg);
+        let opt_room = self.take_room(room_id);
+        if opt_room.is_none() {
+            return;
+        }
+        let mut room = opt_room.unwrap();
+        let command_srv = CommandSrv::Chat(ChatMsgSsn(msg.to_owned()));
         for (id, client_info) in room.drain() {
-            let is_add = if exclude_ids.contains(&id) {
+            let user_name = client_info.name.clone();
+            let is_add = if exclude.contains(&id) {
                 true
             } else {
-                let command_srv = CommandSrv::Chat(ChatMsgSsn(msg.to_owned()));
-                client_info.client.try_send(command_srv).is_ok()
+                client_info.client.try_send(command_srv.clone()).is_ok()
             };
             if is_add {
                 self.add_client_to_room(room_id, Some(id), client_info);
             }
+            debug!("send_chat_message_to_clients() room_id: {}, user_name: {}, is_add: {}, id: {}", room_id, &user_name, is_add, id);
         }
-        Some(())
     }
 }
 
@@ -132,7 +148,7 @@ impl Handler<CountMembers> for ChatWsServer {
     fn handle(&mut self, msg: CountMembers, _ctx: &mut Self::Context) -> Self::Result {
         let CountMembers(room_id) = msg;
         let count = self.count_clients_in_room(room_id);
-
+        debug!("handler<CountMembers>() room_id: {room_id}, count: {count}");
         MessageResult(count)
     }
 }
@@ -146,9 +162,8 @@ impl Handler<JoinRoom> for ChatWsServer {
         let JoinRoom(room_id, user_name, client) = msg;
         let name = user_name.clone();
         let member = name.clone();
-
+        // Add a client to the room.
         let id = self.add_client_to_room(room_id, None, ClientInfo { name, client });
-
         // Get the number of clients in the room.
         let count = self.count_clients_in_room(room_id);
         #[rustfmt::skip]
@@ -169,21 +184,27 @@ impl Handler<LeaveRoom> for ChatWsServer {
         let room_id = msg.0;
         let client_id = msg.1;
         let user_name = msg.2;
+        debug!("handler<LeaveRoom>() room_id:{room_id}, user_name: {user_name}");
 
         if let Some(room) = self.room_map.get_mut(&room_id) {
+            debug!("handler<LeaveRoom>() 1 room.values().count(): {}", room.values().count());
             // Remove the client from the room.
-            let recipient_opt = room.remove(&client_id);
-            let leave = room_id;
+            let opt_recipient = room.remove(&client_id);
+            debug!("handler<LeaveRoom>() room.remove(&client_id): {}", opt_recipient.is_some());
+            debug!("handler<LeaveRoom>() 2 room.values().count(): {}", room.values().count());
             let member = user_name.clone();
             // Get the number of clients in the room.
             let count = self.count_clients_in_room(room_id);
-            let leave_str = to_string(&LeaveEWS { leave, member, count }).unwrap();
+            let leave_str = to_string(&LeaveEWS { leave: room_id, member, count }).unwrap();
             // Send a chat message to all members.
             self.send_chat_message_to_clients(room_id, &leave_str, &[]);
 
-            if let Some(client_info) = recipient_opt {
+            if let Some(client_info) = opt_recipient {
                 let command_srv = CommandSrv::Chat(ChatMsgSsn(leave_str.to_owned()));
                 client_info.client.do_send(command_srv);
+                debug!("handler<LeaveRoom>() client_info.client.do_send(command_srv);");
+            } else {
+                debug!("handler<LeaveRoom>() opt_recipient: None;");    
             }
             debug!("handler<LeaveRoom>() room_id:{room_id}, user_name: {user_name}, count: {count}");
         }
