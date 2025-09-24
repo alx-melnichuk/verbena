@@ -220,7 +220,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         return result;
     }
     public getMenuItem(chatMsg: ChatMessageDto, isOwner: boolean | null, selfName: string | null): MenuItem | null {
-        const menuEdit = this.createMenuEdit(selfName || '', chatMsg);
+        const menuEdit = this.isEditable ? this.createMenuEdit(selfName || '', chatMsg) : null;
         const menuBlock = this.getMenuBlock(chatMsg.member, isOwner, selfName);
         const result = !!menuEdit || !!menuBlock ? { ...menuEdit, ...menuBlock } : null;
         return result;
@@ -255,7 +255,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
     }
     public doSetValueForEditing(chatMsg: ChatMessageDto | null): void {
-        if (this.msgEditing != chatMsg) {
+        if (this.isEditable && this.msgEditing != chatMsg) {
             this.msgEditing = chatMsg;
             this.setTextareaValue(chatMsg?.msg || null);
             this.fieldMessageComp.focus();
