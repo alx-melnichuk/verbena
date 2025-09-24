@@ -23,6 +23,7 @@ export class LocaleService {
     }
 
     // ** Locale **
+
     public getLocale(): string | null {
         return this.currLocale;
     }
@@ -40,10 +41,10 @@ export class LocaleService {
             this.translate.use(locale).pipe(first())
                 .subscribe({
                     next: () => {
-                        window.localStorage.setItem(LOCALE, locale);
                         this.currLocale = locale;
                         this.dateAdapter.setLocale(locale);
                         HttpErrorUtil.setTranslate(this.translate);
+                        window.localStorage.setItem(LOCALE, locale);
                         resolve();
                     },
                     error: (err) => reject(err)
@@ -57,5 +58,9 @@ export class LocaleService {
             localeList2.push(localeList[index].toLowerCase());
         }
         return !!value && localeList2.indexOf(value.toLowerCase()) > -1 ? value : null;
+    }
+
+    public getLocaleFromLocalStorage(): string | null {
+        return localStorage.getItem(LOCALE);
     }
 }

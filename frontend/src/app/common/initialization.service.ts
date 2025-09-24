@@ -7,7 +7,7 @@ import { ProfileService } from '../lib-profile/profile.service';
 import { AuthorizationUtil } from '../utils/authorization.util';
 
 import { COLOR_SCHEME_LIST, ENV_IS_PROD, LOCALE_EN, LOCALE_LIST, SCHEME_DARK, SCHEME_LIGHT } from './constants';
-import { LOCALE, LocaleService } from './locale.service';
+import { LocaleService } from './locale.service';
 import { ROUTE_LOGIN } from './routes';
 
 const COLOR_SCHEME = 'color-scheme';
@@ -40,8 +40,8 @@ export class InitializationService {
         this.translate.addLangs(LOCALE_LIST);
         this.translate.setDefaultLang(LOCALE_EN);
 
-
-        let locale: string | null = this.currLocale || window.localStorage.getItem(LOCALE);
+        const localeFromLocalStorage = this.localeService.getLocaleFromLocalStorage();
+        let locale: string | null = this.currLocale || localeFromLocalStorage;
         if (!!locale) {
             locale = this.localeService.findLocale(LOCALE_LIST, locale);
         }
@@ -69,6 +69,7 @@ export class InitializationService {
                 if (!!locale && this.currLocale != locale) {
                     await this.localeService.setLocale(locale);
                 }
+                // You cannot set a color scheme because it requires a Render. This is done in the App constructor.
             } catch {
                 window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
             }
