@@ -133,15 +133,6 @@ export class ProfileService implements TokenUpdate {
 
     // ** Private Api **
 
-    private updateItemInLocalStorage(name: string, value: string | null): void {
-        if (!!name) {
-            if (!!value) {
-                localStorage.setItem(name, value);
-            } else {
-                localStorage.removeItem(name);
-            }
-        }
-    }
     private setUserTokensDtoToLocalStorage(profileTokensDto: UserTokenResponseDto | null): UserTokenResponseDto | null {
         LocalStorageUtil.update(ACCESS_TOKEN, profileTokensDto?.accessToken || null);
         LocalStorageUtil.update(REFRESH_TOKEN, profileTokensDto?.refreshToken || null);
@@ -157,5 +148,4 @@ export class ProfileService implements TokenUpdate {
         }
         return result;
     }
-
 }
