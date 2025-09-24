@@ -43,6 +43,8 @@ impl Actor for ChatWsSession {
         if log_enabled!(Debug) {
             let user_str = format!("user_id: {}, user_name: \"{}\", id: {}", self.user_id, &self.user_name, self.id);
             debug!("Session closed for user({}) in room_id {}.", user_str, self.room_id);
+            // ?// Leave the room and send a message about it.
+            // ?let _ = self.handle_ews_leave(ctx);
         }
     }
 }
@@ -65,9 +67,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
                 self.handle_text_messages(text.trim(), ctx);
             }
             ws::Message::Close(reason) => {
+                debug!("websocket message: ws::Message::Close();");
                 // Send message about "leave".
                 let _ = self.handle_ews_leave(ctx);
+                debug!("websocket message: ctx.close(reason);");
                 ctx.close(reason);
+                debug!("websocket message: ctx.stop();");
                 ctx.stop();
             }
             _ => {}
@@ -331,12 +336,33 @@ impl ChatWsSession {
 
         // Send a message about leaving the room.
         let leave_room_srv = LeaveRoom(self.room_id, self.id, self.user_name.clone());
+        /*
         // issue_sync comes from having the `BrokerIssue` trait in scope.
         self.issue_system_sync(leave_room_srv, ctx);
         // Reset room name.
         self.room_id = i32::default();
         self.is_owner = false;
         self.is_blocked = false;
+        */
+        ChatWsServer::from_registry()
+            .send(leave_room_srv)
+            .into_actor(self)
+            .then(|res, act_self, _ctx| {
+                if res.is_ok() {
+                    // debug!("handle_ews_leave() res.is_ok()");
+                    debug!("handle_ews_leave() res.is_ok() room_id: {}, user_name: {}", act_self.room_id, act_self.user_name.clone());
+                    // Reset room name.
+                    act_self.id = u64::default();
+                    act_self.room_id = i32::default();
+                    act_self.user_id = i32::default();
+                    act_self.user_name = String::default();
+                    act_self.is_owner = bool::default();
+                    act_self.is_blocked = bool::default();
+                }
+                fut::ready(())
+            })
+            .wait(ctx);
+        debug!("handle_ews_leave() Ok(())");
         Ok(())
     }
 
@@ -572,14 +598,14 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
         ChatWsServer::from_registry()
             .send(join_room_srv)
             .into_actor(self)
-            .then(move |res, act, ctx| {
+            .then(move |res, act_self, ctx| {
                 if let Ok((id, count)) = res {
-                    act.id = id;
-                    act.room_id = room_id;
-                    if log_enabled!(Debug) {
+                    act_self.id = id;
+                    act_self.room_id = room_id;
+                    // if log_enabled!(Debug) {
                         let s1 = format!("is_owner: {is_owner}, is_blocked: {is_blocked}");
                         debug!("handler<AsyncResultEwsJoin>() room_id:{room_id}, user_name: {user_name}, count:{count}, {s1}");
-                    }
+                    // }
                     let is_owner = Some(is_owner);
                     let is_blocked = Some(is_blocked);
                     #[rustfmt::skip]
