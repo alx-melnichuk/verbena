@@ -4,8 +4,6 @@ use serde_json::to_string;
 
 use crate::{chat_event_ws::{EWSType, ErrEWS, EventWS, PrmBoolEWS, PrmIntEWS, PrmStrEWS}, chat_message::SendMessage, chat_ws_tools};
 
-pub struct ChatWsSessionPrmInfo {}
-
 pub trait ChatWsSessionPrm {
 
     fn prm_room_id(&self) -> i32;
