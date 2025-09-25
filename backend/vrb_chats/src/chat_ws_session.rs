@@ -3,14 +3,17 @@ use log::{Level::Debug, debug, log_enabled};
 use actix::prelude::*;
 use actix_broker::{BrokerIssue, BrokerMsg};
 use actix_web::http::StatusCode;
-use actix_web_actors::ws;
+use actix_web_actors::ws::{self, CloseReason};
 use serde_json::to_string;
 use vrb_common::{api_error::code_to_str, err};
 
 use crate::{
-    chat_event_ws::{
-        BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS
-    }, chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage}, chat_ws_assistant::ChatWsAssistant, chat_ws_server::ChatWsServer, chat_ws_session_prm::{ChatWsSessionPrm}, chat_ws_tools
+    chat_event_ws::{BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS},
+    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
+    chat_ws_assistant::ChatWsAssistant,
+    chat_ws_server::ChatWsServer,
+    chat_ws_session_prm::ChatWsSessionPrm,
+    chat_ws_tools,
 };
 
 pub const SPECIFIED_USER_NOT_FOUND: &str = "The specified user was not found.";
@@ -35,16 +38,14 @@ impl Actor for ChatWsSession {
     fn started(&mut self, _ctx: &mut Self::Context) {
         if log_enabled!(Debug) {
             let user_str = format!("user_id: {}, user_name: \"{}\", id: {}", self.user_id, &self.user_name, self.id);
-            debug!("Session opened for user({}) in room_id {}.", user_str, self.room_id);
+            debug!("ChatWsSession.started() room_id {}, {}", self.room_id, user_str);
         }
     }
     // Called after an actor is stopped.
     fn stopped(&mut self, _ctx: &mut Self::Context) {
         if log_enabled!(Debug) {
             let user_str = format!("user_id: {}, user_name: \"{}\", id: {}", self.user_id, &self.user_name, self.id);
-            debug!("Session closed for user({}) in room_id {}.", user_str, self.room_id);
-            // ?// Leave the room and send a message about it.
-            // ?let _ = self.handle_ews_leave(ctx);
+            debug!("ChatWsSession.stopped() room_id {}, {}", self.room_id, user_str);
         }
     }
 }
@@ -60,20 +61,33 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
             }
             Ok(msg) => msg,
         };
-        debug!("websocket message: {msg:?}");
+        debug!("StreamHandler<Message>: {msg:?}");
         match msg {
             ws::Message::Text(text) => {
                 // Handle socket text messages.
                 self.handle_text_messages(text.trim(), ctx);
             }
             ws::Message::Close(reason) => {
-                debug!("websocket message: ws::Message::Close();");
-                // Send message about "leave".
-                let _ = self.handle_ews_leave(ctx);
-                debug!("websocket message: ctx.close(reason);");
-                ctx.close(reason);
-                debug!("websocket message: ctx.stop();");
-                ctx.stop();
+                // Send a message about leaving the room.
+                let leave_room_srv = LeaveRoom(self.room_id, self.id, self.user_name.clone());
+                debug!("StreamHandler<Message::Close> issue_system_sync(leave_room_srv, ctx)");
+                // issue_sync comes from having the `BrokerIssue` trait in scope.
+                self.issue_system_sync(leave_room_srv, ctx);
+
+
+                debug!("StreamHandler<Message::Close> actix_web::rt::spawn();");
+                let addr = ctx.address();
+                // Start an additional asynchronous task.
+                actix_web::rt::spawn(async move {
+                    // Spawns a future on the current thread as a new task.
+                    // This is required so that two concurrent events arrive in this actor's event queue.
+                    // One thread processed the LeaveRoom command.
+                    // Another thread closed the socket.
+                    // If these events are executed in the same thread, closing the socket clears the event queue.
+                    // As a result, the LeaveRoom command is not processed.
+                    debug!("StreamHandler<Message::Close> addr.do_send(CommandSrv::CloseAndStop(reason))");
+                    addr.do_send(CommandSrv::CloseAndStop(reason));
+                });
             }
             _ => {}
         }
@@ -107,7 +121,7 @@ impl ChatWsSession {
         // Parse input data of ws event.
         let res_event = EventWS::parsing(msg);
         if let Err(err) = res_event {
-            debug!("websocket error: {:?} msg: \"{}\"", err, msg);
+            debug!("handle_text_messages() error: {:?} msg: \"{}\"", err, msg);
             ctx.text(to_string(&chat_ws_tools::get_err500(&err)).unwrap());
             return;
         }
@@ -205,7 +219,8 @@ impl ChatWsSession {
 
     // ** Blocking clients in a room by name. (Session -> Server) **
     pub fn handle_ews_block_add_task(&self, user_name: &str, is_block: bool, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
-        debug!("handle_ews_block_add_task() user_name: {user_name}, is_block: {is_block}");
+        let room_id = self.room_id;
+        debug!("handle_ews_block_add_task() room_id: {room_id}, user_name: {user_name}, is_block: {is_block}");
         let tag_name = if is_block { "block" } else { "unblock" };
         // Check if this field is not empty
         chat_ws_tools::check_is_not_empty(user_name, tag_name)?;
@@ -330,39 +345,16 @@ impl ChatWsSession {
 
     // * Leave the client from the chat room. (Session -> Server) *
     pub fn handle_ews_leave(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
-        debug!("handle_ews_leave() room_id: {}, user_name: {}", self.room_id, self.user_name);
+        let is_connected = ctx.address().connected();
+        #[rustfmt::skip]
+        debug!("handle_ews_leave() room_id: {}, user_name: {}, is_connected: {}", self.room_id, self.user_name, is_connected);
         // Check if there is an joined room
         chat_ws_tools::check_is_joined_room(self.room_id)?;
 
         // Send a message about leaving the room.
         let leave_room_srv = LeaveRoom(self.room_id, self.id, self.user_name.clone());
-        /*
         // issue_sync comes from having the `BrokerIssue` trait in scope.
         self.issue_system_sync(leave_room_srv, ctx);
-        // Reset room name.
-        self.room_id = i32::default();
-        self.is_owner = false;
-        self.is_blocked = false;
-        */
-        ChatWsServer::from_registry()
-            .send(leave_room_srv)
-            .into_actor(self)
-            .then(|res, act_self, _ctx| {
-                if res.is_ok() {
-                    // debug!("handle_ews_leave() res.is_ok()");
-                    debug!("handle_ews_leave() res.is_ok() room_id: {}, user_name: {}", act_self.room_id, act_self.user_name.clone());
-                    // Reset room name.
-                    act_self.id = u64::default();
-                    act_self.room_id = i32::default();
-                    act_self.user_id = i32::default();
-                    act_self.user_name = String::default();
-                    act_self.is_owner = bool::default();
-                    act_self.is_blocked = bool::default();
-                }
-                fut::ready(())
-            })
-            .wait(ctx);
-        debug!("handle_ews_leave() Ok(())");
         Ok(())
     }
 
@@ -539,7 +531,6 @@ impl ChatWsSessionPrm for ChatWsSession {
     }
 }
 
-
 // * * * * Handler for asynchronous response to the "error" command. * * * *
 
 struct AsyncResultError(
@@ -602,10 +593,10 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
                 if let Ok((id, count)) = res {
                     act_self.id = id;
                     act_self.room_id = room_id;
-                    // if log_enabled!(Debug) {
+                    if log_enabled!(Debug) {
                         let s1 = format!("is_owner: {is_owner}, is_blocked: {is_blocked}");
                         debug!("handler<AsyncResultEwsJoin>() room_id:{room_id}, user_name: {user_name}, count:{count}, {s1}");
-                    // }
+                    }
                     let is_owner = Some(is_owner);
                     let is_blocked = Some(is_blocked);
                     #[rustfmt::skip]
@@ -686,6 +677,7 @@ impl Handler<CommandSrv> for ChatWsSession {
         match command {
             CommandSrv::Block(block) => self.handle_block_client(block, ctx),
             CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
+            CommandSrv::CloseAndStop(reason) => self.handle_close_and_stop(reason, ctx),
         }
 
         MessageResult(())
@@ -704,12 +696,19 @@ impl ChatWsSession {
         } else {
             to_string(&UnblockEWS { unblock: user_name, is_in_chat }).unwrap()
         };
-        debug!("handler<CommandSrv::BlockSsn>() is_block: {is_block}, str: {str}");
+        debug!("handler<CommandSrv::Block>() is_block: {is_block}, str: {str}");
         ctx.text(str);
     }
 
     // Handler for "CommandSrv::Chat(ChatMessageSsn)".
     fn handle_chat_message_ssn(&mut self, chat_msg: ChatMsgSsn, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.text(chat_msg.0);
+    }
+
+    // Handler for "CommandSrv::CloseAndStop(Option<CloseReason>)".
+    fn handle_close_and_stop(&mut self, reason: Option<CloseReason>, ctx: &mut ws::WebsocketContext<Self>) {
+        debug!("handler<CommandSrv::Close>: ctx.close(reason); ctx.stop();");
+        ctx.close(reason);
+        ctx.stop();
     }
 }

@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use actix_web_actors::ws::CloseReason;
 
 // ** Blocking client in a room by name. (Session -> Server) **
 #[derive(Clone, Message)]
@@ -31,6 +32,7 @@ pub struct ChatMsgSsn(
 pub enum CommandSrv {
     Block(BlockSsn),
     Chat(ChatMsgSsn),
+    CloseAndStop(Option<CloseReason>),
 }
 
 // ** Count of clients in the room. (Session -> Server) **
