@@ -42,8 +42,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
     public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
     public chatIsOwner: boolean | null = null;  // Indicates that the user is the owner of the chat.
-    public chatMaxLen: number | null = 255;
-    public chatMinLen: number | null = 0;
+    public chatMaxLen: number | null = null; // 255;
+    public chatMinLen: number | null = null; // 0;
     public chatMaxRows: number | null = 4;
     public chatMinRows: number | null = 1;
     public chatNickname: string | null = null;
@@ -140,7 +140,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public doEditMessage(keyValue: KeyValue<number, string> | null): void {
         const id = keyValue?.key;
         const msgPut = (keyValue?.value || '').trim();
-        if (!!id && !!msgPut) {
+        if (!!id && id > 0 && !!msgPut) {
             this.chatSocketService.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, id));
         }
     }
