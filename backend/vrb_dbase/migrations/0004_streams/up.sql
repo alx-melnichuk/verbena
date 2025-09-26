@@ -51,7 +51,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   NEW.live := NEW."state" IN ('preparing', 'started', 'paused');
-  IF NEW."state" = 'started' THEN
+  IF NEW."state" = 'started' AND NEW.started IS NULL THEN
     NEW.started := CURRENT_TIMESTAMP;
   END IF;
   IF NEW."state" = 'stopped' THEN
