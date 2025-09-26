@@ -114,13 +114,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public fieldMessageComp!: FieldMessageComponent;
 
     public chatMsgList: ChatMessageDto[] = [];
+    public maxLenVal: number = MESSAGE_MAX_LENGTH;
+    public minLenVal: number = MESSAGE_MIN_LENGTH;
     public countNotViewed: number = 0;
     public frmCtrlNewMsg = new FormControl<string | null>({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.frmCtrlNewMsg });
     public initValue: string | null = null;
     public isFocusMsg: boolean = false;
-    public maxLenVal: number = MESSAGE_MAX_LENGTH;
-    public minLenVal: number = MESSAGE_MIN_LENGTH;
     public msgMarked: ChatMessageDto | null = null;
     public msgEditing: ChatMessageDto | null = null;
     public pc_debug = false;
@@ -207,6 +207,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
             Promise.resolve().then(() => this.setScrollBottom(0));
         }
+        if (!!changes['maxLen']) {
+            this.maxLenVal = (!!this.maxLen && this.maxLen > -1 ? this.maxLen : MESSAGE_MAX_LENGTH);
+        }
+        if (!!changes['minLen']) {
+            this.minLenVal = (!!this.minLen && this.minLen > -1 ? this.minLen : MESSAGE_MIN_LENGTH);
+        }
     }
     ngAfterViewInit(): void {
         this.checkExistScroll();
@@ -280,6 +286,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             result = DateUtil.compare(StringDateTimeUtil.toDate(value), new Date(Date.now())) == 0;
         }
         return result;
+    }
+    public checkValueForNotEmptyAndChanges(value: string | undefined | null, original: string | null): boolean {
+        const value1 = value || '';
+        return !!value1 && value1 != (original || '');
     }
     public doKeydownEnter(event: Event, newMsg: string | null): void {
         const keyEvent: KeyboardEvent = (event as KeyboardEvent);

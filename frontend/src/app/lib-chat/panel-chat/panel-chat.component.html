@@ -92,8 +92,8 @@
         [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
         formControlName="newMsg"
         gist="message"
-        [maxLen]="maxLen"
-        [minLen]="minLen"
+        [maxLen]="maxLenVal"
+        [minLen]="minLenVal"
         [maxRows]="maxRows"
         [minRows]="minRows"
         (keydown.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value) : null"
@@ -113,7 +113,7 @@
         <div class="pc-msg-btns-sepr"></div>
       }
       <button matSuffix mat-icon-button class="pc-msg-icon"
-        [disabled]="(initValue == frmCtrlNewMsg.value?.trim() || formGroup.invalid) ? '' : null"
+        [disabled]="(!checkValueForNotEmptyAndChanges(frmCtrlNewMsg.value?.trim(), initValue) || formGroup.invalid) ? '' : null"
         (click)="doSendMessage(frmCtrlNewMsg.value)">
         <svg><use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use></svg>
       </button>
