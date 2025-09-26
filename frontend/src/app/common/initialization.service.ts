@@ -10,6 +10,7 @@ import { COLOR_SCHEME_LIST, ENV_IS_PROD, LOCALE_EN, LOCALE_LIST, SCHEME_DARK, SC
 import { LocaleService } from './locale.service';
 import { ROUTE_LOGIN } from './routes';
 
+export const THEME = 'theme';
 const COLOR_SCHEME = 'color-scheme';
 
 @Injectable({
@@ -78,6 +79,7 @@ export class InitializationService {
     }
 
     // ** Theme **
+
     public getColorScheme(): string | null {
         return this.currColorScheme;
     }
@@ -103,7 +105,12 @@ export class InitializationService {
                 this.document.documentElement.style.setProperty('--' + COLOR_SCHEME, scheme);
                 renderer.addClass(this.document.documentElement, scheme);
             }
+            window.localStorage.setItem(THEME, theme);
         }
+    }
+
+    public getColorSchemeFromLocalStorage(): string | null {
+        return localStorage.getItem(THEME);
     }
 
     // ** Private Api **

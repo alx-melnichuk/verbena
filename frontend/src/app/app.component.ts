@@ -53,7 +53,8 @@ export class AppComponent implements OnInit {
         private localeService: LocaleService,
         private initializationService: InitializationService,
     ) {
-        const theme = this.profileService.profileDto?.theme || COLOR_SCHEME_LIST[0];
+        const themeFromLocalStorage = this.initializationService.getColorSchemeFromLocalStorage();
+        const theme = this.profileService.profileDto?.theme || themeFromLocalStorage || COLOR_SCHEME_LIST[0];
         this.initializationService.setColorScheme(theme, this.renderer);
     }
 
