@@ -53,8 +53,6 @@ export type LabelDaysType = { [key: number]: string };
 })
 export class DateTimeTimerComponent implements OnChanges {
     @Input()
-    public startDate: Date | null | undefined;
-    @Input()
     public isActive: boolean | null | undefined;
     @Input()
     public isAlignCenter: boolean | null | undefined; // together with "isHideLeadingZero"
@@ -66,6 +64,8 @@ export class DateTimeTimerComponent implements OnChanges {
     public labelDays: string | LabelDaysType | null | undefined;
     @Input()
     public letterSpacing: number | null | undefined = 0; // in 'px'
+    @Input()
+    public startDate: Date | null | undefined;
 
     public innLabelDays: string = '';
     public labelDaysObj: LabelDaysType = this.getLabelDaysObj(null);
@@ -113,6 +113,11 @@ export class DateTimeTimerComponent implements OnChanges {
         if (!!changes['letterSpacing']) {
             const letterSpacing = this.letterSpacing || -1;
             HtmlElemUtil.setProperty(this.hostRef, CSS_LETTER_SPACING, letterSpacing > 0 ? letterSpacing.toString() + 'px' : null);
+        }
+        if (!!changes['startDate']) {
+            if (!!this.startDate && this.isActive) {
+                this.modifyCurrValueAndSetTimeout();
+            }
         }
     }
 
@@ -188,9 +193,9 @@ export class DateTimeTimerComponent implements OnChanges {
             HtmlElemUtil.setProperty(this.hostRef, CCS_MAX_SECONDS, maxSeconds.toString());
 
             this.isEvenIteration = !this.isEvenIteration;
+            const nameIteration = this.isEvenIteration == true ? 'animat2' : 'animat1'
             // Add a new attribute for the new animation.
-            HtmlElemUtil.setAttr(this.renderer, this.hostRef, this.isEvenIteration == true ? 'animat2' : 'animat1', '');
-
+            HtmlElemUtil.setAttr(this.renderer, this.hostRef, nameIteration, '');
             // Start the timer for the next processing.
             this.settimeoutId = window.setTimeout(() => { this.modifyCurrValueAndSetTimeout(); }, duration * 1000);
         } else {
