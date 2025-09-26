@@ -12,7 +12,7 @@
       autocomplete="new-password"
       autocapitalize="off"
       [required]="isRequired"
-      [attr.maxlength]="(maxLenVal > 0 ? maxLenVal + 1 : null)"
+      [attr.maxlength]="maxLenVal > 0 ? maxLenVal + 1 : null"
       [attr.spellcheck] ="!!isSpellcheck"
       cdkTextareaAutosize
       [cdkAutosizeMinRows]="minRowsVal"
@@ -23,6 +23,6 @@
     @if (!!hint) {
       <mat-hint>{{ hint | translate }}</mat-hint>
     }
-    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+    <mat-error>{{ (errorMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
   </mat-form-field>
 </ng-container>

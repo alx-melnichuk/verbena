@@ -18,7 +18,7 @@ export const CUSTOM_ERROR = 'customError';
 export const MESSAGE_MAX_ROWS = 6;
 export const MESSAGE_MIN_ROWS = 2;
 export const MESSAGE_MAX_LENGTH = 2048; // 2*1024
-export const MESSAGE_MIN_LENGTH = 2;
+export const MESSAGE_MIN_LENGTH = 0;
 
 @Component({
     selector: 'app-field-message',
