@@ -73,8 +73,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
                 debug!("StreamHandler<Message::Close> issue_system_sync(leave_room_srv, ctx)");
                 // issue_sync comes from having the `BrokerIssue` trait in scope.
                 self.issue_system_sync(leave_room_srv, ctx);
-
-
+                
                 debug!("StreamHandler<Message::Close> actix_web::rt::spawn();");
                 let addr = ctx.address();
                 // Start an additional asynchronous task.
