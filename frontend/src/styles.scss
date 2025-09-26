@@ -106,7 +106,14 @@ a:hover {
 }
 
 .global-scroll {
-    scrollbar-width: thin;
+    --scr-bar-wd: thin;
+
+    // only for Firefox browser
+    @-moz-document url-prefix() {
+        --scr-bar-wd-firefox: auto;
+    }
+
+    scrollbar-width: var(--scr-bar-wd-firefox, var(--scr-bar-wd));
     //   scrollbar-color: var(--thumbBG) var(--scrollbarBG);
     //   &::-webkit-scrollbar { width: 9px; height: 9px; }
     //   &::-webkit-scrollbar-track { background: var(--scrollbarBG); }
