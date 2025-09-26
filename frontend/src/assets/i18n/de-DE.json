@@ -154,6 +154,7 @@
     "locale:max_length" : "Das feld \"locale\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
     "user_role:invalid_value": "Ungültiger wert für \"user role\" ({{ invalid.actualValue }}).",
     "no_fields_to_update": "Es sind keine felder zum aktualisieren vorhanden. Gültige Namen: {{ noRequiredFields.validNames }}.",
+    "message:required": "Das feld \"message\" ist erforderlich.",
     "message:min_length" : "Das feld \"message\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
     "message:max_length" : "Das feld \"message\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben."
   } ,

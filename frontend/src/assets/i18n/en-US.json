@@ -154,6 +154,7 @@
     "locale:max_length" : "The \"locale\" field must have no more {{ maxlength.requiredLength }} characters.",
     "user_role:invalid_value": "Invalid value for \"user role\" ({{ invalid.actualValue }}).",
     "no_fields_to_update": "There are no fields to update. Valid names: {{ noRequiredFields.validNames }}.",
+    "message:required": "The \"message\" field is required.",
     "message:min_length" : "The \"message\" field must have at least {{ minlength.requiredLength }} characters.",
     "message:max_length" : "The \"message\" field must have no more {{ maxlength.requiredLength }} characters."
   },
