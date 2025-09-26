@@ -50,3 +50,4 @@ export const LOCALE_LIST = [LOCALE_EN, LOCALE_DE, LOCALE_UK];
 
 // Sign of the "production" mode.
 export const ENV_IS_PROD = environment.production;
+console.log(`#0-ENV_IS_PROD: ${ENV_IS_PROD}; environment.production: ${environment.production}`);
