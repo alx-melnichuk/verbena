@@ -12,7 +12,7 @@ import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-v
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { ProfileDto, UserTokenResponseDto } from 'src/app/lib-profile/profile-api.interface';
+import { ProfileDto, ProfileMiniDto, UserTokenResponseDto } from 'src/app/lib-profile/profile-api.interface';
 import { EventWS, EWSType, EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
 import { StreamDto, StreamDtoUtil, StreamState } from 'src/app/lib-stream/stream-api.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
@@ -56,9 +56,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     // An indication that this is the owner of the stream.
     public isStreamOwner = false;
     public profileDto: ProfileDto | null = null;
+    public profileMiniDto: ProfileMiniDto | null = null;
     public profileTokensDto: UserTokenResponseDto | null = null;
-    // The interval for displaying the timer before starting (in minutes).
-    // public showTimerBeforeStart: number | null | undefined;  // ??
     public streamDto: StreamDto | null = null;
 
     private alertService: AlertService = inject(AlertService);
@@ -74,6 +73,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.chatPastMsgs = this.route.snapshot.data['chatMsgList'];
         const conceptResponse = this.route.snapshot.data['conceptResponse'];
+        this.profileMiniDto = conceptResponse?.profileMiniDto;
         this.setStreamDto(conceptResponse?.streamDto || null, this.profileDto?.id || 0);
         const blockedUsers = conceptResponse?.blockedUsersDto || [];
         for (let idx = 0; idx < blockedUsers.length; idx++) {

@@ -1,6 +1,4 @@
 <app-concept-view
-  [avatar]="profileDto?.avatar"
-
   [chatBlockedUsers]="chatBlockedUsers"
   [chatPastMsgs]="chatPastMsgs"
   [chatNewMsgs]="chatNewMsgs"
@@ -19,8 +17,11 @@
   [isLoadStream]="isLoadStream"
   [isShowTimer]="!!streamDto?.live"
   [isStreamOwner]="isStreamOwner"
-  [nickname]="profileDto?.nickname || null"
   
+  [ownerAvatar]="profileMiniDto?.avatar"
+  [ownerEmail]="profileMiniDto?.email"
+  [ownerNickname]="profileMiniDto?.nickname"
+
   [streamDto]="streamDto"
   (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
   (blockUser)="doBlockUser($event)"
