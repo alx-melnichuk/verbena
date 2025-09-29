@@ -5,6 +5,11 @@ DROP FUNCTION IF EXISTS modify_user_profile;
 
 -- **
 
+/* Remove stored function for retrieving data from the "users" and "profiles" tables by ID. */
+DROP FUNCTION IF EXISTS get_user_profile_by_id;
+
+-- **
+
 /* Drop trigger "trg_aft_ins_user_ins_profile". */
 DROP TRIGGER IF EXISTS trg_aft_ins_user_ins_profile ON users;
 

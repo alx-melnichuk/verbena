@@ -44,6 +44,60 @@ INSERT INTO profiles (user_id, created_at, updated_at)
 
 -- **
 
+/* Create a stored function for retrieving data from the "users" and "profiles" tables by ID. */
+CREATE OR REPLACE FUNCTION get_user_profile_by_id(
+  IN _user_id INTEGER,
+  OUT user_id INTEGER,
+  OUT nickname VARCHAR,
+  OUT email VARCHAR,
+  OUT "role" user_role,
+  OUT avatar VARCHAR,
+  OUT descript TEXT,
+  OUT theme VARCHAR,
+  OUT locale VARCHAR,
+  OUT created_at TIMESTAMPTZ,
+  OUT updated_at TIMESTAMPTZ
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  rec_user RECORD = NULL;
+  rec_profile RECORD = NULL;
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT u.id, u.nickname, u.email, u."role", u.created_at, u.updated_at
+  FROM "users" u
+  WHERE u.id = _user_id
+  INTO rec_user;
+
+  SELECT p.user_id, p.avatar, p.descript, p.theme, p.locale, p.updated_at
+  FROM profiles p
+  WHERE p.user_id = _user_id
+  INTO rec_profile;
+
+  IF rec_user.id IS NOT NULL AND rec_profile.user_id IS NOT NULL THEN
+    RETURN QUERY SELECT
+      rec_user.id as user_id,
+      rec_user.nickname,
+      rec_user.email,
+      rec_user."role",
+      rec_profile.avatar,
+      rec_profile.descript,
+      rec_profile.theme,
+      rec_profile.locale,
+      rec_user.created_at,
+      CASE WHEN rec_user.updated_at > rec_profile.updated_at
+        THEN rec_user.updated_at
+        ELSE rec_profile.updated_at
+      END AS updated_at;
+  END IF;
+END;
+$$;
+
+-- **
+
 /* Create a stored function to modify a user and their profile. */
 CREATE OR REPLACE FUNCTION modify_user_profile(
   IN _user_id INTEGER,
