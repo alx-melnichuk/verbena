@@ -413,6 +413,7 @@
   },
   "concept-view": {
     "title": "Titel:",
+    "descript": "Beschreibung:",
     "tags": "Schlagwörter:",
     "state": "Status:",
     "waiting": "warten",

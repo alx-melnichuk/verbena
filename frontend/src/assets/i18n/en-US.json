@@ -411,6 +411,7 @@
   },
   "concept-view": {
     "title": "Title:",
+    "descript": "Description:",
     "tags": "Tags:",
     "state": "State:",
     "waiting": "waiting",

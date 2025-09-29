@@ -413,6 +413,7 @@
   },
   "concept-view": {
     "title": "Назва:",
+    "descript": "Опис:",
     "tags": "Теги:",
     "state": "Стан:",
     "waiting": "очікування",
