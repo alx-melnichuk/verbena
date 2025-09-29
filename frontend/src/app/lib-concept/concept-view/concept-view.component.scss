@@ -123,20 +123,18 @@ app-concept-view {
         background-color: var(---cv-pn-bg);
         border: 1px solid var(---cv-pn-brd);
         box-sizing: border-box;
-        padding: 0.5rem;
+        padding: 0.25rem 0.5rem;
     }
 
     .cv-cnt-title {
         box-sizing: border-box;
         max-height: 15rem;
         overflow: hidden;
-        padding-bottom: 0.25rem;
     }
 
-    .cv-cnt-label {
-        font-size: 1rem;
-        font-weight: 500;
-    }
+    // .cv-cnt-label {
+    //     font-weight: 500;
+    // }
 
     // * center footer - params *
     .cv-cnt-params {
@@ -149,12 +147,15 @@ app-concept-view {
     .cv-cnt-brd {
         border-top: 1px solid var(---cv-pn-brd);
         box-sizing: border-box;
-        padding-bottom: 0.25rem;
+        margin-bottom: 0.25rem;
+        margin-top: 0.25rem;
     }
 
     .cv-cnt-nickname {
-        --av-sz: 4rem;
         --av-brd-rd: 0.5rem;
+        --av-brd-cl: var(--app-concept-pn-brd);
+        --av-hg: 5rem;
+        --av-wd: auto;
         display: flex;
         max-width: max(33%, 15rem);
     }
@@ -166,6 +167,11 @@ app-concept-view {
     .cv-cnt-name-tags {
         display: block;
         overflow-wrap: anywhere;
+    }
+
+    .cv-cnt-email {
+        font-size: calc(1em - 2px);
+        font-style: italic;
     }
 
     .cv-cnt-tags {

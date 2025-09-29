@@ -37,8 +37,8 @@
   <div class="cv-cnt-footer">
 
     <div class="cv-cnt-title">
-      <span cv-mr-rg0_5>{{ 'concept-view.title' | translate }}</span>
-      <span class="cv-cnt-label">{{ streamDto?.title }}</span>
+      <span cv-mr-rg0_5 class="cv-cnt-label">{{ 'concept-view.title' | translate }}</span>
+      <span>{{ streamDto?.title }}</span>
     </div>
 
     <div class="cv-cnt-brd"></div>
@@ -46,11 +46,12 @@
     <div class="cv-cnt-params">
         
       <div class="cv-cnt-nickname cv-cnt-prm">
-        <app-avatar cv-mr-rg0_5 class="cv-cnt-avatar"
-          [avatar]="avatar">
+        <app-avatar av-mx-wd-1_5-hg cv-mr-rg0_5 class="cv-cnt-avatar"
+          [avatar]="ownerAvatar">
         </app-avatar>
         <div class="cv-cnt-name-tags">
-          <div>{{ nickname }}</div>
+          <div>{{ ownerNickname }}</div>
+          <div class="cv-cnt-email">{{ ownerEmail }}</div>
           <div class="cv-cnt-tags">
             <span cv-mr-rg0_5>{{ 'concept-view.tags' | translate }}</span>
             @for (tag of (streamDto?.tags || []); track tag) {
@@ -61,9 +62,8 @@
       </div>
 
       <div class="cv-cnt-prm cv-cnt-actions">
-        <span>{{ 'concept-view.state' | translate }} 
-            @if (!!streamDto) {  {{ ('concept-view.' + streamDto.state) | translate }}  }
-        </span>
+        <span class="cv-cnt-label">{{ 'concept-view.state' | translate }}</span>
+        <span>@if (!!streamDto) {  {{ ('concept-view.' + streamDto.state) | translate }}  }</span>
         @if (isStreamOwner) {
           <app-panel-stream-actions
             [state]="streamDto?.state"
@@ -86,6 +86,13 @@
 
     </div>
 
+    <div class="cv-cnt-brd"></div>
+
+    <div class="cv-cnt-title">
+      <span cv-mr-rg0_5 class="cv-cnt-label">{{ 'concept-view.descript' | translate }}</span>
+      <span>{{ streamDto?.descript }}</span>
+    </div>
+ 
   </div>
     
 </div>

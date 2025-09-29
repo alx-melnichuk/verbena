@@ -33,9 +33,6 @@ import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-st
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConceptViewComponent implements AfterContentInit {
-    @Input()
-    public avatar: string | null | undefined;
-
     @Input() // List of new blocked users.
     public chatBlockedUsers: string[] = [];
     @Input() // List of past chat messages.
@@ -73,6 +70,14 @@ export class ConceptViewComponent implements AfterContentInit {
     public isStreamOwner: boolean = false;
     @Input()
     public nickname: string | null = null;
+
+
+    @Input()
+    public ownerAvatar: string | null | undefined;
+    @Input()
+    public ownerEmail: string | null | undefined;
+    @Input()
+    public ownerNickname: string | null | undefined;
 
     @Input()
     public streamDto: StreamDto | null = null;
