@@ -142,9 +142,15 @@ BEGIN
     RETURNING
       users.id, users.nickname, users.email, users."role", users.created_at, users.updated_at
     INTO rec_user;
+  ELSE
+    SELECT
+      u.id, u.nickname, u.email, u."role", u.created_at, u.updated_at
+    FROM users u
+    WHERE u.id = _user_id
+    INTO rec_user;
   END IF;
 
-  IF rec_user IS NOT NULL AND is_modify_profile THEN
+  IF is_modify_profile THEN
     UPDATE profiles SET
       avatar = COALESCE(_avatar, profiles.avatar),
       descript = COALESCE(_descript, profiles.descript),
@@ -152,11 +158,17 @@ BEGIN
       locale = COALESCE(_locale, profiles.locale)
     WHERE profiles.user_id = _user_id
     RETURNING
-      profiles.avatar, profiles.descript, profiles.theme, profiles.locale, profiles.updated_at
+      profiles.user_id, profiles.avatar, profiles.descript, profiles.theme, profiles.locale, profiles.updated_at
+    INTO rec_profile;
+  ELSE
+    SELECT
+      p.user_id, p.avatar, p.descript, p.theme, p.locale, p.updated_at
+    FROM profiles p
+    WHERE p.user_id = _user_id
     INTO rec_profile;
   END IF;
 
-  IF rec_user IS NOT NULL THEN
+  IF rec_user.id IS NOT NULL AND rec_profile.user_id IS NOT NULL THEN
     RETURN QUERY SELECT
       rec_user.id AS user_id, rec_user.nickname, rec_user.email, rec_user."role", 
       rec_profile.avatar, rec_profile.descript, rec_profile.theme, rec_profile.locale, 
