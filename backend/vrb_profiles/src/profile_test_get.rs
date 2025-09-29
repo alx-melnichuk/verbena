@@ -104,11 +104,10 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
 
-    // ** get_profile_mini_by_id **
+    // ** get_profile_mini_by_id (Without authorization.) ** 
 
     #[actix_web::test]
     async fn test_get_profile_mini_by_id_invalid_id() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[ADMIN]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
@@ -116,13 +115,11 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_mini_by_id)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_mini/{}", user_id_bad))
-            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+            .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
@@ -137,7 +134,6 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_mini_by_id_valid_id() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[ADMIN, USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile2_mini_dto = UserProfileMiniDto::from(profiles.get(1).unwrap().clone());
@@ -145,13 +141,11 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_mini_by_id)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_mini/{}", &profile2_id))
-            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+            .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -165,20 +159,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_mini_by_id_non_existent_id() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[ADMIN, USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
         let profile2_id = profiles.get(1).unwrap().user_id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_mini_by_id)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_mini/{}", profile2_id + 1))
-            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+            .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
