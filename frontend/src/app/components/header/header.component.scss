@@ -85,7 +85,8 @@ app-header {
     }
 
     .h-avatar {
-        --av-sz: var(---hdr-hg);
+        --av-hg: var(---hdr-hg);
+        --av-wd: auto;
         --av-brd-rd: var(--mdc-text-button-container-shape);
     }
 
