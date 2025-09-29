@@ -8,6 +8,7 @@ import { StreamDto } from '../lib-stream/stream-api.interface';
 import { BlockedUserDto } from '../lib-chat/chat-message-api.interface';
 import { ChatMessageService } from '../lib-chat/chat-message.service';
 import { ProfileService } from '../lib-profile/profile.service';
+import { ProfileMiniDto, ProfileMiniDtoUtil } from '../lib-profile/profile-api.interface';
 
 function goToPageNotFound(router: Router): Promise<undefined> {
     return router.navigateByUrl('/technical/not-found').then(() => Promise.resolve(undefined));
@@ -15,6 +16,7 @@ function goToPageNotFound(router: Router): Promise<undefined> {
 
 export interface ConceptResponse {
     streamDto: StreamDto;
+    profileMiniDto: ProfileMiniDto;
     blockedUsersDto: BlockedUserDto[];
 }
 
@@ -32,18 +34,30 @@ export const pgConceptResolver: ResolveFn<ConceptResponse | HttpErrorResponse | 
 
         if (E_CONCEPT_VIEW === url.path && streamId > -1) {
             return streamService.getStream(streamId)
-                .then((response: StreamDto | HttpErrorResponse | undefined) => {
+                .then(async (response: StreamDto | HttpErrorResponse | undefined) => {
                     const streamDto: StreamDto = (response as StreamDto);
+                    const profileMiniList: ProfileMiniDto[] = [ProfileMiniDtoUtil.create({})];
+                    const blockedUsersDto: BlockedUserDto[] = [];
+
+                    const buffPromise: Promise<unknown>[] = [];
+                    // Get a mini profile of the stream owner.
+                    buffPromise.push(profileService.profileMini(streamDto.userId));
+
                     if (!!profileDto?.id && profileDto.id == streamDto.userId) {
-                        return chatMessageService.getBlockedUsers()
-                            .then((response: BlockedUserDto[] | HttpErrorResponse | undefined) => {
-                                const blockedUsersDto: BlockedUserDto[] = (response as BlockedUserDto[]);
-                                return { streamDto, blockedUsersDto };
-                            })
-                            .catch((err) =>
-                                goToPageNotFound(router));
+                        // Get a list of blocked users.
+                        buffPromise.push(chatMessageService.getBlockedUsers());
                     }
-                    return { streamDto, blockedUsersDto: [] };
+                    try {
+                        const responses = await Promise.all(buffPromise);
+                        profileMiniList[0] = responses[0] as ProfileMiniDto;
+                        if (!!responses[1]) {
+                            blockedUsersDto.push(...(responses[1] as BlockedUserDto[]));
+                        }
+                    } catch (error) {
+                        goToPageNotFound(router);
+                    }
+
+                    return { streamDto, profileMiniDto: profileMiniList[0], blockedUsersDto };
                 })
                 .catch((err) =>
                     goToPageNotFound(router));
