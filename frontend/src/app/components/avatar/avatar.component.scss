@@ -2,17 +2,33 @@
 
 app-avatar {
     ---av-sz: var(--av-sz, 2rem);
+    ---av-hg: var(--av-hg, 2rem);
+    ---av-wd: var(--av-wd, 2rem);
     ---av-brd-rd: var(--av-brd-rd, 0px);
+    ---av-brd-cl: var(--av-brd-cl, var(--sys-surface-dim));
 
     display: block;
 
     .av-box {
         border-radius: var(---av-brd-rd);
+        border: 1px solid var(---av-brd-cl);
+        box-sizing: border-box;
         color: var(--app-svg-icon-cl); // for "svg"
         display: block;
-        height: var(---av-sz);
+        height: var(---av-hg);
         object-fit: cover; // for "img"
-        width: var(---av-sz);
+        width: var(---av-wd);
     }
 
+    &[av-mx-wd-1_5-hg]>.av-box {
+        max-width: calc(1.5 * var(---av-hg));
+    }
+
+    &[av-mx-wd-1_75-hg]>.av-box {
+        max-width: calc(1.75 * var(---av-hg));
+    }
+
+    &[av-mx-wd-2-hg]>.av-box {
+        max-width: calc(2 * var(---av-hg));
+    }
 }
