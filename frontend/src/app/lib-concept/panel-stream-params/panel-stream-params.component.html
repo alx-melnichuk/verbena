@@ -1,6 +1,8 @@
 <div class="psp-param">
-  <span psp-mr-r0_5>{{ (!started ? 'panel-stream-params.start' :'panel-stream-params.started') | translate }}</span>
-  <span psp-mr-r0_5>{{ (started || start)  | dateTimeFormat:locale:formatDateTime }} </span>
+    <span psp-mr-r0_5 class="psp-param-label">
+        {{ (!started ? 'panel-stream-params.start' :'panel-stream-params.started') | translate }}
+    </span>
+    <span psp-mr-r0_5>{{ (started || start)  | dateTimeFormat:locale:formatDateTime }} </span>
 </div>
 
 <div class="psp-param">
@@ -25,7 +27,7 @@
 
 @if (!!stopped) {
   <div class="psp-param">
-    <span psp-mr-r0_5>{{ 'panel-stream-params.stopped' | translate }}</span>
+    <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.stopped' | translate }}</span>
     <span psp-mr-r0_5>{{ stopped | dateTimeFormat:locale:formatDateTime }} </span>
   </div>
 }
