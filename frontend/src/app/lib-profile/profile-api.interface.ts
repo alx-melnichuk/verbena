@@ -95,6 +95,37 @@ export class ProfileDtoUtil {
     }
 }
 
+// ** ProfileMiniDto **
+
+export interface ProfileMiniDto {
+    id: number;
+    nickname: string; // max_len: 255
+    email: string; // max_len: 255
+    role: string; // UserRole ["User","Admin"]
+    avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
+}
+
+export class ProfileMiniDtoUtil {
+    public static new(value: any): ProfileMiniDto {
+        return {
+            id: value['id'],
+            nickname: value['nickname'],
+            email: value['email'],
+            role: value['role'],
+            avatar: value['avatar'],
+        };
+    }
+    public static create(profileMiniDto?: Partial<ProfileMiniDto>): ProfileMiniDto {
+        return {
+            id: (profileMiniDto?.id || -1),
+            nickname: (profileMiniDto?.nickname || ''),
+            email: (profileMiniDto?.email || ''),
+            role: (profileMiniDto?.role || ''),
+            avatar: (profileMiniDto?.avatar || ''),
+        };
+    }
+}
+
 // ** Profile Tokens **
 
 export interface UserTokenResponseDto {

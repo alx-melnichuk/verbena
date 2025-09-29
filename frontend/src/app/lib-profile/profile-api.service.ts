@@ -8,9 +8,7 @@ import { HttpParamsUtil } from '../utils/http-params.util';
 
 import {
     LoginDto, LoginResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UserTokenResponseDto,
-    RecoveryUserDto,
-    RegistrUserDto,
-    UserTokenDto, UniquenessDto
+    RecoveryUserDto, RegistrUserDto, UserTokenDto, UniquenessDto, ProfileMiniDto, ProfileMiniDtoUtil
 } from './profile-api.interface';
 
 @Injectable({
@@ -66,6 +64,17 @@ export class ProfileApiService {
 
         const url = Uri.appUri("appApi://users_uniqueness");
         return lastValueFrom(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
+    }
+
+    public profileMini(userId: number): Promise<ProfileMiniDto | HttpErrorResponse | undefined> {
+        if (!userId) {
+            return Promise.reject();
+        }
+        const url = Uri.appUri(`appApi://profiles_mini/${userId}`);
+        return lastValueFrom(this.http.get<ProfileMiniDto | HttpErrorResponse>(url))
+            .then((response: ProfileMiniDto | HttpErrorResponse | undefined) => {
+                return ProfileMiniDtoUtil.new(response as ProfileMiniDto)
+            });
     }
 
     public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Promise<ProfileDto | HttpErrorResponse | undefined> {

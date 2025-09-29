@@ -5,7 +5,7 @@ import { LocalStorageUtil } from '../utils/local-storage.util';
 
 import {
     LoginResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, UserTokenResponseDto, TokenUpdate, UniquenessDto,
-    ProfileDtoUtil
+    ProfileDtoUtil, ProfileMiniDto
 } from './profile-api.interface';
 import { ProfileApiService } from './profile-api.service';
 
@@ -111,6 +111,12 @@ export class ProfileService implements TokenUpdate {
     // ** **
     public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {
         return this.profileApiService.uniqueness(nickname || '', email || '');
+    }
+    public profileMini(userId: number): Promise<ProfileMiniDto | HttpErrorResponse | undefined> {
+        if (!userId) {
+            return Promise.reject();
+        }
+        return this.profileApiService.profileMini(userId);
     }
 
     public async getCurrentProfile(): Promise<ProfileDto | HttpErrorResponse | undefined> {
