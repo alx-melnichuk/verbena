@@ -7,6 +7,9 @@ pub trait ProfileOrm {
     /// Get an entity (profile) by ID.
     fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String>;
 
+    /// Get an entities  (user, profile) by ID.
+    fn get_user_profile_by_id(&self, user_id: i32) -> Result<Option<UserProfile>, String>;
+
     /// Modify an entity (profile, user).
     fn modify_user_profile(&self, user_id: i32, modify_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String>;
 
@@ -71,6 +74,26 @@ pub mod impls {
             Ok(opt_profile)
         }
 
+        /// Get an entities (user, profile) by ID.
+        fn get_user_profile_by_id(&self, user_id: i32) -> Result<Option<UserProfile>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from get_user_profile_by_id($1);").bind::<sql_types::Integer, _>(user_id); // $1
+
+            // Run a query with Diesel to create a new user and return it.
+            let opt_user_profile = query
+                .get_result::<UserProfile>(&mut conn)
+                .optional()
+                .map_err(|e| format!("get_user_profile_by_id: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("get_user_profile_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(opt_user_profile)
+        }
+
         /// Modify an entity (user, profile).
         fn modify_user_profile(&self, user_id: i32, modify_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -100,7 +123,7 @@ pub mod impls {
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.locale); // $9
 
             // Run a query with Diesel to create a new user and return it.
-            let profile_user = query
+            let opt_user_profile = query
                 .get_result::<UserProfile>(&mut conn)
                 .optional()
                 .map_err(|e| format!("modify_profile_user: {}", e.to_string()))?;
@@ -108,7 +131,7 @@ pub mod impls {
             if let Some(timer) = timer {
                 info!("modify_profile() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(profile_user)
+            Ok(opt_user_profile)
         }
 
         /// Filter for the list of stream logos by user ID.
@@ -199,6 +222,17 @@ pub mod tests {
                 updated_at: user_profile.updated_at,
             });
             Ok(opt_profile)
+        }
+
+        /// Get an entities (user, profile) by ID.
+        fn get_user_profile_by_id(&self, user_id: i32) -> Result<Option<UserProfile>, String> {
+            let opt_user_profile = self
+                .user_profile_vec
+                .iter()
+                .find(|profile| profile.user_id == user_id)
+                .map(|profile| profile.clone());
+
+            Ok(opt_user_profile)
         }
 
         /// Modify an entity (profile, user).

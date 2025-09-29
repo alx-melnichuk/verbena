@@ -160,6 +160,30 @@ impl From<UserProfile> for UserProfileDto {
     }
 }
 
+// ** Used: in "profile_controller::get_profile_mini_by_id()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct UserProfileMiniDto {
+    pub id: i32,
+    pub nickname: String,
+    pub email: String,
+    pub role: UserRole,
+    // Link to user avatar, optional
+    pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
+}
+
+impl From<UserProfile> for UserProfileMiniDto {
+    fn from(profile: UserProfile) -> Self {
+        UserProfileMiniDto {
+            id: profile.user_id,
+            nickname: profile.nickname,
+            email: profile.email,
+            role: profile.role.clone(),
+            avatar: profile.avatar.clone(),
+        }
+    }
+}
 // ** Used: in "profile_get_controller::get_profile_config()". **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
