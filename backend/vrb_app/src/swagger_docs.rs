@@ -26,6 +26,7 @@ use vrb_streams::{stream_controller, stream_models};
         user_recovery_controller::recovery_clear_for_expired,
         //
         profile_controller::get_profile_by_id,
+        profile_controller::get_profile_mini_by_id,
         profile_controller::get_profile_current,
         profile_controller::get_profile_config,
         profile_controller::put_profile,
@@ -74,9 +75,9 @@ use vrb_streams::{stream_controller, stream_models};
             user_recovery_models::RecoveryClearForExpiredResponseDto, // ::recovery_clear_for_expired
 
             // profile_controller
+            profile_models::UserProfileDto, // ::get_profile_by_id, ::put_profile
+            profile_models::UserProfileMiniDto, // :;get_profile_mini_by_id
             profile_models::ProfileConfigDto, // ::get_profile_config
-            // profile_controller
-            profile_models::UserProfileDto, // ::put_profile
             profile_models::ModifyUserProfileDto, // ::put_stream
             profile_models::NewPasswordUserProfileDto, // ::put_profile_new_password,
 

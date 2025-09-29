@@ -32,7 +32,10 @@ use crate::profile_orm::impls::ProfileOrmApp;
 use crate::profile_orm::tests::ProfileOrmApp;
 use crate::{
     config_prfl::{self, ConfigPrfl},
-    profile_models::{ModifyUserProfile, ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileConfigDto, UserProfile, UserProfileDto},
+    profile_models::{
+        ModifyUserProfile, ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileConfigDto, UserProfile, UserProfileDto,
+        UserProfileMiniDto,
+    },
     profile_orm::ProfileOrm,
 };
 
@@ -41,6 +44,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         config
             // GET /api/profiles/{id}
             .service(get_profile_by_id)
+            // GET /api/profiles_mini/{id}
+            .service(get_profile_mini_by_id)
             // GET /api/profiles_config
             .service(get_profile_config)
             // GET /api/profiles_current
@@ -225,6 +230,92 @@ pub async fn get_profile_by_id(
     }
     if let Some(user_profile_dto) = opt_user_profile_dto {
         Ok(HttpResponse::Ok().json(user_profile_dto)) // 200
+    } else {
+        Ok(HttpResponse::NoContent().finish()) // 204
+    }
+}
+
+// ** Section: get_profile_mini_by_id **
+
+/// get_profile_mini_by_id
+/// 
+/// Get mini profile data of a user by user ID.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/profiles_mini/1
+/// ```
+///
+/// Return the found specified user (`UserProfileMiniDto`) with status 200 or 204 (no content) if the user is not found.
+///
+/// No authorization required.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Minimum profile data for the user with the specified ID.", body = UserProfileMiniDto,
+            examples(
+            ("with_avatar" = (summary = "with an avatar", description = "Mini user profile with avatar.",
+                value = json!(UserProfileMiniDto::from(
+                UserProfile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151431.png"),
+                    None, None, None))
+            ))),
+            ("without_avatar" = (summary = "without avatar", description = "Mini user profile without avatar.",
+                value = json!(UserProfileMiniDto::from(
+                UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, None, None))
+            )))),
+        ),
+        (status = 204, description = "The user with the specified ID was not found."),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`",
+            body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+                , "`id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = ApiError,
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError,
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    params(("id", description = "Unique user ID.")),
+)]
+#[rustfmt::skip]
+#[get("/api/profiles_mini/{id}" )]
+
+pub async fn get_profile_mini_by_id(
+    profile_orm: web::Data<ProfileOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+    let id_str = request.match_info().query("id").to_string();
+    #[rustfmt::skip]
+    let user_id = parser::parse_i32(&id_str).map_err(|e| {
+        let msg = &format!("`{}` - {}", "id", &e);
+        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
+    })?;
+
+    let res_user_profile = web::block(move || {
+        // Find profile by user id.
+        let res_user_profile =
+            profile_orm.get_user_profile_by_id(user_id).map_err(|e| {
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            });
+
+        res_user_profile
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
+
+    let opt_user_profile = res_user_profile?;
+
+    if let Some(timer) = timer {
+        info!("get_profile_mini_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
+    if let Some(user_profile) = opt_user_profile {
+        let user_profile_mini_dto: UserProfileMiniDto = user_profile.into();
+        Ok(HttpResponse::Ok().json(user_profile_mini_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
