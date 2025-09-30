@@ -350,8 +350,14 @@ impl ChatWsSession {
         // Check if there is an joined room
         chat_ws_tools::check_is_joined_room(self.room_id)?;
 
+        let room_id = self.room_id;
+        // Reset room parameters.
+        self.room_id = i32::default();
+        self.is_owner = false;
+        self.is_blocked = false;
+
         // Send a message about leaving the room.
-        let leave_room_srv = LeaveRoom(self.room_id, self.id, self.user_name.clone());
+        let leave_room_srv = LeaveRoom(room_id, self.id, self.user_name.clone());
         // issue_sync comes from having the `BrokerIssue` trait in scope.
         self.issue_system_sync(leave_room_srv, ctx);
         Ok(())
