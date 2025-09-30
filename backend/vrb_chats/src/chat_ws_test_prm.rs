@@ -57,7 +57,7 @@ mod tests {
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "valBool"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 1.3. "There was no 'join' command." --
+        // -- Test: 1.3. "'valBool' parameter not defined" --
         let prm_text = MessageText("{ \"prmBool\": \"param1_3\", \"valBool\": \"\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -85,7 +85,7 @@ mod tests {
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "valInt"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 2.3. "There was no 'join' command." --
+        // -- Test: 2.3. "'valInt' parameter not defined" --
         let prm_text = MessageText("{ \"prmInt\": \"param2_3\", \"valInt\": \"\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -112,6 +112,13 @@ mod tests {
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "valStr"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
+
+        // -- Test: 3.3. "There was no 'join' command." --
+        let prm_text = MessageText("{ \"prmStr\": \"param3_3\", \"valStr\": \"value3_3\" }".into());
+        framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
+        let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        let err406 = get_err406(err::MSG_THERE_WAS_NO_JOIN);
+        assert_eq!(item1, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
         // -- "There is a block on sending messages." --
 
@@ -142,8 +149,8 @@ mod tests {
         let err403 = get_err403(err::MSG_BLOCK_ON_SEND_MESSAGES);
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden
 
-        // Test: 3.3. Send message "prmStr".
-        let prm_text = MessageText("{ \"prmStr\": \"param3_3\", \"valStr\": \"text2\" }".into());
+        // Test: 3.4. Send message "prmStr".
+        let prm_text = MessageText("{ \"prmStr\": \"param3_4\", \"valStr\": \"text2\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err403 = get_err403(err::MSG_BLOCK_ON_SEND_MESSAGES);
