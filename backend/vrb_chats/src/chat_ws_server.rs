@@ -184,12 +184,8 @@ impl Handler<LeaveRoom> for ChatWsServer {
             #[rustfmt::skip]
             debug!("handler<LeaveRoom>() room_id: {room_id}, user_name: {user_name}, room.len(): {count}, room.remove(client_id): {} ",
                 opt_recipient.is_some());
-            let leave_str = to_string(&LeaveEWS {
-                leave: room_id,
-                member,
-                count,
-            })
-            .unwrap();
+            #[rustfmt::skip]
+            let leave_str = to_string(&LeaveEWS { leave: room_id, member, count }).unwrap();
             // Send a chat message to all members.
             self.send_chat_message_to_clients(room_id, &leave_str, &[]);
 
