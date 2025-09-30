@@ -78,8 +78,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "join": number,        // Stream ID.
 ///   "member": string,      // User nickname.
 ///   "count": number,       // Number of connected users.
-///   "isOwner": boolean,   // The user is the owner of the chat.
-///   "isBlocked": boolean, // The user has been blocked.
+///   "isOwner": boolean,    // The user is the owner of the chat.
+///   "isBlocked": boolean,  // The user has been blocked.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -144,8 +144,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "join": number,        // Stream ID.
 ///   "member": string,      // User nickname.
 ///   "count": number,       // Number of connected users.
-///   "isOwner": boolean,   // The user is the owner of the chat. Always false.
-///   "isBlocked": boolean, // The user has been blocked. Always true.
+///   "isOwner": boolean,    // The user is the owner of the chat. Always false.
+///   "isBlocked": boolean,  // The user has been blocked. Always true.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -166,7 +166,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "leave": number,        // Stream ID.
+///   "leave": number,       // Stream ID.
 /// }
 /// ```
 /// *Server* :<br/>
@@ -174,9 +174,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "leave": number,        // Stream ID.
-///   "member": string,       // User nickname.
-///   "count": number,        // Number of connected users.
+///   "leave": number,       // Stream ID.
+///   "member": string,      // User nickname.
+///   "count": number,       // Number of connected users.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -192,7 +192,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "count": number,        // Number of connected users.
+///   "count": number,       // Number of connected users.
 /// }
 /// ```
 /// *Server* :<br/>
@@ -200,7 +200,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "count": number,        // Number of connected users.
+///   "count": number,       // Number of connected users.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -216,7 +216,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msg": string,          // Message test.
+///   "msg": string,         // Message test.
 /// }
 /// ```
 /// *Server* :<br/>
@@ -224,12 +224,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msg": string,          // Message test.
-///   "id": number,           // Message ID.
-///   "member": string,       // The nickname of the user who sent the message.
-///   "date": string,         // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
-///   "isEdt": boolean,       // Message editing indicator.
-///   "isRmv": boolean,       // Message deletion indicator.
+///   "msg": string,         // Message test.
+///   "id": number,          // Message ID.
+///   "member": string,      // The nickname of the user who sent the message.
+///   "date": string,        // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
+///   "isEdt": boolean,      // Message editing indicator.
+///   "isRmv": boolean,      // Message deletion indicator.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -255,8 +255,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msgPut": string,       // Message test.
-///   "id": number,           // Message ID.
+///   "msgPut": string,      // Message test.
+///   "id": number,          // Message ID.
 /// }
 /// ```
 /// *Server* :<br/>
@@ -264,12 +264,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msg": string,          // Message test.
-///   "id": number,           // Message ID.
-///   "member": string,       // The nickname of the user who sent the message.
-///   "date": string,         // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
-///   "isEdt": boolean,       // Message editing indicator.
-///   "isRmv": boolean,       // Message deletion indicator.
+///   "msg": string,         // Message test.
+///   "id": number,          // Message ID.
+///   "member": string,      // The nickname of the user who sent the message.
+///   "date": string,        // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
+///   "isEdt": boolean,      // Message editing indicator.
+///   "isRmv": boolean,      // Message deletion indicator.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -305,8 +305,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msgCut": string,       // The ID of the message whose content you want to remove.
-///   "id": number,           // Message ID.
+///   "msgCut": string,      // The ID of the message whose content you want to remove.
+///   "id": number,          // Message ID.
 /// }
 /// ```
 /// *Server* :<br/>
@@ -314,12 +314,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msg": string,          // Message test.
-///   "id": number,           // Message ID.
-///   "member": string,       // The nickname of the user who sent the message.
-///   "date": string,         // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
-///   "isEdt": boolean,       // Message editing indicator.
-///   "isRmv": boolean,       // Message deletion indicator.
+///   "msg": string,         // Message test.
+///   "id": number,          // Message ID.
+///   "member": string,      // The nickname of the user who sent the message.
+///   "date": string,        // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
+///   "isEdt": boolean,      // Message editing indicator.
+///   "isRmv": boolean,      // Message deletion indicator.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -350,7 +350,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msgRmv": number,       // The ID of the message to be deleted.
+///   "msgRmv": number,      // The ID of the message to be deleted.
 /// }
 /// ```
 /// *Server* :<br/>
@@ -358,7 +358,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msgRmv": number,       // The ID of the message to be deleted.
+///   "msgRmv": number,      // The ID of the message to be deleted.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -398,7 +398,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// ```text
 /// {
 ///   "block": string,       // The nickname of the user who was blocked.
-///   "isInChat": boolean, // Indication that the user is in a chat.
+///   "isInChat": boolean,   // Indication that the user is in a chat.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -438,7 +438,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// ```text
 /// {
 ///   "unblock": string,     // The nickname of the user who was unblocked.
-///   "isInChat": boolean, // Indication that the user is in a chat.
+///   "isInChat": boolean,   // Indication that the user is in a chat.
 /// }
 /// ```
 /// *Client* :<br/>
@@ -461,6 +461,133 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Server* :<br/>
 /// `{ "err": 404, "code": "NotFound", "message": "user_not_found; blocked_nickname: 'nickname'" }`<br/>
 ///
+/// - ## The "prmBool" command.
+/// Send a named parameter of type "boolean" to a chat member. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "prmBool": "paramB", "valBool": true }`<br/>
+///
+/// ```text
+/// {
+///   "prmBool": string,     // Parameter name.
+///   "valBool": boolean,    // Parameter value (type "boolean").
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{ "prmBool": "paramB", "valBool": true, "isOwner": true }`<br/>
+/// *Server* :<br/>
+/// `{ "prmBool": "paramB", "valBool": true }`<br/>
+///
+/// ```text
+/// {
+///   "prmBool": string,     // Parameter name.
+///   "valBool": boolean,    // Parameter value (type "boolean").
+///   "isOwner"?: boolean,   // The sender is the owner of the chat (true). Optional.
+/// }
+/// ```
+/// *Client* :<br/>
+/// `{ "prmBool": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmBool'" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "prmBool": "param1_2" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmBool'" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "prmBool": "param1_3", "valBool": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmBool'" }`<br/>
+/// 
+/// *Client* :<br/>
+/// `{ "prmBool": "param1_4", "valBool": false }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+/// 
+/// - ## The "PrmInt" command.
+/// Send a named parameter of type "integer" to a chat member. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "prmInt": "paramI", "valInt": 10 }`<br/>
+///
+/// ```text
+/// {
+///   "prmInt": string,      // Parameter name.
+///   "valInt": integer,     // Parameter value (type "integer").
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{ "prmInt": "paramI", "valInt": 10, "isOwner": true }`<br/>
+/// *Server* :<br/>
+/// `{ "prmInt": "paramI", "valInt": 10 }`<br/>
+///
+/// ```text
+/// {
+///   "prmInt": string,      // Parameter name.
+///   "valInt": integer,     // Parameter value (type "integer").
+///   "isOwner"?: boolean,   // The sender is the owner of the chat (true). Optional.
+/// }
+/// ```
+/// *Client* :<br/>
+/// `{ "prmInt": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmInt'" }`<br/>
+///  
+/// *Client* :<br/>
+/// `{ "prmInt": "param2_2" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmInt'" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "prmInt": "param2_3", "valInt": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmInt'" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "prmInt": "param2_4", "valInt": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+/// 
+/// - ## The "PrmStr" command.
+/// Send a named parameter of type "string" to a chat member. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "prmStr": "paramS", "valStr": "test" }`<br/>
+///
+/// ```text
+/// {
+///   "prmStr": string,      // Parameter name.
+///   "valStr": string,      // Parameter value (type "string").
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{ "prmStr": "paramS", "valStr": "test", "isOwner": true }`<br/>
+/// *Server* :<br/>
+/// `{ "prmStr": "paramS", "valStr": "test" }`<br/>
+///
+/// ```text
+/// {
+///   "prmStr": string,      // Parameter name.
+///   "valStr": string,      // Parameter value (type "string").
+///   "isOwner"?: boolean,   // The sender is the owner of the chat (true). Optional.
+/// }
+/// ```
+/// *Client* :<br/>
+/// `{ "prmStr": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmStr'" }`<br/>
+///  
+/// *Client* :<br/>
+/// `{ "prmStr": "param3_2" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmStr'" }`<br/>
+///  
+/// *Client* :<br/>
+/// `{ "prmStr": "param3_3", "valStr": "text3_3" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+/// 
 #[utoipa::path(
     responses(
         (status = 101, description = "Connecting a websocket to a server."),
