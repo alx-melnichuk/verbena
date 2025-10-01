@@ -11,7 +11,9 @@ use crate::{
     chat_event_ws::{BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS},
     chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
     chat_ws_assistant::ChatWsAssistant,
+    chat_ws_async_result::{AsyncResultBlockClient, AsyncResultError},
     chat_ws_server::ChatWsServer,
+    chat_ws_session_blck::{ChatWsSessionBlck, ChatWsSessionBlckInfo},
     chat_ws_session_prm::{ChatWsSessionPrm, ChatWsSessionPrmInfo},
     chat_ws_tools,
 };
@@ -73,7 +75,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
                 debug!("StreamHandler<Message::Close> issue_system_sync(leave_room_srv, ctx)");
                 // issue_sync comes from having the `BrokerIssue` trait in scope.
                 self.issue_system_sync(leave_room_srv, ctx);
-                
+
                 debug!("StreamHandler<Message::Close> actix_web::rt::spawn();");
                 let addr = ctx.address();
                 // Start an additional asynchronous task.
@@ -137,10 +139,11 @@ impl ChatWsSession {
                     ctx.text(to_string(&EchoEWS { echo }).unwrap());
                 }
             }
-            EWSType::Block => {
-                // {"block": "User2"}
-                let block = event.get_string("block").unwrap_or("".to_owned());
-                if let Err(err) = self.handle_ews_block_add_task(&block, true, ctx) {
+            EWSType::Block | EWSType::Unblock => {
+                // EWSType::Block    {"block": "User2"}
+                // EWSType::Unblock  {"unblock": "User2"}
+                let assistant = self.assistant.clone();
+                if let Err(err) = self.handle_event_ews_blck(event, ctx.address(), assistant) {
                     ctx.text(to_string(&err).unwrap());
                 }
             }
@@ -201,57 +204,15 @@ impl ChatWsSession {
                 }
             }
             EWSType::PrmBool | EWSType::PrmInt | EWSType::PrmStr => {
-                if let Err(err) = self.handle_event_ews_type(event) {
-                    ctx.text(to_string(&err).unwrap());
-                }
-            }
-            EWSType::Unblock => {
-                // {"unblock": "User2"}
-                let block = event.get_string("unblock").unwrap_or("".to_owned());
-                if let Err(err) = self.handle_ews_block_add_task(&block, false, ctx) {
+                // EWSType::PrmBool  {"prmBool": "paramB", "valBool": true }
+                // EWSType::PrmInt   {"prmInt": "paramI", "valInt": 10 }
+                // EWSType::PrmStr   {"prmStr": "paramS", "valStr": "text" }
+                if let Err(err) = self.handle_event_ews_prm(event) {
                     ctx.text(to_string(&err).unwrap());
                 }
             }
             _ => {}
         }
-    }
-
-    // ** Blocking clients in a room by name. (Session -> Server) **
-    pub fn handle_ews_block_add_task(&self, user_name: &str, is_block: bool, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
-        let room_id = self.room_id;
-        debug!("handle_ews_block_add_task() room_id: {room_id}, user_name: {user_name}, is_block: {is_block}");
-        let tag_name = if is_block { "block" } else { "unblock" };
-        // Check if this field is not empty
-        chat_ws_tools::check_is_not_empty(user_name, tag_name)?;
-        // Check if there is an joined room
-        chat_ws_tools::check_is_joined_room(self.room_id)?;
-        // Check if the user is the owner of the stream.
-        chat_ws_tools::check_is_owner_room(self.is_owner)?;
-
-        let room_id = self.room_id;
-        let user_id = self.user_id;
-        let block_name = user_name.to_string();
-        // Spawn an async task.
-        let addr = ctx.address();
-        let assistant = self.assistant.clone();
-        // Start an additional asynchronous task.
-        actix_web::rt::spawn(async move {
-            let blocked_nickname = block_name.clone();
-            // Perform blocking/unblocking of a user.
-            let result = assistant.execute_block_user(is_block, user_id, None, Some(block_name)).await;
-            if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
-            }
-            let opt_blocked_user = result.unwrap();
-            if opt_blocked_user.is_none() {
-                let message = format!("{}; blocked_nickname: '{}'", err::MSG_USER_NOT_FOUND, &blocked_nickname);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
-            }
-            let blocked_user = opt_blocked_user.unwrap();
-            let blocked_name = blocked_user.blocked_nickname.clone();
-            addr.do_send(AsyncResultBlockClient(room_id, is_block, blocked_name));
-        });
-        Ok(())
     }
 
     // ** Count of clients in the room. (Session -> Server) **
@@ -520,7 +481,14 @@ impl ChatWsSession {
 
 // ** - **
 
-// Adding functionality for processing parameters.
+// Added functionality for handling commands to block/unblock chat members.
+impl ChatWsSessionBlck for ChatWsSession {
+    fn get_blck_info(&self) -> ChatWsSessionBlckInfo {
+        ChatWsSessionBlckInfo::new(self.room_id, self.user_id, self.is_owner)
+    }
+}
+
+// Adding functionality for handling commands for transferring "parameters".
 impl ChatWsSessionPrm for ChatWsSession {
     fn get_prm_info(&self) -> ChatWsSessionPrmInfo {
         ChatWsSessionPrmInfo::new(self.room_id, self.is_blocked, self.is_owner)
@@ -531,12 +499,6 @@ impl ChatWsSessionPrm for ChatWsSession {
 }
 
 // * * * * Handler for asynchronous response to the "error" command. * * * *
-
-struct AsyncResultError(
-    u16,    // err
-    String, // code
-    String, // message
-);
 
 impl Message for AsyncResultError {
     type Result = ();
@@ -627,12 +589,6 @@ impl Handler<AsyncResultSendText> for ChatWsSession {
 }
 
 // * * * * Handler for asynchronous response to the "BlockClient" event * * * *
-
-struct AsyncResultBlockClient(
-    i32,    // room_id
-    bool,   // is_block
-    String, // blocked_name
-);
 
 impl Message for AsyncResultBlockClient {
     type Result = ();
