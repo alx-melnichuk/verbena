@@ -23,7 +23,7 @@ pub trait ChatWsSessionPrm {
 
     fn prm_issue_system_async<M: BrokerMsg>(&self, msg: M);
 
-    fn handle_event_ews_type(&self, event: EventWS) -> Result<(), ErrEWS> {
+    fn handle_event_ews_prm(&self, event: EventWS) -> Result<(), ErrEWS> {
         match event.ews_type() {
             EWSType::PrmBool => {
                 // {"prmBool": "paramB", "valBool": true }
