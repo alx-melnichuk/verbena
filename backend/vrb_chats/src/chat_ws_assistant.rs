@@ -34,6 +34,19 @@ pub struct ChatStream {
     pub live: bool,
 }
 
+// ** AssistantBlockUser **
+
+pub trait AssistantBlockUser {
+    /** Perform blocking/unblocking of a user. */
+    fn execute_block_user(
+        &self,
+        is_block: bool,
+        user_id: i32,
+        blocked_id: Option<i32>,
+        blocked_nickname: Option<String>,
+    ) -> Result<Option<BlockedUser>, ApiError>;
+}
+
 // ** ChatWsAssistant **
 
 #[derive(Debug, Clone)]
@@ -113,8 +126,20 @@ impl ChatWsAssistant {
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
     }
+    /** Get chat access information. (ChatAccess) */
+    pub async fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, ApiError> {
+        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+
+        chat_message_orm.get_chat_access(stream_id, opt_user_id).map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })
+    }
+}
+
+impl AssistantBlockUser for ChatWsAssistant {
     /** Perform blocking/unblocking of a user. */
-    pub async fn execute_block_user(
+    fn execute_block_user(
         &self,
         is_block: bool,
         user_id: i32,
@@ -139,15 +164,5 @@ impl ChatWsAssistant {
                     ApiError::create(507, err::MSG_DATABASE, &e) // 507
                 })
         }
-    }
-
-    /** Get chat access information. (ChatAccess) */
-    pub async fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
-
-        chat_message_orm.get_chat_access(stream_id, opt_user_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        })
     }
 }
