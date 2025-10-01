@@ -12,7 +12,7 @@ use crate::{
     chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
     chat_ws_assistant::ChatWsAssistant,
     chat_ws_server::ChatWsServer,
-    chat_ws_session_prm::ChatWsSessionPrm,
+    chat_ws_session_prm::{ChatWsSessionPrm, ChatWsSessionPrmInfo},
     chat_ws_tools,
 };
 
@@ -522,14 +522,8 @@ impl ChatWsSession {
 
 // Adding functionality for processing parameters.
 impl ChatWsSessionPrm for ChatWsSession {
-    fn prm_room_id(&self) -> i32 {
-        return self.room_id;
-    }
-    fn prm_is_blocked(&self) -> bool {
-        return self.is_blocked;
-    }
-    fn prm_is_owner(&self) -> bool {
-        return self.is_owner;
+    fn get_prm_info(&self) -> ChatWsSessionPrmInfo {
+        ChatWsSessionPrmInfo::new(self.room_id, self.is_blocked, self.is_owner)
     }
     fn prm_issue_system_async<M: BrokerMsg>(&self, msg: M) {
         self.issue_system_async(msg);
