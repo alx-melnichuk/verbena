@@ -17,5 +17,6 @@ pub mod chat_ws_session;
 pub mod chat_ws_test_1;
 pub mod chat_ws_test_2;
 pub mod chat_ws_test_3;
+pub mod chat_ws_test_blck;
 pub mod chat_ws_test_prm;
 pub mod chat_ws_tools;
