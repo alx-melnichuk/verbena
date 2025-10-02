@@ -1,16 +1,20 @@
-use actix::Addr;
+use actix::prelude::*;
 use actix_web::http::StatusCode;
+use actix_web_actors::ws;
 use log::debug;
+use serde_json::to_string;
 use vrb_common::{
     api_error::{ApiError, code_to_str},
     err,
 };
 
 use crate::{
-    chat_event_ws::{EWSType, ErrEWS, EventWS},
+    chat_event_ws::{BlockEWS, EWSType, ErrEWS, EventWS, UnblockEWS},
+    chat_message::{BlockClient, BlockSsn},
     chat_message_models::BlockedUser,
     chat_ws_assistant::AssistantBlockUser,
     chat_ws_async_result::{AsyncResultBlockClient, AsyncResultError},
+    chat_ws_server::ChatWsServer,
     chat_ws_session::ChatWsSession,
     chat_ws_tools,
 };
@@ -19,14 +23,16 @@ use crate::{
 pub struct ChatWsBlckInfo {
     room_id: i32,
     user_id: i32,
+    user_name: String,
     is_owner: bool,
 }
 
 impl ChatWsBlckInfo {
-    pub fn new(room_id: i32, user_id: i32, is_owner: bool) -> ChatWsBlckInfo {
+    pub fn new(room_id: i32, user_id: i32, user_name: String, is_owner: bool) -> ChatWsBlckInfo {
         ChatWsBlckInfo {
             room_id,
             user_id,
+            user_name,
             is_owner,
         }
     }
@@ -35,23 +41,28 @@ impl ChatWsBlckInfo {
 pub trait ChatWsBlck {
     fn get_blck_info(&self) -> ChatWsBlckInfo;
 
+    fn set_is_blocked(&mut self, is_blocked: bool);
+
     fn handle_event_ews_blck(
         &self,
         event: EventWS,
-        addr: Addr<ChatWsSession>,
         fn_block_user: impl AssistantBlockUser + 'static,
-    ) -> Result<(), ErrEWS> {
+        ctx: &mut ws::WebsocketContext<ChatWsSession>,
+    ) -> Result<(), ErrEWS>
+    where
+        ChatWsSession: actix::Actor<Context = ws::WebsocketContext<ChatWsSession>>,
+    {
         match event.ews_type() {
             EWSType::Block => {
                 // {"block": "User2"}
                 let block = event.get_string("block").unwrap_or("".to_owned());
-                self.handle_ews_block_add_task(&block, true, addr, fn_block_user)?;
+                self.handle_ews_block_add_task(&block, true, fn_block_user, ctx)?;
                 Ok(())
             }
             EWSType::Unblock => {
                 // {"unblock": "User2"}
                 let block = event.get_string("unblock").unwrap_or("".to_owned());
-                self.handle_ews_block_add_task(&block, false, addr, fn_block_user)?;
+                self.handle_ews_block_add_task(&block, false, fn_block_user, ctx)?;
                 Ok(())
             }
             _ => Ok(()),
@@ -63,9 +74,12 @@ pub trait ChatWsBlck {
         &self,
         user_name: &str,
         is_block: bool,
-        addr: Addr<ChatWsSession>,
         fn_block_user: impl AssistantBlockUser + 'static,
-    ) -> Result<(), ErrEWS> {
+        ctx: &mut ws::WebsocketContext<ChatWsSession>,
+    ) -> Result<(), ErrEWS>
+    where
+        ChatWsSession: actix::Actor<Context = ws::WebsocketContext<ChatWsSession>>,
+    {
         let blck_info = self.get_blck_info();
         let room_id = blck_info.room_id;
         debug!("handle_ews_block_add_task() room_id: {room_id}, user_name: {user_name}, is_block: {is_block}");
@@ -79,6 +93,7 @@ pub trait ChatWsBlck {
 
         let user_id = blck_info.user_id;
         let block_name = user_name.to_string();
+        let addr = ctx.address();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
             let blocked_nickname = block_name.clone();
@@ -98,6 +113,22 @@ pub trait ChatWsBlck {
         });
         Ok(())
     }
+
+    // Handler for "CommandSrv::Block(BlockSsn)".
+    fn handle_commandsrv_block(&mut self, block: BlockSsn, ctx: &mut ws::WebsocketContext<ChatWsSession>) {
+        let BlockSsn(is_block, is_in_chat) = block;
+        self.set_is_blocked(is_block);
+        let blck_info = self.get_blck_info();
+        let user_name = blck_info.user_name.clone();
+        #[rustfmt::skip]
+        let str = if is_block {
+            to_string(&BlockEWS { block: user_name, is_in_chat }).unwrap()
+        } else {
+            to_string(&UnblockEWS { unblock: user_name, is_in_chat }).unwrap()
+        };
+        debug!("handler<CommandSrv::Block>() is_block: {is_block}, str: {str}");
+        ctx.text(str);
+    }
 }
 
 async fn execute_block_user(
@@ -109,3 +140,38 @@ async fn execute_block_user(
 ) -> Result<Option<BlockedUser>, ApiError> {
     fn_block_user.execute_block_user(is_block, user_id, blocked_id, blocked_nickname)
 }
+
+// * * * * Handler for asynchronous response to the "BlockClient" event * * * *
+
+impl Message for AsyncResultBlockClient {
+    type Result = ();
+}
+
+impl Handler<AsyncResultBlockClient> for ChatWsSession {
+    type Result = ();
+
+    fn handle(&mut self, info: AsyncResultBlockClient, ctx: &mut Self::Context) {
+        let AsyncResultBlockClient(room_id, is_block, blocked_name) = info;
+        let block_client = BlockClient(room_id, blocked_name.clone(), is_block);
+
+        ChatWsServer::from_registry()
+            .send(block_client)
+            .into_actor(self)
+            .then(move |res, _act, ctx| {
+                if let Ok(is_in_chat) = res {
+                    #[rustfmt::skip]
+                    let str = if is_block {
+                        to_string(&BlockEWS { block: blocked_name, is_in_chat }).unwrap()
+                    } else {
+                        to_string(&UnblockEWS { unblock: blocked_name, is_in_chat }).unwrap()
+                    };
+                    debug!("handler<AsyncResultBlockClient>() is_block: {is_block}, str: {str}");
+                    ctx.text(str);
+                }
+                fut::ready(())
+            })
+            .wait(ctx);
+    }
+}
+
+// * * * *  __  * * * *

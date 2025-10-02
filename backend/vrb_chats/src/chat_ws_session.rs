@@ -1,20 +1,19 @@
-use log::{Level::Debug, debug, log_enabled};
-
 use actix::prelude::*;
 use actix_broker::{BrokerIssue, BrokerMsg};
 use actix_web::http::StatusCode;
 use actix_web_actors::ws::{self, CloseReason};
+use log::{Level::Debug, debug, log_enabled};
 use serde_json::to_string;
 use vrb_common::{api_error::code_to_str, err};
 
 use crate::{
-    chat_event_ws::{BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS},
-    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
+    chat_event_ws::{CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS},
+    chat_message::{ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
     chat_ws_assistant::ChatWsAssistant,
-    chat_ws_async_result::{AsyncResultBlockClient, AsyncResultError},
-    chat_ws_server::ChatWsServer,
+    chat_ws_async_result::AsyncResultError,
     chat_ws_blck::{ChatWsBlck, ChatWsBlckInfo},
     chat_ws_prm::{ChatWsPrm, ChatWsPrmInfo},
+    chat_ws_server::ChatWsServer,
     chat_ws_tools,
 };
 
@@ -143,7 +142,7 @@ impl ChatWsSession {
                 // EWSType::Block    {"block": "User2"}
                 // EWSType::Unblock  {"unblock": "User2"}
                 let assistant = self.assistant.clone();
-                if let Err(err) = self.handle_event_ews_blck(event, ctx.address(), assistant) {
+                if let Err(err) = self.handle_event_ews_blck(event, assistant, ctx) {
                     ctx.text(to_string(&err).unwrap());
                 }
             }
@@ -481,14 +480,19 @@ impl ChatWsSession {
 
 // ** - **
 
-// Added functionality for handling commands to block/unblock chat members.
+// ** Added functionality for handling commands to block/unblock chat members. **
+
 impl ChatWsBlck for ChatWsSession {
     fn get_blck_info(&self) -> ChatWsBlckInfo {
-        ChatWsBlckInfo::new(self.room_id, self.user_id, self.is_owner)
+        ChatWsBlckInfo::new(self.room_id, self.user_id, self.user_name.clone(), self.is_owner)
+    }
+    fn set_is_blocked(&mut self, is_blocked: bool) {
+        self.is_blocked = is_blocked;
     }
 }
 
-// Adding functionality for handling commands for transferring "parameters".
+// ** Adding functionality for handling commands for transferring "parameters". **
+
 impl ChatWsPrm for ChatWsSession {
     fn get_prm_info(&self) -> ChatWsPrmInfo {
         ChatWsPrmInfo::new(self.room_id, self.is_blocked, self.is_owner)
@@ -588,39 +592,6 @@ impl Handler<AsyncResultSendText> for ChatWsSession {
     }
 }
 
-// * * * * Handler for asynchronous response to the "BlockClient" event * * * *
-
-impl Message for AsyncResultBlockClient {
-    type Result = ();
-}
-
-impl Handler<AsyncResultBlockClient> for ChatWsSession {
-    type Result = ();
-
-    fn handle(&mut self, info: AsyncResultBlockClient, ctx: &mut Self::Context) {
-        let AsyncResultBlockClient(room_id, is_block, blocked_name) = info;
-        let block_client = BlockClient(room_id, blocked_name.clone(), is_block);
-
-        ChatWsServer::from_registry()
-            .send(block_client)
-            .into_actor(self)
-            .then(move |res, _act, ctx| {
-                if let Ok(is_in_chat) = res {
-                    #[rustfmt::skip]
-                    let str = if is_block {
-                        to_string(&BlockEWS { block: blocked_name, is_in_chat }).unwrap()
-                    } else {
-                        to_string(&UnblockEWS { unblock: blocked_name, is_in_chat }).unwrap()
-                    };
-                    debug!("handler<AsyncResultBlockClient>() is_block: {is_block}, str: {str}");
-                    ctx.text(str);
-                }
-                fut::ready(())
-            })
-            .wait(ctx);
-    }
-}
-
 // * * * *  __  * * * *
 
 // **** ChatWsSession implementation "Handler<CommandSrv>" ****
@@ -630,7 +601,7 @@ impl Handler<CommandSrv> for ChatWsSession {
 
     fn handle(&mut self, command: CommandSrv, ctx: &mut Self::Context) -> Self::Result {
         match command {
-            CommandSrv::Block(block) => self.handle_block_client(block, ctx),
+            CommandSrv::Block(block) => self.handle_commandsrv_block(block, ctx),
             CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
             CommandSrv::CloseAndStop(reason) => self.handle_close_and_stop(reason, ctx),
         }
@@ -640,21 +611,6 @@ impl Handler<CommandSrv> for ChatWsSession {
 }
 
 impl ChatWsSession {
-    // Handler for "CommandSrv::Block(BlockSsn)".
-    fn handle_block_client(&mut self, block: BlockSsn, ctx: &mut <Self as actix::Actor>::Context) {
-        let BlockSsn(is_block, is_in_chat) = block;
-        self.is_blocked = is_block;
-        let user_name = self.user_name.clone();
-        #[rustfmt::skip]
-        let str = if is_block {
-            to_string(&BlockEWS { block: user_name, is_in_chat }).unwrap()
-        } else {
-            to_string(&UnblockEWS { unblock: user_name, is_in_chat }).unwrap()
-        };
-        debug!("handler<CommandSrv::Block>() is_block: {is_block}, str: {str}");
-        ctx.text(str);
-    }
-
     // Handler for "CommandSrv::Chat(ChatMessageSsn)".
     fn handle_chat_message_ssn(&mut self, chat_msg: ChatMsgSsn, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.text(chat_msg.0);
