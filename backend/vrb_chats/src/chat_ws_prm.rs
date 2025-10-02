@@ -5,21 +5,21 @@ use serde_json::to_string;
 use crate::{chat_event_ws::{EWSType, ErrEWS, EventWS, PrmBoolEWS, PrmIntEWS, PrmStrEWS}, chat_message::SendMessage, chat_ws_tools};
 
 #[derive(Debug, Clone)]
-pub struct ChatWsSessionPrmInfo {
+pub struct ChatWsPrmInfo {
     room_id: i32,
     is_blocked: bool,
     is_owner: bool,
 }
 
-impl ChatWsSessionPrmInfo {
-    pub fn new(room_id: i32, is_blocked: bool, is_owner: bool) -> ChatWsSessionPrmInfo {
-        ChatWsSessionPrmInfo { room_id, is_blocked, is_owner }
+impl ChatWsPrmInfo {
+    pub fn new(room_id: i32, is_blocked: bool, is_owner: bool) -> ChatWsPrmInfo {
+        ChatWsPrmInfo { room_id, is_blocked, is_owner }
     }
 }
 
-pub trait ChatWsSessionPrm {
+pub trait ChatWsPrm {
 
-    fn get_prm_info(&self) -> ChatWsSessionPrmInfo;
+    fn get_prm_info(&self) -> ChatWsPrmInfo;
 
     fn prm_issue_system_async<M: BrokerMsg>(&self, msg: M);
 

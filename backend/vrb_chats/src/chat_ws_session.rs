@@ -14,7 +14,7 @@ use crate::{
     chat_ws_async_result::{AsyncResultBlockClient, AsyncResultError},
     chat_ws_server::ChatWsServer,
     chat_ws_session_blck::{ChatWsSessionBlck, ChatWsSessionBlckInfo},
-    chat_ws_session_prm::{ChatWsSessionPrm, ChatWsSessionPrmInfo},
+    chat_ws_prm::{ChatWsPrm, ChatWsPrmInfo},
     chat_ws_tools,
 };
 
@@ -489,9 +489,9 @@ impl ChatWsSessionBlck for ChatWsSession {
 }
 
 // Adding functionality for handling commands for transferring "parameters".
-impl ChatWsSessionPrm for ChatWsSession {
-    fn get_prm_info(&self) -> ChatWsSessionPrmInfo {
-        ChatWsSessionPrmInfo::new(self.room_id, self.is_blocked, self.is_owner)
+impl ChatWsPrm for ChatWsSession {
+    fn get_prm_info(&self) -> ChatWsPrmInfo {
+        ChatWsPrmInfo::new(self.room_id, self.is_blocked, self.is_owner)
     }
     fn prm_issue_system_async<M: BrokerMsg>(&self, msg: M) {
         self.issue_system_async(msg);
