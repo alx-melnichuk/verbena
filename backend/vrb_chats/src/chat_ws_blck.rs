@@ -16,15 +16,15 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct ChatWsSessionBlckInfo {
+pub struct ChatWsBlckInfo {
     room_id: i32,
     user_id: i32,
     is_owner: bool,
 }
 
-impl ChatWsSessionBlckInfo {
-    pub fn new(room_id: i32, user_id: i32, is_owner: bool) -> ChatWsSessionBlckInfo {
-        ChatWsSessionBlckInfo {
+impl ChatWsBlckInfo {
+    pub fn new(room_id: i32, user_id: i32, is_owner: bool) -> ChatWsBlckInfo {
+        ChatWsBlckInfo {
             room_id,
             user_id,
             is_owner,
@@ -32,8 +32,8 @@ impl ChatWsSessionBlckInfo {
     }
 }
 
-pub trait ChatWsSessionBlck {
-    fn get_blck_info(&self) -> ChatWsSessionBlckInfo;
+pub trait ChatWsBlck {
+    fn get_blck_info(&self) -> ChatWsBlckInfo;
 
     fn handle_event_ews_blck(
         &self,

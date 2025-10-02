@@ -13,7 +13,7 @@ use crate::{
     chat_ws_assistant::ChatWsAssistant,
     chat_ws_async_result::{AsyncResultBlockClient, AsyncResultError},
     chat_ws_server::ChatWsServer,
-    chat_ws_session_blck::{ChatWsSessionBlck, ChatWsSessionBlckInfo},
+    chat_ws_blck::{ChatWsBlck, ChatWsBlckInfo},
     chat_ws_prm::{ChatWsPrm, ChatWsPrmInfo},
     chat_ws_tools,
 };
@@ -482,9 +482,9 @@ impl ChatWsSession {
 // ** - **
 
 // Added functionality for handling commands to block/unblock chat members.
-impl ChatWsSessionBlck for ChatWsSession {
-    fn get_blck_info(&self) -> ChatWsSessionBlckInfo {
-        ChatWsSessionBlckInfo::new(self.room_id, self.user_id, self.is_owner)
+impl ChatWsBlck for ChatWsSession {
+    fn get_blck_info(&self) -> ChatWsBlckInfo {
+        ChatWsBlckInfo::new(self.room_id, self.user_id, self.is_owner)
     }
 }
 
