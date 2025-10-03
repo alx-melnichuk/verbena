@@ -11,6 +11,7 @@ pub mod chat_ws_assistant;
 pub mod chat_ws_async_result;
 pub mod chat_ws_blck;
 pub mod chat_ws_controller;
+pub mod chat_ws_msg;
 pub mod chat_ws_prm;
 pub mod chat_ws_server;
 pub mod chat_ws_session;
