@@ -7,11 +7,12 @@ use serde_json::to_string;
 use vrb_common::{api_error::code_to_str, err};
 
 use crate::{
-    chat_event_ws::{CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS},
-    chat_message::{ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
+    chat_event_ws::{CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, NameEWS},
+    chat_message::{ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom},
     chat_ws_assistant::ChatWsAssistant,
     chat_ws_async_result::AsyncResultError,
     chat_ws_blck::{ChatWsBlck, ChatWsBlckInfo},
+    chat_ws_msg::{ChatWsMsg, ChatWsMsgInfo},
     chat_ws_prm::{ChatWsPrm, ChatWsPrmInfo},
     chat_ws_server::ChatWsServer,
     chat_ws_tools,
@@ -166,32 +167,13 @@ impl ChatWsSession {
                     ctx.text(to_string(&err).unwrap());
                 }
             }
-            EWSType::Msg => {
-                // {"msg":"text msg"}
-                let msg = event.get_string("msg").unwrap_or_default();
-                if let Err(err) = self.handle_ews_msg_add_task(&msg, ctx) {
-                    ctx.text(to_string(&err).unwrap());
-                }
-            }
-            EWSType::MsgCut => {
-                // {"msgCut": "", "id": 1}
-                let id = event.get_i32("id").unwrap_or_default(); // (0);
-                if let Err(err) = self.handle_ews_msg_cut_add_task(id, ctx) {
-                    ctx.text(to_string(&err).unwrap());
-                }
-            }
-            EWSType::MsgPut => {
-                // {"msgPut": "modify msg", "id": 1}
-                let msg_put = event.get_string("msgPut").unwrap_or_default();
-                let id = event.get_i32("id").unwrap_or_default();
-                if let Err(err) = self.handle_ews_msg_put_add_task(&msg_put, id, ctx) {
-                    ctx.text(to_string(&err).unwrap());
-                }
-            }
-            EWSType::MsgRmv => {
-                // {"msgRmv": 1}
-                let msg_rmv = event.get_i32("msgRmv").unwrap_or_default();
-                if let Err(err) = self.handle_ews_msg_rmv_add_task(msg_rmv, ctx) {
+            EWSType::Msg | EWSType::MsgCut | EWSType::MsgPut | EWSType::MsgRmv => {
+                // EWSType::Msg     {"msg":"text msg"}
+                // EWSType::MsgCut  {"msgCut": "", "id": 1}
+                // EWSType::MsgPut  {"msgPut": "modify msg", "id": 1}
+                // EWSType::MsgRmv  {"msgRmv": 1}
+                let assistant = self.assistant.clone();
+                if let Err(err) = self.handle_event_ews_msg(event, assistant, ctx) {
                     ctx.text(to_string(&err).unwrap());
                 }
             }
@@ -323,142 +305,6 @@ impl ChatWsSession {
         Ok(())
     }
 
-    // * Send a text message to all clients in the room. (Server -> Session) *
-    pub fn handle_ews_msg_add_task(&self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
-        let msg = msg.to_owned();
-        // Check if this field is not empty
-        chat_ws_tools::check_is_not_empty(&msg, "msg")?;
-        // Check if there is an joined room
-        chat_ws_tools::check_is_joined_room(self.room_id)?;
-        // Check if there is a block on sending messages
-        chat_ws_tools::check_is_blocked(self.is_blocked)?;
-
-        // Get room (stream) ID and user ID.
-        let stream_id = self.room_id;
-        let user_id = self.user_id;
-        // Spawn an async task.
-        let addr = ctx.address();
-        let assistant = self.assistant.clone();
-        // Start an additional asynchronous task.
-        actix_web::rt::spawn(async move {
-            // Create a new user message in the chat.
-            let result = assistant.execute_create_chat_message(stream_id, user_id, &msg).await;
-            if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
-            }
-            let opt_chat_message = result.unwrap();
-            if opt_chat_message.is_none() {
-                let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
-            }
-            let ch_msg = opt_chat_message.unwrap();
-            // Send the "AsyncResultSendText" command for execution.
-            addr.do_send(AsyncResultSendText(to_string(&MsgEWS::from(ch_msg)).unwrap()));
-        });
-        Ok(())
-    }
-
-    // * Send a delete message to all chat members. (Server -> Session) *
-    pub fn handle_ews_msg_cut_add_task(&self, id: i32, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
-        let msg_cut = "".to_owned();
-        // Check if this field is required
-        chat_ws_tools::check_is_greater_than(id, 0, "id")?;
-        // Check if there is an joined room
-        chat_ws_tools::check_is_joined_room(self.room_id)?;
-        // Check if there is a block on sending messages
-        chat_ws_tools::check_is_blocked(self.is_blocked)?;
-
-        let user_id = self.user_id;
-        // Spawn an async task.
-        let addr = ctx.address();
-        let assistant = self.assistant.clone();
-        // Start an additional asynchronous task.
-        actix_web::rt::spawn(async move {
-            // Change a user's message in a chat.
-            let result = assistant.execute_modify_chat_message(id, user_id, &msg_cut).await;
-            if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
-            }
-            let opt_chat_message = result.unwrap();
-            if opt_chat_message.is_none() {
-                let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
-            }
-            let ch_msg = opt_chat_message.unwrap();
-            // Send the "AsyncResultSendText" command for execution.
-            addr.do_send(AsyncResultSendText(to_string(&MsgEWS::from(ch_msg)).unwrap()));
-        });
-        Ok(())
-    }
-    // * Send a correction to the message to everyone in the chat. (Server -> Session) *
-    #[rustfmt::skip]
-    pub fn handle_ews_msg_put_add_task(
-        &self, msg_put: &str, id: i32, ctx: &mut ws::WebsocketContext<Self>
-    ) -> Result<(), ErrEWS> {
-        let msg_put = msg_put.to_owned();
-        // Check if this field is not empty
-        chat_ws_tools::check_is_not_empty(&msg_put, "msgPut")?;
-        // Check if this field is required
-        chat_ws_tools::check_is_greater_than(id, 0, "id")?;
-        // Check if there is an joined room
-        chat_ws_tools::check_is_joined_room(self.room_id)?;
-        // Check if there is a block on sending messages
-        chat_ws_tools::check_is_blocked(self.is_blocked)?;
-
-        let user_id = self.user_id;
-        // Spawn an async task.
-        let addr = ctx.address();
-        let assistant = self.assistant.clone();
-        // Start an additional asynchronous task.
-        actix_web::rt::spawn(async move {
-            // Change a user's message in a chat.
-            let result = assistant.execute_modify_chat_message(id, user_id, &msg_put).await;
-            if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
-            }
-            let opt_chat_message = result.unwrap();
-            if opt_chat_message.is_none() {
-                let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
-            }
-            let ch_msg = opt_chat_message.unwrap();
-            // Send the "AsyncResultSendText" command for execution.
-            addr.do_send(AsyncResultSendText(to_string(&MsgEWS::from(ch_msg)).unwrap()));
-        });
-        Ok(())
-    }
-    // * Send a permanent deletion message to all chat members. *
-    pub fn handle_ews_msg_rmv_add_task(&self, msg_rmv: i32, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
-        // Check if this field is required
-        chat_ws_tools::check_is_greater_than(msg_rmv, 0, "msgRmv")?;
-        // Check if there is an joined room
-        chat_ws_tools::check_is_joined_room(self.room_id)?;
-        // Check if there is a block on sending messages
-        chat_ws_tools::check_is_blocked(self.is_blocked)?;
-
-        let user_id = self.user_id;
-        // Spawn an async task.
-        let addr = ctx.address();
-        let assistant = self.assistant.clone();
-        // Start an additional asynchronous task.
-        actix_web::rt::spawn(async move {
-            // Delete a user's message in a chat.
-            let result = assistant.execute_delete_chat_message(msg_rmv, user_id).await;
-            if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
-            }
-            let opt_chat_message = result.unwrap();
-            if opt_chat_message.is_none() {
-                let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, msg_rmv, user_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
-            }
-            let text = to_string(&MsgRmvEWS { msg_rmv }).unwrap();
-            // Send the "AsyncResultSendText" command for execution.
-            addr.do_send(AsyncResultSendText(text));
-        });
-        Ok(())
-    }
-
     pub fn handle_ews_name(&mut self, new_name: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
         debug!("handle_ews_name() new_name: {}", new_name);
         // Check if this field is not empty
@@ -488,6 +334,14 @@ impl ChatWsBlck for ChatWsSession {
     }
     fn set_is_blocked(&mut self, is_blocked: bool) {
         self.is_blocked = is_blocked;
+    }
+}
+
+// ** Adding functionality for processing "chat message transfer" commands. **
+
+impl ChatWsMsg for ChatWsSession {
+    fn get_msg_info(&self) -> ChatWsMsgInfo {
+        ChatWsMsgInfo::new(self.room_id, self.user_id, self.user_name.clone(), self.is_blocked)
     }
 }
 
@@ -570,25 +424,6 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
                 fut::ready(())
             })
             .wait(ctx);
-    }
-}
-
-// * * * * Handler for asynchronous response to the "SendText" event * * * *
-
-struct AsyncResultSendText(
-    String, // text
-);
-
-impl Message for AsyncResultSendText {
-    type Result = ();
-}
-
-impl Handler<AsyncResultSendText> for ChatWsSession {
-    type Result = ();
-
-    fn handle(&mut self, info: AsyncResultSendText, _ctx: &mut Self::Context) {
-        // issue_async comes from having the `BrokerIssue` trait in scope.
-        self.issue_system_async(SendMessage(self.room_id, info.0));
     }
 }
 
