@@ -28,15 +28,13 @@ pub struct ChatWsBlckInfo {
 }
 
 impl ChatWsBlckInfo {
+    #[rustfmt::skip]
     pub fn new(room_id: i32, user_id: i32, user_name: String, is_owner: bool) -> ChatWsBlckInfo {
-        ChatWsBlckInfo {
-            room_id,
-            user_id,
-            user_name,
-            is_owner,
-        }
+        ChatWsBlckInfo { room_id, user_id, user_name, is_owner }
     }
 }
+
+// ** Functionality for handling commands to block/unblock chat members. **
 
 pub trait ChatWsBlck {
     fn get_blck_info(&self) -> ChatWsBlckInfo;
