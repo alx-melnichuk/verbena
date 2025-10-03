@@ -34,6 +34,17 @@ pub struct ChatStream {
     pub live: bool,
 }
 
+// ** AssistantChatMsg **
+
+pub trait AssistantChatMsg {
+    /** Create a new user message in the chat. */
+    fn execute_create_chat_message(&self, stream_id: i32, user_id: i32, msg: &str) -> Result<Option<ChatMessage>, ApiError>;
+    /** Change a user's message in a chat. */
+    fn execute_modify_chat_message(&self, id: i32, user_id: i32, new_msg: &str) -> Result<Option<ChatMessage>, ApiError>;
+    /** Delete a user's message in a chat. */
+    fn execute_delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, ApiError>;
+}
+
 // ** AssistantBlockUser **
 
 pub trait AssistantBlockUser {
@@ -97,35 +108,6 @@ impl ChatWsAssistant {
         let user = is_unacceptable_token_id(opt_user, user_id)?;
         Ok(user)
     }
-    /** Create a new user message in the chat. */
-    pub async fn execute_create_chat_message(&self, stream_id: i32, user_id: i32, msg: &str) -> Result<Option<ChatMessage>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
-        let create_chat_message = CreateChatMessage::new(stream_id, user_id, msg);
-        // Add a new entity (stream).
-        chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        })
-    }
-    /** Change a user's message in a chat. */
-    pub async fn execute_modify_chat_message(&self, id: i32, user_id: i32, new_msg: &str) -> Result<Option<ChatMessage>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
-        let modify_chat_message = ModifyChatMessage::new(new_msg.to_owned());
-        // Modify an entity (chat_message).
-        chat_message_orm.modify_chat_message(id, user_id, modify_chat_message).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        })
-    }
-    /** Delete a user's message in a chat. */
-    pub async fn execute_delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
-        // Add a new entity (stream).
-        chat_message_orm.delete_chat_message(id, user_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        })
-    }
     /** Get chat access information. (ChatAccess) */
     pub async fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, ApiError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
@@ -136,6 +118,8 @@ impl ChatWsAssistant {
         })
     }
 }
+
+// ** AssistantBlockUser **
 
 impl AssistantBlockUser for ChatWsAssistant {
     /** Perform blocking/unblocking of a user. */
@@ -164,5 +148,41 @@ impl AssistantBlockUser for ChatWsAssistant {
                     ApiError::create(507, err::MSG_DATABASE, &e) // 507
                 })
         }
+    }
+}
+
+// ** AssistantChatMsg **
+
+impl AssistantChatMsg for ChatWsAssistant {
+    /** Create a new user message in the chat. */
+    fn execute_create_chat_message(&self, stream_id: i32, user_id: i32, msg: &str) -> Result<Option<ChatMessage>, ApiError> {
+        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+        let create_chat_message = CreateChatMessage::new(stream_id, user_id, msg);
+        // Add a new entity (stream).
+        chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })
+    }
+
+    /** Change a user's message in a chat. */
+    fn execute_modify_chat_message(&self, id: i32, user_id: i32, new_msg: &str) -> Result<Option<ChatMessage>, ApiError> {
+        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+        let modify_chat_message = ModifyChatMessage::new(new_msg.to_owned());
+        // Modify an entity (chat_message).
+        chat_message_orm.modify_chat_message(id, user_id, modify_chat_message).map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })
+    }
+
+    /** Delete a user's message in a chat. */
+    fn execute_delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, ApiError> {
+        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+        // Add a new entity (stream).
+        chat_message_orm.delete_chat_message(id, user_id).map_err(|e| {
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })
     }
 }
