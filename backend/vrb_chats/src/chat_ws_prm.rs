@@ -17,6 +17,8 @@ impl ChatWsPrmInfo {
     }
 }
 
+// ** Functionality for handling commands for transferring "parameters". **
+
 pub trait ChatWsPrm {
 
     fn get_prm_info(&self) -> ChatWsPrmInfo;
