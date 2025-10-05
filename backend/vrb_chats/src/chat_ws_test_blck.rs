@@ -42,7 +42,7 @@ mod tests {
         let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
         let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER, USER]);
 
-        // -- Test: 1. "'id' parameter not defined" --
+        // -- Test: 1. "'block' parameter not defined" --
         let msg_text = MessageText("{ \"block\": \"\" }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
