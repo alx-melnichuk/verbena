@@ -43,77 +43,77 @@ mod tests {
         let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
         let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER, USER, USER]);
 
-        // -- Test: 1.1. "'prmBool' parameter not defined" --
+        // -- Test: 1.1. ews_prm_bool: "'prmBool' parameter not defined" --
         let prm_text = MessageText("{ \"prmBool\": \"\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "prmBool"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 1.2. "'valBool' parameter not defined" --
+        // -- Test: 1.2. ews_prm_bool: "'valBool' parameter not defined" --
         let prm_text = MessageText("{ \"prmBool\": \"param1_2\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "valBool"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 1.3. "'valBool' parameter not defined" --
+        // -- Test: 1.3. ews_prm_bool: "'valBool' parameter not defined" --
         let prm_text = MessageText("{ \"prmBool\": \"param1_3\", \"valBool\": \"\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "valBool"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 1.4. "There was no 'join' command." --
+        // -- Test: 1.4. ews_prm_bool: "There was no 'join' command." --
         let prm_text = MessageText("{ \"prmBool\": \"param1_4\", \"valBool\": false }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err406 = get_err406(err::MSG_THERE_WAS_NO_JOIN);
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
-        // -- Test: 2.1. "'prmInt' parameter not defined" --
+        // -- Test: 2.1. ews_prm_int: "'prmInt' parameter not defined" --
         let prm_text = MessageText("{ \"prmInt\": \"\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "prmInt"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 2.2. "'valInt' parameter not defined" --
+        // -- Test: 2.2. ews_prm_int: "'valInt' parameter not defined" --
         let prm_text = MessageText("{ \"prmInt\": \"param2_2\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "valInt"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 2.3. "'valInt' parameter not defined" --
+        // -- Test: 2.3. ews_prm_int: "'valInt' parameter not defined" --
         let prm_text = MessageText("{ \"prmInt\": \"param2_3\", \"valInt\": \"\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "valInt"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 2.4. "There was no 'join' command." --
+        // -- Test: 2.4. ews_prm_int: "There was no 'join' command." --
         let prm_text = MessageText("{ \"prmInt\": \"param2_4\", \"valInt\": 1 }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err406 = get_err406(err::MSG_THERE_WAS_NO_JOIN);
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
-        // -- Test: 3.1. "'prmStr' parameter not defined" --
+        // -- Test: 3.1. ews_prm_str : "'prmStr' parameter not defined" --
         let prm_text = MessageText("{ \"prmStr\": \"\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "prmStr"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 3.2. "'valStr' parameter not defined" --
+        // -- Test: 3.2. ews_prm_str : "'valStr' parameter not defined" --
         let prm_text = MessageText("{ \"prmStr\": \"param3_2\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "valStr"));
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: 3.3. "There was no 'join' command." --
+        // -- Test: 3.3. ews_prm_str : "There was no 'join' command." --
         let prm_text = MessageText("{ \"prmStr\": \"param3_3\", \"valStr\": \"value3_3\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -135,21 +135,21 @@ mod tests {
             join: stream1_id, member: member4.clone(), count: 1, is_owner: Some(false), is_blocked: Some(true) }).unwrap();
         assert_eq!(item1, FrameText(Bytes::from(value)));
         
-        // Test: 1.5. Send message "prmBool".
+        // Test: 1.5. ews_prm_bool: "There is a block on sending messages."
         let prm_text = MessageText("{ \"prmBool\": \"param1_5\", \"valBool\": false }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err403 = get_err403(err::MSG_BLOCK_ON_SEND_MESSAGES);
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden
 
-        // Test: 2.5. Send message "prmInt".
+        // Test: 2.5. ews_prm_int: "There is a block on sending messages."
         let prm_text = MessageText("{ \"prmInt\": \"param2_5\", \"valInt\": 0 }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err403 = get_err403(err::MSG_BLOCK_ON_SEND_MESSAGES);
         assert_eq!(item1, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden
 
-        // Test: 3.4. Send message "prmStr".
+        // Test: 3.4. ews_prm_str : "There is a block on sending messages."
         let prm_text = MessageText("{ \"prmStr\": \"param3_4\", \"valStr\": \"text2\" }".into());
         framed1.send(prm_text).await.unwrap(); // Send a message to a websocket.
         let item1 = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
