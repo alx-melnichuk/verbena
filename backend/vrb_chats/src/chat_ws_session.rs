@@ -240,6 +240,7 @@ impl ChatWsSession {
         let addr = ctx.address();
         let assistant = self.assistant.clone();
 
+        self.user_name = "".into();
         let mut user_name = self.user_name.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
@@ -292,14 +293,15 @@ impl ChatWsSession {
         // Check if there is an joined room
         chat_ws_tools::check_is_joined_room(self.room_id)?;
 
-        let room_id = self.room_id;
+        // Send a message about leaving the room.
+        let leave_room_srv = LeaveRoom(self.room_id, self.id, self.user_name.clone());
+
         // Reset room parameters.
         self.room_id = i32::default();
+        self.user_name = "".into();
         self.is_owner = false;
         self.is_blocked = false;
 
-        // Send a message about leaving the room.
-        let leave_room_srv = LeaveRoom(room_id, self.id, self.user_name.clone());
         // issue_sync comes from having the `BrokerIssue` trait in scope.
         self.issue_system_sync(leave_room_srv, ctx);
         Ok(())
