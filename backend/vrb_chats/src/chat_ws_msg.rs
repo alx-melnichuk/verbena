@@ -10,7 +10,7 @@ use vrb_common::{
 };
 
 use crate::{
-    chat_event_ws::{EWSType, ErrEWS, EventWS, MsgEWS},
+    chat_event_ws::{EWSType, ErrEWS, EventWS, MsgEWS, MsgRmvEWS},
     chat_message::SendMessage,
     chat_message_models::ChatMessage,
     chat_ws_assistant::AssistantChatMsg,
@@ -251,9 +251,8 @@ pub trait ChatWsMsg {
                 let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, msg_rmv, user_id);
                 return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
             }
-            let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
-            addr.do_send(AsyncResultSendText(room_id, to_string(&MsgEWS::from(ch_msg)).unwrap()));
+            addr.do_send(AsyncResultSendText(room_id, to_string(&MsgRmvEWS { msg_rmv }).unwrap()));
         });
         Ok(())
     }
