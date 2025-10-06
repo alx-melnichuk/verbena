@@ -46,7 +46,7 @@ pub trait ChatWsBlck {
         event: EventWS,
         fn_block_user: impl AssistantBlockUser + 'static,
         ctx: &mut ws::WebsocketContext<ChatWsSession>,
-    ) -> Result<(), ErrEWS>
+    ) -> Result<bool, ErrEWS>
     where
         ChatWsSession: actix::Actor<Context = ws::WebsocketContext<ChatWsSession>>,
     {
@@ -55,15 +55,15 @@ pub trait ChatWsBlck {
                 // {"block": "User2"}
                 let block = event.get_string("block").unwrap_or("".to_owned());
                 self.handle_ews_block_add_task(&block, true, fn_block_user, ctx)?;
-                Ok(())
+                Ok(true)
             }
             EWSType::Unblock => {
                 // {"unblock": "User2"}
                 let block = event.get_string("unblock").unwrap_or("".to_owned());
                 self.handle_ews_block_add_task(&block, false, fn_block_user, ctx)?;
-                Ok(())
+                Ok(true)
             }
-            _ => Ok(()),
+            _ => Ok(false),
         }
     }
 
