@@ -63,12 +63,18 @@ pub async fn server_run() -> std::io::Result<()> {
     let app_domain = config_app.app_domain.clone();
     app_log(&format!("Starting server {}", &app_domain));
 
+    let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
+    app_log("Configuring database.");
+    let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
+    dbase::run_migration(&mut pool.get().unwrap());
+
     let config_app2 = config_app.clone();
     #[rustfmt::skip]
     let mut srv = HttpServer::new(move || {
         let cors = create_cors(config_app2.clone());
         App::new()
-            .configure(configure_server())
+            .app_data(pool.clone())
+            .configure(configure_server(pool.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
     });
@@ -92,14 +98,8 @@ pub async fn server_run() -> std::io::Result<()> {
     srv.run().await
 }
 
-pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
-    |config: &mut web::ServiceConfig| {
-        let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
-
-        app_log("Configuring database.");
-        let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
-        dbase::run_migration(&mut pool.get().unwrap());
-
+pub fn configure_server(pool: dbase::DbPool) -> impl FnOnce(&mut web::ServiceConfig) {
+    move |config: &mut web::ServiceConfig| {
         // Adding various configs.
         let config_app0 = config_app::ConfigApp::init_by_env();
         let temp_file_config0 = TempFileConfig::default().clone().directory(config_app0.app_dir_tmp.clone());
