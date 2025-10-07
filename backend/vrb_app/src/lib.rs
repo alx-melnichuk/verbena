@@ -64,8 +64,12 @@ pub async fn server_run() -> std::io::Result<()> {
     app_log(&format!("Starting server {}", &app_domain));
 
     let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
+    let pool_max_size = env::var("DATABASE_POOL_MAX_SIZE").unwrap_or("0".to_owned()).trim().parse().unwrap();
+
     app_log("Configuring database.");
-    let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
+    let pool: dbase::DbPool = dbase::init_db_pool(&db_url, pool_max_size);
+    app_log(&format!("db_pool.max_size: {}", pool.max_size()));
+    // Execute all unapplied migrations for a given migration source
     dbase::run_migration(&mut pool.get().unwrap());
 
     let config_app2 = config_app.clone();

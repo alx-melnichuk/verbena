@@ -12,19 +12,16 @@ pub type DbPooledConnection = PooledConnection<ConnectionManager<Connection>>;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
-pub fn init_db_pool(db_url: &str) -> DbPool {
+pub fn init_db_pool(db_url: &str, max_size: u32) -> DbPool {
     let manager = ConnectionManager::<Connection>::new(db_url);
-    let max_size = 15;
-    let db_pool = Pool::builder()
-        .max_size(max_size)
-        .build(manager)
-        .expect("Failed to create pool.");
-     
-    // let db_pool = Pool::builder().build(manager).expect("Failed to create pool.");
-    eprintln!("db_pool.max_size(): {}", db_pool.max_size());
-    db_pool
+    let mut builder = Pool::builder();
+    if max_size > 0 {
+        builder = builder.max_size(max_size);
+    }
+    builder.build(manager).expect("Failed to create pool.")
 }
 
+/** Execute all unapplied migrations for a given migration source */
 pub fn run_migration(conn: &mut PgConnection) {
     conn.run_pending_migrations(MIGRATIONS).unwrap();
 }
