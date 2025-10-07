@@ -46,8 +46,9 @@ RUST_LOG=warn,actix_web=info,verbena=warn,${LOG01},${LOG02}
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
 # -----------------------------------------------------------------------------
-# DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
-# DATABASE_URL=postgresql://database_user:database_password@127.0.0.1:5432/database_name
+DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+# Sets the maximum number of connections managed by the pool. (Default: 10).
+# DATABASE_POOL_MAX_SIZE=10
 
 # -----------------------------------------------------------------------------
 # JSON Web Token Credentials
