@@ -24,7 +24,12 @@
         </span>
     }
 </div>
-
+<div>
+    <app-time-tracking style="outline: 1px dashed chocolate;"
+        [isActive]="true"
+        [startTime]="date1">
+    </app-time-tracking>
+</div>
 @if (!!stopped) {
   <div class="psp-param">
     <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.stopped' | translate }}</span>

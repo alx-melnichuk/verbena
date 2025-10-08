@@ -4,13 +4,14 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
+import { TimeTrackingComponent } from 'src/app/components/time-tracking/time-tracking.component';
 
 
 @Component({
     selector: 'app-panel-stream-params',
     exportAs: 'appPanelStreamParams',
     standalone: true,
-    imports: [CommonModule, DateTimeFormatPipe, TranslatePipe, DateTimeTimerComponent],
+    imports: [CommonModule, DateTimeFormatPipe, TranslatePipe, DateTimeTimerComponent, TimeTrackingComponent],
     templateUrl: './panel-stream-params.component.html',
     styleUrl: './panel-stream-params.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -32,4 +33,6 @@ export class PanelStreamParamsComponent {
 
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'long', timeStyle: 'short' };
 
+    public date1: Date = new Date();
+    public date2: Date = new Date('2025-10-08T10:35:46.801Z'); // #
 }
