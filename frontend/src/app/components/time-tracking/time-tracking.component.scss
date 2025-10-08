@@ -1,0 +1,13 @@
+/*# sourceURL=time-tracking.component.scss */
+
+app-time-tracking {
+    display: table;
+
+    .ttr-cover {
+        display: inline-flex;
+    }
+
+    .ttr-spacer {
+        padding: 0px var(--ttr-spacer-pd-ver, 0.25em);
+    }
+}
