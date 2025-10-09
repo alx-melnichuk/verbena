@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslatePipe } from '@ngx-translate/core';
+
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
 import { TimeTrackingComponent } from 'src/app/components/time-tracking/time-tracking.component';
-
 
 @Component({
     selector: 'app-panel-stream-params',
@@ -15,9 +15,9 @@ import { TimeTrackingComponent } from 'src/app/components/time-tracking/time-tra
     templateUrl: './panel-stream-params.component.html',
     styleUrl: './panel-stream-params.component.scss',
     encapsulation: ViewEncapsulation.None,
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelStreamParamsComponent {
+export class PanelStreamParamsComponent implements OnChanges {
     @Input()
     public countOfViewer: number | null | undefined;
     @Input()
@@ -33,6 +33,29 @@ export class PanelStreamParamsComponent {
 
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'long', timeStyle: 'short' };
 
-    public date1: Date = new Date();
-    public date2: Date = new Date('2025-10-08T10:35:46.801Z'); // #
+    public date1: Date = new Date(Date.now() + (1 * 3600 * 24 + 3 * 3600 + 11 * 60 + 3) * 1000);
+
+    public labelDays: Record<number, string> = this.createLabelDays(this.translate);
+
+    constructor(private translate: TranslateService) {
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['locale']) {
+            this.labelDays = this.createLabelDays(this.translate);
+        }
+    }
+
+    // ** Private API **
+
+    private createLabelDays(translate: TranslateService): Record<number, string> {
+        const result: Record<number, string> = {};
+        for (let idx = -1; idx <= 20; idx++) {
+            const key = `panel-stream-params.time-tracking.${idx}`;
+            if (translate.instant(key) != key) {
+                result[idx] = key;
+            }
+        }
+        return result;
+    }
 }

@@ -25,9 +25,12 @@
     }
 </div>
 <div>
-    <app-time-tracking style="outline: 1px dashed chocolate;"
-        [isActive]="true"
-        [startTime]="date1">
+    <app-time-tracking style="outline: 1px dashed chocolate; margin-left: 108px;"
+        [isActive]="true" isHideLeadingZero
+        [labelDays]="labelDays"
+        [locale]="locale"
+        [startTime]="date1"
+        >
     </app-time-tracking>
 </div>
 @if (!!stopped) {
