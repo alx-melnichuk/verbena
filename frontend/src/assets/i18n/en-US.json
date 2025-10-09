@@ -427,7 +427,11 @@
     "tags": "Tags:",
     "start": "Start:",
     "started": "Started:",
-    "stopped": "Stopped:"
+    "stopped": "Stopped:",
+    "time-tracking": {
+        "-1": "days",
+        "1": "day"
+    }
   },
   "panel-stream-admin": {
     "btn_settings": "Settings",
