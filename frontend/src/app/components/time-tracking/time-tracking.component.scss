@@ -7,7 +7,7 @@ app-time-tracking {
         display: inline-flex;
     }
 
-    .ttr-spacer {
-        padding: 0px var(--ttr-spacer-pd-ver, 0.25em);
+    [ttr-pd] {
+        padding: 0px var(--ttr-spacer-pd-hor, 0.1em);
     }
 }
