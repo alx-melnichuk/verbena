@@ -64,13 +64,13 @@ export class StreamDtoUtil {
             logo: (streamDto?.logo || null),
             starttime: (streamDto?.starttime || null), // Date;
             live: (streamDto?.live || false),
-            started: (streamDto?.started || null),
-            stopped: (streamDto?.stopped || null),
+            started: (streamDto?.started || null), // Date;
+            stopped: (streamDto?.stopped || null), // Date;
             state: (streamDto?.state || StreamState.waiting),
             tags: (streamDto?.tags || []),
             source: (streamDto?.source || 'obs'),
-            createdAt: (streamDto?.createdAt || ''),
-            updatedAt: (streamDto?.updatedAt || ''),
+            createdAt: (streamDto?.createdAt || ''), // Date;
+            updatedAt: (streamDto?.updatedAt || ''), // Date;
         };
     }
     public static isFuture(startTime: StringDateTime | null): boolean | null {
