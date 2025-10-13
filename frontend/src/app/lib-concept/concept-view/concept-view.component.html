@@ -78,9 +78,9 @@
           [countOfViewer]="countOfViewer"
           [isShowTimer]="isShowTimer"
           [locale]="localeService.getLocale()"
-          [start]="getDate(streamDto?.starttime)"
-          [started]="getDate(streamDto?.started)"
-          [stopped]="getDate(streamDto?.stopped)">
+          [start]="streamStarttime"
+          [started]="streamStarted"
+          [stopped]="streamStopped">
         </app-panel-stream-params>
       </div>
 

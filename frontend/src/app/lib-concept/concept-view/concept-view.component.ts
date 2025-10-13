@@ -1,6 +1,6 @@
 import {
     AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, inject, Input,
-    Output, ViewEncapsulation
+    OnChanges, Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -32,7 +32,7 @@ import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-st
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ConceptViewComponent implements AfterContentInit {
+export class ConceptViewComponent implements AfterContentInit, OnChanges {
     @Input() // List of new blocked users.
     public chatBlockedUsers: string[] = [];
     @Input() // List of past chat messages.
@@ -71,7 +71,6 @@ export class ConceptViewComponent implements AfterContentInit {
     @Input()
     public nickname: string | null = null;
 
-
     @Input()
     public ownerAvatar: string | null | undefined;
     @Input()
@@ -101,10 +100,13 @@ export class ConceptViewComponent implements AfterContentInit {
 
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = true; // false;
-    public localeService: LocaleService = inject(LocaleService);
-
     // To disable the jumping effect of the "stream-video" panel at startup.
     public isStreamVideo = false;
+    public streamStarttime: Date | null | undefined;
+    public streamStarted: Date | null | undefined;
+    public streamStopped: Date | null | undefined;
+
+    public localeService: LocaleService = inject(LocaleService);
 
     // Block "Chat"
 
@@ -119,6 +121,14 @@ export class ConceptViewComponent implements AfterContentInit {
     ngAfterContentInit(): void {
         this.isStreamVideo = true;
         this.changeDetector.markForCheck();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['streamDto']) {
+            this.streamStarttime = StringDateTimeUtil.toDate(this.streamDto?.starttime);
+            this.streamStarted = StringDateTimeUtil.toDate(this.streamDto?.started);
+            this.streamStopped = StringDateTimeUtil.toDate(this.streamDto?.stopped);
+        }
     }
 
     // ** Public API **
@@ -190,15 +200,4 @@ export class ConceptViewComponent implements AfterContentInit {
     }
 
     // ** Private API **
-
-    // Updating data by stream
-
-    private wait(ms: number): void {
-        const start = Date.now();
-        let now = start;
-        while (now - start < ms) {
-            now = Date.now();
-        }
-    }
-
 }
