@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit, SimpleChanges, ViewEncapsulation } from '@angular/core';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -17,23 +17,32 @@ import { TimeTrackingComponent } from 'src/app/components/time-tracking/time-tra
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelStreamParamsComponent implements OnChanges {
+export class PanelStreamParamsComponent implements OnChanges, OnInit {
     @Input()
     public countOfViewer: number | null | undefined;
     @Input()
     public isShowTimer: boolean | null | undefined;
     @Input()
     public locale: string | null = null;
-    @Input() // Time when stream should start.
+    @Input() // The stream start time.
     public start: Date | null | undefined;
-    @Input() // Time when stream was started
+    @Input() // The time the stream began.
     public started: Date | null | undefined;
-    @Input() // Time when stream was stopped
+    @Input() // The time the stream began pausing.
+    public paused: Date | null | undefined;
+    @Input() // The time the stream stopped.
     public stopped: Date | null | undefined;
 
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'long', timeStyle: 'short' };
 
-    public date1: Date = new Date(Date.now() + (1 * 3600 * 24 + 3 * 3600 + 11 * 60 + 3) * 1000);
+    public startVal: Date | null | undefined;
+
+    public timerActive: boolean = false;
+    public timerValue: number | null = null;
+
+    // public date1: Date = new Date(Date.now() + (1 * 3600 * 24 + 3 * 3600 + 11 * 60 + 3) * 1000);
+    // public date1: Date = new Date(Date.now() + (0 * 3600 * 24 + 0 * 3600 + 0 * 60 + 15) * 1000);
+    // const value = Math.floor((Date.now() - this.startTime.getTime()) / 1000);
 
     public labelDays: Record<number, string> = this.createLabelDays(this.translate);
 
@@ -44,6 +53,26 @@ export class PanelStreamParamsComponent implements OnChanges {
         if (!!changes['locale']) {
             this.labelDays = this.createLabelDays(this.translate);
         }
+        if (!!changes['start'] && !!this.start) {
+            this.startVal = this.start;
+            this.timerActive = true;
+            this.timerValue = Math.floor((Date.now() - this.start.getTime()) / 1000);
+        }
+        if (!!changes['started'] && !!this.started) {
+            this.timerActive = true;
+            this.timerValue = Math.floor((Date.now() - this.started.getTime()) / 1000);
+        }
+        if (!!changes['paused'] && !!this.paused && !!this.started) {
+            this.timerActive = false;
+            this.timerValue = Math.floor((this.paused.getTime() - this.started.getTime()) / 1000);
+        }
+        if (!!changes['stopped'] && !!this.stopped && !!this.started) {
+            this.timerActive = false;
+            this.timerValue = Math.floor((this.stopped.getTime() - this.started.getTime()) / 1000);
+        }
+    }
+
+    ngOnInit(): void {
     }
 
     // ** Private API **

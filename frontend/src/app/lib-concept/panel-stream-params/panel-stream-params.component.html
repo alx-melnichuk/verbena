@@ -25,13 +25,17 @@
     }
 </div>
 <div>
-    <app-time-tracking style="outline: 1px dashed chocolate; margin-left: 108px;"
-        [isActive]="true" isHideLeadingZero
-        [labelDays]="labelDays"
-        [locale]="locale"
-        [startTime]="date1"
-        >
-    </app-time-tracking>
+    @if (isShowTimer && (!!started || !!start)) {
+        <app-time-tracking style="outline: 1px dashed chocolate; margin-left: 108px;"
+            [initValue]="timerValue"
+            [isActive]="timerActive" 
+            isHideLeadingZero9
+            [labelDays]="labelDays"
+            [locale]="locale"
+            startTime9="start"
+            startTime8="date1">
+        </app-time-tracking>
+    }
 </div>
 @if (!!stopped) {
   <div class="psp-param">
