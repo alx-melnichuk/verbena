@@ -74,7 +74,27 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.chatPastMsgs = this.route.snapshot.data['chatMsgList'];
         const conceptResponse = this.route.snapshot.data['conceptResponse'];
         this.profileMiniDto = conceptResponse?.profileMiniDto;
-        this.setStreamDto(conceptResponse?.streamDto || null, this.profileDto?.id || 0);
+
+        const streamDto = conceptResponse?.streamDto || null;
+        if (!!streamDto) {
+            // // "state": "preparing"
+            // streamDto.starttime = "2025-10-13T17:00:00.000Z";
+
+            // streamDto.state = "started";
+            // streamDto.starttime = "2025-10-13T14:00:00.000Z";
+            // streamDto.started   = "2025-10-13T15:00:00.000Z";
+
+            // streamDto.state = "stopped";
+            // streamDto.starttime = "2025-10-13T14:00:00.000Z";
+            // streamDto.started = "2025-10-13T15:00:00.000Z";
+            // streamDto.stopped = "2025-10-13T16:00:00.000Z";
+
+            // streamDto.state = "stopped";
+            // streamDto.started = "2025-10-13T13:00:00.000Z";
+            // streamDto.stopped = "2025-10-13T15:00:00.000Z";
+        }
+        this.setStreamDto(streamDto || null, this.profileDto?.id || 0);
+        // this.setStreamDto(conceptResponse?.streamDto || null, this.profileDto?.id || 0);
         const blockedUsers = conceptResponse?.blockedUsersDto || [];
         for (let idx = 0; idx < blockedUsers.length; idx++) {
             if (!!blockedUsers[idx].blockedNickname) {
@@ -206,19 +226,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     // Section: "Chat"
 
-    // private socketConnection(nickname: string | undefined, streamId: number | undefined, state: StreamSateType | undefined) {
-    //     const isStateStopped = (state || 'stopped') == 'stopped';
-    //     if (!this.chatSocketService.hasConnect() && nickname != null && !!nickname && streamId != null && streamId > 0 && !isStateStopped) {
-    //         // Connect to the server web socket chat.
-    //         this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
-    //     }
-    // }
-    // private socketDisconnect() {
-    //     if (this.chatSocketService.hasConnect()) {
-    //         // Disconnect from the websocket chat server.
-    //         this.chatSocketService.disconnect();
-    //     }
-    // }
     private handlReceiveChat = (val: string, isStreamOwner: boolean, streamDto: StreamDto | null, profileDto: ProfileDto | null): void => {
         const eventWS = EventWS.parse(val);
         if (!eventWS) {
@@ -303,5 +310,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.streamDto = streamDto;
         this.isStreamOwner = (this.streamDto?.userId || -1) == profileId;
         this.isStreamAvailable = (this.streamDto?.state || 'stopped') != 'stopped';
+        // live := NEW."state" IN ('preparing', 'started', 'paused');  - isShowTimer
     }
 }
