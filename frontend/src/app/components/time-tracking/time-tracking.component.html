@@ -1,13 +1,13 @@
 <div class="ttr-cover">
-    @if (!isHideDaysVal && getDays() > 0) {
-        <div ttr-pd class="ttr-days">{{ getDays() }}</div>
+    @if (!isHideDaysVal && days > 0) {
+        <div ttr-pd class="ttr-days">{{ days }}</div>
         <div ttr-pd class="ttr-label-days">
-            {{ (getLabelByKey(labelDaysObj, getDays(), locale) || '' ) | translate }}
+            {{ (getLabelByKey(labelDaysObj, days, locale) || '' ) | translate }}
         </div>
     }
-    <div ttr-pd class="ttr-hours">{{ getHours() }}</div>
+    <div ttr-pd ttr-wd class="ttr-hours">{{ hours.toString().padStart(2, fillSymbol) }}</div>
     <span class="ttr-spacer">:</span>
-    <div ttr-pd class="ttr-minutes">{{ getMinutes() }}</div>
+    <div ttr-pd ttr-wd class="ttr-minutes">{{ minutes.toString().padStart(2, fillSymbol) }}</div>
     <span class="ttr-spacer">:</span>
-    <div ttr-pd class="ttr-seconds">{{ getSeconds() }}</div>
+    <div ttr-pd ttr-wd class="ttr-seconds">{{ seconds.toString().padStart(2, fillSymbol) }}</div>
 </div>  
