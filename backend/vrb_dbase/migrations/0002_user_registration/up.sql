@@ -20,7 +20,7 @@ CREATE INDEX idx_user_registration_final_date ON user_registration(final_date);
 CREATE TABLE user_recovery (
     id SERIAL PRIMARY KEY NOT NULL,
     user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    final_date TIMESTAMP WITH TIME ZONE NOT NULL
+    final_date TIMESTAMPTZ NOT NULL
 );
 
 CREATE INDEX idx_user_recovery_user_id_final_date ON user_recovery(user_id, final_date);

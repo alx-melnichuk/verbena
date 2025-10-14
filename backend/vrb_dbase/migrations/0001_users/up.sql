@@ -63,8 +63,8 @@ CREATE OR REPLACE FUNCTION find_user(
   OUT email VARCHAR,
   OUT "password" VARCHAR,
   OUT "role" user_role,
-  OUT created_at TIMESTAMP WITH TIME ZONE,
-  OUT updated_at TIMESTAMP WITH TIME ZONE
+  OUT created_at TIMESTAMPTZ,
+  OUT updated_at TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
