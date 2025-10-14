@@ -38,15 +38,17 @@ export interface StreamDto {
     descript: string;
     // Link to stream logo, optional (min: 2, max: 255)
     logo: string | null;
-    // Time when stream should start. Required on create
+    // The stream start time. Required on create
     starttime: StringDateTime | null;
     // Stream live status, false means inactive
     live: boolean;
     // Stream live state - waiting, preparing, start, paused, stop (waiting by default)
     state: StreamState; // ['waiting', 'preparing', 'started', 'paused', 'stopped']
-    // Time when stream was started
+    // The time the stream began.
     started: StringDateTime | null; // Date | null;
-    // Time when stream was stopped
+    // The time the stream began pausing.
+    paused: StringDateTime | null; // Date | null;
+    // The time the stream stopped.
     stopped: StringDateTime | null; // Date | null;
     source: string;
     tags: string[];
@@ -62,15 +64,16 @@ export class StreamDtoUtil {
             title: (streamDto?.title || ''),
             descript: (streamDto?.descript || ''),
             logo: (streamDto?.logo || null),
-            starttime: (streamDto?.starttime || null), // Date;
+            starttime: (streamDto?.starttime || null), // StringDateTime;
             live: (streamDto?.live || false),
-            started: (streamDto?.started || null), // Date;
-            stopped: (streamDto?.stopped || null), // Date;
+            started: (streamDto?.started || null), // StringDateTime;
+            paused: (streamDto?.paused || null), // StringDateTime;
+            stopped: (streamDto?.stopped || null), // StringDateTime;
             state: (streamDto?.state || StreamState.waiting),
             tags: (streamDto?.tags || []),
             source: (streamDto?.source || 'obs'),
-            createdAt: (streamDto?.createdAt || ''), // Date;
-            updatedAt: (streamDto?.updatedAt || ''), // Date;
+            createdAt: (streamDto?.createdAt || ''), // StringDateTime;
+            updatedAt: (streamDto?.updatedAt || ''), // StringDateTime;
         };
     }
     public static isFuture(startTime: StringDateTime | null): boolean | null {
