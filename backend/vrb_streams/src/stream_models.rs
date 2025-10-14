@@ -110,6 +110,7 @@ pub struct Stream {
     pub live: bool,                     // default false
     pub state: StreamState,             // default Waiting
     pub started: Option<DateTime<Utc>>, // Nullable
+    pub paused: Option<DateTime<Utc>>,  // Nullable
     pub stopped: Option<DateTime<Utc>>, // Nullable
     pub source: String,                 // min_len=2 max_len=255 default "obs"
     pub created_at: DateTime<Utc>,
@@ -133,6 +134,7 @@ impl Stream {
             live: StreamState::is_live(STREAM_STATE_DEF),
             state: STREAM_STATE_DEF,
             started: None,
+            paused: None,
             stopped: None,
             source: STREAM_SOURCE_DEF.to_string(),
             created_at: now,
@@ -151,6 +153,7 @@ impl Stream {
             live: StreamState::is_live(create_stream.state.unwrap_or(STREAM_STATE_DEF)),
             state: create_stream.state.unwrap_or(STREAM_STATE_DEF),
             started: create_stream.started.clone(),
+            paused: create_stream.paused.clone(),
             stopped: create_stream.stopped.clone(),
             source: create_stream.source.clone().unwrap_or(STREAM_SOURCE_DEF.to_string()),
             created_at: now,
@@ -177,6 +180,9 @@ pub struct StreamInfoDto {
     pub started: Option<DateTime<Utc>>,
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    pub paused: Option<DateTime<Utc>>,
+    #[rustfmt::skip]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub stopped: Option<DateTime<Utc>>,
     pub source: String,
     pub tags: Vec<String>,
@@ -199,6 +205,7 @@ impl StreamInfoDto {
             live: stream.live,
             state: stream.state.to_owned(),
             started: stream.started.clone(),
+            paused: stream.paused.clone(),
             stopped: stream.stopped.clone(),
             source: stream.source.to_owned(),
             tags: tags.iter().map(|tag| tag.to_string()).collect(),
@@ -291,6 +298,7 @@ pub struct CreateStream {
     pub starttime: DateTime<Utc>,       //
     pub state: Option<StreamState>,     // default Waiting
     pub started: Option<DateTime<Utc>>, // Nullable
+    pub paused: Option<DateTime<Utc>>,  // Nullable
     pub stopped: Option<DateTime<Utc>>, // Nullable
     pub source: Option<String>,         // min_len=2 max_len=255 default "obs"
 }
@@ -306,6 +314,7 @@ impl CreateStream {
             starttime: create_stream_info.starttime.unwrap_or(min_date_time),
             state: None,
             started: None,
+            paused: None,
             stopped: None,
             source: create_stream_info.source.clone(),
         }
@@ -363,6 +372,7 @@ pub struct ModifyStream {
     pub starttime: Option<DateTime<Utc>>,       //
     pub state: Option<StreamState>,             // default Waiting
     pub started: Option<Option<DateTime<Utc>>>, // Nullable
+    pub paused: Option<Option<DateTime<Utc>>>,  // Nullable
     pub stopped: Option<Option<DateTime<Utc>>>, // Nullable
     pub source: Option<String>,                 // min_len=2 max_len=255 default "obs"
 }
@@ -375,10 +385,11 @@ impl ModifyStream {
         let is_starttime = self.starttime.is_none();
         let is_state = self.state.is_none();
         let is_started = self.started.is_none();
+        let is_paused = self.paused.is_none();
         let is_stopped = self.stopped.is_none();
         let is_source = self.source.is_none();
 
-        is_title && is_descript && is_logo && is_starttime && is_state && is_started && is_stopped && is_source
+        is_title && is_descript && is_logo && is_starttime && is_state && is_started && is_paused && is_stopped && is_source
     }
 }
 
@@ -453,6 +464,7 @@ impl Into<ModifyStream> for ModifyStreamInfoDto {
             starttime: self.starttime.clone(),
             state: None,
             started: None,
+            paused: None,
             stopped: None,
             source: self.source.clone(),
         }
