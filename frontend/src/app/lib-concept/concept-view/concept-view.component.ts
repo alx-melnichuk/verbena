@@ -64,8 +64,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges {
     public countOfViewer: number | null | undefined;
     @Input()
     public isLoadStream = false;
-    @Input()
-    public isShowTimer: boolean = false;
+    // @Input()
+    // public isShowTimer: boolean = false;
     @Input()
     public isStreamOwner: boolean = false;
     @Input()
@@ -104,6 +104,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges {
     public isStreamVideo = false;
     public streamStarttime: Date | null | undefined;
     public streamStarted: Date | null | undefined;
+    public streamPaused: Date | null | undefined;
     public streamStopped: Date | null | undefined;
 
     public localeService: LocaleService = inject(LocaleService);
@@ -125,8 +126,10 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['streamDto']) {
+            console.log(`this.streamDto: ${JSON.stringify(this.streamDto)}`); // #
             this.streamStarttime = StringDateTimeUtil.toDate(this.streamDto?.starttime);
             this.streamStarted = StringDateTimeUtil.toDate(this.streamDto?.started);
+            this.streamPaused = StringDateTimeUtil.toDate(this.streamDto?.paused);
             this.streamStopped = StringDateTimeUtil.toDate(this.streamDto?.stopped);
         }
     }

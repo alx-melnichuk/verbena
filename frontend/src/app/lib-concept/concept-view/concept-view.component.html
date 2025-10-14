@@ -76,10 +76,10 @@
       <div class="cv-cnt-prm">
         <app-panel-stream-params
           [countOfViewer]="countOfViewer"
-          [isShowTimer]="isShowTimer"
           [locale]="localeService.getLocale()"
           [start]="streamStarttime"
           [started]="streamStarted"
+          [paused]="streamPaused"
           [stopped]="streamStopped">
         </app-panel-stream-params>
       </div>
