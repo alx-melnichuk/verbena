@@ -23,7 +23,7 @@ const FILL_SYMBOL_EMPTY = '';
 })
 export class TimeTrackingComponent implements OnChanges, OnDestroy {
     @Input()
-    public initValue: number | null = null;
+    public initValue: number | null | undefined;
     @Input()
     public isActive: boolean | null | undefined;
     @Input()
