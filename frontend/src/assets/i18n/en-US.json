@@ -427,6 +427,7 @@
     "tags": "Tags:",
     "start": "Start:",
     "started": "Started:",
+    "paused": "Paused",
     "stopped": "Stopped:",
     "time-tracking": {
         "-1": "days",

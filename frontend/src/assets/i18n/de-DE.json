@@ -429,6 +429,7 @@
     "tags": "Schlagwörter:",
     "start": "Start:",
     "started": "Gestartet:",
+    "paused": "Pausiert",
     "stopped": "Beendet:",
     "time-tracking": {
         "-1": "tage",
