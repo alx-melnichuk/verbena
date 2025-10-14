@@ -22,6 +22,10 @@ import { environment } from 'src/environments/environment';
 const WS_CHAT_PATHNAME: string = environment.wsChatPathname || 'ws';
 const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
 
+function padStart(value: number): string {
+    return value.toString().padStart(2, '0');
+}
+
 @Component({
     selector: 'app-pg-concept-view',
     standalone: true,
@@ -50,11 +54,11 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
 
-    public isLoadStream = false;
+    public isLoadStream: boolean = false;
     // An indication that the stream is in a chat-available status.
-    public isStreamAvailable = false;
+    public isStreamAvailable: boolean = false;
     // An indication that this is the owner of the stream.
-    public isStreamOwner = false;
+    public isStreamOwner: boolean = false;
     public profileDto: ProfileDto | null = null;
     public profileMiniDto: ProfileMiniDto | null = null;
     public profileTokensDto: UserTokenResponseDto | null = null;
@@ -77,21 +81,32 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
         const streamDto = conceptResponse?.streamDto || null;
         if (!!streamDto) {
-            // // "state": "preparing"
-            // streamDto.starttime = "2025-10-13T17:00:00.000Z";
+            const now = new Date();
+            const hours = `${padStart(now.getHours() - 3)}`;;
+            const min = now.getMinutes();
+            const secs = `${padStart(now.getSeconds())}`;
+
+            // streamDto.state = "preparing";
+            // streamDto.live = true;
+            // streamDto.starttime = `2025-10-14T${hours}:${padStart(min + 10)}:${secs}.000Z`;
 
             // streamDto.state = "started";
-            // streamDto.starttime = "2025-10-13T14:00:00.000Z";
-            // streamDto.started   = "2025-10-13T15:00:00.000Z";
+            // streamDto.live = true;
+            // streamDto.starttime = `2025-10-14T${hours}:${padStart(min - 10)}:${secs}.000Z`;
+            // streamDto.started = `2025-10-14T${hours}:${padStart(min - 5)}:${secs}.000Z`;
+
+            // streamDto.state = "paused";
+            // streamDto.live = true;
+            // streamDto.starttime = `2025-10-14T${hours}:${padStart(min - 10)}:${secs}.000Z`;
+            // streamDto.started = `2025-10-14T${hours}:${padStart(min - 5)}:${secs}.000Z`;
+            // streamDto.paused = `2025-10-14T${hours}:${padStart(min - 0)}:${secs}.000Z`;
 
             // streamDto.state = "stopped";
-            // streamDto.starttime = "2025-10-13T14:00:00.000Z";
-            // streamDto.started = "2025-10-13T15:00:00.000Z";
-            // streamDto.stopped = "2025-10-13T16:00:00.000Z";
-
-            // streamDto.state = "stopped";
-            // streamDto.started = "2025-10-13T13:00:00.000Z";
-            // streamDto.stopped = "2025-10-13T15:00:00.000Z";
+            // streamDto.live = false;
+            // streamDto.starttime = `2025-10-14T${hours}:${padStart(min - 10)}:${secs}.000Z`;
+            // streamDto.started = `2025-10-14T${hours}:${padStart(min - 5)}:${secs}.000Z`;
+            // streamDto.paused = `2025-10-14T${hours}:${padStart(min - 3)}:${secs}.000Z`;
+            // streamDto.stopped = `2025-10-14T${hours}:${padStart(min - 0)}:${secs}.000Z`;
         }
         this.setStreamDto(streamDto || null, this.profileDto?.id || 0);
         // this.setStreamDto(conceptResponse?.streamDto || null, this.profileDto?.id || 0);
@@ -310,6 +325,34 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.streamDto = streamDto;
         this.isStreamOwner = (this.streamDto?.userId || -1) == profileId;
         this.isStreamAvailable = (this.streamDto?.state || 'stopped') != 'stopped';
-        // live := NEW."state" IN ('preparing', 'started', 'paused');  - isShowTimer
+        // live := NEW."state" IN ('preparing', 'started', 'paused');  - 
+        /*this.timerIsShow = (['preparing', 'started', 'paused', 'stopped'].indexOf(this.streamDto?.state || '') > -1);
+        this.timerActive = this.timerIsShow && (['preparing', 'started'].indexOf(this.streamDto?.state || '') > -1);
+        this.timerValue = this.getTimerValue(
+            StringDateTimeUtil.toDate(this.streamDto?.starttime),
+            StringDateTimeUtil.toDate(this.streamDto?.started),
+            StringDateTimeUtil.toDate(this.streamDto?.paused),
+            StringDateTimeUtil.toDate(this.streamDto?.stopped),
+        );*/
     }
+    /*private getTimerValue(starttime: Date | null, started: Date | null, paused: Date | null, stopped: Date | null): number {
+        let result: number = 0;
+        if (!!starttime) {
+            result = Math.floor((Date.now() - starttime.getTime()) / 1000);
+            console.log(`starttime:${starttime.toISOString()}`); // #
+        }
+        if (!!started) {
+            result = Math.floor((Date.now() - started.getTime()) / 1000);
+            console.log(`started  :${started.toISOString()}`); // #
+        }
+        if (!!paused && !!started) {
+            result = Math.floor((paused.getTime() - started.getTime()) / 1000);
+            console.log(`paused   :${paused.toISOString()}`); // #
+        }
+        if (!!stopped && !!started) {
+            result = Math.floor((stopped.getTime() - started.getTime()) / 1000);
+            console.log(`stopped  :${stopped.toISOString()}`); // #
+        }
+        return result;
+    }*/
 }
