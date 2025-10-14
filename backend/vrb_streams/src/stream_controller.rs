@@ -1399,6 +1399,7 @@ pub async fn put_toggle_state(
         starttime: None,
         state: Some(new_state),
         started: None,
+        paused: None,
         stopped: None,
         source: None,
     };
