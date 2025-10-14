@@ -20,20 +20,22 @@ CREATE TABLE streams (
     descript TEXT DEFAULT '' NOT NULL,
     /* Link to stream logo, optional */
     logo VARCHAR(255) NULL,
-    /* Time when stream should start. Required on create */
-    starttime TIMESTAMP WITH TIME ZONE NOT NULL,
+    /* The stream start time. Required on create */
+    starttime TIMESTAMPTZ NOT NULL,
     /* Stream live status, false means inactive */
     live BOOLEAN NOT NULL DEFAULT FALSE,
     /* Stream live state - waiting (default), preparing, start, paused, stopped. */
     "state" stream_state DEFAULT 'waiting' NOT NULL,
-    /* Time when stream was started */
-    "started" TIMESTAMP WITH TIME ZONE NULL,
-    /* Time when stream was stopped */
-    "stopped" TIMESTAMP WITH TIME ZONE NULL,
+    /* The time the stream began. */
+    "started" TIMESTAMPTZ NULL,
+    /* The time the stream began pausing. */
+    "paused" TIMESTAMPTZ NULL,
+    /* The time the stream stopped. */
+    "stopped" TIMESTAMPTZ NULL,
     /* stream source */
     source VARCHAR(255) DEFAULT 'obs' NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 SELECT diesel_manage_updated_at('streams');
@@ -53,6 +55,9 @@ BEGIN
   NEW.live := NEW."state" IN ('preparing', 'started', 'paused');
   IF NEW."state" = 'started' AND NEW.started IS NULL THEN
     NEW.started := CURRENT_TIMESTAMP;
+  END IF;
+  IF NEW."state" = 'paused' THEN
+    NEW.paused := CURRENT_TIMESTAMP;
   END IF;
   IF NEW."state" = 'stopped' THEN
     NEW.stopped := CURRENT_TIMESTAMP;
@@ -245,14 +250,15 @@ CREATE OR REPLACE FUNCTION filter_streams(
   OUT title VARCHAR,
   OUT descript TEXT,
   OUT logo VARCHAR,
-  OUT starttime TIMESTAMP WITH TIME ZONE,
+  OUT starttime TIMESTAMPTZ,
   OUT live BOOLEAN,
   OUT state stream_state,
-  OUT started TIMESTAMP WITH TIME ZONE,
-  OUT stopped TIMESTAMP WITH TIME ZONE,
+  OUT started TIMESTAMPTZ,
+  OUT paused TIMESTAMPTZ,
+  OUT stopped TIMESTAMPTZ,
   OUT source VARCHAR,
-  OUT created_at TIMESTAMP WITH TIME ZONE,
-  OUT updated_at TIMESTAMP WITH TIME ZONE
+  OUT created_at TIMESTAMPTZ,
+  OUT updated_at TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -262,7 +268,7 @@ BEGIN
 
   RETURN QUERY
     SELECT s.id, s.user_id, s.title, s.descript, s.logo, s.starttime, s.live, s.state,
-      s.started, s.stopped, s.source, s.created_at, s.updated_at
+      s.started, s.paused, s.stopped, s.source, s.created_at, s.updated_at
     FROM streams s
     WHERE s.id = COALESCE(_id, s.id)
       AND s.user_id = COALESCE(_user_id, s.user_id)
