@@ -26,38 +26,7 @@ backend/imgs/
 # temporary upload directory
 backend/tmp/
 
-# The result of building the library is "vrb_app".
-backend/vrb_app/target/
-backend/vrb_app/Cargo.lock
-
-# The result of building the library is "vrb_authent".
-backend/vrb_authent/target/
-backend/vrb_authent/Cargo.lock
-
-# The result of building the library is "vrb_chats".
-backend/vrb_chats/target/
-backend/vrb_chats/Cargo.lock
-
-# The result of building the library is "vrb_common".
-backend/vrb_common/target/
-backend/vrb_common/Cargo.lock
-
-# The result of building the library is "vrb_dbase".
-backend/vrb_dbase/target/
-backend/vrb_dbase/Cargo.lock
 backend/vrb_dbase/src/schema.rs
-
-# The result of building the library is "vrb_profiles".
-backend/vrb_profiles/target/
-backend/vrb_profiles/Cargo.lock
-
-# The result of building the library is "vrb_streams".
-backend/vrb_streams/target/
-backend/vrb_streams/Cargo.lock
-
-# The result of building the library is "vrb_tools".
-backend/vrb_tools/target/
-backend/vrb_tools/Cargo.lock
 
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.
@@ -103,5 +72,5 @@ frontend/typings
 frontend/.DS_Store
 frontend/Thumbs.db
 
-
 .vscode
+
