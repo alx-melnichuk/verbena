@@ -13,7 +13,7 @@ DECLARE
   mark_ids INTEGER[] := ARRAY[]::INTEGER[];
   stream_ids INTEGER[] := ARRAY[]::INTEGER[];
   user_ids INTEGER[] := ARRAY[]::INTEGER[];
-  starttimes TIMESTAMP WITH TIME ZONE[] := ARRAY[]::TIMESTAMP WITH TIME ZONE[];
+  starttimes TIMESTAMPTZ[] := ARRAY[]::TIMESTAMPTZ[];
   len2 INTEGER;
   idx2 INTEGER;
   usr_len INTEGER;
@@ -21,7 +21,7 @@ DECLARE
   mark_id INTEGER;
   stream_id INTEGER;
   user_id INTEGER;
-  starttime TIMESTAMP WITH TIME ZONE;
+  starttime TIMESTAMPTZ;
   msg1 VARCHAR;
   ch_msg_id INTEGER;
   ch_msg_logs_ids INTEGER[];

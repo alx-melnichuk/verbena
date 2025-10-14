@@ -16,7 +16,7 @@ $$;
 
 CREATE OR REPLACE PROCEDURE add_stream(
   user_id1 INTEGER, title1 VARCHAR, logo1 VARCHAR, 
-  starttime TIMESTAMP WITH TIME ZONE, descript VARCHAR,
+  starttime TIMESTAMPTZ, descript VARCHAR,
   stream_id INOUT INTEGER
 ) LANGUAGE plpgsql
 AS $$
@@ -71,8 +71,8 @@ DECLARE
   idx INTEGER := 0;
   txt VARCHAR := '';
   year_str VARCHAR := '';
-  starttime1 TIMESTAMP WITH TIME ZONE;
-  starttime2 TIMESTAMP WITH TIME ZONE;
+  starttime1 TIMESTAMPTZ;
+  starttime2 TIMESTAMPTZ;
 BEGIN
   RAISE NOTICE 'Start';
   name_list := ARRAY[
@@ -177,7 +177,7 @@ DECLARE
   txt VARCHAR := '';
   year_str VARCHAR := '';
   year_idx INTEGER := 0;
-  startdate1 TIMESTAMP WITH TIME ZONE;
+  startdate1 TIMESTAMPTZ;
 BEGIN
   RAISE NOTICE 'Start';
   name_list := ARRAY['Logan_Lewis', 'Evelyn_Allen'];

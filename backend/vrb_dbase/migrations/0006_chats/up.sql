@@ -12,11 +12,11 @@ CREATE TABLE chat_messages (
     /* Message text. */
     msg VARCHAR(255) NULL,
     /* Date and time of message creation. */
-    date_created TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_created TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     /* Date and time the message was changed. */
-    date_changed TIMESTAMP WITH TIME ZONE NULL,
+    date_changed TIMESTAMPTZ NULL,
     /* Date and time the message was removed. */
-    date_removed TIMESTAMP WITH TIME ZONE NULL
+    date_removed TIMESTAMPTZ NULL
 );
 
 CREATE INDEX idx_chat_messages_stream_id ON chat_messages(stream_id);
@@ -33,7 +33,7 @@ CREATE TABLE chat_message_logs (
     /* Old message value. */
     old_msg VARCHAR(255) NOT NULL,
     /* Date and time of message creation/modification. */
-    date_update TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+    date_update TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX idx_chat_message_logs_chat_message_id ON chat_message_logs(chat_message_id);
@@ -44,17 +44,17 @@ CREATE INDEX idx_chat_message_logs_chat_message_id ON chat_message_logs(chat_mes
 CREATE OR REPLACE FUNCTION filter_chat_messages(
   IN _stream_id INTEGER,
   IN _sort_des BOOLEAN,
-  IN _min_date_created TIMESTAMP WITH TIME ZONE,
-  IN _max_date_created TIMESTAMP WITH TIME ZONE,
+  IN _min_date_created TIMESTAMPTZ,
+  IN _max_date_created TIMESTAMPTZ,
   IN _rec_limit INTEGER,
   OUT id INTEGER,
   OUT stream_id INTEGER,
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
   OUT msg VARCHAR,
-  OUT date_created TIMESTAMP WITH TIME ZONE,
-  OUT date_changed TIMESTAMP WITH TIME ZONE,
-  OUT date_removed TIMESTAMP WITH TIME ZONE
+  OUT date_created TIMESTAMPTZ,
+  OUT date_changed TIMESTAMPTZ,
+  OUT date_removed TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -105,9 +105,9 @@ CREATE OR REPLACE FUNCTION create_chat_message(
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
   OUT msg VARCHAR,
-  OUT date_created TIMESTAMP WITH TIME ZONE,
-  OUT date_changed TIMESTAMP WITH TIME ZONE,
-  OUT date_removed TIMESTAMP WITH TIME ZONE
+  OUT date_created TIMESTAMPTZ,
+  OUT date_changed TIMESTAMPTZ,
+  OUT date_removed TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE 
@@ -144,9 +144,9 @@ CREATE OR REPLACE FUNCTION modify_chat_message(
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
   OUT msg VARCHAR,
-  OUT date_created TIMESTAMP WITH TIME ZONE,
-  OUT date_changed TIMESTAMP WITH TIME ZONE,
-  OUT date_removed TIMESTAMP WITH TIME ZONE
+  OUT date_created TIMESTAMPTZ,
+  OUT date_changed TIMESTAMPTZ,
+  OUT date_removed TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -202,9 +202,9 @@ CREATE OR REPLACE FUNCTION delete_chat_message(
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
   OUT msg VARCHAR,
-  OUT date_created TIMESTAMP WITH TIME ZONE,
-  OUT date_changed TIMESTAMP WITH TIME ZONE,
-  OUT date_removed TIMESTAMP WITH TIME ZONE
+  OUT date_created TIMESTAMPTZ,
+  OUT date_changed TIMESTAMPTZ,
+  OUT date_removed TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -242,7 +242,7 @@ CREATE OR REPLACE FUNCTION get_chat_message_log(
   OUT id INTEGER,
   OUT chat_message_id INTEGER,
   OUT old_msg VARCHAR,
-  OUT date_update TIMESTAMP WITH TIME ZONE
+  OUT date_update TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE sql
 AS $$
   SELECT
@@ -266,7 +266,7 @@ CREATE TABLE blocked_users (
     /* The user who was blocked. */
     blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     /* Date and time the blocking started. */
-    block_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+    block_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX idx_blocked_users_user_id ON blocked_users(user_id);
@@ -283,7 +283,7 @@ CREATE OR REPLACE FUNCTION create_blocked_user(
   OUT user_id INTEGER,
   OUT blocked_id INTEGER,
   OUT blocked_nickname VARCHAR,
-  OUT block_date TIMESTAMP WITH TIME ZONE
+  OUT block_date TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE 
@@ -358,7 +358,7 @@ CREATE OR REPLACE FUNCTION delete_blocked_user(
   OUT user_id INTEGER,
   OUT blocked_id INTEGER,
   OUT blocked_nickname VARCHAR,
-  OUT block_date TIMESTAMP WITH TIME ZONE
+  OUT block_date TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -418,7 +418,7 @@ CREATE OR REPLACE FUNCTION get_blocked_users(
   OUT user_id INTEGER,
   OUT blocked_id INTEGER,
   OUT blocked_nickname VARCHAR,
-  OUT block_date TIMESTAMP WITH TIME ZONE
+  OUT block_date TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
