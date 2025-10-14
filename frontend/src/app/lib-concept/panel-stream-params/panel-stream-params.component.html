@@ -12,34 +12,36 @@
         </svg>
         <span class="psp-middle">{{ countOfViewer || 0 }}</span>
     </span>
-    @if (isShowTimer && (!!started || !!start)) {
+    @if (timerIsShow) {
         <span psp-mr-r0_5 class="psp-clock">
             <svg psp-mr-r0_5 class="psp-icon-clock">
                 <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
             </svg>
-            <app-date-time-timer
+            <app-time-tracking style="outline: 1px dashed chocolate;"
+                [initValue]="timerValue"
+                [isActive]="timerActive" 
+                [labelDays]="labelDays"
+                [locale]="locale">
+            </app-time-tracking>
+            <!-- <app-date-time-timer
                 [isActive]="true"
                 [startDate]="started || start">
-            </app-date-time-timer>
+            </app-date-time-timer> -->
         </span>
     }
 </div>
-<div>
-    @if (isShowTimer && (!!started || !!start)) {
-        <app-time-tracking style="outline: 1px dashed chocolate; margin-left: 108px;"
-            [initValue]="timerValue"
-            [isActive]="timerActive" 
-            isHideLeadingZero9
-            [labelDays]="labelDays"
-            [locale]="locale"
-            startTime9="start"
-            startTime8="date1">
-        </app-time-tracking>
-    }
-</div>
-@if (!!stopped) {
+
+@if (!!paused && !stopped) {
   <div class="psp-param">
-    <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.stopped' | translate }}</span>
-    <span psp-mr-r0_5>{{ stopped | dateTimeFormat:locale:formatDateTime }} </span>
+    <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.paused' | translate }}</span>
+    <span psp-mr-r0_5>{{ paused | dateTimeFormat:locale:formatDateTime }} </span>
   </div>
 }
+
+@if (!!stopped) {
+    <div class="psp-param">
+      <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.stopped' | translate }}</span>
+      <span psp-mr-r0_5>{{ stopped | dateTimeFormat:locale:formatDateTime }} </span>
+    </div>
+  }
+  
