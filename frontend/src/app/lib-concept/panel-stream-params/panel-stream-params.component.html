@@ -1,8 +1,8 @@
 <div class="psp-param">
     <span psp-mr-r0_5 class="psp-param-label">
-        {{ (!started ? 'panel-stream-params.start' :'panel-stream-params.started') | translate }}
+        {{ (!streamStarted ? 'panel-stream-params.start' :'panel-stream-params.started') | translate }}
     </span>
-    <span psp-mr-r0_5>{{ (started || start)  | dateTimeFormat:locale:formatDateTime }} </span>
+    <span psp-mr-r0_5>{{ (streamStarted || streamStarttime)  | dateTimeFormat:locale:formatDateTime }} </span>
 </div>
 
 <div class="psp-param">
@@ -17,31 +17,27 @@
             <svg psp-mr-r0_5 class="psp-icon-clock">
                 <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
             </svg>
-            <app-time-tracking style="outline: 1px dashed chocolate;"
+            <app-time-tracking
                 [initValue]="timerValue"
                 [isActive]="timerActive" 
                 [labelDays]="labelDays"
                 [locale]="locale">
             </app-time-tracking>
-            <!-- <app-date-time-timer
-                [isActive]="true"
-                [startDate]="started || start">
-            </app-date-time-timer> -->
         </span>
     }
 </div>
 
-@if (!!paused && !stopped) {
+@if (!!streamPaused && !streamStopped) {
   <div class="psp-param">
     <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.paused' | translate }}</span>
-    <span psp-mr-r0_5>{{ paused | dateTimeFormat:locale:formatDateTime }} </span>
+    <span psp-mr-r0_5>{{ streamPaused | dateTimeFormat:locale:formatDateTime }} </span>
   </div>
 }
 
-@if (!!stopped) {
+@if (!!streamStopped) {
     <div class="psp-param">
       <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.stopped' | translate }}</span>
-      <span psp-mr-r0_5>{{ stopped | dateTimeFormat:locale:formatDateTime }} </span>
+      <span psp-mr-r0_5>{{ streamStopped | dateTimeFormat:locale:formatDateTime }} </span>
     </div>
-  }
+}
   
