@@ -26,8 +26,6 @@ backend/imgs/
 # temporary upload directory
 backend/tmp/
 
-backend/vrb_dbase/src/schema.rs
-
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
