@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input, OnChanges, OnDestroy, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, Component, computed, Input, OnChanges, OnDestroy, signal, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -43,18 +43,18 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     public innLabelDays: string = '';
     public labelDaysObj: Record<number, string> = this.getLabelDaysObj(null);
 
-    public days: number = -1;
     public fillSymbol: string = FILL_SYMBOL_ZERO;
-    public hours: number = 0;
-    public minutes: number = 0;
-    public seconds: number = 0;
 
+    // Writable signals for managing timer state.
+    private timeTracking = signal(0); // Counting the number of seconds elapsed.
     private intervalId: number | null = null;
-    private secondsValue: number = 0;
 
-    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    // Expose read-only versions for the template
+    readonly timeValue = this.timeTracking.asReadonly();
 
     constructor() {
+        // Effect for logging state changes (useful for debugging)
+        // effect(() => { console.log(`this.timeValue: ${this.timeValue()}`); });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -92,27 +92,24 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
 
     /** Set the timer value. */
     public setTimeTracking(seconds: number): void {
-        if (this.secondsValue == seconds) {
-            return;
-        }
         this.stopTimeTracking();
-        this.secondsValue = seconds;
-        this.updateProperties(this.secondsValue);
+        this.timeTracking.set(seconds);
     }
     /** Start timer processing (calls "setInterval()"). */
     public startTimeTracking(): void {
-        if (!!this.intervalId) {
+        if (!!this.intervalId || this.timeValue() == 0) {
             return;
         }
-        this.changeDetector.markForCheck();
         this.intervalId = window.setInterval(() => {
-            if (!this.isUnstopAtZeroVal && this.secondsValue == 0) {
-                this.stopTimeTracking();
-            } else {
-                this.secondsValue = this.secondsValue + 1;
-                this.updateProperties(this.secondsValue);
-            }
-            this.changeDetector.markForCheck();
+            this.timeTracking.update((totalSeconds: number): number => {
+                let delta = 0;
+                if (!this.isUnstopAtZeroVal && totalSeconds == 0) {
+                    this.stopTimeTracking();
+                } else {
+                    delta = 1;
+                }
+                return totalSeconds + delta;
+            });
         }, 1000);
     }
     /** Stop timer processing (calls to "setInterval()"). */
@@ -126,12 +123,40 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     public getLabelByKey(labelDaysObj: Record<number, string>, key: number, locale: string | null): string | undefined {
         let result: string | undefined;
         if (locale == LOCALE_UK) {
-            result = (key == 1 ? labelDaysObj[1] : (key < 20 ? labelDaysObj[key] : labelDaysObj[key % 10]));
+            result = (key < 20 ? labelDaysObj[key] : labelDaysObj[key % 10]);
+            if (key == 14 || key == 15) { // # temp for test
+                result = labelDaysObj[1];
+            }
         } else {
             result = labelDaysObj[key > 1 ? -1 : 1]
         }
         return result || labelDaysObj[-1];
     }
+
+    public padsStart(value: number, fillString: string): string {
+        return value.toString().padStart(2, fillString);
+    }
+
+    // ** Computed signals for derived state **
+
+    // Get the number of days the timer has been running.
+    readonly getDays = computed(() => {
+        return Math.floor(Math.abs(this.timeValue()) / 86400); // 3600 * 24 = 86400
+    });
+    /** Get the number of hours the timer has been running. */
+    readonly getHours = computed(() => {
+        return Math.floor((Math.abs(this.timeValue()) % 86400) / 3600); // 3600 * 24 = 86400
+    });
+    /** Get the number of minutes the timer has been running. */
+    readonly getMinutes = computed(() => {
+        return Math.floor((Math.abs(this.timeValue()) % 3600) / 60);
+    });
+    /** Get the number of seconds the timer has been running. */
+    readonly getSeconds = computed(() => {
+        return Math.abs(this.timeValue()) % 60;
+    });
+
+    readonly isCompleted = computed(() => this.timeValue() === 0);
 
     // ** Private API **
 
@@ -147,12 +172,5 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
             }
         }
         return labelDaysObj;
-    }
-
-    private updateProperties(secondsValue: number): void {
-        this.days = Math.floor(Math.abs(secondsValue) / (3600 * 24));
-        this.hours = Math.floor((Math.abs(secondsValue) % (3600 * 24)) / 3600);
-        this.minutes = Math.floor((Math.abs(secondsValue) % 3600) / 60);
-        this.seconds = Math.abs(secondsValue) % 60;
     }
 }
