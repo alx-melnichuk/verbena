@@ -77,10 +77,13 @@
         <app-panel-stream-params
           [countOfViewer]="countOfViewer"
           [locale]="localeService.getLocale()"
-          [start]="streamStarttime"
-          [started]="streamStarted"
-          [paused]="streamPaused"
-          [stopped]="streamStopped">
+          [streamStarttime]="streamDto?.starttime"
+          [streamStarted]="streamDto?.started"
+          [streamPaused]="streamDto?.paused"
+          [streamStopped]="streamDto?.stopped"
+          [timerActive]="timerActive"
+          [timerIsShow]="timerIsShow"
+          [timerValue]="timerValue">
         </app-panel-stream-params>
       </div>
 

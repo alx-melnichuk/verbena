@@ -1,6 +1,6 @@
 import {
     AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, inject, Input,
-    OnChanges, Output, SimpleChanges, ViewEncapsulation
+    Output, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -32,23 +32,23 @@ import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-st
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ConceptViewComponent implements AfterContentInit, OnChanges {
-    @Input() // List of new blocked users.
-    public chatBlockedUsers: string[] = [];
-    @Input() // List of past chat messages.
-    public chatPastMsgs: ChatMessageDto[] = [];
-    @Input() // List of new chat messages.
-    public chatNewMsgs: ChatMessageDto[] = [];
-    @Input() // List of IDs of permanently deleted chat messages.
-    public chatRmvIds: number[] = [];
-    @Input() // Indication that the user is blocked.
-    public chatIsBlocked: boolean | null = null;
-    @Input() // Indicates that the user can send messages to the chat.
-    public chatIsEditable: boolean | null = null;
-    @Input() // Indicates that data is being loaded.
-    public chatIsLoadData: boolean | null = null;
-    @Input() // Indicates that the user is the owner of the chat.
-    public chatIsOwner: boolean | null = null;
+export class ConceptViewComponent implements AfterContentInit {
+    @Input()
+    public chatBlockedUsers: string[] = []; // List of new blocked users.
+    @Input()
+    public chatPastMsgs: ChatMessageDto[] = []; // List of past chat messages.
+    @Input()
+    public chatNewMsgs: ChatMessageDto[] = []; // List of new chat messages.
+    @Input()
+    public chatRmvIds: number[] = []; // List of IDs of permanently deleted chat messages.
+    @Input()
+    public chatIsBlocked: boolean | null = null; // Indication that the user is blocked.
+    @Input()
+    public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
+    @Input()
+    public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
+    @Input()
+    public chatIsOwner: boolean | null = null; // Indicates that the user is the owner of the chat.
     @Input()
     public chatMaxLen: number | null = null;
     @Input()
@@ -64,8 +64,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges {
     public countOfViewer: number | null | undefined;
     @Input()
     public isLoadStream = false;
-    // @Input()
-    // public isShowTimer: boolean = false;
     @Input()
     public isStreamOwner: boolean = false;
     @Input()
@@ -80,6 +78,13 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges {
 
     @Input()
     public streamDto: StreamDto | null = null;
+
+    @Input()
+    public timerActive: boolean | null | undefined;
+    @Input()
+    public timerIsShow: boolean | null | undefined;
+    @Input()
+    public timerValue: number | null | undefined;
 
     @Output()
     readonly changeState: EventEmitter<StreamState> = new EventEmitter();
@@ -102,10 +107,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges {
     public isSidebarRgOpen: boolean = true; // false;
     // To disable the jumping effect of the "stream-video" panel at startup.
     public isStreamVideo = false;
-    public streamStarttime: Date | null | undefined;
-    public streamStarted: Date | null | undefined;
-    public streamPaused: Date | null | undefined;
-    public streamStopped: Date | null | undefined;
 
     public localeService: LocaleService = inject(LocaleService);
 
@@ -122,16 +123,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges {
     ngAfterContentInit(): void {
         this.isStreamVideo = true;
         this.changeDetector.markForCheck();
-    }
-
-    ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes['streamDto']) {
-            console.log(`this.streamDto: ${JSON.stringify(this.streamDto)}`); // #
-            this.streamStarttime = StringDateTimeUtil.toDate(this.streamDto?.starttime);
-            this.streamStarted = StringDateTimeUtil.toDate(this.streamDto?.started);
-            this.streamPaused = StringDateTimeUtil.toDate(this.streamDto?.paused);
-            this.streamStopped = StringDateTimeUtil.toDate(this.streamDto?.stopped);
-        }
     }
 
     // ** Public API **
