@@ -39,21 +39,21 @@ export interface StreamDto {
     // Link to stream logo, optional (min: 2, max: 255)
     logo: string | null;
     // The stream start time. Required on create
-    starttime: StringDateTime | null;
+    starttime: Date | null;
     // Stream live status, false means inactive
     live: boolean;
     // Stream live state - waiting, preparing, start, paused, stop (waiting by default)
     state: StreamState; // ['waiting', 'preparing', 'started', 'paused', 'stopped']
     // The time the stream began.
-    started: StringDateTime | null; // Date | null;
+    started: Date | null;
     // The time the stream began pausing.
-    paused: StringDateTime | null; // Date | null;
+    paused: Date | null;
     // The time the stream stopped.
-    stopped: StringDateTime | null; // Date | null;
+    stopped: Date | null;
     source: string;
     tags: string[];
-    createdAt: StringDateTime;
-    updatedAt: StringDateTime;
+    createdAt: Date | null;
+    updatedAt: Date | null;
 }
 
 export class StreamDtoUtil {
@@ -64,17 +64,21 @@ export class StreamDtoUtil {
             title: (streamDto?.title || ''),
             descript: (streamDto?.descript || ''),
             logo: (streamDto?.logo || null),
-            starttime: (streamDto?.starttime || null), // StringDateTime;
+            starttime: this.getDate(streamDto?.starttime || null),
             live: (streamDto?.live || false),
-            started: (streamDto?.started || null), // StringDateTime;
-            paused: (streamDto?.paused || null), // StringDateTime;
-            stopped: (streamDto?.stopped || null), // StringDateTime;
+            started: this.getDate(streamDto?.started || null), // StringDateTime;
+            paused: this.getDate(streamDto?.paused || null), // StringDateTime;
+            stopped: this.getDate(streamDto?.stopped || null), // StringDateTime;
             state: (streamDto?.state || StreamState.waiting),
             tags: (streamDto?.tags || []),
             source: (streamDto?.source || 'obs'),
-            createdAt: (streamDto?.createdAt || ''), // StringDateTime;
-            updatedAt: (streamDto?.updatedAt || ''), // StringDateTime;
+            createdAt: this.getDate(streamDto?.createdAt || null), // StringDateTime;
+            updatedAt: this.getDate(streamDto?.updatedAt || null), // StringDateTime;
         };
+    }
+    public static getDate(value: StringDateTime | Date | null): Date | null {
+        const isString = value != null && typeof value == 'string';
+        return isString ? StringDateTimeUtil.toDate(value) : value;
     }
     public static isFuture(startTime: StringDateTime | null): boolean | null {
         let date: Date | null = StringDateTimeUtil.toDate(startTime);

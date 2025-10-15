@@ -6,7 +6,7 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import {
     SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto,
-    UpdateStreamFileDto, StreamState,
+    UpdateStreamFileDto, StreamState, StreamDtoUtil,
 } from './stream-api.interface';
 import { StringDateTime } from '../common/string-date-time';
 
@@ -81,7 +81,8 @@ export class StreamApiService {
      */
     public getStream(id: number): Promise<StreamDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri(`appApi://streams/${id}`);
-        return lastValueFrom(this.http.get<StreamDto | HttpErrorResponse>(url));
+        return lastValueFrom(this.http.get<StreamDto | HttpErrorResponse>(url))
+            .then((response) => StreamDtoUtil.create(response as StreamDto));
     }
 
     /** Change state stream
@@ -92,14 +93,13 @@ export class StreamApiService {
      * @ required streamId
      * @ access protected
      */
-    public toggleStreamState(
-        streamId: number, state: StreamState
-    ): Promise<StreamDto | HttpErrorResponse> {
+    public toggleStreamState(streamId: number, state: StreamState): Promise<StreamDto | HttpErrorResponse> {
         if (state === StreamState.waiting) {
             return Promise.reject();
         }
         const url = Uri.appUri(`appApi://streams/toggle/${streamId}`);
-        return lastValueFrom(this.http.put<StreamDto | HttpErrorResponse>(url, { state: state }));
+        return lastValueFrom(this.http.put<StreamDto | HttpErrorResponse>(url, { state: state }))
+            .then((response) => StreamDtoUtil.create(response as StreamDto));
     }
 
     /** Add stream
@@ -129,7 +129,8 @@ export class StreamApiService {
             formData.set('logofile', updateStreamFileDto.logoFile, updateStreamFileDto.logoFile.name);
         }
         const url = Uri.appUri(`appApi://streams`);
-        return lastValueFrom(this.http.post<StreamDto | HttpErrorResponse>(url, formData));
+        return lastValueFrom(this.http.post<StreamDto | HttpErrorResponse>(url, formData))
+            .then((response) => StreamDtoUtil.create(response as StreamDto));
     }
 
     /** Update stream
@@ -163,7 +164,8 @@ export class StreamApiService {
         }
         const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
         const url = Uri.appUri(`appApi://streams/${id}`);
-        return lastValueFrom(this.http.put<StreamDto | HttpErrorResponse>(url, formData, { headers: headers }));
+        return lastValueFrom(this.http.put<StreamDto | HttpErrorResponse>(url, formData, { headers: headers }))
+            .then((response) => StreamDtoUtil.create(response as StreamDto));
     }
 
     /** Delete stream
