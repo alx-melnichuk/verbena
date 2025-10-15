@@ -97,6 +97,7 @@ diesel::table! {
         live -> Bool,
         state -> StreamState,
         started -> Nullable<Timestamptz>,
+        paused -> Nullable<Timestamptz>,
         stopped -> Nullable<Timestamptz>,
         #[max_length = 255]
         source -> Varchar,
