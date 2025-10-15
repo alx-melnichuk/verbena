@@ -22,6 +22,9 @@
     [ownerNickname]="profileMiniDto?.nickname"
 
     [streamDto]="streamDto"
+    [timerActive]="timerActive"
+    [timerIsShow]="timerIsShow"
+    [timerValue]="timerValue"
 
     (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
     (blockUser)="doBlockUser($event)"
