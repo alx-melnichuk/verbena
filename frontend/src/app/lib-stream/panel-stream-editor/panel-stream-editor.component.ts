@@ -180,10 +180,10 @@ export class PanelStreamEditorComponent implements OnChanges {
 
         const title: string = cntlTitle.value || '';
         const descript: string = cntlDescript.value || '';
-        let starttime: StringDateTime | undefined;
+        let starttime: Date | undefined;
         if (!!cntlIsStartTime.value) {
-            const startDateTime = this.getStartDateTime(this.controls.startDate.value, this.controls.startTime.value);
-            starttime = !!startDateTime ? startDateTime.toISOString() : undefined;
+            const startDateTime: Date | null = this.getStartDateTime(this.controls.startDate.value, this.controls.startTime.value);
+            starttime = !!startDateTime ? startDateTime : undefined;
         }
         const tags: string[] = cntlTags.value || [];
 
@@ -191,7 +191,7 @@ export class PanelStreamEditorComponent implements OnChanges {
             id: (this.isCreate ? undefined : this.streamDto?.id),
             title: (this.isCreate ? title : (this.origStreamDto.title != title ? title : undefined)),
             descript: (this.isCreate ? descript : (this.origStreamDto.descript != descript ? descript : undefined)),
-            starttime: (this.isCreate ? starttime : (this.origStreamDto.starttime != starttime ? starttime : undefined)),
+            starttime: (this.isCreate ? starttime : (this.origStreamDto.starttime != starttime ? starttime : undefined))?.toISOString(),
             tags: (this.isCreate ? tags : (this.origStreamDto.tags.join(',') != tags.join(',') ? tags : undefined)),
             logoFile: this.logoFile,
         };
@@ -220,10 +220,10 @@ export class PanelStreamEditorComponent implements OnChanges {
         Object.freeze(this.origStreamDto);
 
         this.isCreate = (streamDto.id < 0);
-        const now = new Date(Date.now())
-        const currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
-        // Date.parse("2010-01-01T00:00:00.000Z");
-        const startDate = (!!streamDto.starttime ? new Date(Date.parse(streamDto.starttime)) : currentTime);
+        const now = new Date(Date.now());
+        const year = now.getFullYear();
+        const currentTime = new Date(year, now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
+        const startDate = (!!streamDto.starttime ? new Date(streamDto.starttime.getTime()) : currentTime);
         const startHours = ('00' + startDate.getHours()).slice(-2);
         const startMinutes = ('00' + startDate.getMinutes()).slice(-2);
         const startTimeStr = startHours + ':' + startMinutes;
@@ -234,7 +234,7 @@ export class PanelStreamEditorComponent implements OnChanges {
             descript: streamDto.descript,
             logo: streamDto.logo,
             tags: (streamDto.tags || []),
-            starttime: streamDto.starttime,
+            starttime: streamDto.starttime?.toISOString(),
             isStartTime: (streamDto.id > 0 && !!streamDto.starttime),
             startDate: startDate,
             startTime: startTimeStr,
