@@ -296,12 +296,19 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.streamDto = stream;
         this.isStreamOwner = (this.streamDto?.userId || -1) == profileId;
         this.isStreamAvailable = (this.streamDto?.state || 'stopped') != 'stopped';
+
         // live := NEW."state" IN ('preparing', 'started', 'paused');
         this.timerIsShow = (['preparing', 'started', 'paused', 'stopped'].indexOf(this.streamDto?.state || '') > -1);
-        this.timerActive = this.timerIsShow && (['preparing', 'started'].indexOf(this.streamDto?.state || '') > -1);
-        this.timerValue = !this.timerIsShow
-            ? 0
-            : this.getTimerValue(stream?.starttime || null, stream?.started || null, stream?.paused || null, stream?.stopped || null);
+        this.timerActive = false;
+        this.timerValue = 0;
+
+        if (stream != null && this.timerIsShow) {
+            this.timerActive = stream.state == StreamState.started;
+            if (!this.timerActive && stream.state == StreamState.preparing) {
+                this.timerActive = !!stream.starttime && stream.starttime > (new Date());
+            }
+            this.timerValue = this.getTimerValue(stream.starttime, stream.started, stream.paused, stream.stopped);
+        }
     }
     private getTimerValue(starttime: Date | null, started: Date | null, paused: Date | null, stopped: Date | null): number {
         let result: number = 0;
