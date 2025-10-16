@@ -61,6 +61,9 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['initValue']) {
             this.setTimeTracking(this.initValue || 0);
+            if (this.isActive) {
+                this.startTimeTracking();
+            }
         }
         if (!!changes['isActive']) {
             if (this.isActive) {
