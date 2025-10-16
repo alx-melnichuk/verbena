@@ -129,10 +129,8 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     public getLabelByKey(labelDaysObj: Record<number, string>, key: number, locale: string | null): string | undefined {
         let result: string | undefined;
         if (locale == LOCALE_UK) {
-            result = (key < 20 ? labelDaysObj[key] : labelDaysObj[key % 10]);
-            if (key == 14 || key == 15) { // # temp for test
-                result = labelDaysObj[1];
-            }
+            const key2 = key % 100;
+            result = (key2 < 20 ? labelDaysObj[key2] : labelDaysObj[key % 10]);
         } else {
             result = labelDaysObj[key > 1 ? -1 : 1]
         }
