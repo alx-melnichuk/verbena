@@ -64,7 +64,7 @@
       <div class="cv-cnt-prm cv-cnt-actions">
         <span class="cv-cnt-label">{{ 'concept-view.state' | translate }}</span>
         <span>@if (!!streamDto) {  {{ ('concept-view.' + streamDto.state) | translate }}  }</span>
-        @if (isStreamOwner) {
+        @if (isStreamOwner && streamDto?.state != 'stopped') {
           <app-panel-stream-actions
             [state]="streamDto?.state"
             [title]="streamDto?.title"
