@@ -48,6 +48,7 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     // Writable signals for managing timer state.
     private timeTracking = signal(0); // Counting the number of seconds elapsed.
     private intervalId: number | null = null;
+    private isFirstIteration: boolean = false;
 
     // Expose read-only versions for the template
     readonly timeValue = this.timeTracking.asReadonly();
@@ -97,16 +98,20 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     }
     /** Start timer processing (calls "setInterval()"). */
     public startTimeTracking(): void {
-        if (!!this.intervalId || this.timeValue() == 0) {
+        if (!!this.intervalId) {
             return;
         }
+        this.isFirstIteration = true;
         this.intervalId = window.setInterval(() => {
             this.timeTracking.update((totalSeconds: number): number => {
                 let delta = 0;
-                if (!this.isUnstopAtZeroVal && totalSeconds == 0) {
+                if (!this.isFirstIteration && !this.isUnstopAtZeroVal && totalSeconds == 0) {
                     this.stopTimeTracking();
                 } else {
                     delta = 1;
+                }
+                if (this.isFirstIteration) {
+                    this.isFirstIteration = false;
                 }
                 return totalSeconds + delta;
             });
@@ -118,6 +123,7 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
             window.clearInterval(this.intervalId);
             this.intervalId = null;
         }
+        this.isFirstIteration = false;
     }
 
     public getLabelByKey(labelDaysObj: Record<number, string>, key: number, locale: string | null): string | undefined {
