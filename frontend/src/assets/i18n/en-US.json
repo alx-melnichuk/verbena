@@ -434,15 +434,6 @@
         "1": "day"
     }
   },
-  "panel-stream-admin": {
-    "btn_settings": "Settings",
-    "_followers": "Followers",
-    "_error_get_stream": "Error getting stream",
-    "_error_get_user_profile": "Error getting user profile",
-    "_error_get_profile_contact": "Error getting profile contact",
-    "_error_subscription": "Error while a subscription",
-    "_error_unsubscription": "Error while a unsubscription"
-  },
   "panel-chat": {
     "you": "you",
     "menu": {
