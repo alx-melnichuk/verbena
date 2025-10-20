@@ -316,7 +316,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         if (!!starttime && currDate < starttime) {
             result = Math.floor((currDate.getTime() - starttime.getTime()) / 1000);
         }
-        if (!!started) {
+        if (!!started && currDate > started) {
             result = Math.floor((currDate.getTime() - started.getTime()) / 1000);
         }
         if (!!paused && !!started) {
