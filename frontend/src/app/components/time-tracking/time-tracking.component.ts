@@ -116,7 +116,7 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     public doIterate() {
         this.updateTimeTracking();
         const currNow = Date.now();
-        if (this.expected == 0) {
+        if (this.expected < currNow) {
             this.expected = currNow;
         }
         // Drift (ms) (positive for exceeded) compares the expected time to the current time.
@@ -134,6 +134,7 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
         if (this.timeoutId != null) {
             window.clearInterval(this.timeoutId);
             this.timeoutId = null;
+            this.expected = 0;
         }
         this.isFirstIteration = false;
     }
