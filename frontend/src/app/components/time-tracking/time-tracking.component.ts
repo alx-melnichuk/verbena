@@ -10,6 +10,9 @@ import { BooleanUtil } from 'src/app/utils/boolean.util';
 const LABEL_DAYS_DEF = 'days';
 const FILL_SYMBOL_ZERO = '0';
 const FILL_SYMBOL_EMPTY = '';
+const INTERVAL = 1000;
+
+let idx = 0;
 
 @Component({
     selector: 'app-time-tracking',
@@ -22,6 +25,8 @@ const FILL_SYMBOL_EMPTY = '';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TimeTrackingComponent implements OnChanges, OnDestroy {
+    @Input()
+    public id = 'timeTrackingId_' + (++idx);
     @Input()
     public initValue: number | null | undefined;
     @Input()
@@ -46,9 +51,10 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     public fillSymbol: string = FILL_SYMBOL_ZERO;
 
     // Writable signals for managing timer state.
-    private timeTracking = signal(0); // Counting the number of seconds elapsed.
-    private intervalId: number | null = null;
+    private expected: number = 0;
     private isFirstIteration: boolean = false;
+    private timeTracking = signal(0); // Counting the number of seconds elapsed.
+    private timeoutId: number | null = null;
 
     // Expose read-only versions for the template
     readonly timeValue = this.timeTracking.asReadonly();
@@ -61,7 +67,7 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['initValue']) {
             this.setTimeTracking(this.initValue || 0);
-            if (this.isActive) {
+            if (this.isActive && !changes['isActive']) {
                 this.startTimeTracking();
             }
         }
@@ -101,30 +107,33 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     }
     /** Start timer processing (calls "setInterval()"). */
     public startTimeTracking(): void {
-        if (!!this.intervalId) {
+        if (!!this.timeoutId) {
             return;
         }
         this.isFirstIteration = true;
-        this.intervalId = window.setInterval(() => {
-            this.timeTracking.update((totalSeconds: number): number => {
-                let delta = 0;
-                if (!this.isFirstIteration && !this.isUnstopAtZeroVal && totalSeconds == 0) {
-                    this.stopTimeTracking();
-                } else {
-                    delta = 1;
-                }
-                if (this.isFirstIteration) {
-                    this.isFirstIteration = false;
-                }
-                return totalSeconds + delta;
-            });
-        }, 1000);
+        this.doIterate();
     }
+    public doIterate() {
+        this.updateTimeTracking();
+        const currNow = Date.now();
+        if (this.expected == 0) {
+            this.expected = currNow;
+        }
+        // Drift (ms) (positive for exceeded) compares the expected time to the current time.
+        const delta = currNow - this.expected;
+        // Set the next expected current time when the timeout fires.
+        this.expected += INTERVAL;
+
+        this.timeoutId = window.setTimeout(() => {
+            this.doIterate();
+        }, Math.max(0, INTERVAL - delta)); // Take drift into account.
+    };
+
     /** Stop timer processing (calls to "setInterval()"). */
     public stopTimeTracking(): void {
-        if (this.intervalId != null) {
-            window.clearInterval(this.intervalId);
-            this.intervalId = null;
+        if (this.timeoutId != null) {
+            window.clearInterval(this.timeoutId);
+            this.timeoutId = null;
         }
         this.isFirstIteration = false;
     }
@@ -166,6 +175,21 @@ export class TimeTrackingComponent implements OnChanges, OnDestroy {
     readonly isCompleted = computed(() => this.timeValue() === 0);
 
     // ** Private API **
+
+    private updateTimeTracking = () => {
+        this.timeTracking.update((totalSeconds: number): number => {
+            let delta = 0;
+            if (!this.isFirstIteration && !this.isUnstopAtZeroVal && totalSeconds == 0) {
+                this.stopTimeTracking();
+            } else {
+                delta = 1;
+            }
+            if (this.isFirstIteration) {
+                this.isFirstIteration = false;
+            }
+            return totalSeconds + delta;
+        });
+    }
 
     private getLabelDaysObj(labelDays: string | Record<number, string> | null | undefined): Record<number, string> {
         const labelDaysObj: Record<number, string> = { [-1]: LABEL_DAYS_DEF };
