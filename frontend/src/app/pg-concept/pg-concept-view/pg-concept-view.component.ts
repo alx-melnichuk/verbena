@@ -84,7 +84,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
         const streamDto = conceptResponse?.streamDto || null;
         this.setStreamDto(streamDto || null, this.profileDto?.id || 0);
-        // this.setStreamDto(conceptResponse?.streamDto || null, this.profileDto?.id || 0);
         const blockedUsers = conceptResponse?.blockedUsersDto || [];
         for (let idx = 0; idx < blockedUsers.length; idx++) {
             if (!!blockedUsers[idx].blockedNickname) {
@@ -297,6 +296,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.isStreamOwner = (this.streamDto?.userId || -1) == profileId;
         this.isStreamAvailable = (this.streamDto?.state || 'stopped') != 'stopped';
 
+        this.updateTimerProperties(stream);
+    }
+
+    private updateTimerProperties(stream: StreamDto | null): void {
         // live := NEW."state" IN ('preparing', 'started', 'paused');
         this.timerIsShow = (['preparing', 'started', 'paused', 'stopped'].indexOf(this.streamDto?.state || '') > -1);
         this.timerActive = false;
@@ -310,13 +313,14 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.timerValue = this.getTimerValue(stream.starttime, stream.started, stream.paused, stream.stopped);
         }
     }
+
     private getTimerValue(starttime: Date | null, started: Date | null, paused: Date | null, stopped: Date | null): number {
         let result: number = 0;
         const currDate = new Date();
         if (!!starttime && currDate < starttime) {
             result = Math.floor((currDate.getTime() - starttime.getTime()) / 1000);
         }
-        if (!!started && currDate > started) {
+        if (!!started && currDate >= started) {
             result = Math.floor((currDate.getTime() - started.getTime()) / 1000);
         }
         if (!!paused && !!started) {
