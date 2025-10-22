@@ -3,6 +3,7 @@ use std::{collections::HashMap, fmt, slice::Iter};
 use chrono::SecondsFormat;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use utoipa::ToSchema;
 
 use crate::chat_message_models::ChatMessage;
 
@@ -173,26 +174,26 @@ fn parse_json_to_i32(json_value: &serde_json::Value) -> Result<i32, &'static str
 // ** **
 
 // ** Block clients in a room by name. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 pub struct BlockEWS {
     pub block: String,
     pub is_in_chat: bool, // The user is in chat now.
 }
 
 // ** Count of clients in the room. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CountEWS {
     pub count: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EchoEWS {
     pub echo: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 pub struct ErrEWS {
     pub err: u16,
     pub code: String,
@@ -213,7 +214,7 @@ impl ErrEWS {
 }
 
 // ** Join the client to the chat room. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinEWS {
     pub join: i32,
@@ -226,7 +227,7 @@ pub struct JoinEWS {
 }
 
 // ** Leave the client from the chat room. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LeaveEWS {
     pub leave: i32,
@@ -235,7 +236,7 @@ pub struct LeaveEWS {
 }
 
 // ** Send a text message to all clients in the room. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct MsgEWS {
     pub msg: String,
@@ -260,7 +261,7 @@ impl From<ChatMessage> for MsgEWS {
 }
 
 // ** Send a message about deleting text to all chat members. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct MsgCutEWS {
     pub msg_cut: String,
@@ -268,7 +269,7 @@ pub struct MsgCutEWS {
 }
 
 // ** Send a correction to the message to everyone in the chat. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct MsgPutEWS {
     pub msg_put: String,
@@ -276,40 +277,40 @@ pub struct MsgPutEWS {
 }
 
 /** Send a permanent deletion message to all chat members. */
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct MsgRmvEWS {
     pub msg_rmv: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct NameEWS {
     pub name: String, // user_name
 }
 
 // ** Send a parameter with the name and type boolean. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PrmBoolEWS {
     pub prm_bool: String, // Parameter name.
-    pub val_bool: bool, // Parameter value.
+    pub val_bool: bool,   // Parameter value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_owner: Option<bool>, // Indicates that the chat was sent by the owner.
 }
 
 // ** Send a parameter with the name and type integer (i32). **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PrmIntEWS {
     pub prm_int: String, // Parameter name.
-    pub val_int: i32, // Parameter value.
+    pub val_int: i32,    // Parameter value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_owner: Option<bool>, // Indicates that the chat was sent by the owner.
 }
 
 // ** Send a parameter with the name and type string. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PrmStrEWS {
     pub prm_str: String, // Parameter name.
@@ -319,7 +320,7 @@ pub struct PrmStrEWS {
 }
 
 // ** Unblock clients in a room by name. **
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UnblockEWS {
     pub unblock: String,
