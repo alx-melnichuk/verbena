@@ -923,7 +923,7 @@ pub async fn post_blocked_user(
 /// 
 #[utoipa::path(
     responses(
-        (status = 200, description = "Remove user from blocked list.", body = ChatMessageDto,
+        (status = 200, description = "Remove user from blocked list.", body = BlockedUserDto,
             examples(
             ("1_remove_by_user_id" = (summary = "Remove user by user ID", 
                 description = "Remove user from blocked list by user ID. 
