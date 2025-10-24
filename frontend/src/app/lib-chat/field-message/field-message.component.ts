@@ -52,13 +52,13 @@ export class FieldMessageComponent implements OnChanges {
     @Input()
     public label: string | null | undefined;
     @Input()
-    public maxLen: number | null = null;
+    public maxLen: number | null | undefined;
     @Input()
-    public minLen: number | null = null;
+    public minLen: number | null | undefined;
     @Input()
-    public maxRows: number | null = null;
+    public maxRows: number | null | undefined;
     @Input()
-    public minRows: number | null = null;
+    public minRows: number | null | undefined;
 
     @ViewChild(MatInput, { static: false })
     public matInput: MatInput | null = null;
@@ -77,10 +77,10 @@ export class FieldMessageComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
             if (!!changes['maxLen']) {
-                this.maxLenVal = (!!this.maxLen && this.maxLen > 0 ? this.maxLen : MESSAGE_MAX_LENGTH);
+                this.maxLenVal = (this.maxLen != null && this.maxLen > 0 ? this.maxLen : MESSAGE_MAX_LENGTH);
             }
             if (!!changes['minLen']) {
-                this.minLenVal = (!!this.minLen && this.minLen > 0 ? this.minLen : MESSAGE_MIN_LENGTH);
+                this.minLenVal = (this.minLen != null && this.minLen > 0 ? this.minLen : MESSAGE_MIN_LENGTH);
             }
             this.prepareFormGroup(this.isRequired, this.maxLenVal, this.minLenVal);
         }
