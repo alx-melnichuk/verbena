@@ -22,10 +22,6 @@ import { environment } from 'src/environments/environment';
 const WS_CHAT_PATHNAME: string = environment.wsChatPathname || 'ws';
 const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
 
-function padStart(value: number): string {
-    return value.toString().padStart(2, '0');
-}
-
 @Component({
     selector: 'app-pg-concept-view',
     standalone: true,
@@ -42,15 +38,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatPastMsgs: ChatMessageDto[] = []; // List of past chat messages.
     public chatNewMsgs: ChatMessageDto[] = []; // List of new chat messages.
     public chatRmvIds: number[] = []; // List of IDs of permanently deleted chat messages.
-    public chatIsBlocked: boolean | null = null; // Indication that the user is blocked.
-    public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
     public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
-    public chatIsOwner: boolean | null = null;  // Indicates that the user is the owner of the chat.
-    public chatMaxLen: number | null = null; // 255;
-    public chatMinLen: number | null = null; // 0;
-    public chatMaxRows: number | null = 4;
-    public chatMinRows: number | null = 1;
-    public chatNickname: string | null = null;
 
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
 

@@ -7,10 +7,6 @@
     [chatIsEditable]="!!profileDto?.id && isStreamAvailable && chatSocketService.isJoined()"
     [chatIsLoadData]="chatIsLoadData"
     [chatIsOwner]="chatSocketService.isOwner()"
-    [chatMaxLen]="chatMaxLen"
-    [chatMinLen]="chatMinLen"
-    [chatMaxRows]="chatMaxRows"
-    [chatMinRows]="chatMinRows"
     [chatNickname]="profileDto?.nickname || null"
   
     [countOfViewer]="chatSocketService.countOfMembers"
