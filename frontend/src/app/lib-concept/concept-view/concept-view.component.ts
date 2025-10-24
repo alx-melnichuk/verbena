@@ -48,15 +48,15 @@ export class ConceptViewComponent implements AfterContentInit {
     @Input()
     public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
     @Input()
-    public chatIsOwner: boolean | null = null; // Indicates that the user is the owner of the chat.
+    public chatIsOwner: boolean | null | undefined; // Indicates that the user is the owner of the chat.
     @Input()
-    public chatMaxLen: number | null = null;
+    public chatMaxLen: number | null | undefined;
     @Input()
-    public chatMinLen: number | null = null;
+    public chatMinLen: number | null | undefined;
     @Input()
-    public chatMaxRows: number | null = null;
+    public chatMaxRows: number | null | undefined;
     @Input()
-    public chatMinRows: number | null = null;
+    public chatMinRows: number | null | undefined;
     @Input()
     public chatNickname: string | null = null;
 
