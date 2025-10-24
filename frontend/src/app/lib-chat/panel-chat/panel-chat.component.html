@@ -1,5 +1,5 @@
-<div class="pc-header">
-  <div class="pc-label">{{ (title | translate) }}</div>
+<div [ngClass]="['pc-header', (!!title ? 'pc-hdr-pd' : '')]">
+  <div class="pc-label" >{{ !!title ? (title | translate) : '' }}</div>
 </div>
 
 <div class="pc-sepr"></div>
@@ -12,8 +12,8 @@
   }
   @for (chatMsg of chatMsgList; track chatMsg.id) {
     <div class="pc-item-wrap"
-      [matMenuTriggerFor]="!!getMenuItem(chatMsg, isOwner, nickname) ? menuItem : null"
-      [matMenuTriggerData]="getMenuItem(chatMsg, isOwner, nickname)"
+      [matMenuTriggerFor]="!!getMenuItem(chatMsg, !!isOwner, nickname) ? menuItem : null"
+      [matMenuTriggerData]="getMenuItem(chatMsg, !!isOwner, nickname)"
       (menuOpened)="msgMarked=chatMsg;cleanNewMsg();"
       (menuClosed)="msgMarked=null;">
       <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')

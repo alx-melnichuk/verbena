@@ -18,8 +18,11 @@ app-panel-chat {
     .pc-header {
         flex-shrink: 0;
         font-size: var(--pc-hdr-fn-sz, 1rem);
-        padding: 0.4rem 0.5rem;
         text-align: center;
+    }
+
+    .pc-hdr-pd {
+        padding: 0.4rem 0.5rem;
     }
 
     // ** separator **

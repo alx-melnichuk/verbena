@@ -38,10 +38,10 @@ interface MenuItem {
 }
 
 export const TITLE = 'message';
-export const MESSAGE_MAX_ROWS = 3;
-export const MESSAGE_MIN_ROWS = 1;
 export const MESSAGE_MAX_LENGTH = 255;
 export const MESSAGE_MIN_LENGTH = 0;
+export const MESSAGE_MAX_ROWS = 4;
+export const MESSAGE_MIN_ROWS = 1;
 export const DEBOUNCE_DELAY = 50;
 export const MIN_SCR_TOP_FOR_QUERYING_PAST_MSGS = 15;
 export const MIN_SCR_BOT_FOR_RESET_COUNTNOTVIEWED = 30;
@@ -77,21 +77,21 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input() // Indicates that data is being loaded.
     public isLoadData: boolean | null = null;
     @Input() // Indicates that the user is the owner of the chat.
-    public isOwner: boolean | null = null;
+    public isOwner: boolean | null | undefined;
     @Input()
-    public locale: string | null = null;
+    public locale: string | null | undefined;
     @Input()
-    public maxLen: number | null = null;
+    public maxLen: number | null | undefined;
     @Input()
-    public minLen: number | null = null;
+    public minLen: number | null | undefined;
     @Input()
-    public maxRows: number | null = null;
+    public maxRows: number | null | undefined;
     @Input()
-    public minRows: number | null = null;
+    public minRows: number | null | undefined;
     @Input()
     public nickname: string | null = null;
     @Input()
-    public title = '';
+    public title: string | null = null;
 
     @Output()
     readonly blockUser: EventEmitter<string> = new EventEmitter();
@@ -116,6 +116,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public chatMsgList: ChatMessageDto[] = [];
     public maxLenVal: number = MESSAGE_MAX_LENGTH;
     public minLenVal: number = MESSAGE_MIN_LENGTH;
+    public maxRowsVal: number = MESSAGE_MAX_ROWS;
+    public minRowsVal: number = MESSAGE_MIN_ROWS;
     public countNotViewed: number = 0;
     public frmCtrlNewMsg = new FormControl<string | null>({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.frmCtrlNewMsg });
@@ -154,7 +156,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!!changes['blockedUsers'] || !!changes['isOwner']) {
             this.blockedUserSet.clear();
             const selfName = this.nickname || ''
-            const blockedUsers = this.isOwner ? this.blockedUsers : [];
+            const blockedUsers = !!this.isOwner ? this.blockedUsers : [];
             for (let idx = 0; idx < blockedUsers.length; idx++) {
                 if (selfName != blockedUsers[idx]) {
                     this.blockedUserSet.add(blockedUsers[idx]);
@@ -208,10 +210,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             Promise.resolve().then(() => this.setScrollBottom(0));
         }
         if (!!changes['maxLen']) {
-            this.maxLenVal = (!!this.maxLen && this.maxLen > -1 ? this.maxLen : MESSAGE_MAX_LENGTH);
+            this.maxLenVal = (this.maxLen != null && this.maxLen > -1 ? this.maxLen : MESSAGE_MAX_LENGTH);
         }
         if (!!changes['minLen']) {
-            this.minLenVal = (!!this.minLen && this.minLen > -1 ? this.minLen : MESSAGE_MIN_LENGTH);
+            this.minLenVal = (this.minLen != null && this.minLen > -1 ? this.minLen : MESSAGE_MIN_LENGTH);
+        }
+        if (!!changes['maxRows']) {
+            this.maxRowsVal = (this.maxRows != null && this.maxRows > -1 ? this.maxRows : MESSAGE_MAX_ROWS);
+        }
+        if (!!changes['minRows']) {
+            this.minRowsVal = (this.minRows != null && this.minRows > -1 ? this.minRows : MESSAGE_MIN_ROWS);
         }
     }
     ngAfterViewInit(): void {
@@ -220,12 +228,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     // ** Public API **
 
-    public getMenuBlock(nickname: string, isOwner: boolean | null, selfName: string | null): MenuBlock | null {
+    public getMenuBlock(nickname: string, isOwner: boolean, selfName: string | null): MenuBlock | null {
         const isBlocked = !isOwner ? null : (nickname == selfName ? null : this.blockedUserSet.has(nickname));
         const result = isBlocked != null ? { isBlock: !isBlocked, isUnblock: isBlocked } : null;
         return result;
     }
-    public getMenuItem(chatMsg: ChatMessageDto, isOwner: boolean | null, selfName: string | null): MenuItem | null {
+    public getMenuItem(chatMsg: ChatMessageDto, isOwner: boolean, selfName: string | null): MenuItem | null {
         const menuEdit = this.isEditable ? this.createMenuEdit(selfName || '', chatMsg) : null;
         const menuBlock = this.getMenuBlock(chatMsg.member, isOwner, selfName);
         const result = !!menuEdit || !!menuBlock ? { ...menuEdit, ...menuBlock } : null;
