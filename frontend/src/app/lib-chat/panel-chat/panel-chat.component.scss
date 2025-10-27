@@ -45,12 +45,12 @@ app-panel-chat {
         width: 100%;
     }
 
-    .pc-item-wrap {
-        margin: var(--pc-itm-mr, 0.5rem 0px);
-    }
-
     .pc-item-load {
         height: 30px;
+    }
+
+    .pc-item-wrap {
+        margin: var(--pc-itm-mr, 0.5rem 0px);
     }
 
     .pc-item {

@@ -1,8 +1,8 @@
+import { CommonModule, KeyValue } from '@angular/common';
 import {
     AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener,
     inject, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
-import { CommonModule, KeyValue } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -55,7 +55,7 @@ type ChatMsgMap = Map<number, number>;
     selector: 'app-panel-chat',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
-        TranslatePipe, DateTimeFormatPipe, SpinnerComponent, FieldMessageComponent],
+        DateTimeFormatPipe, FieldMessageComponent, SpinnerComponent, TranslatePipe],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
     encapsulation: ViewEncapsulation.None,
