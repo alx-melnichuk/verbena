@@ -214,6 +214,9 @@
   "field-locale": {
     "label": "Gebietsschema "
   },
+  "field-message": {
+    "editing_msg": "Bearbeiten einer nachricht"
+  },
   "field-theme": {
     "label": "Farbthema "
   },
@@ -450,7 +453,9 @@
     "message_edited": "geändert",
     "message_deleted": "Diese Nachricht wurde entfernt."
   },
-  "field-message": {
-    "editing_msg": "Bearbeiten einer nachricht"
+  "panel-blocked-users": {
+    "title": "Gesperrte Benutzer",
+    "user_nickname": "Benutzer-Spitzname",
+    "date_blocking": "Datum der Sperrung"
   }
 }

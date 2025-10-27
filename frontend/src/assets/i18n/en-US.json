@@ -214,6 +214,9 @@
   "field-locale": {
     "label": "Locale "
   },
+  "field-message": {
+    "editing_msg": "Editing a message"
+  },
   "field-theme": {
     "label": "Color theme "
   },
@@ -448,7 +451,9 @@
     "message_edited": "changed",
     "message_deleted": "This message has been removed."
   },
-  "field-message": {
-    "editing_msg": "Editing a message"
+  "panel-blocked-users": {
+    "title": "Blocked users",
+    "user_nickname": "User nickname",
+    "date_blocking": "Date of blocking"
   }
 }

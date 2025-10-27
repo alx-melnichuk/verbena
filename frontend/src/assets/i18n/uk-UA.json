@@ -214,6 +214,9 @@
   "field-locale": {
     "label": "Локаль "
   },
+  "field-message": {
+    "editing_msg": "Редагування повідомлення"
+  },
   "field-theme": {
     "label": "Кольорова тема "
   },
@@ -457,7 +460,10 @@
     "message_edited": "змінено",
     "message_deleted": "Це повідомлення видалено."
   },
-  "field-message": {
-    "editing_msg": "Редагування повідомлення"
+  "panel-blocked-users": {
+    "title": "Заблоковані користувачі",
+    "user_nickname": "Користувач",
+    "date_blocking": "Дата блокування"
+
   }
 }
