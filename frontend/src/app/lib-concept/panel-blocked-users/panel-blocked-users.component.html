@@ -1,0 +1,36 @@
+<div [ngClass]="['pbu-header', (!!title ? 'pbu-hdr-pd' : '')]">
+  <div class="pbu-label" >{{ !!title ? (title | translate) : '' }}</div>
+</div>
+  
+<div class="pbu-sepr"></div>
+
+<div class="pbu-middle global-scroll">
+  @if (isLoadData) {
+    <div class="pbu-item-load">
+      <app-spinner [diameter]="30"></app-spinner>
+    </div>
+  }
+  @if (blockedUsers.length > 0) {
+    <div pbu-brd-bt class="pbu-item">
+      <div class="pbu-item-nickname">
+        <span>{{ 'panel-blocked-users.user_nickname' | translate }}</span>
+      </div>
+      <div class="pbu-item-date">
+        <span>{{ 'panel-blocked-users.date_blocking' | translate }}</span>
+      </div>
+    </div>
+    <div pbu-brd-bt></div>
+  }
+  @for (blockedUser of blockedUsers; track blockedUser.id) {
+    <div pbu-brd-bt class="pbu-item">
+      <div class="pbu-item-nickname">
+        <span>{{ blockedUser.blockedNickname }}</span>
+      </div>
+      <div class="pbu-item-date">
+        <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatDate }}</span>
+        <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatTime }}</span>
+      </div>
+    </div>
+    <div pbu-brd-bt></div>
+  }
+</div>

@@ -1,0 +1,79 @@
+/*# sourceURL=panel-blocked-users.component.scss */
+
+app-panel-blocked-users {
+    ---pbu-itm-sh: var(--pbu-itm-sh);
+    ---pbu-brd-sz: var(--pbu-brd-sz, medium); // thin-1px, medium-3px, thick-5px
+
+    background-color: var(--pbu-bg, inherit);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    // ** Header **
+
+    .pbu-header {
+        flex-shrink: 0;
+        font-size: var(--pbu-hdr-fn-sz, 1rem);
+        text-align: center;
+    }
+
+    .pbu-hdr-pd {
+        padding: 0.4rem 0.5rem;
+    }
+
+    // ** separator **
+    .pbu-sepr {
+        border-top: var(---pbu-brd-sz) solid var(---pbu-itm-sh, initial);
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    [pbu-brd-bt] {
+        border-bottom: 1px solid var(---pbu-itm-sh, initial);
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    // ** Middle **
+
+    // ** Middle **
+
+    .pbu-middle {
+        box-sizing: border-box;
+        flex-grow: 1;
+        font-size: var(--pbu-mdl-fn-sz, 1rem);
+        height: 100%;
+        overflow-y: auto;
+        padding-left: var(--pbu-pd-lf, 2px);
+        padding-right: var(--pbu-pd-rg, 2px);
+        width: 100%;
+    }
+
+    .pbu-item-load {
+        height: 30px;
+    }
+
+    .pbu-item {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: row;
+        gap: var(--pbu-itm-gp, .25rem);
+        padding: var(--pbu-itm-pd, 0.5rem 0.5rem);
+    }
+
+    .pbu-item-nickname {
+        flex: 0 1 53%;
+        display: inline-block;
+        overflow-wrap: anywhere;
+    }
+
+    .pbu-item-date {
+        flex: 0 1 47%;
+        column-gap: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        font-size: var(--pc-date-fn-sz, inherit);
+        min-width: var(--pc-date-mn-wd, 6rem);
+        word-wrap: break-word;
+    }
+}
