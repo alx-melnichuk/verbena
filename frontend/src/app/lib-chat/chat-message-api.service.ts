@@ -4,7 +4,7 @@ import { lastValueFrom } from 'rxjs';
 
 import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
-import { BlockedUserDto, ChatMessageDto, SearchChatMessageDto } from './chat-message-api.interface';
+import { BlockedUserDto, BlockedUserDtoUtil, ChatMessageDto, SearchChatMessageDto } from './chat-message-api.interface';
 
 @Injectable({
     providedIn: 'root'
@@ -21,6 +21,7 @@ export class ChatMessageApiService {
 
     public getBlockedUsers(): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
         const url = Uri.appUri(`appApi://blocked_users`);
-        return lastValueFrom(this.http.get<BlockedUserDto[] | HttpErrorResponse>(url));
+        return lastValueFrom(this.http.get<BlockedUserDto[] | HttpErrorResponse>(url))
+            .then((response) => ((response || []) as BlockedUserDto[]).map((v) => BlockedUserDtoUtil.create(v)));
     }
 }

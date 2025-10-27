@@ -1,4 +1,5 @@
 import { StringDateTime } from '../common/string-date-time';
+import { StringDateTimeUtil } from '../utils/string-date-time.util';
 
 // ** ChatMessageDto **
 
@@ -55,7 +56,7 @@ export interface BlockedUserDto {
     userId: number;
     blockedId: number;
     blockedNickname: string;
-    blockDate: StringDateTime;
+    blockDate: Date | null;
 }
 
 export class BlockedUserDtoUtil {
@@ -64,7 +65,9 @@ export class BlockedUserDtoUtil {
         let userId: number = obj.userId || 0;
         let blockedId: number = obj.blockedId || 0;
         let blockedNickname: string = obj.blockedNickname || '';
-        let blockDate: StringDateTime = obj.blockDate || '';
+        let blockDateStr = obj.blockDate || '';
+        const isString = blockDateStr != null && typeof blockDateStr == 'string';
+        let blockDate = isString ? StringDateTimeUtil.toDate(blockDateStr) : null;
         return { id, userId, blockedId, blockedNickname, blockDate };
     }
 }
