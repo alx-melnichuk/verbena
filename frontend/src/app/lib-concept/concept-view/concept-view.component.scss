@@ -85,6 +85,17 @@ app-concept-view {
         }
     }
 
+    // * left side - blocked-users * 
+
+    .cv-sb-bl-users {
+        --pbu-itm-sh: var(---cv-brd-cl);
+        --pbu-brd-sz: var(---cv-brd-sz);
+        --pbu-mdl-fn-sz: 0.9rem;
+        --pbu-pd-lf: 0;
+        --pbu-pd-rg: 0;
+        --pbu-itm-pd: 0.5rem 0.2rem 0.5rem 0.5rem;
+    }
+
     // ** center **
 
     .cv-center {
@@ -132,16 +143,11 @@ app-concept-view {
         overflow: hidden;
     }
 
-    // .cv-cnt-label {
-    //     font-weight: 500;
-    // }
-
     // * center footer - params *
     .cv-cnt-params {
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
-        // # outline: 1px dashed darkseagreen;
     }
 
     .cv-cnt-brd {
@@ -180,11 +186,9 @@ app-concept-view {
     }
 
     // * right side - chat * 
-    .cv-sdb-chat {
+    .cv-sd-chat {
         --pc-itm-sh: var(---cv-brd-cl);
         --pc-brd-sz: var(---cv-brd-sz);
-
-        // --pc-bg: var(--sys-surface); // Defines the background color of the panel for "panel-chat".
         --pc-mdl-fn-sz: 0.9rem;
         --pc-pd-lf: 0.25rem;
     }

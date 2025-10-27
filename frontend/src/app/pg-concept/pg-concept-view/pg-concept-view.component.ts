@@ -5,16 +5,16 @@ import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
 import { StringDateTime } from 'src/app/common/string-date-time';
+import { ChatMessageDto, BlockedUserDto, ParamQueryPastMsg, ChatMessageDtoUtil } from 'src/app/lib-chat/chat-message-api.interface';
 import { ChatMessageService } from 'src/app/lib-chat/chat-message.service';
-import { ChatMessageDto, ChatMessageDtoUtil, ParamQueryPastMsg } from 'src/app/lib-chat/chat-message-api.interface';
 import { ChatSocketService } from 'src/app/lib-chat/chat-socket.service';
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto, ProfileMiniDto, UserTokenResponseDto } from 'src/app/lib-profile/profile-api.interface';
-import { EventWS, EWSType, EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
-import { StreamDto, StreamDtoUtil, StreamState } from 'src/app/lib-stream/stream-api.interface';
+import { EWSTypeUtil, EventWS, EWSType } from 'src/app/lib-socket/socket-chat.interface';
+import { StreamDto, StreamState, StreamDtoUtil } from 'src/app/lib-stream/stream-api.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 import { environment } from 'src/environments/environment';
@@ -41,6 +41,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
 
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
+    // List of blocked users.
+    public blockedUsers: BlockedUserDto[] = [];
 
     public isLoadStream: boolean = false;
     // An indication that the stream is in a chat-available status.
@@ -72,10 +74,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
         const streamDto = conceptResponse?.streamDto || null;
         this.setStreamDto(streamDto || null, this.profileDto?.id || 0);
-        const blockedUsers = conceptResponse?.blockedUsersDto || [];
-        for (let idx = 0; idx < blockedUsers.length; idx++) {
-            if (!!blockedUsers[idx].blockedNickname) {
-                this.chatBlockedUsers.push(blockedUsers[idx].blockedNickname);
+        this.blockedUsers = conceptResponse?.blockedUsersDto || [];
+        for (let idx = 0; idx < this.blockedUsers.length; idx++) {
+            if (!!this.blockedUsers[idx].blockedNickname) {
+                this.chatBlockedUsers.push(this.blockedUsers[idx].blockedNickname);
             }
         }
         const nickname: string = this.profileDto?.nickname || '';

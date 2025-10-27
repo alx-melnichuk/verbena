@@ -2,7 +2,7 @@
   <app-spinner isFillParent></app-spinner>
 }
 
-<app-sidebar class="cv-sidebar" mode="left" style="display: none;"
+<app-sidebar class="cv-sidebar" mode="left"
   [isOpen]="isSidebarLfOpen"
   (click)="isSidebarLfOpen=(isSidebarLfOpen==false ? true: isSidebarLfOpen)">
   <div sidebar-layer>
@@ -13,10 +13,12 @@
     </button>
   </div>
   <div cv-hg100 cv-brd-bx cv-pd-rg0_5>
-    <div cv-hg100 class="cv-sdb-brd cv-brd-rg">
-      bar-left 1 bar-left 2
-
-    </div>
+    <app-panel-blocked-users class="cv-sb-bl-users cv-sdb-brd cv-brd-rg"
+      [blockedUsers]="blockedUsers"
+      isLoadData9=""
+      [locale]="localeService.getLocale()"
+      [title]="'panel-blocked-users.title'">
+    </app-panel-blocked-users>
   </div>
 </app-sidebar>
 
@@ -111,7 +113,7 @@
     </button>
   </div>
   <div cv-hg100 cv-brd-bx cv-pd-lf0_5>
-    <app-panel-chat class="cv-sdb-chat cv-sdb-brd cv-brd-lf"
+    <app-panel-chat class="cv-prm-chat cv-sdb-brd cv-brd-lf"
       [blockedUsers]="chatBlockedUsers"
       [chatPastMsgs]="chatPastMsgs"
       [chatNewMsgs]="chatNewMsgs"
