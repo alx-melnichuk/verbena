@@ -90,7 +90,9 @@ export class ChatSocketService {
     }
 
     public sendData(val: string): void {
-        this.socketService?.sendData(val);
+        if (this.hasConnect()) {
+            this.socketService?.sendData(val);
+        }
     }
 
     public clearError(): void {
