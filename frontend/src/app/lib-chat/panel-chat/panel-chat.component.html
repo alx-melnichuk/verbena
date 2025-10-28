@@ -37,16 +37,10 @@
         @if (!chatMsg.dateRmv) {
           <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
             {{ chatMsg.msg }}
-            @if (pc_debug) {
-                <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" />
-            }
           </div>
         } @else {
           <div class="pc-item-msg-rmv">
             <i>{{ 'panel-chat.message_deleted' | translate }}</i>
-            @if (pc_debug) {
-                <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" />
-            }
           </div>
         }
       </div>
@@ -68,13 +62,6 @@
     </div>
   </div>
 }
-
-<ng-template #templateShowInfo let-chatMsg="chatMsg2">
-    <sub style="color: var(--sys-secondary);">
-        id:{{ chatMsg.id }} E:{{ !!chatMsg.dateEdt ? 1 : 0 }} R:{{ !!chatMsg.dateRmv ? 1 : 0 }}
-    </sub>
-</ng-template>
-
 
 <div class="pc-sepr"></div>
 
@@ -144,7 +131,7 @@
       </button>
     }
     @if (isCut) {
-      <button mat-menu-item class="pn-item-menu"  (click)="doCutMessage(msgMarked)">
+      <button mat-menu-item class="pn-item-menu" (click)="doCutMessage(msgMarked)">
         <svg class="pc-svg-box">
           <use href="assets/icons/lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
         </svg>
@@ -152,7 +139,7 @@
       </button>
     }
     @if (isRemove) {
-        <button mat-menu-item class="pn-item-menu"  (click)="doRemoveMessage(msgMarked)">
+        <button mat-menu-item class="pn-item-menu" (click)="doRemoveMessage(msgMarked)">
           <svg class="pc-svg-box">
             <use href="assets/icons/lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
           </svg>
@@ -160,7 +147,7 @@
         </button>
     }
     @if (isBlock) {
-      <button mat-menu-item class="pn-item-menu"  (click)="doBlockUser(msgMarked?.member, blockedUsers)">
+      <button mat-menu-item class="pn-item-menu" (click)="doBlockUser(msgMarked?.member, blockedUsers)">
         <svg class="pc-svg-box">
             <use href="assets/icons/lib-chat/panel-chat/lock-closed-bin.svg#lock-closed-bin"></use>
         </svg>
@@ -168,7 +155,7 @@
       </button>
     }
     @if (isUnblock) {
-      <button mat-menu-item class="pn-item-menu"  (click)="doUnblockUser(msgMarked?.member, blockedUsers)">
+      <button mat-menu-item class="pn-item-menu" (click)="doUnblockUser(msgMarked?.member, blockedUsers)">
         <svg class="pc-svg-box">
             <use href="assets/icons/lib-chat/panel-chat/lock-open-bin.svg#lock-open-bin"></use>
         </svg>
