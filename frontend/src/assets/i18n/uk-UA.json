@@ -463,7 +463,9 @@
   "panel-blocked-users": {
     "title": "Заблоковані користувачі",
     "user_nickname": "Користувач",
-    "date_blocking": "Дата блокування"
-
+    "date_blocking": "Дата блокування",
+    "menu": {
+      "unblock_user": "Розблокувати"
+    }
   }
 }

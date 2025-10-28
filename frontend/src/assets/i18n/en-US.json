@@ -454,6 +454,9 @@
   "panel-blocked-users": {
     "title": "Blocked users",
     "user_nickname": "User nickname",
-    "date_blocking": "Date of blocking"
+    "date_blocking": "Date of blocking",
+    "menu": {
+      "unblock_user": "Unblock"
+    }
   }
 }

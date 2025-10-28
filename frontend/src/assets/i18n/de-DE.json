@@ -456,6 +456,9 @@
   "panel-blocked-users": {
     "title": "Gesperrte Benutzer",
     "user_nickname": "Benutzer-Spitzname",
-    "date_blocking": "Datum der Sperrung"
+    "date_blocking": "Datum der Sperrung",
+    "menu": {
+      "unblock_user": "Entsperren"
+    }
   }
 }
