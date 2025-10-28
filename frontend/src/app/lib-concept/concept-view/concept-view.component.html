@@ -15,9 +15,10 @@
   <div cv-hg100 cv-brd-bx cv-pd-rg0_5>
     <app-panel-blocked-users class="cv-sb-bl-users cv-sdb-brd cv-brd-rg"
       [blockedUsers]="blockedUsers"
-      isLoadData9=""
+      [isLoadData]="blockedUsersIsLoading"
       [locale]="localeService.getLocale()"
-      [title]="'panel-blocked-users.title'">
+      [title]="'panel-blocked-users.title'"
+      (unblockUser)="doUnblockUserExt($event)">
     </app-panel-blocked-users>
   </div>
 </app-sidebar>

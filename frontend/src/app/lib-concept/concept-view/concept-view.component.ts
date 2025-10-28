@@ -66,6 +66,9 @@ export class ConceptViewComponent implements AfterContentInit {
     @Input()
     public blockedUsers: BlockedUserDto[] = []; // List of blocked users.
     @Input()
+    public blockedUsersIsLoading: boolean | null = null;
+
+    @Input()
     public isLoadStream = false;
     @Input()
     public isStreamOwner: boolean = false;
@@ -95,6 +98,8 @@ export class ConceptViewComponent implements AfterContentInit {
     readonly blockUser: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly unblockUser: EventEmitter<string> = new EventEmitter();
+    @Output()
+    readonly unblockUserExt: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly sendMessage: EventEmitter<string> = new EventEmitter();
     @Output()
@@ -194,6 +199,14 @@ export class ConceptViewComponent implements AfterContentInit {
     }
     public doQueryPastMsgs(info: ParamQueryPastMsg) {
         this.queryPastMsgs.emit(info);
+    }
+
+    // Section: "panel blocked users"
+
+    public doUnblockUserExt(user_name: string): void {
+        if (!!user_name) {
+            this.unblockUserExt.emit(user_name);
+        }
     }
 
     // ** Private API **
