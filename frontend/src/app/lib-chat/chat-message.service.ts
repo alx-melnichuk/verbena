@@ -21,4 +21,9 @@ export class ChatMessageService {
     public getBlockedUsers(): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
         return this.chatMessageApiService.getBlockedUsers();
     }
+
+    public deleteBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
+        return this.chatMessageApiService.deleteBlockedUser(blockedNickname);
+    }
+
 }
