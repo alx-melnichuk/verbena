@@ -11,6 +11,7 @@
   
     [countOfViewer]="chatSocketService.countOfMembers"
     [blockedUsers]="blockedUsers"
+    [blockedUsersIsLoading]="blockedUsersIsLoading"
     [isLoadStream]="isLoadStream"
     [isStreamOwner]="isStreamOwner"
   
@@ -26,6 +27,7 @@
     (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
     (blockUser)="doBlockUser($event)"
     (unblockUser)="doUnblockUser($event)"
+    (unblockUserExt)="doUnblockUserExt($event)"
     (sendMessage)="doSendMessage($event)"
     (editMessage)="doEditMessage($event)"
     (cutMessage)="doCutMessage($event)"

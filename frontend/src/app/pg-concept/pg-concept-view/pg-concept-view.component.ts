@@ -43,6 +43,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
     // List of blocked users.
     public blockedUsers: BlockedUserDto[] = [];
+    public blockedUsersIsLoading: boolean | null = null;
 
     public isLoadStream: boolean = false;
     // An indication that the stream is in a chat-available status.
@@ -75,11 +76,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         const streamDto = conceptResponse?.streamDto || null;
         this.setStreamDto(streamDto || null, this.profileDto?.id || 0);
         this.blockedUsers = conceptResponse?.blockedUsersDto || [];
-        for (let idx = 0; idx < this.blockedUsers.length; idx++) {
-            if (!!this.blockedUsers[idx].blockedNickname) {
-                this.chatBlockedUsers.push(this.blockedUsers[idx].blockedNickname);
-            }
-        }
+        this.chatBlockedUsers = this.getChatBlockedUsers(this.blockedUsers);
         const nickname: string = this.profileDto?.nickname || '';
 
         this.chatSocketService.handlOnError = (err: string) => {
@@ -160,6 +157,20 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
     }
 
+    // Section: "panel blocked users"
+
+    public doUnblockUserExt(user_name: string): void {
+        if (!!user_name) {
+            if (this.chatSocketService.hasConnect()) {
+                console.log(`socket.sendData(UnblockEWS(user_name));`); // #
+                this.chatSocketService.sendData(EWSTypeUtil.getUnblockEWS(user_name));
+            } else {
+                console.log(`send_Unblock_User`); // #
+                this.chatMessageService.deleteBlockedUser(user_name);
+            }
+        }
+    }
+
     // ** Private API **
 
     // Section: "panel stream admin"
@@ -225,6 +236,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             const username = isBlock ? eventWS.getStr('block') : eventWS.getStr('unblock');
             if (!!username && isStreamOwner) {
                 this.chatBlockedUsers = this.updateBlockedUsers(this.chatBlockedUsers, isBlock, username);
+                this.updateBlockedUsersExt();
             }
             const nickname = profileDto?.nickname || '';
             if (!!username && (isStreamOwner || nickname == username)) {
@@ -281,6 +293,25 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.changeDetector.markForCheck();
             });
     }
+
+    // Section: "panel blocked users"
+
+    private updateBlockedUsersExt(): void {
+        this.blockedUsersIsLoading = true;
+        this.chatMessageService.getBlockedUsers()
+            .then((response: BlockedUserDto[] | HttpErrorResponse | undefined) => {
+                this.blockedUsers = (response as BlockedUserDto[]);
+            })
+            .catch((error: HttpErrorResponse) => {
+                console.error(`BlockedUsersError:`, error);
+            })
+            .finally(() => {
+                this.blockedUsersIsLoading = false;
+                this.changeDetector.markForCheck();
+            });
+    }
+
+    // Update parameters based on stream data.
     private setStreamDto(stream: StreamDto | null, profileId: number): void {
         this.streamDto = stream;
         this.isStreamOwner = (this.streamDto?.userId || -1) == profileId;
@@ -288,7 +319,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
         this.updateTimerProperties(stream);
     }
-
     private updateTimerProperties(stream: StreamDto | null): void {
         // live := NEW."state" IN ('preparing', 'started', 'paused');
         this.timerIsShow = (['preparing', 'started', 'paused', 'stopped'].indexOf(this.streamDto?.state || '') > -1);
@@ -303,7 +333,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.timerValue = this.getTimerValue(stream.starttime, stream.started, stream.paused, stream.stopped);
         }
     }
-
     private getTimerValue(starttime: Date | null, started: Date | null, paused: Date | null, stopped: Date | null): number {
         let result: number = 0;
         const currDate = new Date();
@@ -318,6 +347,16 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
         if (!!stopped && !!started) {
             result = Math.floor((stopped.getTime() - started.getTime()) / 1000);
+        }
+        return result;
+    }
+
+    private getChatBlockedUsers(blockedUsers: BlockedUserDto[]): string[] {
+        const result: string[] = [];
+        for (let idx = 0; idx < blockedUsers.length; idx++) {
+            if (!!blockedUsers[idx].blockedNickname) {
+                result.push(blockedUsers[idx].blockedNickname);
+            }
         }
         return result;
     }
