@@ -8,6 +8,7 @@ app-panel-blocked-users {
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
 
     // ** Header **
 
@@ -49,16 +50,16 @@ app-panel-blocked-users {
         width: 100%;
     }
 
-    .pbu-item-load {
-        height: 30px;
-    }
-
     .pbu-item {
         box-sizing: border-box;
         display: flex;
         flex-direction: row;
         gap: var(--pbu-itm-gp, .25rem);
         padding: var(--pbu-itm-pd, 0.5rem 0.5rem);
+    }
+
+    .pbu-header-item {
+        font-style: italic;
     }
 
     .pbu-item-nickname {
@@ -72,8 +73,27 @@ app-panel-blocked-users {
         column-gap: 0.5rem;
         display: flex;
         flex-wrap: wrap;
-        font-size: var(--pc-date-fn-sz, inherit);
-        min-width: var(--pc-date-mn-wd, 6rem);
+        font-size: var(--pbu-date-fn-sz, inherit);
+        min-width: var(--pbu-date-mn-wd, 6rem);
         word-wrap: break-word;
+    }
+}
+
+// ** context menu **
+.cdk-overlay-pane {
+    .mat-mdc-menu-panel.pbu-menu-panel {
+        ---pbu-svg-sz: var(--pbu-svg-sz, 1.4rem);
+
+        .pbu-svg-box {
+            color: var(--app-svg-icon-cl); // for "svg"
+            height: var(---pbu-svg-sz);
+            width: var(---pbu-svg-sz);
+            vertical-align: middle;
+        }
+
+        .pbu-menu-label {
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
     }
 }
