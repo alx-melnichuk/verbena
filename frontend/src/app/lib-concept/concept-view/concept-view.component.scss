@@ -88,12 +88,11 @@ app-concept-view {
     // * left side - blocked-users * 
 
     .cv-sb-bl-users {
-        --pbu-itm-sh: var(---cv-brd-cl);
+        --pbu-brd-cl: var(---cv-brd-cl);
         --pbu-brd-sz: var(---cv-brd-sz);
-        --pbu-mdl-fn-sz: 0.9rem;
-        --pbu-pd-lf: 0;
-        --pbu-pd-rg: 0;
-        --pbu-itm-pd: 0.5rem 0.2rem 0.5rem 0.5rem;
+        // --pbu-pd-lf: 0;
+        // --pbu-pd-rg: 0;
+        // --pbu-itm-pd: 0.5rem 0.2rem 0.5rem 0.5rem;
     }
 
     // ** center **

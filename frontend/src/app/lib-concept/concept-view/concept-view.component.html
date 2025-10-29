@@ -2,6 +2,7 @@
   <app-spinner isFillParent></app-spinner>
 }
 
+@if (isStreamOwner) {
 <app-sidebar class="cv-sidebar" mode="left"
   [isOpen]="isSidebarLfOpen"
   (click)="isSidebarLfOpen=(isSidebarLfOpen==false ? true: isSidebarLfOpen)">
@@ -15,13 +16,14 @@
   <div cv-hg100 cv-brd-bx cv-pd-rg0_5>
     <app-panel-blocked-users class="cv-sb-bl-users cv-sdb-brd cv-brd-rg"
       [blockedUsers]="blockedUsers"
-      [isLoadData]="blockedUsersIsLoading"
+      [isLoading]="blockedUsersIsLoading"
       [locale]="localeService.getLocale()"
       [title]="'panel-blocked-users.title'"
-      (unblockUser)="doUnblockUserExt($event)">
+      (unblockUser)="doUnblockUser($event)">
     </app-panel-blocked-users>
   </div>
 </app-sidebar>
+}
 
 <div class="cv-center">
   
@@ -121,7 +123,7 @@
       [chatRmvIds]="chatRmvIds"
       [isBlocked]="chatIsBlocked"
       [isEditable]="chatIsEditable"
-      [isLoadData]="chatIsLoadData"
+      [isLoading]="chatIsLoading"
       [isOwner]="chatIsOwner"  
       [locale]="localeService.getLocale()"
       [maxLen]="chatMaxLen"

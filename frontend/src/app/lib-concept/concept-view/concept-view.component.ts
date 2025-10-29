@@ -47,7 +47,7 @@ export class ConceptViewComponent implements AfterContentInit {
     @Input()
     public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
     @Input()
-    public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
+    public chatIsLoading: boolean | null = null; // Indicates that data is being loaded.
     @Input()
     public chatIsOwner: boolean | null | undefined; // Indicates that the user is the owner of the chat.
     @Input()
@@ -98,8 +98,6 @@ export class ConceptViewComponent implements AfterContentInit {
     readonly blockUser: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly unblockUser: EventEmitter<string> = new EventEmitter();
-    @Output()
-    readonly unblockUserExt: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly sendMessage: EventEmitter<string> = new EventEmitter();
     @Output()
@@ -199,14 +197,6 @@ export class ConceptViewComponent implements AfterContentInit {
     }
     public doQueryPastMsgs(info: ParamQueryPastMsg) {
         this.queryPastMsgs.emit(info);
-    }
-
-    // Section: "panel blocked users"
-
-    public doUnblockUserExt(user_name: string): void {
-        if (!!user_name) {
-            this.unblockUserExt.emit(user_name);
-        }
     }
 
     // ** Private API **
