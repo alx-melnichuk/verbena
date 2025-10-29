@@ -38,7 +38,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatPastMsgs: ChatMessageDto[] = []; // List of past chat messages.
     public chatNewMsgs: ChatMessageDto[] = []; // List of new chat messages.
     public chatRmvIds: number[] = []; // List of IDs of permanently deleted chat messages.
-    public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
+    public chatIsEditable: boolean | null = null;
+    public chatIsLoading: boolean | null = null; // Indicates that data is being loaded.
 
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
     // List of blocked users.
@@ -73,11 +74,12 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         const conceptResponse = this.route.snapshot.data['conceptResponse'];
         this.profileMiniDto = conceptResponse?.profileMiniDto;
 
-        const streamDto = conceptResponse?.streamDto || null;
-        this.setStreamDto(streamDto || null, this.profileDto?.id || 0);
         this.blockedUsers = conceptResponse?.blockedUsersDto || [];
         this.chatBlockedUsers = this.getChatBlockedUsers(this.blockedUsers);
         const nickname: string = this.profileDto?.nickname || '';
+
+        const streamDto = conceptResponse?.streamDto || null;
+        this.setStreamDto(streamDto || null, this.profileDto?.id || 0);
 
         this.chatSocketService.handlOnError = (err: string) => {
             console.error(`SocketErr:`, err);
@@ -91,18 +93,18 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.changeDetector.markForCheck();
         };
 
-        const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
+        const streamId: number = streamDto?.id || -1;
         const access = this.profileTokensDto?.accessToken;
         this.chatSocketService.config({ nickname, room: streamId, access });
-        // Connect to the server web socket chat.
-        this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
+        // If the stream status allows it, establish a connection to the socket. Otherwise, terminate it.
+        this.updateSocketConnect(this.streamDto?.state);
     }
 
     ngOnInit(): void {
     }
 
     ngOnDestroy(): void {
-        this.chatSocketService.disconnect();
+        this.chatSocketService.disconnect(); // Disconnect to the server web socket chat.
     }
 
     // ** Public API **
@@ -117,14 +119,15 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     // Section: "Chat"
 
-    public doBlockUser(user_name: string): void {
-        if (!!user_name) {
-            this.chatSocketService.sendData(EWSTypeUtil.getBlockEWS(user_name));
-        }
-    }
-    public doUnblockUser(user_name: string): void {
-        if (!!user_name) {
-            this.chatSocketService.sendData(EWSTypeUtil.getUnblockEWS(user_name));
+    public doModifyBlockUser(isStreamOwner: boolean, isPost: boolean, user_name: string): void {
+        if (!!isStreamOwner && !!user_name) {
+            if (this.chatSocketService.hasConnect()) {
+                const blockUnblockEWS = isPost ? EWSTypeUtil.getBlockEWS(user_name) : EWSTypeUtil.getUnblockEWS(user_name);
+                this.chatSocketService.sendData(blockUnblockEWS);
+            } else {
+                this.modifyBlockedUser(user_name, isPost)
+                    .then(() => this.updateBlockedUsersExt());
+            }
         }
     }
     public doSendMessage(newMessage: string | null): void {
@@ -157,20 +160,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
     }
 
-    // Section: "panel blocked users"
-
-    public doUnblockUserExt(user_name: string): void {
-        if (!!user_name) {
-            if (this.chatSocketService.hasConnect()) {
-                console.log(`socket.sendData(UnblockEWS(user_name));`); // #
-                this.chatSocketService.sendData(EWSTypeUtil.getUnblockEWS(user_name));
-            } else {
-                console.log(`send_Unblock_User`); // #
-                this.chatMessageService.deleteBlockedUser(user_name);
-            }
-        }
-    }
-
     // ** Private API **
 
     // Section: "panel stream admin"
@@ -182,10 +171,11 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.isLoadStream = true;
         this.streamService.toggleStreamState(streamId, streamState)
             .then((response: StreamDto | HttpErrorResponse) => {
-                this.setStreamDto((response as StreamDto), this.profileDto?.id || 0);
-                if (!!this.streamDto) {
+                if (!!response) {
+                    const streamDto: StreamDto = (response as StreamDto);
+                    this.setStreamDto(streamDto, this.profileDto?.id || 0);
                     Promise.resolve().then(() => {
-                        this.chatSocketService.sendData(EWSTypeUtil.getPrmStrEWS("streamDto", JSON.stringify(this.streamDto)));
+                        this.chatSocketService.sendData(EWSTypeUtil.getPrmStrEWS("streamDto", JSON.stringify(streamDto)));
                     });
                 }
             })
@@ -251,6 +241,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 const streamDto2 = StreamDtoUtil.create(obj);
                 if (streamDto != null && streamDto.id == streamDto2.id) {
                     this.setStreamDto(streamDto2, profileDto?.id || 0);
+                    // If the stream status allows it, establish a connection to the socket. Otherwise, terminate it.
+                    this.updateSocketConnect(this.streamDto?.state);
                 }
             }
         }
@@ -280,7 +272,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         if (!streamId || streamId < 0) {
             return;
         }
-        this.chatIsLoadData = true;
+        this.chatIsLoading = true;
         this.chatMessageService.getChatMessages(streamId, isSortDes, undefined, maxDate, limit)
             .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
                 this.chatPastMsgs = (response as ChatMessageDto[]); // List of past chat messages.
@@ -289,18 +281,40 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 console.error(`ChatMessageError:`, error);
             })
             .finally(() => {
-                this.chatIsLoadData = false;
+                this.chatIsLoading = false;
                 this.changeDetector.markForCheck();
             });
     }
 
     // Section: "panel blocked users"
 
-    private updateBlockedUsersExt(): void {
+    private modifyBlockedUser(blockedNickname: string, isPost: boolean): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
+        const name = isPost ? 'PostBlockedUser' : 'DeleteBlockedUser';
         this.blockedUsersIsLoading = true;
-        this.chatMessageService.getBlockedUsers()
+        const buffPromise: Promise<unknown>[] = [];
+        if (isPost) {
+            buffPromise.push(this.chatMessageService.postBlockedUser(blockedNickname));
+        } else {
+            buffPromise.push(this.chatMessageService.deleteBlockedUser(blockedNickname));
+        }
+        return Promise.all(buffPromise)
+            .then((responses) => responses[0] as BlockedUserDto)
+            .catch((error: HttpErrorResponse) => {
+                console.error(`${name}Error:`, error);
+                return error;
+            })
+            .finally(() => {
+                this.blockedUsersIsLoading = false;
+                this.changeDetector.markForCheck();
+            });
+    }
+
+    private updateBlockedUsersExt(): Promise<void> {
+        this.blockedUsersIsLoading = true;
+        return this.chatMessageService.getBlockedUsers()
             .then((response: BlockedUserDto[] | HttpErrorResponse | undefined) => {
                 this.blockedUsers = (response as BlockedUserDto[]);
+                this.chatBlockedUsers = this.getChatBlockedUsers(this.blockedUsers);
             })
             .catch((error: HttpErrorResponse) => {
                 console.error(`BlockedUsersError:`, error);
@@ -314,11 +328,28 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     // Update parameters based on stream data.
     private setStreamDto(stream: StreamDto | null, profileId: number): void {
         this.streamDto = stream;
+        const streamState = stream?.state || 'stopped';
         this.isStreamOwner = (this.streamDto?.userId || -1) == profileId;
-        this.isStreamAvailable = (this.streamDto?.state || 'stopped') != 'stopped';
+        this.isStreamAvailable = streamState != 'stopped';
+        this.chatIsEditable = streamState != 'waiting' && streamState != 'stopped';
 
         this.updateTimerProperties(stream);
     }
+
+    private updateSocketConnect(streamState: StreamState | undefined): void {
+        if (streamState == null) {
+            return;
+        }
+        const isConnectionAvailable = streamState != 'stopped';
+        if (isConnectionAvailable && !this.chatSocketService.hasConnect()) {
+            console.log(`chatSocketService.connect()`); // #
+            this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST); // Connect to the server web socket chat.
+        } else if (!isConnectionAvailable && this.chatSocketService.hasConnect()) {
+            console.log(`chatSocketService.disconnect()`); // #
+            this.chatSocketService.disconnect(); // Disconnect to the server web socket chat.
+        }
+    }
+
     private updateTimerProperties(stream: StreamDto | null): void {
         // live := NEW."state" IN ('preparing', 'started', 'paused');
         this.timerIsShow = (['preparing', 'started', 'paused', 'stopped'].indexOf(this.streamDto?.state || '') > -1);
