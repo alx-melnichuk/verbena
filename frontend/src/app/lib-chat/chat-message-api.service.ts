@@ -25,6 +25,15 @@ export class ChatMessageApiService {
             .then((response) => ((response || []) as BlockedUserDto[]).map((v) => BlockedUserDtoUtil.create(v)));
     }
 
+    public postBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
+        if (!blockedNickname) {
+            return Promise.resolve(undefined);
+        }
+        const url = Uri.appUri(`appApi://blocked_users`);
+        return lastValueFrom(this.http.post<BlockedUserDto | HttpErrorResponse>(url, { blockedNickname }))
+            .then((response) => BlockedUserDtoUtil.create(response as BlockedUserDto));
+    }
+
     public deleteBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
         if (!blockedNickname) {
             return Promise.resolve(undefined);
@@ -33,5 +42,4 @@ export class ChatMessageApiService {
         return lastValueFrom(this.http.delete<BlockedUserDto | HttpErrorResponse>(url, { body: { blockedNickname } }))
             .then((response) => BlockedUserDtoUtil.create(response as BlockedUserDto));
     }
-
 }

@@ -22,8 +22,11 @@ export class ChatMessageService {
         return this.chatMessageApiService.getBlockedUsers();
     }
 
+    public postBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
+        return this.chatMessageApiService.postBlockedUser(blockedNickname);
+    }
+
     public deleteBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
         return this.chatMessageApiService.deleteBlockedUser(blockedNickname);
     }
-
 }
