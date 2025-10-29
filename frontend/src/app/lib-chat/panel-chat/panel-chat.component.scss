@@ -26,6 +26,7 @@ app-panel-chat {
     }
 
     // ** separator **
+
     .pc-sepr {
         border-top: var(---pc-brd-sz) solid var(---pc-itm-sh, initial);
         box-sizing: border-box;
@@ -69,8 +70,8 @@ app-panel-chat {
         border-radius: var(--pc-br-rd, 0.75rem);
         display: flex;
         flex-direction: column;
-        gap: var(--pc-itm-gp, .25rem);
-        padding: var(--pc-itm-pd, 0.25rem 0.5rem);
+        gap: var(--pc-itm-gp, 0.25rem);
+        padding: var(--pc-itm-pd, 0.25rem 0.3rem);
     }
 
     // -- item nickname and date  --
@@ -78,7 +79,8 @@ app-panel-chat {
         align-items: baseline;
         display: flex;
         flex-direction: row;
-        gap: .5rem;
+        gap: 0.25rem;
+        justify-content: space-between;
     }
 
     .pc-item-name {
@@ -90,14 +92,16 @@ app-panel-chat {
         display: inline-block;
         font-size: var(--pc-name-fn-sz, inherit);
         font-weight: 500;
-        min-width: 5rem;
+        // flex: 0 1 53%;
+        // min-width: 5rem;
         overflow-wrap: anywhere;
     }
 
     .pc-item-date {
         color: var(--pc-date-cl, var(--sys-secondary));
-        column-gap: 0.5rem;
+        column-gap: 0.25rem;
         display: flex;
+        // flex: 0 1 47%;
         flex-wrap: wrap;
         font-size: var(--pc-date-fn-sz, inherit);
         min-width: var(--pc-date-mn-wd, 6rem);

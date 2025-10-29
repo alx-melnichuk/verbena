@@ -53,6 +53,7 @@ type ChatMsgMap = Map<number, number>;
 
 @Component({
     selector: 'app-panel-chat',
+    exportAs: 'appPanelChat',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
         DateTimeFormatPipe, FieldMessageComponent, SpinnerComponent, TranslatePipe],
@@ -75,7 +76,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input() // Indicates that the user can send messages to the chat.
     public isEditable: boolean | null = null;
     @Input() // Indicates that data is being loaded.
-    public isLoadData: boolean | null = null;
+    public isLoading: boolean | null = null;
     @Input() // Indicates that the user is the owner of the chat.
     public isOwner: boolean | null | undefined;
     @Input()

@@ -5,7 +5,7 @@
 <div class="pc-sepr"></div>
 
 <div class="pc-middle global-scroll" #scrollItem (scroll)="dbncScrollItem()">
-  @if (isLoadData) {
+  @if (isLoading) {
     <div class="pc-item-load">
       <app-spinner [diameter]="30"></app-spinner>
     </div>
