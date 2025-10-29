@@ -8,6 +8,7 @@ import { BlockedUserDto } from 'src/app/lib-chat/chat-message-api.interface';
 
 @Component({
     selector: 'app-panel-blocked-users',
+    exportAs: 'appPanelBlockedUsers',
     standalone: true,
     imports: [CommonModule, MatMenuModule, DateTimeFormatPipe, SpinnerComponent, TranslatePipe],
     templateUrl: './panel-blocked-users.component.html',
@@ -19,7 +20,7 @@ export class PanelBlockedUsersComponent {
     @Input()
     public blockedUsers: BlockedUserDto[] = []; // List of blocked users.
     @Input() // Indicates that data is being loaded.
-    public isLoadData: boolean | null = null;
+    public isLoading: boolean | null = null;
     @Input()
     public locale: string | null | undefined;
     @Input()

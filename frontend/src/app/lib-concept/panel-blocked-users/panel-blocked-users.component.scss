@@ -1,7 +1,7 @@
 /*# sourceURL=panel-blocked-users.component.scss */
 
 app-panel-blocked-users {
-    ---pbu-itm-sh: var(--pbu-itm-sh);
+    ---pbu-brd-cl: var(--pbu-brd-cl);
     ---pbu-brd-sz: var(--pbu-brd-sz, medium); // thin-1px, medium-3px, thick-5px
 
     background-color: var(--pbu-bg, inherit);
@@ -23,19 +23,10 @@ app-panel-blocked-users {
     }
 
     // ** separator **
+
     .pbu-sepr {
-        border-top: var(---pbu-brd-sz) solid var(---pbu-itm-sh, initial);
-        box-sizing: border-box;
-        width: 100%;
+        border-top: var(---pbu-brd-sz) solid var(---pbu-brd-cl, initial);
     }
-
-    [pbu-brd-bt] {
-        border-bottom: 1px solid var(---pbu-itm-sh, initial);
-        box-sizing: border-box;
-        width: 100%;
-    }
-
-    // ** Middle **
 
     // ** Middle **
 
@@ -51,26 +42,28 @@ app-panel-blocked-users {
     }
 
     .pbu-item {
+        border-bottom: 1px solid var(---pbu-brd-cl, initial);
         box-sizing: border-box;
         display: flex;
         flex-direction: row;
-        gap: var(--pbu-itm-gp, .25rem);
-        padding: var(--pbu-itm-pd, 0.5rem 0.5rem);
+        gap: var(--pbu-itm-gp, 0.25rem);
+        justify-content: space-between;
+        padding: var(--pbu-itm-pd, 0.5rem 0.3rem);
     }
 
     .pbu-header-item {
-        font-style: italic;
+        justify-content: space-around;
     }
 
     .pbu-item-nickname {
-        flex: 0 1 53%;
+        // flex: 0 1 53%;
         display: inline-block;
         overflow-wrap: anywhere;
     }
 
     .pbu-item-date {
-        flex: 0 1 47%;
-        column-gap: 0.5rem;
+        // flex: 0 1 47%;
+        column-gap: 0.25rem;
         display: flex;
         flex-wrap: wrap;
         font-size: var(--pbu-date-fn-sz, inherit);

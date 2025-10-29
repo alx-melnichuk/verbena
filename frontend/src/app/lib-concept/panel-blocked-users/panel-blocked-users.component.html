@@ -5,22 +5,21 @@
 <div class="pbu-sepr"></div>
 
 <div class="pbu-middle global-scroll">
-  @if (isLoadData) {
+  @if (isLoading) {
     <app-spinner isFillParent [diameter]="30"></app-spinner>
   }
   @if (blockedUsers.length > 0) {
-    <div pbu-brd-bt class="pbu-item pbu-header-item">
+    <div class="pbu-item pbu-header-item">
       <div class="pbu-item-nickname">
-        <span>{{ 'panel-blocked-users.user_nickname' | translate }}</span>
+        <i><span>{{ 'panel-blocked-users.user_nickname' | translate }}</span></i>
       </div>
       <div class="pbu-item-date">
-        <span>{{ 'panel-blocked-users.date_blocking' | translate }}</span>
+        <i><span>{{ 'panel-blocked-users.date_blocking' | translate }}</span></i>
       </div>
     </div>
-    <div pbu-brd-bt></div>
   }
   @for (blockedUser of blockedUsers; track blockedUser.id) {
-    <div pbu-brd-bt class="pbu-item"
+    <div class="pbu-item"
     [matMenuTriggerFor]="menuItem"
     [matMenuTriggerData]="{ member: blockedUser.blockedNickname }">
       <div class="pbu-item-nickname">
@@ -31,7 +30,6 @@
         <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatTime }}</span>
       </div>
     </div>
-    <div pbu-brd-bt></div>
   }
 </div>
 
