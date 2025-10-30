@@ -412,6 +412,32 @@ END;
 $$;
 
 /* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
+CREATE OR REPLACE FUNCTION get_blocked_users_mini(
+  IN _user_id INTEGER,
+  OUT id INTEGER,
+  OUT blocked_id INTEGER,
+  OUT nickname VARCHAR
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF (_user_id IS NULL) THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+    SELECT
+      bu.id,
+      bu.blocked_id,
+      u.nickname
+    FROM
+      blocked_users bu, users u
+    WHERE
+      bu.user_id = _user_id
+      AND bu.blocked_id = u.id;
+END;
+$$;
+
+/* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
 CREATE OR REPLACE FUNCTION get_blocked_users(
   IN _user_id INTEGER,
   OUT id INTEGER,
