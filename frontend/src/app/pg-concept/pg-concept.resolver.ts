@@ -17,7 +17,7 @@ function goToPageNotFound(router: Router): Promise<undefined> {
 export interface ConceptResponse {
     streamDto: StreamDto;
     profileMiniDto: ProfileMiniDto;
-    blockedUsersDto: BlockedUserDto[];
+    blockedNames: string[];
 }
 
 export const pgConceptResolver: ResolveFn<ConceptResponse | HttpErrorResponse | undefined> =
@@ -36,8 +36,8 @@ export const pgConceptResolver: ResolveFn<ConceptResponse | HttpErrorResponse | 
             return streamService.getStream(streamId)
                 .then(async (response: StreamDto | HttpErrorResponse | undefined) => {
                     const streamDto: StreamDto = (response as StreamDto);
-                    const profileMiniList: ProfileMiniDto[] = [ProfileMiniDtoUtil.create({})];
-                    const blockedUsersDto: BlockedUserDto[] = [];
+                    let profileMiniDto: ProfileMiniDto = ProfileMiniDtoUtil.create({});
+                    const blockedNames: string[] = [];
 
                     const buffPromise: Promise<unknown>[] = [];
                     // Get a mini profile of the stream owner.
@@ -45,19 +45,19 @@ export const pgConceptResolver: ResolveFn<ConceptResponse | HttpErrorResponse | 
 
                     if (!!profileDto?.id && profileDto.id == streamDto.userId) {
                         // Get a list of blocked users.
-                        buffPromise.push(chatMessageService.getBlockedUsers());
+                        buffPromise.push(chatMessageService.getBlockedNames());
                     }
                     try {
                         const responses = await Promise.all(buffPromise);
-                        profileMiniList[0] = responses[0] as ProfileMiniDto;
+                        profileMiniDto = responses[0] as ProfileMiniDto;
                         if (!!responses[1]) {
-                            blockedUsersDto.push(...(responses[1] as BlockedUserDto[]));
+                            blockedNames.push(...(responses[1] as string[]));
                         }
                     } catch (error) {
                         goToPageNotFound(router);
                     }
 
-                    return { streamDto, profileMiniDto: profileMiniList[0], blockedUsersDto };
+                    return { streamDto, profileMiniDto, blockedNames };
                 })
                 .catch((err) =>
                     goToPageNotFound(router));
