@@ -43,8 +43,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(put_chat_message)
             // DELETE /api/chat_messages/{id}
             .service(delete_chat_message)
-            // GET /api/blocked_nicknames/
-            .service(get_blocked_nicknames)
+            // GET /api/blocked_users/nicknames/
+            .service(get_blocked_users_names)
             // GET /api/blocked_users
             .service(get_blocked_users)
             // POST /api/blocked_users
@@ -664,14 +664,14 @@ pub async fn delete_chat_message(
 // ** Section: BlockedUsers **
 
 
-/// blocked_nicknames
+/// get_blocked_users_names
 ///
 /// Get a list of blocked users (nickname only) for the current user.
 /// This method is called by the thread owner to get the list of blocked users (nickname only).
 /// 
 /// One could call with following curl.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/blocked_nicknames
+/// curl -i -X GET http://localhost:8080/api/blocked_users/nicknames
 /// ```
 /// 
 /// Returns the found list of blocked users (nickname only) (Vec<String>) with status 200.
@@ -702,8 +702,8 @@ pub async fn delete_chat_message(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/blocked_nicknames", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_blocked_nicknames(
+#[get("/api/blocked_users/nicknames", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_blocked_users_names(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -733,7 +733,7 @@ pub async fn get_blocked_nicknames(
     let nickname_vec: Vec<String> = blocked_name_vec.iter().map(|v| v.nickname.clone()).collect();
 
     if let Some(timer) = timer {
-        info!("get_blocked_nicknames() time: {}", format!("{:.2?}", timer.elapsed()));
+        info!("get_blocked_users_names() time: {}", format!("{:.2?}", timer.elapsed()));
     }
     Ok(HttpResponse::Ok().json(nickname_vec)) // 200
 }

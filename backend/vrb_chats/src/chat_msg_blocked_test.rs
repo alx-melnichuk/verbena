@@ -18,7 +18,7 @@ mod tests {
     };
 
     use crate::{
-        chat_message_controller::{delete_blocked_user, get_blocked_nicknames, get_blocked_users, post_blocked_user, tests as ChatMessageCtrlTest},
+        chat_message_controller::{delete_blocked_user, get_blocked_users_names, get_blocked_users, post_blocked_user, tests as ChatMessageCtrlTest},
         chat_message_models::{self, BlockedUser, BlockedUserDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto},
         chat_message_orm::tests::ChatMessageOrmTest,
     };
@@ -26,10 +26,10 @@ mod tests {
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
-    // ** get_blocked_nicknames **
+    // ** get_blocked_users_names **
 
     #[actix_web::test]
-    async fn test_get_blocked_nicknames_exist_blocked_users() {
+    async fn test_get_blocked_users_names_exist_blocked_users() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
@@ -41,13 +41,13 @@ mod tests {
         let nickname_vec: Vec<String> = blocked_users.iter().map(|v| v.blocked_nickname.clone()).collect();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_blocked_nicknames)
+            App::new().service(get_blocked_users_names)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::get().uri("/api/blocked_nicknames")
+        let req = test::TestRequest::get().uri("/api/blocked_users/nicknames")
             .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -62,7 +62,7 @@ mod tests {
         }
     }
     #[actix_web::test]
-    async fn test_get_nicknames_not_exist_blocked_users() {
+    async fn test_get_blocked_users_names_not_exist_blocked_users() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
@@ -73,13 +73,13 @@ mod tests {
         data_cm.2 = blocked_users;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_blocked_nicknames)
+            App::new().service(get_blocked_users_names)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::get().uri("/api/blocked_nicknames")
+        let req = test::TestRequest::get().uri("/api/blocked_users/nicknames")
             .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
