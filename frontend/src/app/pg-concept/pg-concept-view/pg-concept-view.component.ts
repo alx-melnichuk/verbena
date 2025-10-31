@@ -43,8 +43,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
     // List of blocked users.
-    public blockedUsers: BlockedUserDto[] = [];
-    public blockedUsersIsLoading: boolean | null = null;
+    public blockedNamesIsLoading: boolean | null = null;
 
     public isLoadStream: boolean = false;
     // An indication that the stream is in a chat-available status.
@@ -74,8 +73,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         const conceptResponse = this.route.snapshot.data['conceptResponse'];
         this.profileMiniDto = conceptResponse?.profileMiniDto;
 
-        this.blockedUsers = conceptResponse?.blockedUsersDto || [];
-        this.chatBlockedUsers = this.getChatBlockedUsers(this.blockedUsers);
+        this.chatBlockedUsers = conceptResponse?.blockedNames || [];
         const nickname: string = this.profileDto?.nickname || '';
 
         const streamDto = conceptResponse?.streamDto || null;
@@ -126,7 +124,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.chatSocketService.sendData(blockUnblockEWS);
             } else {
                 this.modifyBlockedUser(user_name, isPost)
-                    .then(() => this.updateBlockedUsersExt());
+                    .then(() => this.chatBlockedUsers = this.updateBlockedNames(this.chatBlockedUsers, isPost, user_name))
             }
         }
     }
@@ -225,8 +223,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             const isBlock = eventWS.et == EWSType.Block;
             const username = isBlock ? eventWS.getStr('block') : eventWS.getStr('unblock');
             if (!!username && isStreamOwner) {
-                this.chatBlockedUsers = this.updateBlockedUsers(this.chatBlockedUsers, isBlock, username);
-                this.updateBlockedUsersExt();
+                this.chatBlockedUsers = this.updateBlockedNames(this.chatBlockedUsers, isBlock, username);
             }
             const nickname = profileDto?.nickname || '';
             if (!!username && (isStreamOwner || nickname == username)) {
@@ -259,12 +256,12 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatRmvIds = [id];
         }
     }
-    private updateBlockedUsers(blockedUsers: string[], isBlock: boolean, blockUser: string): string[] {
-        const userSet: Set<string> = new Set(blockedUsers);
+    private updateBlockedNames(blockedNames: string[], isBlock: boolean, blockName: string): string[] {
+        const userSet: Set<string> = new Set(blockedNames);
         if (isBlock) {
-            userSet.add(blockUser);
+            userSet.add(blockName);
         } else {
-            userSet.delete(blockUser);
+            userSet.delete(blockName);
         }
         return Array.from(userSet);
     }
@@ -290,11 +287,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     private modifyBlockedUser(blockedNickname: string, isPost: boolean): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
         const name = isPost ? 'PostBlockedUser' : 'DeleteBlockedUser';
-        this.blockedUsersIsLoading = true;
+        this.blockedNamesIsLoading = true;
         const buffPromise: Promise<unknown>[] = [];
+        let idx = -1;
         if (isPost) {
             buffPromise.push(this.chatMessageService.postBlockedUser(blockedNickname));
         } else {
+            idx = this.chatBlockedUsers.indexOf(blockedNickname);
             buffPromise.push(this.chatMessageService.deleteBlockedUser(blockedNickname));
         }
         return Promise.all(buffPromise)
@@ -304,23 +303,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 return error;
             })
             .finally(() => {
-                this.blockedUsersIsLoading = false;
-                this.changeDetector.markForCheck();
-            });
-    }
-
-    private updateBlockedUsersExt(): Promise<void> {
-        this.blockedUsersIsLoading = true;
-        return this.chatMessageService.getBlockedUsers()
-            .then((response: BlockedUserDto[] | HttpErrorResponse | undefined) => {
-                this.blockedUsers = (response as BlockedUserDto[]);
-                this.chatBlockedUsers = this.getChatBlockedUsers(this.blockedUsers);
-            })
-            .catch((error: HttpErrorResponse) => {
-                console.error(`BlockedUsersError:`, error);
-            })
-            .finally(() => {
-                this.blockedUsersIsLoading = false;
+                this.blockedNamesIsLoading = false;
                 this.changeDetector.markForCheck();
             });
     }
@@ -342,10 +325,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
         const isConnectionAvailable = streamState != 'stopped';
         if (isConnectionAvailable && !this.chatSocketService.hasConnect()) {
-            console.log(`chatSocketService.connect()`); // #
             this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST); // Connect to the server web socket chat.
         } else if (!isConnectionAvailable && this.chatSocketService.hasConnect()) {
-            console.log(`chatSocketService.disconnect()`); // #
             this.chatSocketService.disconnect(); // Disconnect to the server web socket chat.
         }
     }
@@ -378,16 +359,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
         if (!!stopped && !!started) {
             result = Math.floor((stopped.getTime() - started.getTime()) / 1000);
-        }
-        return result;
-    }
-
-    private getChatBlockedUsers(blockedUsers: BlockedUserDto[]): string[] {
-        const result: string[] = [];
-        for (let idx = 0; idx < blockedUsers.length; idx++) {
-            if (!!blockedUsers[idx].blockedNickname) {
-                result.push(blockedUsers[idx].blockedNickname);
-            }
         }
         return result;
     }
