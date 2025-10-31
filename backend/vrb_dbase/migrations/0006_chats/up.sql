@@ -412,7 +412,7 @@ END;
 $$;
 
 /* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
-CREATE OR REPLACE FUNCTION get_blocked_users_mini(
+CREATE OR REPLACE FUNCTION get_blocked_nicknames(
   IN _user_id INTEGER,
   OUT id INTEGER,
   OUT blocked_id INTEGER,
