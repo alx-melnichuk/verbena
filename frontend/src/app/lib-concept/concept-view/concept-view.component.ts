@@ -17,7 +17,6 @@ import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 
-import { PanelBlockedUsersComponent } from '../panel-blocked-users/panel-blocked-users.component';
 import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-stream-actions.component';
 import { PanelStreamParamsComponent } from '../panel-stream-params/panel-stream-params.component';
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
@@ -27,7 +26,7 @@ import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-st
     exportAs: 'appConceptView',
     standalone: true,
     imports: [CommonModule, AvatarComponent, SpinnerComponent, SidebarComponent, TranslatePipe, PanelStreamStateComponent,
-        PanelStreamParamsComponent, PanelStreamActionsComponent, PanelChatComponent, SidebarHandlerDirective, PanelBlockedUsersComponent],
+        PanelStreamParamsComponent, PanelStreamActionsComponent, PanelChatComponent, SidebarHandlerDirective],
     templateUrl: './concept-view.component.html',
     styleUrl: './concept-view.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -63,10 +62,6 @@ export class ConceptViewComponent implements AfterContentInit {
 
     @Input()
     public countOfViewer: number | null | undefined;
-    @Input()
-    public blockedUsers: BlockedUserDto[] = []; // List of blocked users.
-    @Input()
-    public blockedUsersIsLoading: boolean | null = null;
 
     @Input()
     public isLoadStream = false;
