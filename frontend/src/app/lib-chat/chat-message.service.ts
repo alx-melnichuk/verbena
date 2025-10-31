@@ -18,6 +18,10 @@ export class ChatMessageService {
         return this.chatMessageApiService.getChatMessages({ streamId, isSortDes, minDate, maxDate })
     }
 
+    public getBlockedNames(): Promise<string[] | HttpErrorResponse | undefined> {
+        return this.chatMessageApiService.getBlockedNames();
+    }
+
     public getBlockedUsers(): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
         return this.chatMessageApiService.getBlockedUsers();
     }
