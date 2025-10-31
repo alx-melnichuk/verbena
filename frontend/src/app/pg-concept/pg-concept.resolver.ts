@@ -45,7 +45,7 @@ export const pgConceptResolver: ResolveFn<ConceptResponse | HttpErrorResponse | 
 
                     if (!!profileDto?.id && profileDto.id == streamDto.userId) {
                         // Get a list of blocked users.
-                        buffPromise.push(chatMessageService.getBlockedNames());
+                        buffPromise.push(chatMessageService.getBlockedUsersNames());
                     }
                     try {
                         const responses = await Promise.all(buffPromise);

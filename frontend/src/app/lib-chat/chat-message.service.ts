@@ -18,8 +18,8 @@ export class ChatMessageService {
         return this.chatMessageApiService.getChatMessages({ streamId, isSortDes, minDate, maxDate })
     }
 
-    public getBlockedNames(): Promise<string[] | HttpErrorResponse | undefined> {
-        return this.chatMessageApiService.getBlockedNames();
+    public getBlockedUsersNames(): Promise<string[] | HttpErrorResponse | undefined> {
+        return this.chatMessageApiService.getBlockedUsersNames();
     }
 
     public getBlockedUsers(): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
