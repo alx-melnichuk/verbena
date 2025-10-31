@@ -18,13 +18,77 @@ mod tests {
     };
 
     use crate::{
-        chat_message_controller::{delete_blocked_user, get_blocked_users, post_blocked_user, tests as ChatMessageCtrlTest},
+        chat_message_controller::{delete_blocked_user, get_blocked_nicknames, get_blocked_users, post_blocked_user, tests as ChatMessageCtrlTest},
         chat_message_models::{self, BlockedUser, BlockedUserDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto},
         chat_message_orm::tests::ChatMessageOrmTest,
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+
+    // ** get_blocked_nicknames **
+
+    #[actix_web::test]
+    async fn test_get_blocked_nicknames_exist_blocked_users() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
+        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        #[rustfmt::skip]
+        let blocked_users: Vec<BlockedUser> = data_cm.2.iter()
+            .filter(|v| v.user_id == user1_id).map(|v| v.clone()).collect();
+        #[rustfmt::skip]
+        let nickname_vec: Vec<String> = blocked_users.iter().map(|v| v.blocked_nickname.clone()).collect();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_nicknames)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri("/api/blocked_nicknames")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let nicknames_res: Vec<String> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(nicknames_res.len(), nickname_vec.len());
+        for (index, nickname1) in nicknames_res.iter().enumerate() {
+            let nickname2 = nickname_vec.get(index).unwrap();
+            assert_eq!(nickname1, nickname2);
+        }
+    }
+    #[actix_web::test]
+    async fn test_get_nicknames_not_exist_blocked_users() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
+        let mut data_cm = ChatMessageOrmTest::chat_messages(1);
+        #[rustfmt::skip]
+        let blocked_users: Vec<BlockedUser> = data_cm.2.iter()
+            .filter(|v| v.user_id != user1_id).map(|v| v.clone()).collect();
+        data_cm.2 = blocked_users;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_nicknames)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri("/api/blocked_nicknames")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let nicknames_res: Vec<String> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(nicknames_res.len(), 0);
+    }
 
     // ** get_blocked_users **
 

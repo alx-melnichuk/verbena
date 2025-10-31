@@ -24,9 +24,7 @@ use crate::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
     chat_message_models::{
-        BlockedUser, BlockedUserDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage,
-        CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto,
-        SearchChatMessage, SearchChatMessageDto,
+        BlockedUser, BlockedUserDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -45,7 +43,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(put_chat_message)
             // DELETE /api/chat_messages/{id}
             .service(delete_chat_message)
-            // GET /api/blocked_users/{stream_id}
+            // GET /api/blocked_nicknames/
+            .service(get_blocked_nicknames)
+            // GET /api/blocked_users
             .service(get_blocked_users)
             // POST /api/blocked_users
             .service(post_blocked_user)
@@ -663,9 +663,84 @@ pub async fn delete_chat_message(
 
 // ** Section: BlockedUsers **
 
+
+/// blocked_nicknames
+///
+/// Get a list of blocked users (nickname only) for the current user.
+/// This method is called by the thread owner to get the list of blocked users (nickname only).
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/blocked_nicknames
+/// ```
+/// 
+/// Returns the found list of blocked users (nickname only) (Vec<String>) with status 200.
+///
+/// The structure is returned:
+/// ```text
+/// String[]  // nickname of the blocked user;
+/// ```
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Get a list of blocked users (nickname only) for the current user.", body = Vec<String>,
+            examples(
+            ("1_blocked_users_present" = (summary = "blocked users are present", description = "There are blocked users.",
+                value = json!(vec!["mary_williams".to_string(), "ava_wilson".to_string()])
+            )),
+            ("2_blocked_users_absent" = (summary = "blocked users are absent", description = "There are no blocked users.",
+                value = json!([])
+            ))),
+        ),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[get("/api/blocked_nicknames", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_blocked_nicknames(
+    authenticated: Authenticated,
+    chat_message_orm: web::Data<ChatMessageOrmApp>,
+) -> actix_web::Result<HttpResponse, ApiError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+    // Get current user details.
+    let user = authenticated.deref();
+    let user_id = user.id;
+
+    let chat_message_orm2 = chat_message_orm.get_ref().clone();
+    let res_blocked_names = web::block(move || {
+        // Get a list of blocked users.
+        let res_chat_message1 = chat_message_orm2
+            .get_blocked_nicknames(user_id)
+            .map_err(|e| {
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            });
+        res_chat_message1
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
+
+    let blocked_name_vec = res_blocked_names?;
+    let nickname_vec: Vec<String> = blocked_name_vec.iter().map(|v| v.nickname.clone()).collect();
+
+    if let Some(timer) = timer {
+        info!("get_blocked_nicknames() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
+    Ok(HttpResponse::Ok().json(nickname_vec)) // 200
+}
+
 /// get_blocked_users
 ///
-/// Get a list of blocked users for the specified stream.
+/// Get a list of blocked users for the current user.
 /// This method is called by the stream owner to get a list of blocked users.
 /// 
 /// One could call with following curl.
