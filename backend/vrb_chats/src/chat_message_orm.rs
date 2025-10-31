@@ -1,8 +1,7 @@
 use vrb_dbase::dbase::DbPool;
 
 use crate::chat_message_models::{
-    BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage,
-    SearchChatMessage,
+    BlockedName, BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
 };
 
 pub trait ChatMessageOrm {
@@ -23,6 +22,9 @@ pub trait ChatMessageOrm {
 
     /// Get chat access information. (ChatAccess)
     fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, String>;
+
+    /// Get a list of blocked users (nickname only).
+    fn get_blocked_nicknames(&self, user_id: i32) -> Result<Vec<BlockedName>, String>;
 
     /// Get a list of blocked users.
     fn get_blocked_users(&self, user_id: i32) -> Result<Vec<BlockedUser>, String>;
@@ -54,8 +56,7 @@ pub mod impls {
 
     use crate::{
         chat_message_models::{
-            BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser,
-            ModifyChatMessage, SearchChatMessage,
+            BlockedName, BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -228,6 +229,28 @@ pub mod impls {
             Ok(opt_chat_access)
         }
 
+        /// Get a list of blocked users (nickname only).
+        fn get_blocked_nicknames(&self, user_id: i32) -> Result<Vec<BlockedName>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            #[rustfmt::skip]
+            let query = diesel::sql_query("select * from get_blocked_nicknames($1);")
+                .bind::<sql_types::Integer, _>(user_id); // $1
+
+            // Run a query with Diesel to create a new user and return it.
+            #[rustfmt::skip]
+            let blocked_name_list: Vec<BlockedName> = query
+                .load(&mut conn)
+                .map_err(|e| format!("get_blocked_nicknames: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("get_blocked_nicknames() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(blocked_name_list)
+        }
+
         /// Get a list of blocked users.
         fn get_blocked_users(&self, user_id: i32) -> Result<Vec<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -323,8 +346,7 @@ pub mod tests {
 
     use crate::{
         chat_message_models::{
-            BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser,
-            ModifyChatMessage, SearchChatMessage,
+            BlockedName, BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -612,6 +634,15 @@ pub mod tests {
             Ok(Some(ChatAccess::new(stream_id, stream_owner, stream_state, is_blocked)))
         }
 
+        /// Get a list of blocked users (nickname only).
+        fn get_blocked_nicknames(&self, user_id: i32) -> Result<Vec<BlockedName>, String> {
+            let vec = (*self.blocked_user_vec).borrow();
+            #[rustfmt::skip]
+            let result: Vec<BlockedName> = vec.iter()
+                .filter(|v| (*v).user_id == user_id).map(|v| BlockedName::new(v.id, v.blocked_id, v.blocked_nickname.clone())).collect();
+            Ok(result)
+        }
+        
         /// Get a list of blocked users.
         fn get_blocked_users(&self, user_id: i32) -> Result<Vec<BlockedUser>, String> {
             let vec = (*self.blocked_user_vec).borrow();

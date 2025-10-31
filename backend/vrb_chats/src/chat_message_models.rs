@@ -325,6 +325,29 @@ impl ChatAccess {
 
 // * * * * Section: models for "BlockedUserOrm". * * * *
 
+// ** Model: "BlockedName". Used to return the "nickname" from "blocked_user". **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+#[diesel(table_name = schema::blocked_users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct BlockedName {
+    pub id: i32,
+    pub blocked_id: i32,
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(column_name = "nickname")]
+    pub nickname: String,
+}
+
+impl BlockedName {
+    pub fn new(id: i32, blocked_id: i32, nickname: String) -> BlockedName {
+        BlockedName {
+            id,
+            blocked_id,
+            nickname,
+        }
+    }
+}
+
 // ** Model: "BlockedUser". Used to return "blocked_user" data. **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
