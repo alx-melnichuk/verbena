@@ -51,6 +51,7 @@ use vrb_streams::{stream_controller, stream_models};
         chat_message_controller::post_chat_message,
         chat_message_controller::put_chat_message,
         chat_message_controller::delete_chat_message,
+        chat_message_controller::get_blocked_nicknames,
         chat_message_controller::get_blocked_users,
         chat_message_controller::post_blocked_user,
         chat_message_controller::delete_blocked_user,
