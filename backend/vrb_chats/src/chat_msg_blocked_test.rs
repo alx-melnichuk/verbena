@@ -18,9 +18,9 @@ mod tests {
     };
 
     use crate::{
-        chat_message_controller::{delete_blocked_user, get_blocked_users_names, get_blocked_users, post_blocked_user, tests as ChatMessageCtrlTest},
+        chat_message_controller::{delete_blocked_user, get_blocked_users, get_blocked_users_names, post_blocked_user, tests as ChatMessageCtrlTest},
         chat_message_models::{self, BlockedUser, BlockedUserDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto},
-        chat_message_orm::tests::ChatMessageOrmTest,
+        chat_message_orm::tests::{BlockedData, ChatMessageOrmTest},
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
@@ -35,7 +35,7 @@ mod tests {
         let user1_id = data_u.0.get(0).unwrap().id;
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
-        let blocked_users: Vec<BlockedUser> = data_cm.2.iter()
+        let blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.user_id == user1_id).map(|v| v.clone()).collect();
         #[rustfmt::skip]
         let nickname_vec: Vec<String> = blocked_users.iter().map(|v| v.blocked_nickname.clone()).collect();
@@ -68,7 +68,7 @@ mod tests {
         let user1_id = data_u.0.get(0).unwrap().id;
         let mut data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
-        let blocked_users: Vec<BlockedUser> = data_cm.2.iter()
+        let blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.user_id != user1_id).map(|v| v.clone()).collect();
         data_cm.2 = blocked_users;
         #[rustfmt::skip]
@@ -101,7 +101,7 @@ mod tests {
         #[rustfmt::skip]
         let blocked_users_vec: Vec<BlockedUserDto> = data_cm.2.iter()
             .filter(|v| v.user_id == user1_id)
-            .map(|v| BlockedUserDto::from(v.clone()))
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into())))
             .collect();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -140,7 +140,7 @@ mod tests {
         let user1_id = data_u.0.get(0).unwrap().id;
         let mut data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
-        let blocked_users: Vec<BlockedUser> = data_cm.2.iter()
+        let blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.user_id != user1_id).map(|v| v.clone()).collect();
         data_cm.2 = blocked_users;
         #[rustfmt::skip]

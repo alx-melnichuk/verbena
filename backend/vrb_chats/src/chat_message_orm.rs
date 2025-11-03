@@ -368,10 +368,44 @@ pub mod tests {
     }
 
     #[derive(Debug, Clone)]
+    pub struct BlockedData {
+        pub id: i32,
+        pub user_id: i32,
+        pub blocked_id: i32,
+        pub blocked_nickname: String,
+        pub block_date: DateTime<Utc>,
+    }
+
+    impl BlockedData {
+        pub fn new(id: i32, user_id: i32, blocked_id: i32, blocked_nickname: String, opt_block_date: Option<DateTime<Utc>>) -> Self {
+            BlockedData {
+                id,
+                user_id,
+                blocked_id,
+                blocked_nickname,
+                block_date: opt_block_date.unwrap_or(Utc::now()),
+            }
+        }
+    }
+
+    impl Into<BlockedUser> for BlockedData {
+        fn into(self) -> BlockedUser {
+            BlockedUser {
+                id : self.id,
+                user_id : self.user_id,
+                blocked_id : self.blocked_id,
+                blocked_nickname : self.blocked_nickname.clone(),
+                block_date : self.block_date.clone(),
+            }
+        }
+    }
+    
+
+    #[derive(Debug, Clone)]
     pub struct ChatMessageOrmApp {
         pub chat_message_vec: Vec<ChatMessage>,
         pub chat_message_log_map: HashMap<i32, Vec<ChatMessageLog>>,
-        pub blocked_user_vec: Box<RefCell<Vec<BlockedUser>>>,
+        pub blocked_user_vec: Box<RefCell<Vec<BlockedData>>>,
         pub user_vec: Vec<UserMini>,
     }
 
@@ -393,7 +427,7 @@ pub mod tests {
         pub fn create(
             chat_message_list: &[ChatMessage],
             chat_message_log_list: &[ChatMessageLog],
-            blocked_user_list: &[BlockedUser],
+            blocked_user_list: &[BlockedData],
             users_list: &[UserMini],
         ) -> Self {
             let mut chat_message_vec: Vec<ChatMessage> = Vec::new();
@@ -449,10 +483,10 @@ pub mod tests {
                 }
             }
 
-            let mut blocked_user_vec: Vec<BlockedUser> = Vec::new();
+            let mut blocked_user_vec: Vec<BlockedData> = Vec::new();
             for (idx, blocked_user) in blocked_user_list.iter().enumerate() {
                 let delta: i32 = idx.try_into().unwrap();
-                let new_blocked_user = BlockedUser::new(
+                let new_blocked_user = BlockedData::new(
                     BLOCKED_USER_ID + delta,
                     blocked_user.user_id,
                     blocked_user.blocked_id,
@@ -648,7 +682,7 @@ pub mod tests {
             let vec = (*self.blocked_user_vec).borrow();
             #[rustfmt::skip]
             let result: Vec<BlockedUser> = vec.iter()
-                .filter(|v| (*v).user_id == user_id).map(|v| v.clone()).collect();
+                .filter(|v| (*v).user_id == user_id).map(|v| v.clone().into()).collect();
             Ok(result)
         }
 
@@ -680,20 +714,20 @@ pub mod tests {
                     })
                     .map(|v| v.clone());
 
-                if let Some(blocked_user) = opt_blocked_user {
-                    result = Some(blocked_user);
+                if let Some(blocked_data) = opt_blocked_user {
+                    result = Some(blocked_data.into());
                 } else {
                     let cnt = vec.len();
                     let idx: i32 = cnt.try_into().unwrap();
-                    let blocked_user = BlockedUser::new(
+                    let blocked_data = BlockedData::new(
                         BLOCKED_USER_ID + idx,
                         create_blocked_user.user_id,
                         user_mini.id,
                         user_mini.name.clone(),
                         Some(round_subsecs(Utc::now())),
                     );
-                    vec.push(blocked_user.clone());
-                    result = Some(blocked_user);
+                    vec.push(blocked_data.clone());
+                    result = Some(blocked_data.into());
                 }
             }
             Ok(result)
@@ -726,7 +760,7 @@ pub mod tests {
                 });
                 if let Some(index) = opt_index {
                     let blocked_user = vec.remove(index);
-                    result = Some(blocked_user);
+                    result = Some(blocked_user.into());
                 }
             }
             Ok(result)
@@ -757,8 +791,8 @@ pub mod tests {
             }
             .to_string()
         }
-        fn get_blocked_user_vec() -> Vec<BlockedUser> {
-            let mut result: Vec<BlockedUser> = Vec::new();
+        fn get_blocked_user_vec() -> Vec<BlockedData> {
+            let mut result: Vec<BlockedData> = Vec::new();
             let user_ids = Self::user_ids();
             let blocked_id = user_ids.last().unwrap().clone();
             let blocked_name = Self::get_user_name(blocked_id);
@@ -768,7 +802,7 @@ pub mod tests {
                 }
                 let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
                 let blocked_nickname = blocked_name.clone();
-                result.push(BlockedUser::new(id, *user_id, blocked_id, blocked_nickname, None));
+                result.push(BlockedData::new(id, *user_id, blocked_id, blocked_nickname, None));
             }
             result
         }
@@ -776,7 +810,7 @@ pub mod tests {
         fn get_user_mini() -> Vec<UserMini> {
             Self::user_ids().iter().map(|v| UserMini {id: *v, name: Self::get_user_name(*v)}).collect()
         }
-        pub fn chat_messages(count_msg: i32) -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>, Vec<UserMini>) {
+        pub fn chat_messages(count_msg: i32) -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedData>, Vec<UserMini>) {
             let mut chat_message_list: Vec<ChatMessage> = Vec::new();
             let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
 
@@ -793,7 +827,7 @@ pub mod tests {
                 user_id = if user_id == USER4_ID { USER1_ID } else { user_id + 1 };
             }
 
-            let blocked_user_list: Vec<BlockedUser> = Self::get_blocked_user_vec();
+            let blocked_user_list: Vec<BlockedData> = Self::get_blocked_user_vec();
             let user_mini_vec: Vec<UserMini> = Self::get_user_mini();
             let users_list = user_mini_vec.clone();
             #[rustfmt::skip]
@@ -812,7 +846,7 @@ pub mod tests {
             (chat_message_vec, chat_message_log_vec, blocked_user_vec, user_mini_vec)
         }
         pub fn cfg_chat_message_orm(
-            data_cm: (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>, Vec<UserMini>),
+            data_cm: (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedData>, Vec<UserMini>),
         ) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
                 let data_chat_message_orm = web::Data::new(ChatMessageOrmApp::create(&data_cm.0, &data_cm.1, &data_cm.2, &data_cm.3));
