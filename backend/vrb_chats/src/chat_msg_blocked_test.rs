@@ -36,7 +36,7 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
-            .filter(|v| v.user_id == user1_id).map(|v| v.clone()).collect();
+            .filter(|v| v.owner_user_id == user1_id).map(|v| v.clone()).collect();
         #[rustfmt::skip]
         let nickname_vec: Vec<String> = blocked_users.iter().map(|v| v.nickname.clone()).collect();
         #[rustfmt::skip]
@@ -69,7 +69,7 @@ mod tests {
         let mut data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
-            .filter(|v| v.user_id != user1_id).map(|v| v.clone()).collect();
+            .filter(|v| v.owner_user_id != user1_id).map(|v| v.clone()).collect();
         data_cm.2 = blocked_users;
         #[rustfmt::skip]
         let app = test::init_service(
