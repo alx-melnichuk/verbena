@@ -353,6 +353,53 @@ impl BlockedName {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::blocked_users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct BlockedUserMini {
+    pub id: i32,
+    #[diesel(sql_type = diesel::sql_types::Integer)]
+    #[diesel(column_name = "blocked_id")]
+    pub user_id: i32,
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(column_name = "nickname")]
+    pub nickname: String,
+    pub block_date: DateTime<Utc>,
+}
+
+impl BlockedUserMini {
+    pub fn new(id: i32, user_id: i32, nickname: String, block_date: DateTime<Utc>) -> Self {
+        BlockedUserMini {
+            id,
+            user_id,
+            nickname: nickname.clone(),
+            block_date: block_date.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct BlockedUserMiniDto {
+    pub id: i32,
+    pub user_id: i32,
+    pub nickname: String,
+    #[serde(with = "serial_datetime")]
+    pub block_date: DateTime<Utc>,
+}
+
+impl From<BlockedUserMini> for BlockedUserMiniDto {
+    fn from(blocked_user: BlockedUserMini) -> Self {
+        BlockedUserMiniDto {
+            id: blocked_user.id,
+            user_id: blocked_user.user_id,
+            nickname: blocked_user.nickname.clone(),
+            block_date: blocked_user.block_date.clone(),
+        }
+    }
+}
+
+
+/*#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+#[diesel(table_name = schema::blocked_users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct BlockedUser {
     pub id: i32,
     pub user_id: i32,
@@ -373,6 +420,40 @@ impl BlockedUser {
             block_date: opt_block_date.unwrap_or(Utc::now()),
         }
     }
+}*/
+
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+#[diesel(table_name = schema::blocked_users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct BlockedUser2 {
+    pub id: i32,
+    #[diesel(sql_type = diesel::sql_types::Integer)]
+    #[diesel(column_name = "user_id")]
+    pub user_id: i32,
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(column_name = "nickname")]
+    pub nickname: String,
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(column_name = "email")]
+    pub email: String,
+    pub block_date: DateTime<Utc>,
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(column_name = "avatar")]
+    pub avatar: String,
+}
+
+impl BlockedUser2 {
+    pub fn new(id: i32, user_id: i32, nickname: String, email: String, block_date: DateTime<Utc>, avatar: String) -> Self {
+        BlockedUser2 {
+            id,
+            user_id,
+            nickname,
+            email,
+            block_date,
+            avatar,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
@@ -380,20 +461,22 @@ impl BlockedUser {
 pub struct BlockedUserDto {
     pub id: i32,
     pub user_id: i32,
-    pub blocked_id: i32,
-    pub blocked_nickname: String,
+    pub nickname: String,
+    pub email: String,
     #[serde(with = "serial_datetime")]
     pub block_date: DateTime<Utc>,
+    pub avatar: String,
 }
 
-impl From<BlockedUser> for BlockedUserDto {
-    fn from(blocked_user: BlockedUser) -> Self {
+impl From<BlockedUser2> for BlockedUserDto {
+    fn from(blocked_user: BlockedUser2) -> Self {
         BlockedUserDto {
             id: blocked_user.id,
             user_id: blocked_user.user_id,
-            blocked_id: blocked_user.blocked_id,
-            blocked_nickname: blocked_user.blocked_nickname.clone(),
+            nickname: blocked_user.nickname.clone(),
+            email: blocked_user.email,
             block_date: blocked_user.block_date.clone(),
+            avatar: blocked_user.avatar,
         }
     }
 }
