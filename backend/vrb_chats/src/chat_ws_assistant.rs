@@ -22,7 +22,7 @@ use crate::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
     chat_message_models::{
-        BlockedUser, ChatAccess, ChatMessage, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage,
+        BlockedUserMini, ChatAccess, ChatMessage, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -55,7 +55,7 @@ pub trait AssistantBlockUser {
         user_id: i32,
         blocked_id: Option<i32>,
         blocked_nickname: Option<String>,
-    ) -> Result<Option<BlockedUser>, ApiError>;
+    ) -> Result<Option<BlockedUserMini>, ApiError>;
 }
 
 // ** ChatWsAssistant **
@@ -129,7 +129,7 @@ impl AssistantBlockUser for ChatWsAssistant {
         user_id: i32,
         blocked_id: Option<i32>,
         blocked_nickname: Option<String>,
-    ) -> Result<Option<BlockedUser>, ApiError> {
+    ) -> Result<Option<BlockedUserMini>, ApiError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
         if is_block {
             // Add a new entry (blocked_user).
