@@ -8,6 +8,9 @@ DROP FUNCTION IF EXISTS get_chat_access;
 /* Remove stored function that will get the list of "blocked_user" by the specified parameter. */
 DROP FUNCTION IF EXISTS get_blocked_users;
 
+/* Remove stored function that will get a sorted list of "blocked_user" by the specified parameter. */
+DROP FUNCTION IF EXISTS get_blocked_users_sort;
+
 /* Remove stored function that will get the list of "blocked_user" by the specified parameter. */
 DROP FUNCTION IF EXISTS get_blocked_nicknames;
 

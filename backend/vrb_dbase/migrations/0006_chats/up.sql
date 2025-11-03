@@ -276,22 +276,21 @@ CREATE UNIQUE INDEX uq_idx_blocked_users_blocked_id_user_id ON blocked_users(blo
 
 /* Create a stored function to add a new entry to "blocked_users". */
 CREATE OR REPLACE FUNCTION create_blocked_user(
-  IN _user_id INTEGER,
+  IN _owner_user_id INTEGER,
   IN _blocked_id INTEGER,
   IN _blocked_nickname VARCHAR,
   OUT id INTEGER,
   OUT user_id INTEGER,
-  OUT blocked_id INTEGER,
-  OUT blocked_nickname VARCHAR,
+  OUT nickname VARCHAR,
   OUT block_date TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE 
   rec1 RECORD;
-  bl_id INTEGER;
+  bl_user_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
-  IF (_user_id IS NULL) THEN
+  IF (_owner_user_id IS NULL) THEN
     RETURN;
   END IF;
 
@@ -299,17 +298,15 @@ BEGIN
     SELECT u.id, u.nickname
     FROM users u 
     WHERE u.id = _blocked_id
-    INTO bl_id, bl_nickname;
-  ELSE
-    IF _blocked_nickname IS NOT NULL THEN 
-      SELECT u.id, u.nickname 
-      FROM users u 
-      WHERE u.nickname = _blocked_nickname
-      INTO bl_id, bl_nickname;
-    END IF;
+    INTO bl_user_id, bl_nickname;
+  ELSIF _blocked_nickname IS NOT NULL THEN 
+    SELECT u.id, u.nickname 
+    FROM users u 
+    WHERE u.nickname = _blocked_nickname
+    INTO bl_user_id, bl_nickname;
   END IF;
 
-  IF (bl_id IS NULL OR bl_nickname IS NULL) THEN
+  IF (bl_user_id IS NULL OR bl_nickname IS NULL) THEN
     RETURN;
   END IF;
 
@@ -320,17 +317,16 @@ BEGIN
     blocked_users.blocked_id,
     blocked_users.block_date
   FROM blocked_users
-  WHERE blocked_users.user_id = _user_id AND blocked_users.blocked_id = bl_id
+  WHERE blocked_users.user_id = _owner_user_id AND blocked_users.blocked_id = bl_user_id
   INTO rec1;
 
   -- If there is no such entry, add it.
   IF rec1.id IS NULL THEN
     -- Add a new entry to the "blocked_user" table.
     INSERT INTO blocked_users(user_id, blocked_id)
-    VALUES (_user_id, bl_id)
+    VALUES (_owner_user_id, bl_user_id)
     RETURNING
       blocked_users.id,
-      blocked_users.user_id,
       blocked_users.blocked_id,
       blocked_users.block_date
     INTO rec1;
@@ -342,31 +338,29 @@ BEGIN
 
   RETURN QUERY SELECT
     rec1.id,
-    rec1.user_id,
-    rec1.blocked_id,
-    bl_nickname as blocked_nickname,
+    rec1.blocked_id AS user_id,
+    bl_nickname as nickname,
     rec1.block_date;
 END;
 $$;
 
 /* Create a stored function to delete the entity in "blocked_users". */
 CREATE OR REPLACE FUNCTION delete_blocked_user(
-  IN _user_id INTEGER,
+  IN _owner_user_id INTEGER,
   IN _blocked_id INTEGER,
   IN _blocked_nickname VARCHAR,
   OUT id INTEGER,
   OUT user_id INTEGER,
-  OUT blocked_id INTEGER,
-  OUT blocked_nickname VARCHAR,
+  OUT nickname VARCHAR,
   OUT block_date TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
   rec1 RECORD;
-  bl_id INTEGER;
+  bl_user_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
-  IF (_user_id IS NULL) THEN
+  IF (_owner_user_id IS NULL) THEN
     RETURN;
   END IF;
 
@@ -374,26 +368,23 @@ BEGIN
     SELECT u.id, u.nickname
     FROM users u 
     WHERE u.id = _blocked_id
-    INTO bl_id, bl_nickname;
-  ELSE
-    IF _blocked_nickname IS NOT NULL THEN 
-      SELECT u.id, u.nickname 
-      FROM users u 
-      WHERE u.nickname = _blocked_nickname
-      INTO bl_id, bl_nickname;
-    END IF;
+    INTO bl_user_id, bl_nickname;
+  ELSIF _blocked_nickname IS NOT NULL THEN 
+    SELECT u.id, u.nickname 
+    FROM users u 
+    WHERE u.nickname = _blocked_nickname
+    INTO bl_user_id, bl_nickname;
   END IF;
 
-  IF (bl_id IS NULL OR bl_nickname IS NULL)  THEN
+  IF (bl_user_id IS NULL OR bl_nickname IS NULL)  THEN
     RETURN;
   END IF;
 
   DELETE FROM blocked_users
-  WHERE blocked_users.user_id = _user_id
-    AND blocked_users.blocked_id = bl_id
+  WHERE blocked_users.user_id = _owner_user_id
+    AND blocked_users.blocked_id = bl_user_id
   RETURNING 
     blocked_users.id,
-    blocked_users.user_id,
     blocked_users.blocked_id,
     blocked_users.block_date
   INTO rec1;
@@ -404,9 +395,8 @@ BEGIN
 
   RETURN QUERY SELECT
     rec1.id,
-    rec1.user_id,
-    rec1.blocked_id,
-    bl_nickname as blocked_nickname,
+    rec1.blocked_id AS user_id,
+    bl_nickname as nickname,
     rec1.block_date;
 END;
 $$;
@@ -437,50 +427,80 @@ BEGIN
 END;
 $$;
 
-/* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
-CREATE OR REPLACE FUNCTION get_blocked_users(
+/* Create a stored function that will get a sorted list of "blocked_user" by the specified parameter. */
+CREATE OR REPLACE FUNCTION get_blocked_users_sort(
   IN _user_id INTEGER,
+  IN _sort_order VARCHAR, -- 'nickname','email','block_date'
+  IN _sort_des BOOLEAN,
   OUT id INTEGER,
   OUT user_id INTEGER,
-  OUT blocked_id INTEGER,
-  OUT blocked_nickname VARCHAR,
+  OUT nickname VARCHAR,
+  OUT email VARCHAR,
   OUT block_date TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
+BEGIN
+  IF (_user_id IS NULL) THEN
+    RETURN;
+  END IF;
+  IF (_sort_des IS NULL) THEN
+    _sort_des := FALSE;
+  END IF;
+
+  IF (_sort_order = 'email') THEN
+    RETURN QUERY
+      SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
+      FROM blocked_users b, users u
+      WHERE b.user_id = _user_id AND b.blocked_id = u.id
+      ORDER BY 
+        CASE WHEN NOT _sort_des THEN u.email ELSE NULL END ASC,
+        CASE WHEN _sort_des     THEN u.email ELSE NULL END DESC;
+  ELSIF (_sort_order = 'block_date') THEN
+    RETURN QUERY
+      SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
+      FROM blocked_users b, users u
+      WHERE b.user_id = _user_id AND b.blocked_id = u.id
+      ORDER BY 
+        CASE WHEN NOT _sort_des THEN b.block_date ELSE NULL END ASC,
+        CASE WHEN _sort_des     THEN b.block_date ELSE NULL END DESC;
+  ELSE
+    RETURN QUERY
+      SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
+      FROM blocked_users b, users u
+      WHERE b.user_id = _user_id AND b.blocked_id = u.id
+      ORDER BY 
+        CASE WHEN NOT _sort_des THEN u.nickname ELSE NULL END ASC,
+        CASE WHEN _sort_des     THEN u.nickname ELSE NULL END DESC;
+  END IF;
+END;
+$$;
+
+/* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
+CREATE OR REPLACE FUNCTION get_blocked_users(
+  IN _user_id INTEGER,
+  IN _sort_order VARCHAR, -- 'nickname','email','block_date'
+  IN _sort_des BOOLEAN,
+  OUT id INTEGER,
+  OUT user_id INTEGER,
+  OUT nickname VARCHAR,
+  OUT email VARCHAR,
+  OUT block_date TIMESTAMPTZ,
+  OUT avatar VARCHAR
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
 DECLARE
-  user_id2 INTEGER;
-  rec1 RECORD;
-  bl_id INTEGER;
-  bl_nickname VARCHAR;
 BEGIN
   IF (_user_id IS NULL) THEN
     RETURN;
   END IF;
 
-  SELECT u.id
-  FROM users u
-  WHERE u.id = _user_id
-  INTO user_id2;
-
-  IF (user_id2 IS NULL) THEN
-    -- If the user is not the owner of the stream, the result is an empty array.
-    RETURN;
-  END IF;
-
   RETURN QUERY
     SELECT
-      bu.id,
-      bu.user_id,
-      bu.blocked_id,
-      u.nickname AS blocked_nickname,
-      bu.block_date
+      b.id, b.user_id, b.nickname, b.email, b.block_date, p.avatar
     FROM
-      blocked_users bu, users u
+      get_blocked_users_sort(_user_id, _sort_order, _sort_des) b, profiles p
     WHERE
-      bu.user_id = user_id2
-      AND bu.blocked_id = u.id
-    ORDER BY
-      u.nickname ASC;
+      b.user_id = p.user_id;
 END;
 $$;
 
