@@ -1,7 +1,7 @@
 use vrb_dbase::dbase::DbPool;
 
 use crate::chat_message_models::{
-    BlockedName, BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+    BlockedName, BlockedUser2, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
 };
 
 pub trait ChatMessageOrm {
@@ -27,13 +27,13 @@ pub trait ChatMessageOrm {
     fn get_blocked_nicknames(&self, user_id: i32) -> Result<Vec<BlockedName>, String>;
 
     /// Get a list of blocked users.
-    fn get_blocked_users(&self, user_id: i32) -> Result<Vec<BlockedUser>, String>;
+    fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser2>, String>;
 
     /// Add a new entry (blocked_user).
-    fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String>;
+    fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUserMini>, String>;
 
     /// Delete an entity (blocked_user).
-    fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUser>, String>;
+    fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUserMini>, String>;
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -56,7 +56,7 @@ pub mod impls {
 
     use crate::{
         chat_message_models::{
-            BlockedName, BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+            BlockedName, BlockedUser2, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -252,18 +252,20 @@ pub mod impls {
         }
 
         /// Get a list of blocked users.
-        fn get_blocked_users(&self, user_id: i32) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser2>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             #[rustfmt::skip]
-            let query = diesel::sql_query("select * from get_blocked_users($1);")
-                .bind::<sql_types::Integer, _>(user_id); // $1
+            let query = diesel::sql_query("select * from get_blocked_users($1, $2, $3);")
+                .bind::<sql_types::Integer, _>(owner_user_id) // $1
+                .bind::<sql_types::Text, _>(sort_order) // $2
+                .bind::<sql_types::Bool, _>(sort_des); // $3
 
             // Run a query with Diesel to create a new user and return it.
             #[rustfmt::skip]
-            let blocked_user_list: Vec<BlockedUser> = query
+            let blocked_user_list: Vec<BlockedUser2> = query
                 .load(&mut conn)
                 .map_err(|e| format!("get_blocked_users: {}", e.to_string()))?;
 
@@ -274,7 +276,7 @@ pub mod impls {
         }
 
         /// Add a new entry (blocked_user).
-        fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String> {
+        fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUserMini>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let validation_res = create_blocked_user.validate();
@@ -293,7 +295,7 @@ pub mod impls {
 
             // Run a query with Diesel to create a new user and return it.
             let blocked_user = query
-                .get_result::<BlockedUser>(&mut conn)
+                .get_result::<BlockedUserMini>(&mut conn)
                 .optional()
                 .map_err(|e| format!("create_blocked_user: {}", e.to_string()))?;
 
@@ -304,7 +306,7 @@ pub mod impls {
         }
 
         /// Delete an entity (blocked_user).
-        fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUser>, String> {
+        fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUserMini>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             let validation_res = delete_blocked_user.validate();
             if let Err(validation_errors) = validation_res {
@@ -322,7 +324,7 @@ pub mod impls {
 
             // Run a query with Diesel to delete the entity and return it.
             let blocked_user = query
-                .get_result::<BlockedUser>(&mut conn)
+                .get_result::<BlockedUserMini>(&mut conn)
                 .optional()
                 .map_err(|e| format!("delete_blocked_user: {}", e.to_string()))?;
 
@@ -346,7 +348,7 @@ pub mod tests {
 
     use crate::{
         chat_message_models::{
-            BlockedName, BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+            BlockedName, BlockedUser2, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -370,36 +372,53 @@ pub mod tests {
     #[derive(Debug, Clone)]
     pub struct BlockedData {
         pub id: i32,
+        pub owner_user_id: i32,
         pub user_id: i32,
-        pub blocked_id: i32,
-        pub blocked_nickname: String,
+        pub nickname: String,
+        pub email: String,
         pub block_date: DateTime<Utc>,
+        pub avatar: String,    
     }
 
     impl BlockedData {
-        pub fn new(id: i32, user_id: i32, blocked_id: i32, blocked_nickname: String, opt_block_date: Option<DateTime<Utc>>) -> Self {
+        pub fn new(
+            id: i32, owner_user_id: i32, user_id: i32, nickname: String, email: String, block_date: DateTime<Utc>, avatar: String
+        ) -> Self {
             BlockedData {
                 id,
+                owner_user_id,
                 user_id,
-                blocked_id,
-                blocked_nickname,
-                block_date: opt_block_date.unwrap_or(Utc::now()),
+                nickname,
+                email,
+                block_date,
+                avatar,
             }
         }
     }
 
-    impl Into<BlockedUser> for BlockedData {
-        fn into(self) -> BlockedUser {
-            BlockedUser {
-                id : self.id,
-                user_id : self.user_id,
-                blocked_id : self.blocked_id,
-                blocked_nickname : self.blocked_nickname.clone(),
-                block_date : self.block_date.clone(),
+    impl Into<BlockedUser2> for BlockedData {
+        fn into(self) -> BlockedUser2 {
+            BlockedUser2 {
+                id: self.id,
+                user_id: self.user_id,
+                nickname: self.nickname.clone(),
+                email: self.email.clone(),
+                block_date: self.block_date.clone(),
+                avatar: self.avatar.clone(),
             }
         }
     }
     
+    impl Into<BlockedUserMini> for BlockedData {
+        fn into(self) -> BlockedUserMini {
+            BlockedUserMini {
+                id: self.id,
+                user_id: self.user_id,
+                nickname: self.nickname.clone(),
+                block_date: self.block_date.clone(),
+            }
+        }
+    }
 
     #[derive(Debug, Clone)]
     pub struct ChatMessageOrmApp {
@@ -484,14 +503,16 @@ pub mod tests {
             }
 
             let mut blocked_user_vec: Vec<BlockedData> = Vec::new();
-            for (idx, blocked_user) in blocked_user_list.iter().enumerate() {
+            for (idx, blocked_data) in blocked_user_list.iter().enumerate() {
                 let delta: i32 = idx.try_into().unwrap();
                 let new_blocked_user = BlockedData::new(
                     BLOCKED_USER_ID + delta,
-                    blocked_user.user_id,
-                    blocked_user.blocked_id,
-                    blocked_user.blocked_nickname.clone(),
-                    Some(round_subsecs(blocked_user.block_date.clone())),
+                    blocked_data.owner_user_id,
+                    blocked_data.user_id,
+                    blocked_data.nickname.clone(),
+                    blocked_data.email.clone(),
+                    round_subsecs(blocked_data.block_date.clone()),
+                    blocked_data.avatar.clone(),
                 );
                 blocked_user_vec.push(new_blocked_user);
             }
@@ -661,7 +682,8 @@ pub mod tests {
             if let Some(user_id) = opt_user_id {
                 let opt_idx_user_id = ChatMessageOrmTest::user_ids().iter().position(|v| *v == user_id);
                 if opt_idx_user_id.is_some() {
-                    is_blocked = (*self.blocked_user_vec).borrow().iter().find(|v| v.blocked_id == user_id).is_some();
+                    is_blocked = (*self.blocked_user_vec).borrow().iter()
+                        .find(|v| v.owner_user_id == stream_owner && v.user_id == user_id).is_some();
                 }
             }
              
@@ -673,21 +695,42 @@ pub mod tests {
             let vec = (*self.blocked_user_vec).borrow();
             #[rustfmt::skip]
             let result: Vec<BlockedName> = vec.iter()
-                .filter(|v| (*v).user_id == user_id).map(|v| BlockedName::new(v.id, v.blocked_id, v.blocked_nickname.clone())).collect();
+                .filter(|v| (*v).owner_user_id == user_id)
+                .map(|v| BlockedName::new(v.id, v.user_id, v.nickname.clone()))
+                .collect();
             Ok(result)
         }
         
         /// Get a list of blocked users.
-        fn get_blocked_users(&self, user_id: i32) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser2>, String> {
             let vec = (*self.blocked_user_vec).borrow();
             #[rustfmt::skip]
-            let result: Vec<BlockedUser> = vec.iter()
-                .filter(|v| (*v).user_id == user_id).map(|v| v.clone().into()).collect();
+            let mut result: Vec<BlockedUser2> = vec.iter()
+                .filter(|v| (*v).user_id == owner_user_id).map(|v| v.clone().into()).collect();
+            
+            result.sort_by(|a, b| {
+                let mut result = if sort_order == "email" {
+                    a.email.to_lowercase().cmp(&b.email.to_lowercase())
+                } else if sort_order == "block_date" {
+                    a.block_date.partial_cmp(&b.block_date).unwrap_or(Ordering::Equal)
+                } else {
+                    a.nickname.to_lowercase().cmp(&b.nickname.to_lowercase())
+                };
+                if !sort_des {
+                    result = match result {
+                        Ordering::Less => Ordering::Greater,
+                        Ordering::Greater => Ordering::Less,
+                        Ordering::Equal => Ordering::Equal,
+                    };
+                }
+                result
+            });
+
             Ok(result)
         }
 
         /// Add a new entry (blocked_user).
-        fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String> {
+        fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUserMini>, String> {
             if create_blocked_user.blocked_id.is_none() && create_blocked_user.blocked_nickname.is_none() {
                 return Ok(None);
             }
@@ -702,29 +745,32 @@ pub mod tests {
             } else if let Some(blocked_nickname) = create_blocked_user.blocked_nickname {
                 opt_user_mini = self.find_user_by_name(&blocked_nickname);
             }
-            let mut result: Option<BlockedUser> = None;
+            let mut result: Option<BlockedUserMini> = None;
             let mut vec = (*self.blocked_user_vec).borrow_mut();
             if let Some(user_mini) = opt_user_mini {
-                let opt_blocked_user = vec
+                let opt_blocked_data = vec
                     .iter()
                     .find(|v| {
-                        (*v).user_id == create_blocked_user.user_id
-                            && (*v).blocked_id == user_mini.id
-                            && (*v).blocked_nickname.eq(&user_mini.name)
+                        (*v).owner_user_id == create_blocked_user.user_id
+                            && (*v).user_id == user_mini.id
+                            && (*v).nickname.eq(&user_mini.name)
                     })
                     .map(|v| v.clone());
 
-                if let Some(blocked_data) = opt_blocked_user {
+                if let Some(blocked_data) = opt_blocked_data {
                     result = Some(blocked_data.into());
                 } else {
                     let cnt = vec.len();
                     let idx: i32 = cnt.try_into().unwrap();
+                    let email = ChatMessageOrmTest::get_user_email(user_mini.id);
                     let blocked_data = BlockedData::new(
                         BLOCKED_USER_ID + idx,
                         create_blocked_user.user_id,
                         user_mini.id,
                         user_mini.name.clone(),
-                        Some(round_subsecs(Utc::now())),
+                        email,
+                        round_subsecs(Utc::now()),
+                        "".into(),
                     );
                     vec.push(blocked_data.clone());
                     result = Some(blocked_data.into());
@@ -734,7 +780,7 @@ pub mod tests {
         }
 
         /// Delete an entity (blocked_user).
-        fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUser>, String> {
+        fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUserMini>, String> {
             if delete_blocked_user.blocked_id.is_none() && delete_blocked_user.blocked_nickname.is_none() {
                 return Ok(None);
             }
@@ -750,13 +796,13 @@ pub mod tests {
                 opt_user_mini = self.find_user_by_name(&blocked_nickname);
             }
 
-            let mut result: Option<BlockedUser> = None;
+            let mut result: Option<BlockedUserMini> = None;
             let mut vec = (*self.blocked_user_vec).borrow_mut();
             if let Some(user_mini) = opt_user_mini {
                 let opt_index = vec.iter().position(|v| {
-                    (*v).user_id == delete_blocked_user.user_id
-                        && (*v).blocked_id == user_mini.id
-                        && (*v).blocked_nickname.eq(&user_mini.name)
+                    (*v).owner_user_id == delete_blocked_user.user_id
+                        && (*v).user_id == user_mini.id
+                        && (*v).nickname.eq(&user_mini.name)
                 });
                 if let Some(index) = opt_index {
                     let blocked_user = vec.remove(index);
@@ -791,18 +837,33 @@ pub mod tests {
             }
             .to_string()
         }
+        pub fn get_user_email(user_id: i32) -> String {
+            let user_name = match user_id {
+                USER1_ID => USER1_NAME,
+                USER2_ID => USER2_NAME,
+                USER3_ID => USER3_NAME,
+                USER4_ID => USER4_NAME,
+                _ => "",
+            };
+            if user_name.len() > 0 { format!("{}@email.uk", user_name) } else { "".into() }
+        }
         fn get_blocked_user_vec() -> Vec<BlockedData> {
             let mut result: Vec<BlockedData> = Vec::new();
             let user_ids = Self::user_ids();
             let blocked_id = user_ids.last().unwrap().clone();
-            let blocked_name = Self::get_user_name(blocked_id);
+            let nickname = Self::get_user_name(blocked_id);
+            let email = Self::get_user_email(blocked_id);
+            let block_date = round_subsecs(Utc::now());
+            let avatar = "".to_string();
             for (idx, user_id) in user_ids.iter().enumerate() {
                 if *user_id == blocked_id {
                     continue;
                 }
                 let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
-                let blocked_nickname = blocked_name.clone();
-                result.push(BlockedData::new(id, *user_id, blocked_id, blocked_nickname, None));
+                let nickname = nickname.clone();
+                result.push(
+                    BlockedData::new(id, *user_id, blocked_id, nickname.clone(), email.clone(), block_date.clone(), avatar.clone())
+                );
             }
             result
         }
