@@ -24,7 +24,7 @@ use crate::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
     chat_message_models::{
-        BlockedUser, BlockedUserDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto
+        BlockedUser2, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -756,9 +756,10 @@ pub async fn get_blocked_users_names(
 ///   {
 ///     id: Number,                // required - record ID;
 ///     userId: Number,            // required - user ID, stream owner;
-///     blockedId: Number,         // required - blocked user ID;
-///     blockedNickname: String,   // required - nickname of the blocked user;
+///     nickname: String,          // required - nickname of the blocked user;
+///     email: String,             // required - email of the blocked user;
 ///     blockDate: DateTime<Utc>,  // required - date and time the user was blocked;
+///     avatar: String,            // required - avatar of the blocked user;
 ///   }
 /// ]
 /// ```
@@ -767,16 +768,17 @@ pub async fn get_blocked_users_names(
     responses(
         (status = 200, description = "Get a list of blocked users for the specified stream.", body = Vec<BlockedUserDto>,
             examples(
-            ("1_blocked_users_present" = (summary = "blocked users are present", description = "There are blocked users.",
-                value = json!(vec![
-                    BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
-                        , Some(Utc::now() + Duration::minutes(-30)))),
-                    BlockedUserDto::from(BlockedUser::new(1, 12, 48, "ava_wilson".to_string()
-                        , Some(Utc::now() + Duration::minutes(-145)))), ])
+            ("1_blocked_users_present" = (summary = "blocked users are present", description = "There are no blocked users.",
+                value = json!([
+                    BlockedUserDto::from(BlockedUser2::new(1, 42, "mary_williams".into(), "mary_williams@email.uk".into()
+                        , Utc::now() + Duration::minutes(-30), "".into()) ),
+                    BlockedUserDto::from(BlockedUser2::new(1, 48, "ava_wilson".into(), "ava_wilson@email.uk".into()
+                        , Utc::now() + Duration::minutes(-145), "".into()) ),
+                ])
             )),
             ("2_blocked_users_absent" = (summary = "blocked users are absent", description = "There are no blocked users.",
                 value = json!([])
-            ))),
+            )) ),
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
@@ -798,11 +800,14 @@ pub async fn get_blocked_users(
     let user = authenticated.deref();
     let user_id = user.id;
 
+    let sort_order: String = "".into(); 
+    let sort_des: bool = false;
+
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_blocked_users = web::block(move || {
         // Get a list of blocked users.
         let res_chat_message1 = chat_message_orm2
-            .get_blocked_users(user_id)
+            .get_blocked_users(user_id, sort_order, sort_des)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
@@ -838,15 +843,14 @@ pub async fn get_blocked_users(
 /// 
 /// One of the parameters "blockedId", "blockedNickname" must be present.
 /// 
-/// Returns the blocked user record (`BlockedUserDto`) with status 200 or 204 (no content) if the user is not found.
+/// Returns the blocked user record (`BlockedUserMiniDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
 /// The structure is returned:
 /// ```text
 /// {
 ///   id: Number,                // required - record ID;
-///   userId: Number,            // required - user ID, stream owner;
-///   blockedId: Number,         // required - blocked user ID;
-///   blockedNickname: String,   // required - nickname of the blocked user;
+///   userId: Number,            // required - blocked user ID;
+///   nickname: String,          // required - nickname of the blocked user;
 ///   blockDate: DateTime<Utc>,  // required - date and time the user was blocked;
 /// }
 /// ```
@@ -869,21 +873,21 @@ pub async fn get_blocked_users(
 /// 
 #[utoipa::path(
     responses(
-        (status = 201, description = "Add user to blocked list.", body = BlockedUserDto,
+        (status = 201, description = "Add user to blocked list.", body = BlockedUserMiniDto,
             examples(
             ("1_add_by_user_id" = (summary = "Add user by user ID", 
                 description = "Add user to blocked list by user ID. 
                 `curl -i -X POST http://localhost:8080/api/blocked_users 
                 -d '{\"blockedId\": 42} -H 'Content-Type: application/json'`",
-                value = json!(BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
-                    , Some(Utc::now() + Duration::minutes(-30))))
+                value = json!(BlockedUserMiniDto::from(BlockedUserMini::new(1, 42, "mary_williams".to_string()
+                    , Utc::now() + Duration::minutes(-30)))
             ))),
             ("2_add_by_nickname" = (summary = "Add user by user \"nickname\"", 
                 description = "Add user to the blocked list by user \"nickname\".
                 `curl -i -X POST http://localhost:8080/api/blocked_users 
                 -d '{\"blockedNickname\": \"mary_williams\"} -H 'Content-Type: application/json'`",
-                value = json!(BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
-                , Some(Utc::now() + Duration::minutes(-30))))
+                value = json!(BlockedUserMiniDto::from(BlockedUserMini::new(1, 42, "mary_williams".to_string()
+                , Utc::now() + Duration::minutes(-30)))
             )))),
         ),
         (status = 204, description = "The user with the specified ID was not found."),
@@ -942,12 +946,12 @@ pub async fn post_blocked_user(
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    let opt_blocked_user_dto = res_blocked_user?.map(|v| BlockedUserDto::from(v));
+    let opt_blocked_user_mini_dto = res_blocked_user?.map(|v| BlockedUserMiniDto::from(v));
 
     if let Some(timer) = timer {
         info!("post_blocked_user() time: {}", format!("{:.2?}", timer.elapsed()));
     }
-    if let Some(blocked_user_dto) = opt_blocked_user_dto {
+    if let Some(blocked_user_dto) = opt_blocked_user_mini_dto {
         Ok(HttpResponse::Created().json(blocked_user_dto)) // 201
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
@@ -968,15 +972,14 @@ pub async fn post_blocked_user(
 /// 
 /// One of the parameters "blockedId", "blockedNickname" must be present.
 /// 
-/// Returns the blocked user record (`BlockedUserDto`) with status 200 or 204 (no content) if the user is not found.
+/// Returns the blocked user record (`BlockedUserMiniDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
 /// The structure is returned:
 /// ```text
 /// {
 ///   id: Number,                // required - record ID;
-///   userId: Number,            // required - user ID, stream owner;
-///   blockedId: Number,         // required - blocked user ID;
-///   blockedNickname: String,   // required - nickname of the blocked user;
+///   userId: Number,            // required - blocked user ID;
+///   nickname: String,          // required - nickname of the blocked user;
 ///   blockDate: DateTime<Utc>,  // required - date and time the user was blocked;
 /// }
 /// ```
@@ -998,21 +1001,21 @@ pub async fn post_blocked_user(
 /// 
 #[utoipa::path(
     responses(
-        (status = 200, description = "Remove user from blocked list.", body = BlockedUserDto,
+        (status = 200, description = "Remove user from blocked list.", body = BlockedUserMiniDto,
             examples(
             ("1_remove_by_user_id" = (summary = "Remove user by user ID", 
                 description = "Remove user from blocked list by user ID. 
                 `curl -i -X DELETE http://localhost:8080/api/blocked_users 
                 -d '{\"blockedId\": 42} -H 'Content-Type: application/json'`",
-                value = json!(BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
-                    , Some(Utc::now() + Duration::minutes(-30))))
+                value = json!(BlockedUserMiniDto::from(BlockedUserMini::new(1, 42, "mary_williams".to_string()
+                    , Utc::now() + Duration::minutes(-30)))
             ))),
             ("2_remove_by_nickname" = (summary = "Remove user by user \"nickname\"", 
                 description = "Remove user from the blocked list by user \"nickname\".
                 `curl -i -X DELETE http://localhost:8080/api/blocked_users 
                 -d '{\"blockedNickname\": \"mary_williams\"} -H 'Content-Type: application/json'`",
-                value = json!(BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
-                , Some(Utc::now() + Duration::minutes(-30))))
+                value = json!(BlockedUserMiniDto::from(BlockedUserMini::new(1, 42, "mary_williams".to_string()
+                , Utc::now() + Duration::minutes(-30)))
             )))),
         ),
         (status = 204, description = "The user with the specified ID was not found."),
@@ -1071,12 +1074,12 @@ pub async fn delete_blocked_user(
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    let opt_blocked_user_dto = res_blocked_user?.map(|v| BlockedUserDto::from(v));
+    let opt_blocked_user_mini_dto = res_blocked_user?.map(|v| BlockedUserMiniDto::from(v));
 
     if let Some(timer) = timer {
         info!("delete_blocked_user() time: {}", format!("{:.2?}", timer.elapsed()));
     }
-    if let Some(blocked_user_dto) = opt_blocked_user_dto {
+    if let Some(blocked_user_dto) = opt_blocked_user_mini_dto {
         Ok(HttpResponse::Ok().json(blocked_user_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
