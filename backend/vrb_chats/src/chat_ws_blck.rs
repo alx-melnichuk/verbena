@@ -11,7 +11,7 @@ use vrb_common::{
 use crate::{
     chat_event_ws::{BlockEWS, EWSType, ErrEWS, EventWS, UnblockEWS},
     chat_message::{BlockClient, BlockSsn},
-    chat_message_models::BlockedUser,
+    chat_message_models::BlockedUserMini,
     chat_ws_assistant::AssistantBlockUser,
     chat_ws_async_result::{AsyncResultBlockClient, AsyncResultError},
     chat_ws_server::ChatWsServer,
@@ -106,7 +106,7 @@ pub trait ChatWsBlck {
                 return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
             }
             let blocked_user = opt_blocked_user.unwrap();
-            let blocked_name = blocked_user.blocked_nickname.clone();
+            let blocked_name = blocked_user.nickname.clone();
             addr.do_send(AsyncResultBlockClient(room_id, is_block, blocked_name));
         });
         Ok(())
@@ -135,7 +135,7 @@ async fn execute_block_user(
     blocked_id: Option<i32>,
     blocked_nickname: Option<String>,
     fn_block_user: impl AssistantBlockUser + 'static,
-) -> Result<Option<BlockedUser>, ApiError> {
+) -> Result<Option<BlockedUserMini>, ApiError> {
     fn_block_user.execute_block_user(is_block, user_id, blocked_id, blocked_nickname)
 }
 
