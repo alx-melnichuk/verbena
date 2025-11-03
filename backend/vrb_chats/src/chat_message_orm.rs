@@ -1,7 +1,7 @@
 use vrb_dbase::dbase::DbPool;
 
 use crate::chat_message_models::{
-    BlockedName, BlockedUser2, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+    BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
 };
 
 pub trait ChatMessageOrm {
@@ -27,7 +27,7 @@ pub trait ChatMessageOrm {
     fn get_blocked_nicknames(&self, user_id: i32) -> Result<Vec<BlockedName>, String>;
 
     /// Get a list of blocked users.
-    fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser2>, String>;
+    fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String>;
 
     /// Add a new entry (blocked_user).
     fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUserMini>, String>;
@@ -56,7 +56,7 @@ pub mod impls {
 
     use crate::{
         chat_message_models::{
-            BlockedName, BlockedUser2, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+            BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -252,7 +252,7 @@ pub mod impls {
         }
 
         /// Get a list of blocked users.
-        fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser2>, String> {
+        fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             // Get a connection from the P2D2 pool.
@@ -265,7 +265,7 @@ pub mod impls {
 
             // Run a query with Diesel to create a new user and return it.
             #[rustfmt::skip]
-            let blocked_user_list: Vec<BlockedUser2> = query
+            let blocked_user_list: Vec<BlockedUser> = query
                 .load(&mut conn)
                 .map_err(|e| format!("get_blocked_users: {}", e.to_string()))?;
 
@@ -348,7 +348,7 @@ pub mod tests {
 
     use crate::{
         chat_message_models::{
-            BlockedName, BlockedUser2, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+            BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -396,9 +396,9 @@ pub mod tests {
         }
     }
 
-    impl Into<BlockedUser2> for BlockedData {
-        fn into(self) -> BlockedUser2 {
-            BlockedUser2 {
+    impl Into<BlockedUser> for BlockedData {
+        fn into(self) -> BlockedUser {
+            BlockedUser {
                 id: self.id,
                 user_id: self.user_id,
                 nickname: self.nickname.clone(),
@@ -702,10 +702,10 @@ pub mod tests {
         }
         
         /// Get a list of blocked users.
-        fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser2>, String> {
+        fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String> {
             let vec = (*self.blocked_user_vec).borrow();
             #[rustfmt::skip]
-            let mut result: Vec<BlockedUser2> = vec.iter()
+            let mut result: Vec<BlockedUser> = vec.iter()
                 .filter(|v| (*v).user_id == owner_user_id).map(|v| v.clone().into()).collect();
             
             result.sort_by(|a, b| {

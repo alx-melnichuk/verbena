@@ -396,37 +396,10 @@ impl From<BlockedUserMini> for BlockedUserMiniDto {
     }
 }
 
-
-/*#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::blocked_users)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct BlockedUser {
-    pub id: i32,
-    pub user_id: i32,
-    pub blocked_id: i32,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "blocked_nickname")]
-    pub blocked_nickname: String,
-    pub block_date: DateTime<Utc>,
-}
-
-impl BlockedUser {
-    pub fn new(id: i32, user_id: i32, blocked_id: i32, blocked_nickname: String, opt_block_date: Option<DateTime<Utc>>) -> BlockedUser {
-        BlockedUser {
-            id,
-            user_id,
-            blocked_id,
-            blocked_nickname,
-            block_date: opt_block_date.unwrap_or(Utc::now()),
-        }
-    }
-}*/
-
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::blocked_users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct BlockedUser2 {
+pub struct BlockedUser {
     pub id: i32,
     #[diesel(sql_type = diesel::sql_types::Integer)]
     #[diesel(column_name = "user_id")]
@@ -443,9 +416,9 @@ pub struct BlockedUser2 {
     pub avatar: String,
 }
 
-impl BlockedUser2 {
+impl BlockedUser {
     pub fn new(id: i32, user_id: i32, nickname: String, email: String, block_date: DateTime<Utc>, avatar: String) -> Self {
-        BlockedUser2 {
+        BlockedUser {
             id,
             user_id,
             nickname,
@@ -468,8 +441,8 @@ pub struct BlockedUserDto {
     pub avatar: String,
 }
 
-impl From<BlockedUser2> for BlockedUserDto {
-    fn from(blocked_user: BlockedUser2) -> Self {
+impl From<BlockedUser> for BlockedUserDto {
+    fn from(blocked_user: BlockedUser) -> Self {
         BlockedUserDto {
             id: blocked_user.id,
             user_id: blocked_user.user_id,

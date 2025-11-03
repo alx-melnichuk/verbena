@@ -19,7 +19,7 @@ mod tests {
 
     use crate::{
         chat_message_controller::{delete_blocked_user, get_blocked_users, get_blocked_users_names, post_blocked_user, tests as ChatMessageCtrlTest},
-        chat_message_models::{self, BlockedUser2, BlockedUserDto, BlockedUserMiniDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto},
+        chat_message_models::{self, BlockedUser, BlockedUserDto, BlockedUserMiniDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto},
         chat_message_orm::tests::{BlockedData, ChatMessageOrmTest},
     };
 
@@ -101,7 +101,7 @@ mod tests {
         #[rustfmt::skip]
         let blocked_users_vec: Vec<BlockedUserDto> = data_cm.2.iter()
             .filter(|v| v.user_id == user1_id)
-            .map(|v| BlockedUserDto::from(BlockedUser2::from(v.clone().into())))
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into())))
             .collect();
         #[rustfmt::skip]
         let app = test::init_service(

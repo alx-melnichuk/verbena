@@ -24,7 +24,7 @@ use crate::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
     chat_message_models::{
-        BlockedUser2, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto
+        BlockedUser, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -770,9 +770,9 @@ pub async fn get_blocked_users_names(
             examples(
             ("1_blocked_users_present" = (summary = "blocked users are present", description = "There are no blocked users.",
                 value = json!([
-                    BlockedUserDto::from(BlockedUser2::new(1, 42, "mary_williams".into(), "mary_williams@email.uk".into()
+                    BlockedUserDto::from(BlockedUser::new(1, 42, "mary_williams".into(), "mary_williams@email.uk".into()
                         , Utc::now() + Duration::minutes(-30), "".into()) ),
-                    BlockedUserDto::from(BlockedUser2::new(1, 48, "ava_wilson".into(), "ava_wilson@email.uk".into()
+                    BlockedUserDto::from(BlockedUser::new(1, 48, "ava_wilson".into(), "ava_wilson@email.uk".into()
                         , Utc::now() + Duration::minutes(-145), "".into()) ),
                 ])
             )),
