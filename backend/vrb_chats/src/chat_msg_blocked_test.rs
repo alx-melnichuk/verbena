@@ -19,7 +19,7 @@ mod tests {
 
     use crate::{
         chat_message_controller::{delete_blocked_user, get_blocked_users, get_blocked_users_names, post_blocked_user, tests as ChatMessageCtrlTest},
-        chat_message_models::{self, BlockedUser, BlockedUserDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto},
+        chat_message_models::{self, BlockedUser2, BlockedUserDto, BlockedUserMiniDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto},
         chat_message_orm::tests::{BlockedData, ChatMessageOrmTest},
     };
 
@@ -38,7 +38,7 @@ mod tests {
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.user_id == user1_id).map(|v| v.clone()).collect();
         #[rustfmt::skip]
-        let nickname_vec: Vec<String> = blocked_users.iter().map(|v| v.blocked_nickname.clone()).collect();
+        let nickname_vec: Vec<String> = blocked_users.iter().map(|v| v.nickname.clone()).collect();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_blocked_users_names)
@@ -101,7 +101,7 @@ mod tests {
         #[rustfmt::skip]
         let blocked_users_vec: Vec<BlockedUserDto> = data_cm.2.iter()
             .filter(|v| v.user_id == user1_id)
-            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into())))
+            .map(|v| BlockedUserDto::from(BlockedUser2::from(v.clone().into())))
             .collect();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -124,13 +124,14 @@ mod tests {
             let blocked_user2 = blocked_users_vec.get(index).unwrap();
             assert_eq!(blocked_user1.id, blocked_user2.id);
             assert_eq!(blocked_user1.user_id, blocked_user2.user_id);
-            assert_eq!(blocked_user1.blocked_id, blocked_user2.blocked_id);
-            assert_eq!(blocked_user1.blocked_nickname, blocked_user2.blocked_nickname);
+            assert_eq!(blocked_user1.nickname, blocked_user2.nickname);
+            assert_eq!(blocked_user1.email, blocked_user2.email);
             // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
             // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
             let block_date = blocked_user2.block_date.to_rfc3339_opts(SecondsFormat::Secs, true);
             #[rustfmt::skip]
             assert_eq!(blocked_user1.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), block_date);
+            assert_eq!(blocked_user1.avatar, blocked_user2.avatar);
         }
     }
     #[actix_web::test]
@@ -333,9 +334,9 @@ mod tests {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        let user_id = data_u.0.get(0).unwrap().id;
         let blocked_id = data_u.0.get(1).unwrap().id;
         let blocked_nickname = data_u.0.get(1).unwrap().nickname.clone();
+        let blocked_last_id = data_cm.2.last().unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
@@ -353,24 +354,24 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(blocked_user_res.user_id, user_id);
-        assert_eq!(blocked_user_res.blocked_id, blocked_id);
-        assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
+        let blocked_user_mini_res: BlockedUserMiniDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_mini_res.id, blocked_last_id + 1);
+        assert_eq!(blocked_user_mini_res.user_id, blocked_id);
+        assert_eq!(blocked_user_mini_res.nickname, blocked_nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
         let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
+        assert_eq!(blocked_user_mini_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        let user_id = data_u.0.get(0).unwrap().id;
         let blocked_id = data_u.0.get(1).unwrap().id;
         let blocked_nickname = data_u.0.get(1).unwrap().nickname.clone();
+        let blocked_last_id = data_cm.2.last().unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
@@ -388,15 +389,15 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(blocked_user_res.user_id, user_id);
-        assert_eq!(blocked_user_res.blocked_id, blocked_id);
-        assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
+        let blocked_user_mini_res: BlockedUserMiniDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_mini_res.id, blocked_last_id + 1);
+        assert_eq!(blocked_user_mini_res.user_id, blocked_id);
+        assert_eq!(blocked_user_mini_res.nickname, blocked_nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
         let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
+        assert_eq!(blocked_user_mini_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_id() {
@@ -405,9 +406,8 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
-        let blocked = data_cm.2.iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
-        let blocked_id = blocked.blocked_id;
-        let blocked_nickname = blocked.blocked_nickname.clone();
+        let blocked = data_cm.2.iter().find(|v| v.owner_user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked_id = blocked.user_id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
@@ -425,15 +425,15 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(blocked_user_res.user_id, user_id);
-        assert_eq!(blocked_user_res.blocked_id, blocked_id);
-        assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
+        let blocked_user_mini_res: BlockedUserMiniDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_mini_res.id, blocked.id);
+        assert_eq!(blocked_user_mini_res.user_id, blocked.user_id);
+        assert_eq!(blocked_user_mini_res.nickname, blocked.nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
         let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
+        assert_eq!(blocked_user_mini_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_nickname() {
@@ -442,9 +442,8 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
-        let blocked = data_cm.2.iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
-        let blocked_id = blocked.blocked_id;
-        let blocked_nickname = blocked.blocked_nickname.clone();
+        let blocked = data_cm.2.iter().find(|v| v.owner_user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked_nickname = blocked.nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
@@ -462,15 +461,15 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(blocked_user_res.user_id, user_id);
-        assert_eq!(blocked_user_res.blocked_id, blocked_id);
-        assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
+        let blocked_user_mini_res: BlockedUserMiniDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_mini_res.id, blocked.id);
+        assert_eq!(blocked_user_mini_res.user_id, blocked.user_id);
+        assert_eq!(blocked_user_mini_res.nickname, blocked.nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
         let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
+        assert_eq!(blocked_user_mini_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
 
     // ** delete_blocked_user **
@@ -686,9 +685,9 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
-        let blocked = data_cm.2.iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
-        let blocked_id = blocked.blocked_id;
-        let blocked_nickname = blocked.blocked_nickname.clone();
+        let blocked = data_cm.2.iter().find(|v| v.owner_user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked_user_id = blocked.user_id;
+        // let blocked_nickname = blocked.nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
@@ -699,22 +698,22 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
             .insert_header(ChatMessageCtrlTest::header_auth(&token1))
-            .set_json(DeleteBlockedUserDto { blocked_id: Some(blocked_id), blocked_nickname: None })
+            .set_json(DeleteBlockedUserDto { blocked_id: Some(blocked_user_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(blocked_user_res.user_id, user_id);
-        assert_eq!(blocked_user_res.blocked_id, blocked_id);
-        assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
+        let blocked_user_mini_res: BlockedUserMiniDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_mini_res.id, blocked.id);
+        assert_eq!(blocked_user_mini_res.user_id, blocked.user_id);
+        assert_eq!(blocked_user_mini_res.nickname, blocked.nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
         let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
+        assert_eq!(blocked_user_mini_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_nickname() {
@@ -723,9 +722,8 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
-        let blocked = data_cm.2.iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
-        let blocked_id = blocked.blocked_id;
-        let blocked_nickname = blocked.blocked_nickname.clone();
+        let blocked = data_cm.2.iter().find(|v| v.owner_user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked_nickname = blocked.nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
@@ -743,14 +741,14 @@ mod tests {
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(blocked_user_res.user_id, user_id);
-        assert_eq!(blocked_user_res.blocked_id, blocked_id);
-        assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
+        let blocked_user_mini_res: BlockedUserMiniDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_mini_res.id, blocked.id);
+        assert_eq!(blocked_user_mini_res.user_id, blocked.user_id);
+        assert_eq!(blocked_user_mini_res.nickname, blocked.nickname);
         // DateTime.to_rfc3339_opts(SecondsFormat::Millis, true) => "2018-01-26T18:30:09.113Z"
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true)   => "2018-01-26T18:30:09Z"
         let now_date = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
+        assert_eq!(blocked_user_mini_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true), now_date);
     }
 }
