@@ -454,6 +454,15 @@ impl From<BlockedUser> for BlockedUserDto {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SortingBlockedUsersDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sort_order: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sort_desc: Option<bool>,
+}
+
 // ** Model: "CreateBlockedUser". Used: BlockedUserOrm::create_blocked_user() **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

@@ -24,7 +24,7 @@ use crate::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
     chat_message_models::{
-        BlockedUser, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto
+        BlockedUser, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto, SortingBlockedUsersDto
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -188,6 +188,7 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
     ),
     security(("bearer_auth" = [])),
 )]
+// GET /api/chat_messages
 #[rustfmt::skip]
 #[get("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_chat_message(
@@ -287,6 +288,7 @@ pub async fn get_chat_message(
     ),
     security(("bearer_auth" = [])),
 )]
+// POST /api/chat_messages
 #[rustfmt::skip]
 #[post("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_chat_message(
@@ -441,6 +443,7 @@ fn message_max() -> String {
     params(("id", description = "Unique chat message ID.")),
     security(("bearer_auth" = [])),
 )]
+// PUT /api/chat_messages/{id}
 #[rustfmt::skip]
 #[put("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_chat_message(
@@ -595,6 +598,7 @@ pub async fn put_chat_message(
     params(("id", description = "Unique chat message ID.")),
     security(("bearer_auth" = [])),
 )]
+// DELETE /api/chat_messages/{id}
 #[rustfmt::skip]
 #[delete("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_chat_message(
@@ -701,6 +705,7 @@ pub async fn delete_chat_message(
     ),
     security(("bearer_auth" = [])),
 )]
+// GET /api/blocked_users/nicknames/
 #[rustfmt::skip]
 #[get("/api/blocked_users/nicknames", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_blocked_users_names(
@@ -789,25 +794,29 @@ pub async fn get_blocked_users_names(
     ),
     security(("bearer_auth" = [])),
 )]
+// GET /api/blocked_users
 #[rustfmt::skip]
 #[get("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_blocked_users(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
+    query_params: web::Query<SortingBlockedUsersDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let user = authenticated.deref();
     let user_id = user.id;
 
-    let sort_order: String = "".into(); 
-    let sort_des: bool = false;
+    // Get search parameters.
+    let sorting_blocked_users_dto: SortingBlockedUsersDto = query_params.into_inner();
+    let sort_order: String = sorting_blocked_users_dto.sort_order.unwrap_or("".into()); 
+    let sort_desc: bool = sorting_blocked_users_dto.sort_desc.unwrap_or(false);
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_blocked_users = web::block(move || {
         // Get a list of blocked users.
         let res_chat_message1 = chat_message_orm2
-            .get_blocked_users(user_id, sort_order, sort_des)
+            .get_blocked_users(user_id, sort_order, sort_desc)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
@@ -906,6 +915,7 @@ pub async fn get_blocked_users(
     ),
     security(("bearer_auth" = [])),
 )]
+// POST /api/blocked_users
 #[rustfmt::skip]
 #[post("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_blocked_user(
@@ -1034,6 +1044,7 @@ pub async fn post_blocked_user(
     ),
     security(("bearer_auth" = [])),
 )]
+// DELETE /api/blocked_users
 #[rustfmt::skip]
 #[delete("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_blocked_user(
