@@ -432,7 +432,7 @@ $$;
 CREATE OR REPLACE FUNCTION get_blocked_users_sort(
   IN _owner_id INTEGER,
   IN _sort_order VARCHAR, -- 'nickname','email','block_date'
-  IN _sort_des BOOLEAN,
+  IN _sort_desc BOOLEAN,
   OUT id INTEGER,
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
@@ -444,8 +444,8 @@ BEGIN
   IF (_owner_id IS NULL) THEN
     RETURN;
   END IF;
-  IF (_sort_des IS NULL) THEN
-    _sort_des := FALSE;
+  IF (_sort_desc IS NULL) THEN
+    _sort_desc := FALSE;
   END IF;
 
   IF (_sort_order = 'email') THEN
@@ -454,24 +454,24 @@ BEGIN
       FROM blocked_users b, users u
       WHERE b.owner_id = _owner_id AND b.blocked_id = u.id
       ORDER BY 
-        CASE WHEN NOT _sort_des THEN u.email ELSE NULL END ASC,
-        CASE WHEN _sort_des     THEN u.email ELSE NULL END DESC;
+        CASE WHEN NOT _sort_desc THEN u.email ELSE NULL END ASC,
+        CASE WHEN _sort_desc     THEN u.email ELSE NULL END DESC;
   ELSIF (_sort_order = 'block_date') THEN
     RETURN QUERY
       SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
       FROM blocked_users b, users u
       WHERE b.owner_id = _owner_id AND b.blocked_id = u.id
       ORDER BY 
-        CASE WHEN NOT _sort_des THEN b.block_date ELSE NULL END ASC,
-        CASE WHEN _sort_des     THEN b.block_date ELSE NULL END DESC;
+        CASE WHEN NOT _sort_desc THEN b.block_date ELSE NULL END ASC,
+        CASE WHEN _sort_desc     THEN b.block_date ELSE NULL END DESC;
   ELSE
     RETURN QUERY
       SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
       FROM blocked_users b, users u
       WHERE b.owner_id = _owner_id AND b.blocked_id = u.id
       ORDER BY 
-        CASE WHEN NOT _sort_des THEN u.nickname ELSE NULL END ASC,
-        CASE WHEN _sort_des     THEN u.nickname ELSE NULL END DESC;
+        CASE WHEN NOT _sort_desc THEN u.nickname ELSE NULL END ASC,
+        CASE WHEN _sort_desc     THEN u.nickname ELSE NULL END DESC;
   END IF;
 END;
 $$;
@@ -480,7 +480,7 @@ $$;
 CREATE OR REPLACE FUNCTION get_blocked_users(
   IN _owner_id INTEGER,
   IN _sort_order VARCHAR, -- 'nickname','email','block_date'
-  IN _sort_des BOOLEAN,
+  IN _sort_desc BOOLEAN,
   OUT id INTEGER,
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
@@ -499,7 +499,7 @@ BEGIN
     SELECT
       b.id, b.user_id, b.nickname, b.email, b.block_date, p.avatar
     FROM
-      get_blocked_users_sort(_owner_id, _sort_order, _sort_des) b, profiles p
+      get_blocked_users_sort(_owner_id, _sort_order, _sort_desc) b, profiles p
     WHERE
       b.user_id = p.user_id;
 END;
