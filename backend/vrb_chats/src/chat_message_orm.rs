@@ -24,10 +24,10 @@ pub trait ChatMessageOrm {
     fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, String>;
 
     /// Get a list of blocked users (nickname only).
-    fn get_blocked_nicknames(&self, user_id: i32) -> Result<Vec<BlockedName>, String>;
+    fn get_blocked_nicknames(&self, owner_id: i32) -> Result<Vec<BlockedName>, String>;
 
     /// Get a list of blocked users.
-    fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String>;
+    fn get_blocked_users(&self, owner_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String>;
 
     /// Add a new entry (blocked_user).
     fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUserMini>, String>;
@@ -230,14 +230,14 @@ pub mod impls {
         }
 
         /// Get a list of blocked users (nickname only).
-        fn get_blocked_nicknames(&self, user_id: i32) -> Result<Vec<BlockedName>, String> {
+        fn get_blocked_nicknames(&self, owner_id: i32) -> Result<Vec<BlockedName>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             #[rustfmt::skip]
             let query = diesel::sql_query("select * from get_blocked_nicknames($1);")
-                .bind::<sql_types::Integer, _>(user_id); // $1
+                .bind::<sql_types::Integer, _>(owner_id); // $1
 
             // Run a query with Diesel to create a new user and return it.
             #[rustfmt::skip]
@@ -252,14 +252,14 @@ pub mod impls {
         }
 
         /// Get a list of blocked users.
-        fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_users(&self, owner_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             #[rustfmt::skip]
             let query = diesel::sql_query("select * from get_blocked_users($1, $2, $3);")
-                .bind::<sql_types::Integer, _>(owner_user_id) // $1
+                .bind::<sql_types::Integer, _>(owner_id) // $1
                 .bind::<sql_types::Text, _>(sort_order) // $2
                 .bind::<sql_types::Bool, _>(sort_des); // $3
 
@@ -289,7 +289,7 @@ pub mod impls {
             let mut conn = self.get_conn()?;
 
             let query = diesel::sql_query("select * from create_blocked_user($1,$2,$3);")
-                .bind::<sql_types::Integer, _>(create_blocked_user.user_id) // $1
+                .bind::<sql_types::Integer, _>(create_blocked_user.owner_id) // $1
                 .bind::<sql_types::Nullable<sql_types::Integer>, _>(create_blocked_user.blocked_id) // $2
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(create_blocked_user.blocked_nickname); // $3
 
@@ -319,7 +319,7 @@ pub mod impls {
             let mut conn = self.get_conn()?;
 
             let query = diesel::sql_query("select * from delete_blocked_user($1,$2,$3);")
-                .bind::<sql_types::Integer, _>(delete_blocked_user.user_id) // $1
+                .bind::<sql_types::Integer, _>(delete_blocked_user.owner_id) // $1
                 .bind::<sql_types::Nullable<sql_types::Integer>, _>(delete_blocked_user.blocked_id) // $2
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(delete_blocked_user.blocked_nickname); // $3
 
@@ -373,7 +373,7 @@ pub mod tests {
     #[derive(Debug, Clone)]
     pub struct BlockedData {
         pub id: i32,
-        pub owner_user_id: i32,
+        pub owner_id: i32,
         pub user_id: i32,
         pub nickname: String,
         pub email: String,
@@ -383,11 +383,11 @@ pub mod tests {
 
     impl BlockedData {
         pub fn new(
-            id: i32, owner_user_id: i32, user_id: i32, nickname: String, email: String, block_date: DateTime<Utc>, avatar: String
+            id: i32, owner_id: i32, user_id: i32, nickname: String, email: String, block_date: DateTime<Utc>, avatar: String
         ) -> Self {
             BlockedData {
                 id,
-                owner_user_id,
+                owner_id,
                 user_id,
                 nickname,
                 email,
@@ -508,7 +508,7 @@ pub mod tests {
                 let delta: i32 = idx.try_into().unwrap();
                 let new_blocked_user = BlockedData::new(
                     BLOCKED_USER_ID + delta,
-                    blocked_data.owner_user_id,
+                    blocked_data.owner_id,
                     blocked_data.user_id,
                     blocked_data.nickname.clone(),
                     blocked_data.email.clone(),
@@ -684,7 +684,7 @@ pub mod tests {
                 let opt_idx_user_id = ChatMessageOrmTest::user_ids().iter().position(|v| *v == user_id);
                 if opt_idx_user_id.is_some() {
                     is_blocked = (*self.blocked_user_vec).borrow().iter()
-                        .find(|v| v.owner_user_id == stream_owner && v.user_id == user_id).is_some();
+                        .find(|v| v.owner_id == stream_owner && v.user_id == user_id).is_some();
                 }
             }
              
@@ -692,22 +692,22 @@ pub mod tests {
         }
 
         /// Get a list of blocked users (nickname only).
-        fn get_blocked_nicknames(&self, user_id: i32) -> Result<Vec<BlockedName>, String> {
+        fn get_blocked_nicknames(&self, owner_id: i32) -> Result<Vec<BlockedName>, String> {
             let vec = (*self.blocked_user_vec).borrow();
             #[rustfmt::skip]
             let result: Vec<BlockedName> = vec.iter()
-                .filter(|v| (*v).owner_user_id == user_id)
+                .filter(|v| (*v).owner_id == owner_id)
                 .map(|v| BlockedName::new(v.id, v.user_id, v.nickname.clone()))
                 .collect();
             Ok(result)
         }
         
         /// Get a list of blocked users.
-        fn get_blocked_users(&self, owner_user_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_users(&self, owner_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String> {
             let vec = (*self.blocked_user_vec).borrow();
             #[rustfmt::skip]
             let mut result: Vec<BlockedUser> = vec.iter()
-                .filter(|v| (*v).user_id == owner_user_id).map(|v| v.clone().into()).collect();
+                .filter(|v| (*v).owner_id == owner_id).map(|v| v.clone().into()).collect();
             
             result.sort_by(|a, b| {
                 let mut result = if sort_order == "email" {
@@ -752,7 +752,7 @@ pub mod tests {
                 let opt_blocked_data = vec
                     .iter()
                     .find(|v| {
-                        (*v).owner_user_id == create_blocked_user.user_id
+                        (*v).owner_id == create_blocked_user.owner_id
                             && (*v).user_id == user_mini.id
                             && (*v).nickname.eq(&user_mini.name)
                     })
@@ -766,7 +766,7 @@ pub mod tests {
                     let email = ChatMessageOrmTest::get_user_email(user_mini.id);
                     let blocked_data = BlockedData::new(
                         BLOCKED_USER_ID + idx,
-                        create_blocked_user.user_id,
+                        create_blocked_user.owner_id,
                         user_mini.id,
                         user_mini.name.clone(),
                         email,
@@ -801,7 +801,7 @@ pub mod tests {
             let mut vec = (*self.blocked_user_vec).borrow_mut();
             if let Some(user_mini) = opt_user_mini {
                 let opt_index = vec.iter().position(|v| {
-                    (*v).owner_user_id == delete_blocked_user.user_id
+                    (*v).owner_id == delete_blocked_user.owner_id
                         && (*v).user_id == user_mini.id
                         && (*v).nickname.eq(&user_mini.name)
                 });

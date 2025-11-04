@@ -458,15 +458,15 @@ impl From<BlockedUser> for BlockedUserDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct CreateBlockedUser {
-    pub user_id: i32,
+    pub owner_id: i32,
     pub blocked_id: Option<i32>,
     pub blocked_nickname: Option<String>,
 }
 
 impl CreateBlockedUser {
-    pub fn new(user_id: i32, blocked_id: Option<i32>, blocked_nickname: Option<String>) -> CreateBlockedUser {
+    pub fn new(owner_id: i32, blocked_id: Option<i32>, blocked_nickname: Option<String>) -> CreateBlockedUser {
         CreateBlockedUser {
-            user_id,
+            owner_id,
             blocked_id,
             blocked_nickname,
         }
@@ -522,15 +522,15 @@ impl Validator for CreateBlockedUserDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct DeleteBlockedUser {
-    pub user_id: i32,
+    pub owner_id: i32,
     pub blocked_id: Option<i32>,
     pub blocked_nickname: Option<String>,
 }
 
 impl DeleteBlockedUser {
-    pub fn new(user_id: i32, blocked_id: Option<i32>, blocked_nickname: Option<String>) -> DeleteBlockedUser {
+    pub fn new(owner_id: i32, blocked_id: Option<i32>, blocked_nickname: Option<String>) -> DeleteBlockedUser {
         DeleteBlockedUser {
-            user_id,
+            owner_id,
             blocked_id,
             blocked_nickname,
         }

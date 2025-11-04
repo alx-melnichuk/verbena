@@ -36,7 +36,7 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
-            .filter(|v| v.owner_user_id == user1_id).map(|v| v.clone()).collect();
+            .filter(|v| v.owner_id == user1_id).map(|v| v.clone()).collect();
         #[rustfmt::skip]
         let nickname_vec: Vec<String> = blocked_users.iter().map(|v| v.nickname.clone()).collect();
         #[rustfmt::skip]
@@ -69,7 +69,7 @@ mod tests {
         let mut data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
-            .filter(|v| v.owner_user_id != user1_id).map(|v| v.clone()).collect();
+            .filter(|v| v.owner_id != user1_id).map(|v| v.clone()).collect();
         data_cm.2 = blocked_users;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -100,7 +100,7 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users_vec: Vec<BlockedUserDto> = data_cm.2.iter()
-            .filter(|v| v.user_id == user1_id)
+            .filter(|v| v.owner_id == user1_id)
             .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into())))
             .collect();
         #[rustfmt::skip]
@@ -142,7 +142,7 @@ mod tests {
         let mut data_cm = ChatMessageOrmTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
-            .filter(|v| v.user_id != user1_id).map(|v| v.clone()).collect();
+            .filter(|v| v.owner_id != user1_id).map(|v| v.clone()).collect();
         data_cm.2 = blocked_users;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -406,7 +406,7 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
-        let blocked = data_cm.2.iter().find(|v| v.owner_user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked = data_cm.2.iter().find(|v| v.owner_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_id = blocked.user_id;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -442,7 +442,7 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
-        let blocked = data_cm.2.iter().find(|v| v.owner_user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked = data_cm.2.iter().find(|v| v.owner_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_nickname = blocked.nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -685,7 +685,7 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
-        let blocked = data_cm.2.iter().find(|v| v.owner_user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked = data_cm.2.iter().find(|v| v.owner_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_user_id = blocked.user_id;
         // let blocked_nickname = blocked.nickname.clone();
         #[rustfmt::skip]
@@ -722,7 +722,7 @@ mod tests {
         let data_cm = ChatMessageOrmTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
-        let blocked = data_cm.2.iter().find(|v| v.owner_user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked = data_cm.2.iter().find(|v| v.owner_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_nickname = blocked.nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
