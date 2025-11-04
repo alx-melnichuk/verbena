@@ -1032,6 +1032,7 @@ impl ModifyStreamForm {
         (status = 510, description = "Error while converting file.", body = ApiError,
             example = json!(ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\""))),
     ),
+    params(("id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
 )]
 // PUT /api/streams/{id}
@@ -1291,6 +1292,7 @@ pub async fn put_stream(
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
+    params(("id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
 )]
 // PUT /api/streams/toggle/{id}
@@ -1462,6 +1464,7 @@ pub async fn put_toggle_state(
     params(("id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
 )]
+// DELETE /api/streams/{id}
 #[rustfmt::skip]
 #[delete("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_stream(
