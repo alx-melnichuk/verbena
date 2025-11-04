@@ -124,7 +124,12 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.chatSocketService.sendData(blockUnblockEWS);
             } else {
                 this.modifyBlockedUser(user_name, isPost)
-                    .then(() => this.chatBlockedUsers = this.updateBlockedNames(this.chatBlockedUsers, isPost, user_name))
+                    .then(() =>
+                        this.chatBlockedUsers = this.updateBlockedNames(this.chatBlockedUsers, isPost, user_name))
+                    .catch((errHttp: HttpErrorResponse) => {
+                        const errMsg = HttpErrorUtil.getMsgs(errHttp)[0];
+                        this.alertService.showError(errMsg, `pg-concept-view.error_${isPost ? '' : 'un'}blocked`);
+                    });
             }
         }
     }
@@ -286,7 +291,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     // Section: "panel blocked users"
 
     private modifyBlockedUser(blockedNickname: string, isPost: boolean): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
-        const name = isPost ? 'PostBlockedUser' : 'DeleteBlockedUser';
         this.blockedNamesIsLoading = true;
         const buffPromise: Promise<unknown>[] = [];
         let idx = -1;
@@ -299,8 +303,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         return Promise.all(buffPromise)
             .then((responses) => responses[0] as BlockedUserDto)
             .catch((error: HttpErrorResponse) => {
-                console.error(`${name}Error:`, error);
-                return error;
+                console.error(`${isPost ? 'PostBlockedUser' : 'DeleteBlockedUser'}Error:`, error);
+                throw error;
             })
             .finally(() => {
                 this.blockedNamesIsLoading = false;
