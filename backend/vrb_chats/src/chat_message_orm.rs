@@ -294,7 +294,7 @@ pub mod impls {
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(create_blocked_user.blocked_nickname); // $3
 
             // Run a query with Diesel to create a new user and return it.
-            let blocked_user = query
+            let opt_blocked_user_mini = query
                 .get_result::<BlockedUserMini>(&mut conn)
                 .optional()
                 .map_err(|e| format!("create_blocked_user: {}", e.to_string()))?;
@@ -302,12 +302,13 @@ pub mod impls {
             if let Some(timer) = timer {
                 info!("create_blocked_user() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(blocked_user)
+            Ok(opt_blocked_user_mini)
         }
 
         /// Delete an entity (blocked_user).
         fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUserMini>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             let validation_res = delete_blocked_user.validate();
             if let Err(validation_errors) = validation_res {
                 let buff: Vec<String> = validation_errors.into_iter().map(|v| v.message.to_string()).collect();
@@ -323,7 +324,7 @@ pub mod impls {
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(delete_blocked_user.blocked_nickname); // $3
 
             // Run a query with Diesel to delete the entity and return it.
-            let blocked_user = query
+            let opt_blocked_user_mini = query
                 .get_result::<BlockedUserMini>(&mut conn)
                 .optional()
                 .map_err(|e| format!("delete_blocked_user: {}", e.to_string()))?;
@@ -331,7 +332,7 @@ pub mod impls {
             if let Some(timer) = timer {
                 info!("delete_blocked_user() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(blocked_user)
+            Ok(opt_blocked_user_mini)
         }
     }
 }
