@@ -27,7 +27,7 @@ mod tests {
         let mut srv = actix_test::start(move || {
             let mut data_u = UserOrmTest::users(&[USER, USER, USER]);
             let user2_id = data_u.0.get(1).unwrap().id;
-            // Add session (num_token) for user2, user4.
+            // Add session (num_token) for user2.
             data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
             let data_cm = ChatMessageOrmTest::chat_messages(2);
             App::new()
