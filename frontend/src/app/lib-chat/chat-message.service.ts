@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ChatMessageApiService } from './chat-message-api.service';
-import { BlockedUserDto, ChatMessageDto } from './chat-message-api.interface';
+import { BlockedUserDto, BlockedUserMiniDto, ChatMessageDto } from './chat-message-api.interface';
 import { StringDateTime } from '../common/string-date-time';
 
 @Injectable({
@@ -26,11 +26,11 @@ export class ChatMessageService {
         return this.chatMessageApiService.getBlockedUsers();
     }
 
-    public postBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
+    public postBlockedUser(blockedNickname: string): Promise<BlockedUserMiniDto | HttpErrorResponse | undefined> {
         return this.chatMessageApiService.postBlockedUser(blockedNickname);
     }
 
-    public deleteBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
+    public deleteBlockedUser(blockedNickname: string): Promise<BlockedUserMiniDto | HttpErrorResponse | undefined> {
         return this.chatMessageApiService.deleteBlockedUser(blockedNickname);
     }
 }

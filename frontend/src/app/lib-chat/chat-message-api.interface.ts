@@ -49,26 +49,49 @@ export interface ParamQueryPastMsg {
     limit?: number;
 }
 
+// ** BlockedUserMiniDto **
+
+export interface BlockedUserMiniDto {
+    id: number;
+    userId: number;
+    nickname: string;
+    blockDate: Date | null;
+}
+
+export class BlockedUserMiniDtoUtil {
+    public static create(obj: Partial<BlockedUserMiniDto> | null | undefined): BlockedUserMiniDto {
+        let id: number = obj?.id || 0;
+        let userId: number = obj?.userId || 0;
+        let nickname: string = obj?.nickname || '';
+        let blockDateStr = obj?.blockDate || '';
+        const isString = blockDateStr != null && typeof blockDateStr == 'string';
+        let blockDate = isString ? StringDateTimeUtil.toDate(blockDateStr) : null;
+        return { id, userId, nickname, blockDate };
+    }
+}
+
 // ** BlockedUserDto **
 
 export interface BlockedUserDto {
     id: number;
     userId: number;
-    blockedId: number;
-    blockedNickname: string;
+    nickname: string;
+    email: string;
     blockDate: Date | null;
+    avatar: string;
 }
 
 export class BlockedUserDtoUtil {
-    public static create(obj: Partial<BlockedUserDto>): BlockedUserDto {
-        let id: number = obj.id || 0;
-        let userId: number = obj.userId || 0;
-        let blockedId: number = obj.blockedId || 0;
-        let blockedNickname: string = obj.blockedNickname || '';
-        let blockDateStr = obj.blockDate || '';
+    public static create(obj: Partial<BlockedUserDto> | null | undefined): BlockedUserDto {
+        let id: number = obj?.id || 0;
+        let userId: number = obj?.userId || 0;
+        let nickname: string = obj?.nickname || '';
+        let email: string = obj?.email || '';
+        let blockDateStr = obj?.blockDate || '';
         const isString = blockDateStr != null && typeof blockDateStr == 'string';
         let blockDate = isString ? StringDateTimeUtil.toDate(blockDateStr) : null;
-        return { id, userId, blockedId, blockedNickname, blockDate };
+        let avatar: string = obj?.avatar || '';
+        return { id, userId, nickname, email, blockDate, avatar };
     }
 }
 

@@ -4,7 +4,9 @@ import { lastValueFrom } from 'rxjs';
 
 import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
-import { BlockedUserDto, BlockedUserDtoUtil, ChatMessageDto, SearchChatMessageDto } from './chat-message-api.interface';
+import {
+    BlockedUserDto, BlockedUserDtoUtil, BlockedUserMiniDto, BlockedUserMiniDtoUtil, ChatMessageDto, SearchChatMessageDto
+} from './chat-message-api.interface';
 
 @Injectable({
     providedIn: 'root'
@@ -30,21 +32,21 @@ export class ChatMessageApiService {
             .then((response) => ((response || []) as BlockedUserDto[]).map((v) => BlockedUserDtoUtil.create(v)));
     }
 
-    public postBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
+    public postBlockedUser(blockedNickname: string): Promise<BlockedUserMiniDto | HttpErrorResponse | undefined> {
         if (!blockedNickname) {
             return Promise.resolve(undefined);
         }
         const url = Uri.appUri(`appApi://blocked_users`);
-        return lastValueFrom(this.http.post<BlockedUserDto | HttpErrorResponse>(url, { blockedNickname }))
-            .then((response) => BlockedUserDtoUtil.create(response as BlockedUserDto));
+        return lastValueFrom(this.http.post<BlockedUserMiniDto | HttpErrorResponse>(url, { blockedNickname }))
+            .then((response) => BlockedUserMiniDtoUtil.create(response as BlockedUserMiniDto));
     }
 
-    public deleteBlockedUser(blockedNickname: string): Promise<BlockedUserDto | HttpErrorResponse | undefined> {
+    public deleteBlockedUser(blockedNickname: string): Promise<BlockedUserMiniDto | HttpErrorResponse | undefined> {
         if (!blockedNickname) {
             return Promise.resolve(undefined);
         }
         const url = Uri.appUri(`appApi://blocked_users`);
-        return lastValueFrom(this.http.delete<BlockedUserDto | HttpErrorResponse>(url, { body: { blockedNickname } }))
-            .then((response) => BlockedUserDtoUtil.create(response as BlockedUserDto));
+        return lastValueFrom(this.http.delete<BlockedUserMiniDto | HttpErrorResponse>(url, { body: { blockedNickname } }))
+            .then((response) => BlockedUserMiniDtoUtil.create(response as BlockedUserMiniDto));
     }
 }
