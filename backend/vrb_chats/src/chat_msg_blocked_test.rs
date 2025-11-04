@@ -10,7 +10,7 @@ mod tests {
     use serde_json::{self, json};
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{USER, USER1_ID, UserOrmTest},
+        user_orm::tests::{USER, USER1_ID, USER4_ID, UserOrmTest},
     };
     use vrb_common::{
         api_error::{ApiError, code_to_str},
@@ -162,6 +162,38 @@ mod tests {
         let blocked_user_dto_vec: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(blocked_user_dto_vec.len(), 0);
     }
+    /*#[actix_web::test]
+    async fn test_get_blocked_users_without_order() {
+        let token4 = config_jwt::tests::get_token(USER4_ID);
+        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user4_id = data_u.0.get(3).unwrap().id;
+        // Add session (num_token) for user2, user4.
+        data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
+        let mut data_cm = ChatMessageOrmTest::chat_messages(1);
+        #[rustfmt::skip]
+        let blocked_users: Vec<BlockedData> = data_cm.2.iter()
+            .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
+        dbg!(&blocked_users);
+        data_cm.2 = blocked_users;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_users)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri("/api/blocked_users")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let blocked_user_dto_vec: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        dbg!(&blocked_user_dto_vec);
+        assert_eq!(blocked_user_dto_vec.len(), 0);
+    }*/
 
     // ** post_blocked_user **
 

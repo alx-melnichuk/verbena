@@ -854,18 +854,30 @@ pub mod tests {
             let blocked_id = user_ids.last().unwrap().clone();
             let nickname = Self::get_user_name(blocked_id);
             let email = Self::get_user_email(blocked_id);
-            let block_date = round_subsecs(Utc::now());
+            let date = round_subsecs(Utc::now());
             let avatar = "".to_string();
-            for (idx, user_id) in user_ids.iter().enumerate() {
+            let mut idx = 0;
+            for user_id in user_ids.iter() {
                 if *user_id == blocked_id {
                     continue;
                 }
                 let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
-                let nickname = nickname.clone();
+                let block_date = date - Duration::minutes(i64::try_from(idx * 10).unwrap());
                 result.push(
-                    BlockedData::new(id, *user_id, blocked_id, nickname.clone(), email.clone(), block_date.clone(), avatar.clone())
-                );
+                    BlockedData::new(id, *user_id, blocked_id, nickname.clone(), email.clone(), block_date, avatar.clone()) );
+
+                idx += 1;
+                let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
+                let nickname2 = Self::get_user_name(*user_id);
+                let email2 = Self::get_user_email(*user_id);
+                let block_date2 = date - Duration::minutes(i64::try_from(idx * 10).unwrap());
+                let avatar2 = "".to_string();
+                result.push(
+                    BlockedData::new(id, blocked_id, *user_id, nickname2, email2, block_date2, avatar2) );
+
+                idx += 1;
             }
+
             result
         }
         #[rustfmt::skip]
