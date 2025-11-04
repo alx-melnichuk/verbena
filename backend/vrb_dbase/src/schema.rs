@@ -13,7 +13,7 @@ pub mod sql_types {
 diesel::table! {
     blocked_users (id) {
         id -> Int4,
-        user_id -> Int4,
+        owner_id -> Int4,
         blocked_id -> Int4,
         block_date -> Timestamptz,
     }
