@@ -171,6 +171,7 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
     params(("id", description = "Unique user ID.")),
     security(("bearer_auth" = [])),
 )]
+// GET /api/profiles/{id}
 #[rustfmt::skip]
 #[get("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_profile_by_id(
@@ -275,9 +276,9 @@ pub async fn get_profile_by_id(
     ),
     params(("id", description = "Unique user ID.")),
 )]
+// GET /api/profiles_mini/{id}
 #[rustfmt::skip]
 #[get("/api/profiles_mini/{id}" )]
-
 pub async fn get_profile_mini_by_id(
     profile_orm: web::Data<ProfileOrmApp>,
     request: actix_web::HttpRequest,
@@ -367,6 +368,7 @@ pub async fn get_profile_mini_by_id(
     ),
     security(("bearer_auth" = []))
 )]
+// GET /api/profiles_config
 #[get("/api/profiles_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -428,6 +430,7 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
     ),
     security(("bearer_auth" = []))
 )]
+// GET /api/profiles_current
 #[rustfmt::skip]
 #[get("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_current(
@@ -878,6 +881,7 @@ pub async fn put_profile(
     ),
     security(("bearer_auth" = []))
 )]
+// PUT /api/profiles_new_password
 #[rustfmt::skip]
 #[put("/api/profiles_new_password", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_profile_new_password(
@@ -1022,6 +1026,7 @@ pub async fn put_profile_new_password(
     params(("id", description = "Unique user ID.")),
     security(("bearer_auth" = [])),
 )]
+// DELETE /api/profiles/{id}
 #[rustfmt::skip]
 #[delete("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_profile(
@@ -1167,6 +1172,7 @@ pub async fn delete_profile(
     ),
     security(("bearer_auth" = [])),
 )]
+// DELETE /api/profiles_current
 #[rustfmt::skip]
 #[delete("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_profile_current(
