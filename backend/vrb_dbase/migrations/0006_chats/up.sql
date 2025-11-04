@@ -262,21 +262,22 @@ $$;
 CREATE TABLE blocked_users (
     id SERIAL PRIMARY KEY NOT NULL,
     /* The user who performed the blocking. */
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    owner_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     /* The user who was blocked. */
     blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     /* Date and time the blocking started. */
     block_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
-CREATE INDEX idx_blocked_users_user_id ON blocked_users(user_id);
-CREATE UNIQUE INDEX uq_idx_blocked_users_blocked_id_user_id ON blocked_users(blocked_id, user_id);
+CREATE INDEX idx_blocked_users_owner_id ON blocked_users(owner_id);
+CREATE UNIQUE INDEX uq_idx_blocked_users_blocked_id_owner_id ON blocked_users(blocked_id, owner_id);
+CREATE INDEX idx_blocked_users_block_date ON blocked_users(block_date);
 
 -- **
 
 /* Create a stored function to add a new entry to "blocked_users". */
 CREATE OR REPLACE FUNCTION create_blocked_user(
-  IN _owner_user_id INTEGER,
+  IN _owner_id INTEGER,
   IN _blocked_id INTEGER,
   IN _blocked_nickname VARCHAR,
   OUT id INTEGER,
@@ -290,7 +291,7 @@ DECLARE
   bl_user_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
-  IF (_owner_user_id IS NULL) THEN
+  IF (_owner_id IS NULL) THEN
     RETURN;
   END IF;
 
@@ -313,18 +314,18 @@ BEGIN
   -- Check for the presence of such a record.
   SELECT
     blocked_users.id,
-    blocked_users.user_id,
+    blocked_users.owner_id,
     blocked_users.blocked_id,
     blocked_users.block_date
   FROM blocked_users
-  WHERE blocked_users.user_id = _owner_user_id AND blocked_users.blocked_id = bl_user_id
+  WHERE blocked_users.owner_id = _owner_id AND blocked_users.blocked_id = bl_user_id
   INTO rec1;
 
   -- If there is no such entry, add it.
   IF rec1.id IS NULL THEN
     -- Add a new entry to the "blocked_user" table.
-    INSERT INTO blocked_users(user_id, blocked_id)
-    VALUES (_owner_user_id, bl_user_id)
+    INSERT INTO blocked_users(owner_id, blocked_id)
+    VALUES (_owner_id, bl_user_id)
     RETURNING
       blocked_users.id,
       blocked_users.blocked_id,
@@ -346,7 +347,7 @@ $$;
 
 /* Create a stored function to delete the entity in "blocked_users". */
 CREATE OR REPLACE FUNCTION delete_blocked_user(
-  IN _owner_user_id INTEGER,
+  IN _owner_id INTEGER,
   IN _blocked_id INTEGER,
   IN _blocked_nickname VARCHAR,
   OUT id INTEGER,
@@ -360,7 +361,7 @@ DECLARE
   bl_user_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
-  IF (_owner_user_id IS NULL) THEN
+  IF (_owner_id IS NULL) THEN
     RETURN;
   END IF;
 
@@ -381,7 +382,7 @@ BEGIN
   END IF;
 
   DELETE FROM blocked_users
-  WHERE blocked_users.user_id = _owner_user_id
+  WHERE blocked_users.owner_id = _owner_id
     AND blocked_users.blocked_id = bl_user_id
   RETURNING 
     blocked_users.id,
@@ -403,14 +404,14 @@ $$;
 
 /* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
 CREATE OR REPLACE FUNCTION get_blocked_nicknames(
-  IN _user_id INTEGER,
+  IN _owner_id INTEGER,
   OUT id INTEGER,
   OUT blocked_id INTEGER,
   OUT nickname VARCHAR
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 BEGIN
-  IF (_user_id IS NULL) THEN
+  IF (_owner_id IS NULL) THEN
     RETURN;
   END IF;
 
@@ -422,14 +423,14 @@ BEGIN
     FROM
       blocked_users bu, users u
     WHERE
-      bu.user_id = _user_id
+      bu.owner_id = _owner_id
       AND bu.blocked_id = u.id;
 END;
 $$;
 
 /* Create a stored function that will get a sorted list of "blocked_user" by the specified parameter. */
 CREATE OR REPLACE FUNCTION get_blocked_users_sort(
-  IN _user_id INTEGER,
+  IN _owner_id INTEGER,
   IN _sort_order VARCHAR, -- 'nickname','email','block_date'
   IN _sort_des BOOLEAN,
   OUT id INTEGER,
@@ -440,7 +441,7 @@ CREATE OR REPLACE FUNCTION get_blocked_users_sort(
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 BEGIN
-  IF (_user_id IS NULL) THEN
+  IF (_owner_id IS NULL) THEN
     RETURN;
   END IF;
   IF (_sort_des IS NULL) THEN
@@ -451,7 +452,7 @@ BEGIN
     RETURN QUERY
       SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
       FROM blocked_users b, users u
-      WHERE b.user_id = _user_id AND b.blocked_id = u.id
+      WHERE b.owner_id = _owner_id AND b.blocked_id = u.id
       ORDER BY 
         CASE WHEN NOT _sort_des THEN u.email ELSE NULL END ASC,
         CASE WHEN _sort_des     THEN u.email ELSE NULL END DESC;
@@ -459,7 +460,7 @@ BEGIN
     RETURN QUERY
       SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
       FROM blocked_users b, users u
-      WHERE b.user_id = _user_id AND b.blocked_id = u.id
+      WHERE b.owner_id = _owner_id AND b.blocked_id = u.id
       ORDER BY 
         CASE WHEN NOT _sort_des THEN b.block_date ELSE NULL END ASC,
         CASE WHEN _sort_des     THEN b.block_date ELSE NULL END DESC;
@@ -467,7 +468,7 @@ BEGIN
     RETURN QUERY
       SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
       FROM blocked_users b, users u
-      WHERE b.user_id = _user_id AND b.blocked_id = u.id
+      WHERE b.owner_id = _owner_id AND b.blocked_id = u.id
       ORDER BY 
         CASE WHEN NOT _sort_des THEN u.nickname ELSE NULL END ASC,
         CASE WHEN _sort_des     THEN u.nickname ELSE NULL END DESC;
@@ -477,7 +478,7 @@ $$;
 
 /* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
 CREATE OR REPLACE FUNCTION get_blocked_users(
-  IN _user_id INTEGER,
+  IN _owner_id INTEGER,
   IN _sort_order VARCHAR, -- 'nickname','email','block_date'
   IN _sort_des BOOLEAN,
   OUT id INTEGER,
@@ -490,7 +491,7 @@ CREATE OR REPLACE FUNCTION get_blocked_users(
 AS $$
 DECLARE
 BEGIN
-  IF (_user_id IS NULL) THEN
+  IF (_owner_id IS NULL) THEN
     RETURN;
   END IF;
 
@@ -498,7 +499,7 @@ BEGIN
     SELECT
       b.id, b.user_id, b.nickname, b.email, b.block_date, p.avatar
     FROM
-      get_blocked_users_sort(_user_id, _sort_order, _sort_des) b, profiles p
+      get_blocked_users_sort(_owner_id, _sort_order, _sort_des) b, profiles p
     WHERE
       b.user_id = p.user_id;
 END;
