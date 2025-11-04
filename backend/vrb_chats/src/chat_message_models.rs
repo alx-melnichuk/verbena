@@ -356,7 +356,7 @@ impl BlockedName {
 pub struct BlockedUserMini {
     pub id: i32,
     #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = "blocked_id")]
+    #[diesel(column_name = "user_id")]
     pub user_id: i32,
     #[diesel(sql_type = diesel::sql_types::Text)]
     #[diesel(column_name = "nickname")]
