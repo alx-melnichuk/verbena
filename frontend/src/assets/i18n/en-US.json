@@ -411,7 +411,9 @@
     "chat_commands": "Chat commands",
     "user_blocked": "User \"{{ username }}\" is blocked.",
     "user_unblocked": "User \"{{ username }}\" is unblocked.",
-    "error_socket": "Socket error"
+    "error_socket": "Socket error",
+    "error_blocked": "User blocked error",
+    "error_unblocked": "User unblocked error"
   },
   "concept-view": {
     "title": "Title:",

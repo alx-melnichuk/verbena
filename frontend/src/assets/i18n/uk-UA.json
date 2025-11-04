@@ -413,7 +413,9 @@
     "chat_commands": "Команди чату",
     "user_blocked": "Користувач \"{{ username }}\" заблокований.",
     "user_unblocked": "Користувач \"{{ username }}\" розблокований.",
-    "error_socket": "Помилка сокета"
+    "error_socket": "Помилка сокета",
+    "error_blocked": "Помилка блокування користувача",
+    "error_unblocked": "Помилка розблокування користувача"
   },
   "concept-view": {
     "title": "Назва:",

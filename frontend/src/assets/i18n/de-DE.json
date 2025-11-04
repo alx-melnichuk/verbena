@@ -413,7 +413,9 @@
     "chat_commands": "Chat befehle",
     "user_blocked": "Benutzer \"{{ username }}\" ist gesperrt.",
     "user_unblocked": "Benutzer \"{{ username }}\" ist entsperrt.",
-    "error_socket": "Socket fehler"
+    "error_socket": "Socket fehler",
+    "error_blocked": "Benutzer blockiert",
+    "error_unblocked": "Benutzer entsperrt"
   },
   "concept-view": {
     "title": "Titel:",
