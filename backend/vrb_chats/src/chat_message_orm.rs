@@ -405,7 +405,7 @@ pub mod tests {
                 nickname: self.nickname.clone(),
                 email: self.email.clone(),
                 block_date: self.block_date.clone(),
-                avatar: self.avatar.clone(),
+                avatar: if self.avatar.len() > 0 { Some(self.avatar.clone()) } else { None },
             }
         }
     }

@@ -764,7 +764,7 @@ pub async fn get_blocked_users_names(
 ///     nickname: String,          // required - nickname of the blocked user;
 ///     email: String,             // required - email of the blocked user;
 ///     blockDate: DateTime<Utc>,  // required - date and time the user was blocked;
-///     avatar: String,            // required - avatar of the blocked user;
+///     avatar?: String,           // optional - avatar of the blocked user;
 ///   }
 /// ]
 /// ```
@@ -776,9 +776,9 @@ pub async fn get_blocked_users_names(
             ("1_blocked_users_present" = (summary = "blocked users are present", description = "There are no blocked users.",
                 value = json!([
                     BlockedUserDto::from(BlockedUser::new(1, 42, "mary_williams".into(), "mary_williams@email.uk".into()
-                        , Utc::now() + Duration::minutes(-30), "".into()) ),
+                        , Utc::now() + Duration::minutes(-30), None) ),
                     BlockedUserDto::from(BlockedUser::new(1, 48, "ava_wilson".into(), "ava_wilson@email.uk".into()
-                        , Utc::now() + Duration::minutes(-145), "".into()) ),
+                        , Utc::now() + Duration::minutes(-145), None) ),
                 ])
             )),
             ("2_blocked_users_absent" = (summary = "blocked users are absent", description = "There are no blocked users.",

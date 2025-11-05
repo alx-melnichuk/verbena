@@ -411,13 +411,13 @@ pub struct BlockedUser {
     #[diesel(column_name = "email")]
     pub email: String,
     pub block_date: DateTime<Utc>,
-    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::Text>)]
     #[diesel(column_name = "avatar")]
-    pub avatar: String,
+    pub avatar: Option<String>,
 }
 
 impl BlockedUser {
-    pub fn new(id: i32, user_id: i32, nickname: String, email: String, block_date: DateTime<Utc>, avatar: String) -> Self {
+    pub fn new(id: i32, user_id: i32, nickname: String, email: String, block_date: DateTime<Utc>, avatar: Option<String>) -> Self {
         BlockedUser {
             id,
             user_id,
@@ -438,7 +438,7 @@ pub struct BlockedUserDto {
     pub email: String,
     #[serde(with = "serial_datetime")]
     pub block_date: DateTime<Utc>,
-    pub avatar: String,
+    pub avatar: Option<String>,
 }
 
 impl From<BlockedUser> for BlockedUserDto {
@@ -449,7 +449,7 @@ impl From<BlockedUser> for BlockedUserDto {
             nickname: blocked_user.nickname.clone(),
             email: blocked_user.email,
             block_date: blocked_user.block_date.clone(),
-            avatar: blocked_user.avatar,
+            avatar: blocked_user.avatar.clone(),
         }
     }
 }
