@@ -1,17 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { PanelBannedUsersComponent } from '../lib-banned/panel-banned-users/panel-banned-users.component';
+import { BlockedUserDto } from '../lib-chat/chat-message-api.interface';
+import { LocaleService } from '../common/locale.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
     selector: 'app-pg-banned',
     standalone: true,
-    imports: [CommonModule, RouterOutlet],
+    imports: [CommonModule, PanelBannedUsersComponent],
     templateUrl: './pg-banned.component.html',
     styleUrl: './pg-banned.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PgBannedComponent {
+    public blockedUsers: BlockedUserDto[] = [];
+
+    public localeService: LocaleService = inject(LocaleService);
+
+    private route: ActivatedRoute = inject(ActivatedRoute);
+
     constructor() {
+        this.blockedUsers = this.route.snapshot.data['blockedUsers'];
     }
 }
