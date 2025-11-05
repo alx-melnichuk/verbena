@@ -1,1 +1,24 @@
-<p>panel-banned-users works!</p>
+
+<div class="pbu-item pbu-header-item">
+    <div class="pbu-item-nickname">
+        <i><span>{{ 'panel-blocked-users.user_nickname' | translate }}</span></i>
+    </div>
+    <div class="pbu-item-date">
+        <i><span>{{ 'panel-blocked-users.date_blocking' | translate }}</span></i>
+    </div>
+</div>
+
+<div class="pbu-middle global-scroll">
+
+    @for (blockedUser of blockedUsers; track blockedUser.id) {
+        <div class="pbu-item">
+          <div class="pbu-item-nickname">
+            <span>{{ blockedUser.nickname }}</span>
+          </div>
+          <div class="pbu-item-date">
+            <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatDate }}</span>
+            <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatTime }}</span>
+          </div>
+        </div>
+    }
+</div>
