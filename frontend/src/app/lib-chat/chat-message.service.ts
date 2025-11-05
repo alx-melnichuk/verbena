@@ -22,8 +22,8 @@ export class ChatMessageService {
         return this.chatMessageApiService.getBlockedUsersNames();
     }
 
-    public getBlockedUsers(): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
-        return this.chatMessageApiService.getBlockedUsers();
+    public getBlockedUsers(sortColumn?: string, sortDesc?: boolean): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
+        return this.chatMessageApiService.getBlockedUsers({ sortColumn, sortDesc });
     }
 
     public postBlockedUser(blockedNickname: string): Promise<BlockedUserMiniDto | HttpErrorResponse | undefined> {

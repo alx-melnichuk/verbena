@@ -70,6 +70,10 @@ export class BlockedUserMiniDtoUtil {
     }
 }
 
+export interface SortingBlockedUsersDto {
+    sortColumn?: string, // "nickname", "email", "block_date"
+    sortDesc?: boolean,
+}
 // ** BlockedUserDto **
 
 export interface BlockedUserDto {
