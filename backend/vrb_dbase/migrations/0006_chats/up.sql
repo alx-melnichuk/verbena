@@ -431,7 +431,7 @@ $$;
 /* Create a stored function that will get a sorted list of "blocked_user" by the specified parameter. */
 CREATE OR REPLACE FUNCTION get_blocked_users_sort(
   IN _owner_id INTEGER,
-  IN _sort_order VARCHAR, -- 'nickname','email','block_date'
+  IN _sort_column VARCHAR, -- 'nickname','email','block_date'
   IN _sort_desc BOOLEAN,
   OUT id INTEGER,
   OUT user_id INTEGER,
@@ -448,7 +448,7 @@ BEGIN
     _sort_desc := FALSE;
   END IF;
 
-  IF (_sort_order = 'email') THEN
+  IF (_sort_column = 'email') THEN
     RETURN QUERY
       SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
       FROM blocked_users b, users u
@@ -456,7 +456,7 @@ BEGIN
       ORDER BY 
         CASE WHEN NOT _sort_desc THEN u.email ELSE NULL END ASC,
         CASE WHEN _sort_desc     THEN u.email ELSE NULL END DESC;
-  ELSIF (_sort_order = 'block_date') THEN
+  ELSIF (_sort_column = 'block_date') THEN
     RETURN QUERY
       SELECT b.id, b.blocked_id AS user_id, u.nickname, u.email, b.block_date
       FROM blocked_users b, users u
@@ -479,7 +479,7 @@ $$;
 /* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
 CREATE OR REPLACE FUNCTION get_blocked_users(
   IN _owner_id INTEGER,
-  IN _sort_order VARCHAR, -- 'nickname','email','block_date'
+  IN _sort_column VARCHAR, -- 'nickname','email','block_date'
   IN _sort_desc BOOLEAN,
   OUT id INTEGER,
   OUT user_id INTEGER,
@@ -499,7 +499,7 @@ BEGIN
     SELECT
       b.id, b.user_id, b.nickname, b.email, b.block_date, p.avatar
     FROM
-      get_blocked_users_sort(_owner_id, _sort_order, _sort_desc) b, profiles p
+      get_blocked_users_sort(_owner_id, _sort_column, _sort_desc) b, profiles p
     WHERE
       b.user_id = p.user_id;
 END;
