@@ -1,16 +1,11 @@
 import { Routes } from '@angular/router';
 import { PgBannedComponent } from './pg-banned.component';
-import { PgBannedViewComponent } from './pg-banned-view/pg-banned-view.component';
+import { pgBannedResolver } from './pg-banned.resolver';
 
 export const PG_BANNED_ROUTES: Routes = [
     {
-        path: '',
+        path: '', // 'ind/banned'
         component: PgBannedComponent,
-        children: [
-            {
-                path: '', // 'ind/banned'
-                component: PgBannedViewComponent,
-            },
-        ]
+        resolve: { blockedUsers: pgBannedResolver },
     },
 ];
