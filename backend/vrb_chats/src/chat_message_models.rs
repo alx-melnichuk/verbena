@@ -458,7 +458,7 @@ impl From<BlockedUser> for BlockedUserDto {
 #[serde(rename_all = "camelCase")]
 pub struct SortingBlockedUsersDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sort_order: Option<String>,
+    pub sort_column: Option<String>, // "nickname", "email", "block_date"
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sort_desc: Option<bool>,
 }

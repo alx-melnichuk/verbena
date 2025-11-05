@@ -27,7 +27,7 @@ pub trait ChatMessageOrm {
     fn get_blocked_nicknames(&self, owner_id: i32) -> Result<Vec<BlockedName>, String>;
 
     /// Get a list of blocked users.
-    fn get_blocked_users(&self, owner_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String>;
+    fn get_blocked_users(&self, owner_id: i32, sort_column: String, sort_desc: bool) -> Result<Vec<BlockedUser>, String>;
 
     /// Add a new entry (blocked_user).
     fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUserMini>, String>;
@@ -252,7 +252,7 @@ pub mod impls {
         }
 
         /// Get a list of blocked users.
-        fn get_blocked_users(&self, owner_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_users(&self, owner_id: i32, sort_column: String, sort_desc: bool) -> Result<Vec<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             // Get a connection from the P2D2 pool.
@@ -260,8 +260,8 @@ pub mod impls {
             #[rustfmt::skip]
             let query = diesel::sql_query("select * from get_blocked_users($1, $2, $3);")
                 .bind::<sql_types::Integer, _>(owner_id) // $1
-                .bind::<sql_types::Text, _>(sort_order) // $2
-                .bind::<sql_types::Bool, _>(sort_des); // $3
+                .bind::<sql_types::Text, _>(sort_column) // $2
+                .bind::<sql_types::Bool, _>(sort_desc); // $3
 
             // Run a query with Diesel to create a new user and return it.
             #[rustfmt::skip]
@@ -703,21 +703,21 @@ pub mod tests {
         }
         
         /// Get a list of blocked users.
-        fn get_blocked_users(&self, owner_id: i32, sort_order: String, sort_des: bool) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_users(&self, owner_id: i32, sort_column: String, sort_desc: bool) -> Result<Vec<BlockedUser>, String> {
             let vec = (*self.blocked_user_vec).borrow();
             #[rustfmt::skip]
             let mut result: Vec<BlockedUser> = vec.iter()
                 .filter(|v| (*v).owner_id == owner_id).map(|v| v.clone().into()).collect();
             
             result.sort_by(|a, b| {
-                let mut result = if sort_order == "email" {
+                let mut result = if sort_column == "email" {
                     a.email.to_lowercase().cmp(&b.email.to_lowercase())
-                } else if sort_order == "block_date" {
+                } else if sort_column == "block_date" {
                     a.block_date.partial_cmp(&b.block_date).unwrap_or(Ordering::Equal)
                 } else {
                     a.nickname.to_lowercase().cmp(&b.nickname.to_lowercase())
                 };
-                if !sort_des {
+                if sort_desc {
                     result = match result {
                         Ordering::Less => Ordering::Greater,
                         Ordering::Greater => Ordering::Less,

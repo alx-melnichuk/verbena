@@ -809,14 +809,14 @@ pub async fn get_blocked_users(
 
     // Get search parameters.
     let sorting_blocked_users_dto: SortingBlockedUsersDto = query_params.into_inner();
-    let sort_order: String = sorting_blocked_users_dto.sort_order.unwrap_or("".into()); 
+    let sort_column: String = sorting_blocked_users_dto.sort_column.unwrap_or("".into()); 
     let sort_desc: bool = sorting_blocked_users_dto.sort_desc.unwrap_or(false);
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_blocked_users = web::block(move || {
         // Get a list of blocked users.
         let res_chat_message1 = chat_message_orm2
-            .get_blocked_users(user_id, sort_order, sort_desc)
+            .get_blocked_users(user_id, sort_column, sort_desc)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
