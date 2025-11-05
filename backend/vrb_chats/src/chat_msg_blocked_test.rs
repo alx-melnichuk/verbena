@@ -1,5 +1,7 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
+    use std::cmp::Ordering;
+
     use actix_web::{
         self, App, body, dev,
         http::StatusCode,
@@ -159,22 +161,27 @@ mod tests {
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let blocked_user_dto_vec: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(blocked_user_dto_vec.len(), 0);
+        let blocked_user_dto_res: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_dto_res.len(), 0);
     }
-    /*#[actix_web::test]
-    async fn test_get_blocked_users_without_order() {
+    #[actix_web::test]
+    async fn test_get_blocked_users_without_sorting() {
         let token4 = config_jwt::tests::get_token(USER4_ID);
         let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
         let user4_id = data_u.0.get(3).unwrap().id;
-        // Add session (num_token) for user2, user4.
+        // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-        let mut data_cm = ChatMessageOrmTest::chat_messages(1);
-        #[rustfmt::skip]
-        let blocked_users: Vec<BlockedData> = data_cm.2.iter()
+        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        
+        #[rustfmt::skip] // Filter data only for the user.
+        let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
-        dbg!(&blocked_users);
-        data_cm.2 = blocked_users;
+        // Sort data by "nickname".
+        blocked_users.sort_by(|a, b| a.nickname.to_lowercase().cmp(&b.nickname.to_lowercase()));
+        #[rustfmt::skip]
+        let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_users.iter()
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into()))).collect();
+
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_blocked_users)
@@ -190,10 +197,245 @@ mod tests {
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let blocked_user_dto_vec: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        dbg!(&blocked_user_dto_vec);
-        assert_eq!(blocked_user_dto_vec.len(), 0);
-    }*/
+        let blocked_user_dto_res: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert!(blocked_user_dto_res.len() > 0);
+        assert_eq!(blocked_user_dto_res.len(), blocked_user_dto_vec.len());
+        assert_eq!(blocked_user_dto_res, blocked_user_dto_vec);
+    }
+    #[actix_web::test]
+    async fn test_get_blocked_users_with_sort_by_nickname_asc() {
+        let token4 = config_jwt::tests::get_token(USER4_ID);
+        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user4_id = data_u.0.get(3).unwrap().id;
+        // Add session (num_token) for user4.
+        data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
+        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        
+        #[rustfmt::skip] // Filter data only for the user.
+        let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
+            .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
+        // Sort data by "nickname" asc.
+        blocked_users.sort_by(|a, b| a.nickname.to_lowercase().cmp(&b.nickname.to_lowercase()));
+        #[rustfmt::skip]
+        let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_users.iter()
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into()))).collect();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_users)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri("/api/blocked_users?sortColumn=nickname")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let blocked_user_dto_res: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert!(blocked_user_dto_res.len() > 0);
+        assert_eq!(blocked_user_dto_res.len(), blocked_user_dto_vec.len());
+        assert_eq!(blocked_user_dto_res, blocked_user_dto_vec);
+    }
+    #[actix_web::test]
+    async fn test_get_blocked_users_with_sort_by_nickname_desc() {
+        let token4 = config_jwt::tests::get_token(USER4_ID);
+        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user4_id = data_u.0.get(3).unwrap().id;
+        // Add session (num_token) for user4.
+        data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
+        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        
+        #[rustfmt::skip] // Filter data only for the user.
+        let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
+            .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
+        // Sort data by "nickname" desc.
+        blocked_users.sort_by(|a, b| b.nickname.to_lowercase().cmp(&a.nickname.to_lowercase()));
+        #[rustfmt::skip]
+        let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_users.iter()
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into()))).collect();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_users)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri("/api/blocked_users?sortColumn=nickname&sortDesc=true")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let blocked_user_dto_res: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert!(blocked_user_dto_res.len() > 0);
+        assert_eq!(blocked_user_dto_res.len(), blocked_user_dto_vec.len());
+        assert_eq!(blocked_user_dto_res, blocked_user_dto_vec);
+    }
+    #[actix_web::test]
+    async fn test_get_blocked_users_with_sort_by_email_asc() {
+        let token4 = config_jwt::tests::get_token(USER4_ID);
+        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user4_id = data_u.0.get(3).unwrap().id;
+        // Add session (num_token) for user4.
+        data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
+        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        
+        #[rustfmt::skip] // Filter data only for the user.
+        let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
+            .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
+        // Sort data by "nickname" asc.
+        blocked_users.sort_by(|a, b| a.email.to_lowercase().cmp(&b.email.to_lowercase()));
+        #[rustfmt::skip]
+        let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_users.iter()
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into()))).collect();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_users)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri("/api/blocked_users?sortColumn=email&sortDesc=false")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let blocked_user_dto_res: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert!(blocked_user_dto_res.len() > 0);
+        assert_eq!(blocked_user_dto_res.len(), blocked_user_dto_vec.len());
+        assert_eq!(blocked_user_dto_res, blocked_user_dto_vec);
+    }
+    #[actix_web::test]
+    async fn test_get_blocked_users_with_sort_by_email_desc() {
+        let token4 = config_jwt::tests::get_token(USER4_ID);
+        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user4_id = data_u.0.get(3).unwrap().id;
+        // Add session (num_token) for user4.
+        data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
+        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        
+        #[rustfmt::skip] // Filter data only for the user.
+        let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
+            .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
+        // Sort data by "nickname" asc.
+        blocked_users.sort_by(|a, b| b.email.to_lowercase().cmp(&a.email.to_lowercase()));
+        #[rustfmt::skip]
+        let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_users.iter()
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into()))).collect();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_users)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri("/api/blocked_users?sortColumn=email&sortDesc=true")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let blocked_user_dto_res: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert!(blocked_user_dto_res.len() > 0);
+        assert_eq!(blocked_user_dto_res.len(), blocked_user_dto_vec.len());
+        assert_eq!(blocked_user_dto_res, blocked_user_dto_vec);
+    }
+    #[actix_web::test]
+    async fn test_get_blocked_users_with_sort_by_block_date_asc() {
+        let token4 = config_jwt::tests::get_token(USER4_ID);
+        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user4_id = data_u.0.get(3).unwrap().id;
+        // Add session (num_token) for user4.
+        data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
+        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        
+        #[rustfmt::skip] // Filter data only for the user.
+        let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
+            .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
+        // Sort data by "nickname" asc.
+        blocked_users.sort_by(|a, b| a.block_date.partial_cmp(&b.block_date).unwrap_or(Ordering::Equal));
+        #[rustfmt::skip]
+        let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_users.iter()
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into()))).collect();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_users)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri("/api/blocked_users?sortColumn=block_date&sortDesc=false")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let blocked_user_dto_res: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert!(blocked_user_dto_res.len() > 0);
+        assert_eq!(blocked_user_dto_res.len(), blocked_user_dto_vec.len());
+        assert_eq!(blocked_user_dto_res, blocked_user_dto_vec);
+    }
+    #[actix_web::test]
+    async fn test_get_blocked_users_with_sort_by_block_date_desc() {
+        let token4 = config_jwt::tests::get_token(USER4_ID);
+        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let user4_id = data_u.0.get(3).unwrap().id;
+        // Add session (num_token) for user4.
+        data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
+        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        
+        #[rustfmt::skip] // Filter data only for the user.
+        let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
+            .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
+        // Sort data by "nickname" asc.
+        blocked_users.sort_by(|a, b| b.block_date.partial_cmp(&a.block_date).unwrap_or(Ordering::Equal));
+        #[rustfmt::skip]
+        let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_users.iter()
+            .map(|v| BlockedUserDto::from(BlockedUser::from(v.clone().into()))).collect();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_blocked_users)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri("/api/blocked_users?sortColumn=block_date&sortDesc=true")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let blocked_user_dto_res: Vec<BlockedUserDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert!(blocked_user_dto_res.len() > 0);
+        assert_eq!(blocked_user_dto_res.len(), blocked_user_dto_vec.len());
+        assert_eq!(blocked_user_dto_res, blocked_user_dto_vec);
+    }
 
     // ** post_blocked_user **
 
