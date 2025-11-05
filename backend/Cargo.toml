@@ -19,38 +19,38 @@ license = "MIT"
 
 [workspace.dependencies]
 actix = "0.13.5"
-actix-broker = "0.4.3"
+actix-broker = "0.4.4"
 actix-cors = "0.7.1"
-actix-files = "0.6.6"
+actix-files = "0.6.8"
 actix-multipart = "0.7.2"
 actix-web = { version = "4.11.0", features = ["openssl"] }
 actix-web-actors = "4.3.1"
 argon2 = "0.5.3"
-chrono = { version = "0.4.41", features = ["serde"] }
-diesel = { version = "2.2.10", features = ["postgres", "r2d2", "chrono"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+diesel = { version = "2.3.3", features = ["postgres", "r2d2", "chrono"] }
 diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
-diesel_migrations = "2.2.0"
+diesel_migrations = "2.3.0"
 dotenv = "0.15.0"
 email_address = "0.2.9"
 env_logger = "0.11.8"
 futures-util = "0.3.31"
 getrandom = "0.3"
 handlebars = "6.3.2"
-image = "0.25.6"
-jsonwebtoken = "9.3.1"
-lettre = { version = "0.11.16", features = ["tokio1", "tokio1-native-tls"] }
-log = "0.4.27"
-mime = "0.3.17"
-openssl = "0.10.72"
-r2d2 = "0.8.10"
-rand = "0.9.1"
-regex = "1.11.1"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] }
-utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web"] }
-utoipa-redoc = { version = "6.0.0", features = ["actix-web"] }
-utoipa-rapidoc = { version = "6.0.0", features = ["actix-web"] }
+image = "0.25"
+jsonwebtoken = "9.3"
+lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls"] }
+log = "0.4"
+mime = "0.3"
+openssl = "0.10"
+r2d2 = "0.8"
+rand = "0.9"
+regex = "1.12"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+utoipa = { version = "5.4", features = ["chrono", "actix_extras"] }
+utoipa-swagger-ui = { version = "9.0", features = ["actix-web"] }
+utoipa-redoc = { version = "6.0", features = ["actix-web"] }
+utoipa-rapidoc = { version = "6.0", features = ["actix-web"] }
 vrb_app = { version = "0.1", path="./vrb_app" }
 vrb_authent = { version = "0.1", path="./vrb_authent" }
 vrb_chats = { version = "0.1", path="./vrb_chats" }
