@@ -1,0 +1,11 @@
+/*# sourceURL=banned-users.component.scss */
+
+app-banned-users {
+    display: flex;
+    height: 100%;
+    justify-content: center;
+
+    .bu-container {
+        width: min(900px, 100vw);
+    }
+}
