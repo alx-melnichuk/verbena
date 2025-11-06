@@ -1,24 +1,46 @@
 
-<div class="pbu-item pbu-header-item">
-    <div class="pbu-item-nickname">
-        <i><span>{{ 'panel-blocked-users.user_nickname' | translate }}</span></i>
-    </div>
-    <div class="pbu-item-date">
-        <i><span>{{ 'panel-blocked-users.date_blocking' | translate }}</span></i>
-    </div>
+<div [ngClass]="['pbu-header', (!!title ? 'pbu-hdr-pd' : '')]">
+    <div class="pbu-label" >{{ !!title ? (title | translate) : '' }}</div>
 </div>
+  
 
 <div class="pbu-middle global-scroll">
+    <div class="pbu-item">
+        <div class="pbu-grid1"></div>
+        <div class="pbu-item-nickname_ pbu-grid2">
+            <i><span>{{ 'panel-banned-users.nickname' | translate }}</span></i>
+        </div>
+        <div class="pbu-item-email_ pbu-grid3">
+            <i><span>{{ 'panel-banned-users.email' | translate }}</span></i>
+        </div>
+        <div class="pbu-item-date_ pbu-grid4">
+            <i><span>{{ 'panel-banned-users.date_blocking' | translate }}</span></i>
+        </div>
+        <div class="pbu-grid5"></div>
+    </div>
+    <div class="pbu-sepr"></div>
 
     @for (blockedUser of blockedUsers; track blockedUser.id) {
         <div class="pbu-item">
-          <div class="pbu-item-nickname">
-            <span>{{ blockedUser.nickname }}</span>
-          </div>
-          <div class="pbu-item-date">
-            <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatDate }}</span>
-            <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatTime }}</span>
-          </div>
+            <app-avatar av-mx-wd-1_25-hg class="pbu-item-avatar pbu-grid1"
+                [avatar]="blockedUser.avatar">
+            </app-avatar>
+            <div class="pbu-item-nickname_ pbu-grid2">
+                <span>{{ (blockedUser.userId % 2 != 0 ? 'demo02_' : '') + blockedUser.nickname }}</span>
+            </div>
+            <div class="pbu-item-email_ pbu-grid3">
+                <span>{{ (blockedUser.userId % 2 == 0 ? 'test01_' : '') + blockedUser.email }}</span>
+            </div>
+            <div class="pbu-item-date pbu-grid4">
+                <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatDate }}</span>
+                <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatTime }}</span>
+            </div>
+            <div class="pbu-item-action pbu-grid5">
+                <button mat-stroked-button class="mat-primary" click_="doResend()">
+                    {{ 'panel-banned-users.unblock_user' | translate }}
+                </button>
+            </div>
         </div>
+        <div class="pbu-sepr"></div>
     }
 </div>
