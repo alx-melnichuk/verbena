@@ -463,6 +463,13 @@
     "message_edited": "змінено",
     "message_deleted": "Це повідомлення видалено."
   },
+  "panel-banned-users": {
+    "title": "Заблоковані користувачі",
+    "nickname": "Користувач",
+    "email": "Електронна пошта",
+    "date_blocking": "Дата блокування",
+    "unblock_user": "Розблокувати"
+  },
   "panel-blocked-users": {
     "title": "Заблоковані користувачі",
     "user_nickname": "Користувач",

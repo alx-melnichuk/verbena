@@ -454,6 +454,13 @@
     "message_edited": "changed",
     "message_deleted": "This message has been removed."
   },
+  "panel-banned-users": {
+    "title": "Blocked users",
+    "nickname": "User nickname",
+    "email": "User email",
+    "date_blocking": "Date of blocking",
+    "unblock_user": "Unblock"
+  },
   "panel-blocked-users": {
     "title": "Blocked users",
     "user_nickname": "User nickname",
