@@ -20,6 +20,10 @@ app-avatar {
         width: var(---av-wd);
     }
 
+    &[av-mx-wd-1_25-hg]>.av-box {
+        max-width: calc(1.25 * var(---av-hg));
+    }
+
     &[av-mx-wd-1_5-hg]>.av-box {
         max-width: calc(1.5 * var(---av-hg));
     }
