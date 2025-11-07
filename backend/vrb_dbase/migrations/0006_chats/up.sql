@@ -537,7 +537,7 @@ BEGIN
   IF _user_id IS NOT NULL THEN
     SELECT bu.id
     FROM blocked_users bu 
-    WHERE bu.user_id = rec1.stream_owner AND bu.blocked_id = _user_id
+    WHERE bu.owner_id = rec1.stream_owner AND bu.blocked_id = _user_id
     INTO blocked_id;
   ELSE
     blocked_id := -1;
