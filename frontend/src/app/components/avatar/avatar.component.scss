@@ -17,6 +17,8 @@ app-avatar {
         display: block;
         height: var(---av-hg);
         object-fit: cover; // for "img"
+        margin-left: auto;
+        margin-right: auto;
         width: var(---av-wd);
     }
 
