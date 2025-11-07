@@ -469,13 +469,5 @@
     "email": "Електронна пошта",
     "date_blocking": "Дата блокування",
     "unblock_user": "Розблокувати"
-  },
-  "panel-blocked-users": {
-    "title": "Заблоковані користувачі",
-    "user_nickname": "Користувач",
-    "date_blocking": "Дата блокування",
-    "menu": {
-      "unblock_user": "Розблокувати"
-    }
   }
 }

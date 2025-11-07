@@ -460,13 +460,5 @@
     "email": "User email",
     "date_blocking": "Date of blocking",
     "unblock_user": "Unblock"
-  },
-  "panel-blocked-users": {
-    "title": "Blocked users",
-    "user_nickname": "User nickname",
-    "date_blocking": "Date of blocking",
-    "menu": {
-      "unblock_user": "Unblock"
-    }
   }
 }
