@@ -1,6 +1,10 @@
 <div class="bu-container">
     <app-panel-banned-users
         [blockedUsers]="blockedUsers"
-        [locale]="localeService.getLocale()">
+        [locale]="localeService.getLocale()"
+        [sortDesc]="sortDesc"
+        [sortColumn]="sortColumn"
+        (sort)="doSort($event)"
+        (unblockUser)="doUnblockUser($event, blockedUsers)">
     </app-panel-banned-users>
 </div>
