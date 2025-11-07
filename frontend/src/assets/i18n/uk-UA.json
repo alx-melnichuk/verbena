@@ -468,6 +468,7 @@
     "nickname": "Користувач",
     "email": "Електронна пошта",
     "date_blocking": "Дата блокування",
-    "unblock_user": "Розблокувати"
+    "unblock_user": "Розблокувати",
+    "are_you_want_to_unblock_user": "Ви впевнені, що хочете розблокувати користувача: \"{{nickname}}\" ?"
   }
 }
