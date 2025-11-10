@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { LocaleService } from '../common/locale.service';
-import { PanelBannedUsersComponent } from '../lib-banned/panel-banned-users/panel-banned-users.component';
-import { BlockedUserDto, BlockedUserMiniDto } from '../lib-chat/chat-message-api.interface';
+import { BannedUsersComponent } from '../lib-banned/banned-users/banned-users.component';
+import { BlockedUserDto } from '../lib-chat/chat-message-api.interface';
 import { ChatMessageService } from '../lib-chat/chat-message.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpErrorUtil } from '../utils/http-error.util';
 import { AlertService } from '../lib-dialog/alert.service';
+import { HttpErrorUtil } from '../utils/http-error.util';
 
 export const SORT_COL_INIT: string = 'nickname';
 export const SORT_DESC_INIT: boolean = false;
@@ -15,7 +15,7 @@ export const SORT_DESC_INIT: boolean = false;
 @Component({
     selector: 'app-pg-banned',
     standalone: true,
-    imports: [CommonModule, PanelBannedUsersComponent],
+    imports: [CommonModule, BannedUsersComponent],
     templateUrl: './pg-banned.component.html',
     styleUrl: './pg-banned.component.scss',
     encapsulation: ViewEncapsulation.None,
