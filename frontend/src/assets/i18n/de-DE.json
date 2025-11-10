@@ -454,7 +454,8 @@
     "you_not_allowed_chat": "Du darfst den öffentlichen chat nicht nutzen.",
     "you_been_blocked": "Du wurdest gesperrt.",
     "message_edited": "geändert",
-    "message_deleted": "Diese Nachricht wurde entfernt."
+    "message_deleted": "Diese Nachricht wurde entfernt.",
+    "msg_discard_draft": "Entwurf verwerfen? (Er kann nicht wiederhergestellt werden.)"
   },
   "banned-users": {
     "are_you_want_to_unblock_user": "Möchten Sie den Benutzer \"{{nickname}}\" wirklich entsperren?"

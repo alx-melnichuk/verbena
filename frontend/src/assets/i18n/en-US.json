@@ -452,7 +452,8 @@
     "you_not_allowed_chat": "You are not allowed to use the public chat.",
     "you_been_blocked": "You have been blocked.",
     "message_edited": "changed",
-    "message_deleted": "This message has been removed."
+    "message_deleted": "This message has been removed.",
+    "msg_discard_draft": "Discard draft? (You won't be able to restore it.)"
   },
   "banned-users": {
     "are_you_want_to_unblock_user": "Are you sure you want to unblock user: \"{{nickname}}\" ?"

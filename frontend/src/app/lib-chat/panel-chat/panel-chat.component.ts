@@ -274,11 +274,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
     }
     public async doSetValueForEditing(chatMsg: ChatMessageDto | null): Promise<void> {
-        console.log(`doSetValueForEditing() this.msgEditing != chatMsg : ${this.msgEditing != chatMsg}`); // #
         if (this.isEditable && this.msgEditing != chatMsg) {
-            console.log(`doSetValueForEditing() checkForEditingBlock("${this.frmCtrlNewMsg.value}")`); // #
             const isEditingBlock = await this.checkForEditingBlock(this.frmCtrlNewMsg.value);
-            console.log(`doSetValueForEditing() isEditingBlock: ${isEditingBlock}"`); // #
             if (isEditingBlock) {
                 return Promise.resolve();
             }
@@ -465,11 +462,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         let result: boolean = false;
         const newMsgVal = (newMsg || '').trim();
         if (this.isEditable && newMsgVal.length > 0) {
-            console.log(`checkForEditingBlock() newMsg: "${newMsg}"`); // #
-            const message = this.translateService.instant('_Ви не зможете її відновити._');
-            result = !!await this.dialogService.openConfirmation(
-                message, '_Відхилити чернетку ?_', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
-            console.log(`checkForEditingBlock() responce: ${result}`); // #
+            result = !await this.dialogService.openConfirmation('panel-chat.msg_discard_draft', 'dialog.confirmation',
+                { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
         }
         return result;
     }
