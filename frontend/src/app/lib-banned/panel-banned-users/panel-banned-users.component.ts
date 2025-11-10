@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
 import { BlockedUserDto } from 'src/app/lib-chat/chat-message-api.interface';
-import { DialogService } from 'src/app/lib-dialog/dialog.service';
 
 const COL_NICKNAME = 'nickname';
 const COL_EMAIL = 'email';
@@ -45,9 +44,6 @@ export class PanelBannedUsersComponent {
     readonly colEmail: string = COL_EMAIL;
     readonly colBlockDate: string = COL_BLOCK_DATE;
 
-    private dialogService: DialogService = inject(DialogService);
-    private translateService: TranslateService = inject(TranslateService);
-
     constructor() {
     }
 
@@ -61,13 +57,7 @@ export class PanelBannedUsersComponent {
     }
 
     public async doUnblockUser(nickname: string): Promise<void> {
-        if (!nickname) {
-            return;
-        }
-        const message = this.translateService.instant('panel-banned-users.are_you_want_to_unblock_user', { nickname });
-        const res = await this.dialogService.openConfirmation(
-            message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
-        if (!!res) {
+        if (!!nickname) {
             this.unblockUser.emit(nickname);
         }
     }

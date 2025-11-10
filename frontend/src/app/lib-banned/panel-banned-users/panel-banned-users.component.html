@@ -44,10 +44,10 @@
                 [avatar]="blockedUser.avatar">
             </app-avatar>
             <div wrap class="pbu-cell2">
-                <span>{{ (blockedUser.userId % 2 != 0 ? 'demo02_' : '') + blockedUser.nickname }}</span>
+                <span>{{ blockedUser.nickname }}</span>
             </div>
             <div wrap class="pbu-cell3">
-                <span>{{ (blockedUser.userId % 2 == 0 ? 'test01_' : '') + blockedUser.email }}</span>
+                <span>{{ blockedUser.email }}</span>
             </div>
             <div class="pbu-item-date pbu-cell4">
                 <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatDate }}</span>
