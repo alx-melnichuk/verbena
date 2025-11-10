@@ -3,20 +3,19 @@ import {
     AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener,
     inject, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormControl, FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
-import { TranslatePipe } from '@ngx-translate/core';
-
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { debounceFn } from 'src/app/common/debounce';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
+import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { DateUtil } from 'src/app/utils/date.utils';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
-
 import { ChatMessageDto, ParamQueryPastMsg } from '../chat-message-api.interface';
 import { FieldMessageComponent } from '../field-message/field-message.component';
 
@@ -140,6 +139,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private smallestDate: StringDateTime | undefined;
 
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private dialogService: DialogService = inject(DialogService);
+    private translateService: TranslateService = inject(TranslateService);
 
     constructor() {
     }
@@ -265,8 +266,22 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.rmvMsg.emit(chatMsg.id);
         }
     }
-    public doSetValueForEditing(chatMsg: ChatMessageDto | null): void {
+    public doResetValueForEditing(): void {
+        if (this.isEditable) {
+            this.msgEditing = null;
+            this.setTextareaValue(null);
+            this.fieldMessageComp.focus();
+        }
+    }
+    public async doSetValueForEditing(chatMsg: ChatMessageDto | null): Promise<void> {
+        console.log(`doSetValueForEditing() this.msgEditing != chatMsg : ${this.msgEditing != chatMsg}`); // #
         if (this.isEditable && this.msgEditing != chatMsg) {
+            console.log(`doSetValueForEditing() checkForEditingBlock("${this.frmCtrlNewMsg.value}")`); // #
+            const isEditingBlock = await this.checkForEditingBlock(this.frmCtrlNewMsg.value);
+            console.log(`doSetValueForEditing() isEditingBlock: ${isEditingBlock}"`); // #
+            if (isEditingBlock) {
+                return Promise.resolve();
+            }
             this.msgEditing = chatMsg;
             this.setTextareaValue(chatMsg?.msg || null);
             this.fieldMessageComp.focus();
@@ -445,5 +460,17 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
     private runQueryPastMsgs(dateLimit: StringDateTime | undefined = this.smallestDate): void {
         this.queryPastMsgs.emit({ isSortDes: true, maxDate: dateLimit });
+    }
+    private async checkForEditingBlock(newMsg: string | null): Promise<boolean> {
+        let result: boolean = false;
+        const newMsgVal = (newMsg || '').trim();
+        if (this.isEditable && newMsgVal.length > 0) {
+            console.log(`checkForEditingBlock() newMsg: "${newMsg}"`); // #
+            const message = this.translateService.instant('_Ви не зможете її відновити._');
+            result = !!await this.dialogService.openConfirmation(
+                message, '_Відхилити чернетку ?_', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
+            console.log(`checkForEditingBlock() responce: ${result}`); // #
+        }
+        return result;
     }
 }

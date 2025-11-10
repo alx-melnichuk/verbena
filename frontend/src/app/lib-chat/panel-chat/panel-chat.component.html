@@ -14,7 +14,8 @@
     <div class="pc-item-wrap"
       [matMenuTriggerFor]="!!getMenuItem(chatMsg, !!isOwner, nickname) ? menuItem : null"
       [matMenuTriggerData]="getMenuItem(chatMsg, !!isOwner, nickname)"
-      (menuOpened)="msgMarked=chatMsg;cleanNewMsg();"
+      menuOpened_="msgMarked=chatMsg;cleanNewMsg();"
+      (menuOpened)="msgMarked=chatMsg;"
       (menuClosed)="msgMarked=null;">
       <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
         , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
@@ -94,7 +95,7 @@
     <div class="pc-msg-btns">
       @if (!!msgEditing) {
         <button matSuffix  mat-icon-button class="pc-msg-icon"
-          (click)="doSetValueForEditing(null)">
+          (click)="doResetValueForEditing()">
           <svg><use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use></svg>
         </button>
         <div class="pc-msg-btns-sepr"></div>
