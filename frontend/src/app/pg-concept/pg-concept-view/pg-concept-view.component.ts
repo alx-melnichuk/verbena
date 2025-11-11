@@ -318,7 +318,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         const streamState = stream?.state || 'stopped';
         this.isStreamOwner = (this.streamDto?.userId || -1) == profileId;
         this.isStreamAvailable = streamState != 'stopped';
-        this.chatIsEditable = streamState != 'waiting' && streamState != 'stopped';
+        this.chatIsEditable = ['preparing', 'started', 'paused'].indexOf(streamState) > -1;
 
         this.updateTimerProperties(stream);
     }
