@@ -88,6 +88,7 @@ app-header {
         --av-hg: var(---hdr-hg);
         --av-wd: auto;
         --av-brd-rd: var(--mdc-text-button-container-shape);
+        min-width: 3rem;
     }
 
     // -- svg "more-vert" for unlogged in user --
