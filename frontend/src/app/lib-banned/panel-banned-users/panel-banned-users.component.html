@@ -11,16 +11,16 @@
 
     <div class="pbu-item pbu-item-hdr">
         <div class="pbu-cell1"></div>
-        <div wrap class="pbu-cell2 pbu-sort" (click)="doSort(colNickname, sortColumn, !!sortDesc)">
-            <i><span>{{ 'panel-banned-users.nickname' | translate }}</span></i>
+        <div pbu-wrap class="pbu-cell2 pbu-sort" (click)="doSort(colNickname, sortColumn, !!sortDesc)">
+            <span pbu-italic>{{ 'panel-banned-users.nickname' | translate }}</span>
             <span class="pbu-ord">
                 @if (sortColumn == colNickname) {
                     <ng-container  [ngTemplateOutlet]="templDesc" [ngTemplateOutletContext]="{desc: sortDesc}" />
                 }
             </span>
         </div>
-        <div wrap class="pbu-item-email pbu-cell3 pbu-sort" (click)="doSort(colEmail, sortColumn, !!sortDesc)">
-            <i><span>{{ 'panel-banned-users.email' | translate }}</span></i>
+        <div pbu-wrap class="pbu-cell3 pbu-sort" (click)="doSort(colEmail, sortColumn, !!sortDesc)">
+            <span pbu-italic>{{ 'panel-banned-users.email' | translate }}</span>
             <span class="pbu-ord">
                 @if (sortColumn == colEmail) {
                     <ng-container  [ngTemplateOutlet]="templDesc" [ngTemplateOutletContext]="{desc: sortDesc}" />
@@ -28,7 +28,7 @@
             </span>
         </div>
         <div class="pbu-item-date pbu-cell4 pbu-sort" (click)="doSort(colBlockDate, sortColumn, !!sortDesc)">
-            <i><span>{{ 'panel-banned-users.date_blocking' | translate }}</span></i>
+            <span pbu-italic>{{ 'panel-banned-users.date_blocking' | translate }}</span>
             <span class="pbu-ord">
                 @if (sortColumn == colBlockDate) {
                     <ng-container  [ngTemplateOutlet]="templDesc" [ngTemplateOutletContext]="{desc: sortDesc}" />
@@ -43,10 +43,10 @@
             <app-avatar av-mx-wd-1_25-hg class="pbu-item-avatar pbu-cell1"
                 [avatar]="blockedUser.avatar">
             </app-avatar>
-            <div wrap class="pbu-cell2">
+            <div pbu-wrap class="pbu-cell2">
                 <span>{{ blockedUser.nickname }}</span>
             </div>
-            <div wrap class="pbu-cell3">
+            <div pbu-wrap class="pbu-cell3">
                 <span>{{ blockedUser.email }}</span>
             </div>
             <div class="pbu-item-date pbu-cell4">
