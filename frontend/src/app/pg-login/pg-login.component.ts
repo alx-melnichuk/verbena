@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -23,11 +23,11 @@ export class PgLoginComponent {
     public isDisabledSubmit = false;
     public errMsgs: string[] = [];
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private router: Router,
-        private profileService: ProfileService,
-    ) {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private router: Router = inject(Router);
+    private profileService: ProfileService = inject(ProfileService);
+
+    constructor() {
     }
 
     // ** Public API **
