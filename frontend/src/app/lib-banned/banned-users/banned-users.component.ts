@@ -46,15 +46,16 @@ export class BannedUsersComponent {
         this.sort.emit(event);
     }
 
-    public async doUnblockUser(nickname: string): Promise<void> {
+    public doUnblockUser(nickname: string): void {
         if (!nickname) {
             return;
         }
         const message = this.translateService.instant('banned-users.are_you_want_to_unblock_user', { nickname });
-        const res = await this.dialogService.openConfirmation(
-            message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
-        if (!!res) {
-            this.unblockUser.emit(nickname);
-        }
+        this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' })
+            .then((res) => {
+                if (!!res) {
+                    this.unblockUser.emit(nickname);
+                }
+            });
     }
 }
