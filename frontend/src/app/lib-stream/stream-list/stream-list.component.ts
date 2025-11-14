@@ -1,6 +1,6 @@
 import { CommonModule, KeyValue } from '@angular/common';
 import {
-    ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -76,12 +76,13 @@ export class StreamListComponent implements OnChanges {
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'long' };
 
-    constructor(
-        private translateService: TranslateService,
-        private dialogService: DialogService,
-        private alertService: AlertService,
-        public localeService: LocaleService,
-    ) {
+    public localeService: LocaleService = inject(LocaleService);
+
+    private translateService: TranslateService = inject(TranslateService);
+    private dialogService: DialogService = inject(DialogService);
+    private alertService: AlertService = inject(AlertService);
+
+    constructor() {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
