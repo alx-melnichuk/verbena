@@ -273,15 +273,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.fieldMessageComp.focus();
         }
     }
-    public async doSetValueForEditing(chatMsg: ChatMessageDto | null): Promise<void> {
+    public doSetValueForEditing(chatMsg: ChatMessageDto | null): void {
         if (this.isEditable && this.msgEditing != chatMsg) {
-            const isEditingBlock = await this.checkForEditingBlock(this.frmCtrlNewMsg.value);
-            if (isEditingBlock) {
-                return Promise.resolve();
-            }
-            this.msgEditing = chatMsg;
-            this.setTextareaValue(chatMsg?.msg || null);
-            this.fieldMessageComp.focus();
+            this.checkForEdit(this.frmCtrlNewMsg.value)
+                .then((isEditing) => {
+                    if (isEditing) {
+                        this.msgEditing = chatMsg;
+                        this.setTextareaValue(chatMsg?.msg || null);
+                        this.fieldMessageComp.focus();
+                    }
+                });
         }
     }
     public doBlockUser(member: string | null | undefined, blockedUsers: string[] | null): void {
@@ -458,13 +459,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private runQueryPastMsgs(dateLimit: StringDateTime | undefined = this.smallestDate): void {
         this.queryPastMsgs.emit({ isSortDes: true, maxDate: dateLimit });
     }
-    private async checkForEditingBlock(newMsg: string | null): Promise<boolean> {
-        let result: boolean = false;
+    private checkForEdit(newMsg: string | null): Promise<boolean> {
         const newMsgVal = (newMsg || '').trim();
         if (this.isEditable && newMsgVal.length > 0) {
-            result = !await this.dialogService.openConfirmation('panel-chat.msg_discard_draft', 'dialog.confirmation',
-                { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
+            return this.dialogService.openConfirmation('panel-chat.msg_discard_draft', 'dialog.confirmation',
+                { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' }).then((res) => !!res);
+        } else {
+            return Promise.reject();
         }
-        return result;
     }
 }
