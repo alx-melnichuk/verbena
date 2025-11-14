@@ -139,15 +139,17 @@ export class StreamListComponent implements OnChanges {
         this.actionView.emit(streamId);
     }
 
-    public async doActionDelete(info: { id: number, title: string }): Promise<void> {
+    public doActionDelete(info: { id: number, title: string }): void {
         if (!info || !info.id) {
-            return Promise.resolve();
+            return;
         }
         const message = this.translateService.instant('stream_list.sure_you_want_delete_stream', { title: info.title });
-        const res = await this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
-        if (!!res) {
-            this.actionDelete.emit(info.id);
-        }
+        this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' })
+            .then((res) => {
+                if (!!res) {
+                    this.actionDelete.emit(info.id);
+                }
+            });
     }
 
     // ** Private API **
