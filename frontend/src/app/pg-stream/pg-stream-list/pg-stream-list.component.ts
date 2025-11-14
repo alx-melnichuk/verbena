@@ -1,6 +1,6 @@
 import { CommonModule, KeyValue } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { AlertService } from 'src/app/lib-dialog/alert.service';
@@ -36,98 +36,97 @@ export class PgStreamListComponent implements OnInit {
     // "Calendar"
     public calendarHdlr: CalendarHandler;
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private route: ActivatedRoute,
-        private alertService: AlertService,
-        private streamService: StreamService,
-    ) {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private route: ActivatedRoute = inject(ActivatedRoute);
+    private alertService: AlertService = inject(AlertService);
+    private streamService: StreamService = inject(StreamService);
+
+    constructor() {
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.futureStreamHdlr = new StreamHandler(this.streamService, true, CN_DEFAULT_LIMIT, CN_INTERVAL_MINUTES);
         this.pastStreamHdlr = new StreamHandler(this.streamService, false, CN_DEFAULT_LIMIT, CN_INTERVAL_MINUTES);
         this.calendarHdlr = new CalendarHandler(this.streamService);
     }
 
-    async ngOnInit(): Promise<void> {
-        await this.loadFutureAndPastStreamsAndSchedule();
+    ngOnInit(): void {
+        this.loadFutureAndPastStreamsAndSchedule();
     }
     // ** Public API **
 
     // ** "Streams Calendar" panel-stream-calendar **
 
-    public async doCalendarForPeriod(calendarStart: Date): Promise<void> {
-        const buffPromise: Promise<unknown>[] = [];
+    public doCalendarForPeriod(calendarStart: Date): void {
+        const arrayOfPromises: Promise<unknown>[] = [];
         // Get a list of events (streams) for a specified date.
-        buffPromise.push(this.calendarHdlr.getCalendarInfoForPeriod(calendarStart, false));
+        arrayOfPromises.push(this.calendarHdlr.getCalendarInfoForPeriod(calendarStart, false));
 
         if (this.calendarHdlr.isShowEvents(calendarStart)) {
             // Get a list of short streams for the selected date.
-            buffPromise.push(this.calendarHdlr.getListEventsForDate(this.calendarHdlr.eventsOfDaySelected, 1));
+            arrayOfPromises.push(this.calendarHdlr.getListEventsForDate(this.calendarHdlr.eventsOfDaySelected, 1));
         } else {
             this.calendarHdlr.clearStreamsEvent();
         }
-        try {
-            await Promise.all(buffPromise);
-        } catch (error) {
-            this.alertService.showError(
-                HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_streams_for_active_period');
-            throw error;
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+
+        Promise.all(arrayOfPromises)
+            .catch((error) => {
+                this.alertService.showError(
+                    HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_streams_for_active_period');
+                throw error;
+            })
+            .finally(() => this.changeDetector.markForCheck());
     }
 
     // ** "Streams Event" panel-stream-event **
 
-    public async doStreamEventsForDate(info: { selectedDate: Date | null, pageNum: number }): Promise<void> {
-        try {
-            // Get the next page of the list of short streams for the selected date.
-            await this.calendarHdlr.getListEventsForDate(info.selectedDate, info.pageNum);
-        } catch (error) {
-            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0]
-                , 'stream_list.error_get_streams_for_selected_day');
-            throw error;
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+    public doStreamEventsForDate(info: { selectedDate: Date | null, pageNum: number }): void {
+        // Get the next page of the list of short streams for the selected date.
+        this.calendarHdlr.getListEventsForDate(info.selectedDate, info.pageNum)
+            .catch((error) => {
+                this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0]
+                    , 'stream_list.error_get_streams_for_selected_day');
+                throw error;
+            })
+            .finally(() => this.changeDetector.markForCheck());
     }
 
     // ** "Future Stream" and "Past Stream" panel-stream-info **
 
-    public async doSearchNextFutureStream(): Promise<void> {
+    public doSearchNextFutureStream(): void {
         // Checking if the data needs to be updated.
         if (this.futureStreamHdlr.isNeedRefreshData()) {
-            return Promise.resolve(undefined).then(() => this.loadFutureAndPastStreamsAndSchedule());
+            this.loadFutureAndPastStreamsAndSchedule();
+            return;
         }
-        try {
-            // Get the next page of the "Future Stream".
-            await this.futureStreamHdlr.searchNextStream();
-            // Refresh view for "panel-stream-event".
-            this.isRefreshStreamEvent = !this.isRefreshStreamEvent ? true : undefined;
-        } catch (error) {
-            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_future_streams');
-            throw error;
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+        // Get the next page of the "Future Stream".
+        this.futureStreamHdlr.searchNextStream()
+            .then(() => {
+                // Refresh view for "panel-stream-event".
+                this.isRefreshStreamEvent = !this.isRefreshStreamEvent ? true : undefined;
+            })
+            .catch((error) => {
+                this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_future_streams');
+                throw error;
+            })
+            .finally(() => this.changeDetector.markForCheck());
     }
 
-    public async doSearchNextPastStream(): Promise<void> {
+    public doSearchNextPastStream(): void {
         // Checking if the data needs to be updated.
         if (this.pastStreamHdlr.isNeedRefreshData()) {
-            return Promise.resolve(undefined).then(() => this.loadFutureAndPastStreamsAndSchedule());
+            this.loadFutureAndPastStreamsAndSchedule();
+            return;
         }
-        try {
-            // Get the next page of "Past Stream".
-            await this.pastStreamHdlr.searchNextStream();
-            // Refresh view for "panel-stream-event".
-            this.isRefreshStreamEvent = !this.isRefreshStreamEvent ? true : undefined;
-        } catch (error) {
-            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_past_streams');
-            throw error;
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+        // Get the next page of "Past Stream".
+        this.pastStreamHdlr.searchNextStream()
+            .then(() => {
+                // Refresh view for "panel-stream-event".
+                this.isRefreshStreamEvent = !this.isRefreshStreamEvent ? true : undefined;
+            })
+            .catch((error) => {
+                this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_past_streams');
+                throw error;
+            })
+            .finally(() => this.changeDetector.markForCheck());
     }
 
     // ** **
@@ -144,59 +143,60 @@ export class PgStreamListComponent implements OnInit {
         this.streamService.redirectToStreamViewPage(streamId);
     }
 
-    public async doActionDelete(streamId: number): Promise<void> {
-        await this.deleteDataStream(streamId);
+    public doActionDelete(streamId: number): void {
+        this.deleteDataStream(streamId)
+            .then(() => {
+                // Update the list of next and past streams.
+                this.loadFutureAndPastStreamsAndSchedule();
+            });
     }
 
     // ** Private API **
 
-    private async loadFutureAndPastStreamsAndSchedule(): Promise<void> {
-        const buffPromise: Promise<unknown>[] = [];
+    private loadFutureAndPastStreamsAndSchedule(): void {
+        const arrayOfPromises: Promise<unknown>[] = [];
         const now = new Date();
         now.setHours(0, 0, 0, 0);
 
         this.futureStreamHdlr.clearStream();
         // Get the next page of the "Future Stream".
-        buffPromise.push(this.futureStreamHdlr.searchNextStream());
+        arrayOfPromises.push(this.futureStreamHdlr.searchNextStream());
 
         this.pastStreamHdlr.clearStream();
         // Get the next page of "Past Stream".
-        buffPromise.push(this.pastStreamHdlr.searchNextStream());
+        arrayOfPromises.push(this.pastStreamHdlr.searchNextStream());
 
         this.calendarHdlr.clearStreamsEvent();
         // Get a list of short streams for the selected date.
-        buffPromise.push(this.calendarHdlr.getListEventsForDate(this.calendarHdlr.eventsOfDaySelected || now, 1));
+        arrayOfPromises.push(this.calendarHdlr.getListEventsForDate(this.calendarHdlr.eventsOfDaySelected || now, 1));
 
         // Get a list of events (streams) for a specified date.
         const calendarMonth = this.calendarHdlr.calendarMonth || now;
-        buffPromise.push(this.calendarHdlr.getCalendarInfoForPeriod(calendarMonth, true));
+        arrayOfPromises.push(this.calendarHdlr.getCalendarInfoForPeriod(calendarMonth, true));
 
         this.changeDetector.markForCheck();
-        try {
-            await Promise.all(buffPromise);
-        } catch (error) {
-            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_retrieving_data');
-            throw error;
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+        Promise.all(arrayOfPromises)
+            .catch((error) => {
+                this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_retrieving_data');
+                throw error;
+            })
+            .finally(() => this.changeDetector.markForCheck());
+
     }
 
-    private async deleteDataStream(streamId: number): Promise<void> {
+    private deleteDataStream(streamId: number): Promise<void> {
         this.errObj = null;
         this.changeDetector.markForCheck();
-        try {
-            // Delete a stream by its ID.
-            await this.futureStreamHdlr.deleteDataStream(streamId);
-            // Update the list of next and past streams.
-            await this.loadFutureAndPastStreamsAndSchedule();
-        } catch (error) {
-            if (error instanceof HttpErrorResponse) {
-                const value = HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0];
-                this.errObj = { "key": CN_DELETE_STREAM, value };
-            }
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+        // Delete a stream by its ID.
+        return this.futureStreamHdlr.deleteDataStream(streamId)
+            .catch((error) => {
+                if (error instanceof HttpErrorResponse) {
+                    const value = HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0];
+                    this.errObj = { "key": CN_DELETE_STREAM, value };
+                }
+                throw error;
+            })
+            .finally(() => this.changeDetector.markForCheck());
+
     }
 }
