@@ -78,22 +78,21 @@ export class AppComponent implements OnInit {
 
     // ** Private API **
 
-    private async doLogout(): Promise<void> {
-        await this.profileService.logout();
+    private doLogout(): void {
         let currentRoute = window.location.pathname;
         const idx = AUTHORIZATION_DENIED.findIndex((item) => currentRoute.startsWith(item));
         currentRoute = (idx > -1 ? currentRoute : ROUTE_LOGIN);
-        const queryParams = this.router.routerState.snapshot.root.queryParams;
+        const queryParams = (idx > -1 ? this.router.routerState.snapshot.root.queryParams : {});
 
-        return new Promise(resolve =>
-            window.setTimeout(() => {
-                return this.router.navigate([currentRoute], { queryParams, onSameUrlNavigation: 'reload' })
-                    .finally(() => {
-                        this.changeDetector.markForCheck();
-                        return resolve;
-                    });
-            }, 0)
-        );
+        this.profileService.logout()
+            .then(() => {
+                window.setTimeout(() => {
+                    return this.router.navigate([currentRoute], { queryParams, onSameUrlNavigation: 'reload' })
+                        .finally(() => {
+                            this.changeDetector.markForCheck();
+                        });
+                }, 0)
+            });
     }
 
     private doSetLocale(value: string): void {
