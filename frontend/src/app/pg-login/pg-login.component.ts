@@ -32,7 +32,7 @@ export class PgLoginComponent {
 
     // ** Public API **
 
-    public async doLogin(params: StrParams): Promise<void> {
+    public doLogin(params: StrParams): void {
         if (!params) {
             return;
         }
@@ -42,19 +42,22 @@ export class PgLoginComponent {
         if (!nickname || !password) {
             return;
         }
-
         this.isDisabledSubmit = true;
         this.errMsgs = [];
-        try {
-            await this.profileService.login(nickname, password);
-            window.setTimeout(() => this.router.navigateByUrl(REDIRECT_AFTER_LOGIN), 0);
-        } catch (error) {
-            this.errMsgs = HttpErrorUtil.getMsgs(error as HttpErrorResponse);
-            throw error;
-        } finally {
-            this.isDisabledSubmit = false;
-            this.changeDetector.markForCheck();
-        }
+        this.profileService.login(nickname, password)
+            .then(() => {
+                window.setTimeout(() => {
+                    this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
+                }, 0);
+            })
+            .catch((error) => {
+                this.errMsgs = HttpErrorUtil.getMsgs(error as HttpErrorResponse);
+                throw error;
+            })
+            .finally(() => {
+                this.isDisabledSubmit = false;
+                this.changeDetector.markForCheck();
+            })
     }
 
     // ** Private API **
