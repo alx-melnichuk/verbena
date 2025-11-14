@@ -20,4 +20,10 @@ export class ClipboardUtil {
         document.execCommand('copy');
         document.body.removeChild(selBox);
     }
+    public static setClipboardValue(text: string, typeVal?: string | undefined): Promise<void> {
+        const type = typeVal || "text/plain";
+        const clipboardItemData = { [type]: text };
+        const clipboardItem = new ClipboardItem(clipboardItemData);
+        return window.navigator.clipboard.write([clipboardItem]);
+    }
 }
