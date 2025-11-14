@@ -1,15 +1,15 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnInit, Renderer2, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, inject, OnInit, Renderer2, ViewEncapsulation
+} from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
-import { TranslateService } from '@ngx-translate/core';
-
 import { COLOR_SCHEME_LIST } from './common/constants';
 import { InitializationService } from './common/initialization.service';
-import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
-import { FooterComponent } from './components/footer/footer.component';
-import { HeaderComponent, HM_LOGOUT, HM_SET_COLOR_SCHEME, HM_SET_LOCALE } from './components/header/header.component';
-import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
 import { LocaleService } from './common/locale.service';
+import { ROUTE_LOGIN, AUTHORIZATION_DENIED } from './common/routes';
+import { FooterComponent } from './components/footer/footer.component';
+import { HeaderComponent, HM_LOGOUT, HM_SET_LOCALE, HM_SET_COLOR_SCHEME } from './components/header/header.component';
+import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
 
 @Component({
     selector: 'app-root',
@@ -45,14 +45,15 @@ export class AppComponent implements OnInit {
     public set currentRoute(value: string) {
     }
 
-    constructor(
-        public translate: TranslateService,
-        public profileService: ProfileService,
-        public renderer: Renderer2,
-        private router: Router,
-        private localeService: LocaleService,
-        private initializationService: InitializationService,
-    ) {
+    public profileService: ProfileService = inject(ProfileService);
+
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private initializationService: InitializationService = inject(InitializationService);
+    private localeService: LocaleService = inject(LocaleService);
+    private renderer: Renderer2 = inject(Renderer2);
+    private router: Router = inject(Router);
+
+    constructor() {
         const themeFromLocalStorage = this.initializationService.getColorSchemeFromLocalStorage();
         const theme = this.profileService.profileDto?.theme || themeFromLocalStorage || COLOR_SCHEME_LIST[0];
         this.initializationService.setColorScheme(theme, this.renderer);
@@ -86,8 +87,11 @@ export class AppComponent implements OnInit {
 
         return new Promise(resolve =>
             window.setTimeout(() => {
-                return this.router.navigate([currentRoute], { queryParams }) // ByUrl(currentRoute, { });
-                    .finally(() => resolve);
+                return this.router.navigate([currentRoute], { queryParams, onSameUrlNavigation: 'reload' })
+                    .finally(() => {
+                        this.changeDetector.markForCheck();
+                        return resolve;
+                    });
             }, 0)
         );
     }
