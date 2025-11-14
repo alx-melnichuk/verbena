@@ -167,28 +167,31 @@ export class ConceptViewComponent implements AfterContentInit {
             this.editMessage.emit(keyValue);
         }
     }
-    public async doCutMessage(keyValue: KeyValue<number, string>): Promise<void> {
+    public doCutMessage(keyValue: KeyValue<number, string>): void {
         if (!keyValue || !keyValue.key || !keyValue.value) {
-            return Promise.resolve();
+            return;
         }
         const msg = keyValue.value.slice(0, 45) + (keyValue.value.length > 45 ? '...' : '');
         const message = this.translateService.instant('concept-view.sure_you_want_delete_message', { message: msg });
-        const res = await this.dialogService.openConfirmation(
-            message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
-        if (!!res) {
-            this.cutMessage.emit(keyValue.key);
-        }
+        this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' })
+            .then((res) => {
+                if (!!res) {
+                    this.cutMessage.emit(keyValue.key);
+                }
+            });
+
     }
-    public async doRmvMessage(chMsgId: number): Promise<void> {
+    public doRmvMessage(chMsgId: number): void {
         if (!chMsgId || chMsgId < 0) {
-            return Promise.resolve();
+            return;
         }
         const message = this.translateService.instant('concept-view.sure_you_want_permanently_delete_message');
-        const res = await this.dialogService.openConfirmation(
-            message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
-        if (!!res) {
-            this.rmvMessage.emit(chMsgId);
-        }
+        this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' })
+            .then((res) => {
+                if (!!res) {
+                    this.rmvMessage.emit(chMsgId);
+                }
+            });
     }
     public doQueryPastMsgs(info: ParamQueryPastMsg) {
         this.queryPastMsgs.emit(info);
