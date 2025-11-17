@@ -72,9 +72,6 @@ export class FieldInputComponent implements OnChanges, ControlValueAccessor, Val
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ input: this.formControl });
 
-    constructor() {
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen'] || !!changes['pattern'] || !!changes['type']) {
             this.prepareFormGroup(

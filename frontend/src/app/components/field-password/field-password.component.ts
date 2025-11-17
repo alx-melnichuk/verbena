@@ -66,8 +66,6 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
     public isShowPassword = false;
     public errMessage: string = '';
 
-    constructor() { }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen'] || !!changes['pattern'] || !!changes['type']) {
             this.prepareFormGroup();

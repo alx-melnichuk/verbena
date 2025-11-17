@@ -59,8 +59,6 @@ export class FieldTimeComponent implements OnChanges, ControlValueAccessor, Vali
     public innMinLimit: string | null = null;
     public innMaxLimit: string | null = null;
 
-    constructor() { }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['min'] || !!changes['max']) {
             const { min, minLimit } = this.getValueMin(this.min);

@@ -61,8 +61,6 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
 
     readonly value: string[] = this.formControl.value.concat();
 
-    constructor() { }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isReadonly'] || !!changes['isRequired']
             || !!changes['minLength'] || !!changes['maxLength']

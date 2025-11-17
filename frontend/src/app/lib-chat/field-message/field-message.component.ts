@@ -71,9 +71,6 @@ export class FieldMessageComponent implements OnChanges {
     public maxRowsVal: number = MESSAGE_MAX_ROWS;
     public minRowsVal: number = MESSAGE_MIN_ROWS;
 
-    constructor() {
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
             if (!!changes['maxLen']) {

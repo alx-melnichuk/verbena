@@ -130,9 +130,6 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
 
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
-    constructor() {
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired']) {
             this.prepareFormGroup();

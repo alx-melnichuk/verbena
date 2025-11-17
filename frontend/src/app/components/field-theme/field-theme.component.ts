@@ -53,9 +53,6 @@ export class FieldThemeComponent implements OnChanges, ControlValueAccessor, Val
 
     public themeList: string[] = ['', ...COLOR_SCHEME_LIST];
 
-    constructor() {
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired']) {
             this.prepareFormGroup();

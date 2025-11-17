@@ -64,8 +64,6 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
     private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
     private localeError: string | null = null;
 
-    constructor() { }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired']) {
             this.prepareFormGroup();

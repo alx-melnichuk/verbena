@@ -62,9 +62,6 @@ export class FieldTextareaComponent implements OnChanges, ControlValueAccessor, 
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ textarea: this.formControl });
 
-    constructor() {
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
             this.prepareFormGroup(this.isRequired || null, this.maxLen || null, this.minLen || null);
