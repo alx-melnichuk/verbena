@@ -37,9 +37,6 @@ export class BannedUsersComponent {
     private dialogService: DialogService = inject(DialogService);
     private translateService: TranslateService = inject(TranslateService);
 
-    constructor() {
-    }
-
     // ** Public API **
 
     public doSort(event: Record<string, boolean>): void {

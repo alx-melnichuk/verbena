@@ -27,9 +27,6 @@ export class PgLoginComponent {
     private router: Router = inject(Router);
     private profileService: ProfileService = inject(ProfileService);
 
-    constructor() {
-    }
-
     // ** Public API **
 
     public doLogin(params: StrParams): void {

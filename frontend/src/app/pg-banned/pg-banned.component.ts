@@ -22,7 +22,8 @@ export const SORT_DESC_INIT: boolean = false;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PgBannedComponent {
-    public blockedUsers: BlockedUserDto[] = [];
+    private route: ActivatedRoute = inject(ActivatedRoute);
+    public blockedUsers: BlockedUserDto[] = this.route.snapshot.data['blockedUsers'] || [];
     public isLoading: boolean = false;
     public sortColumn: string = SORT_COL_INIT;
     public sortDesc: boolean = SORT_DESC_INIT;
@@ -31,12 +32,7 @@ export class PgBannedComponent {
 
     private alertService: AlertService = inject(AlertService);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
-    private route: ActivatedRoute = inject(ActivatedRoute);
     private chatMessageService: ChatMessageService = inject(ChatMessageService);
-
-    constructor() {
-        this.blockedUsers = this.route.snapshot.data['blockedUsers'];
-    }
 
     // ** Public API **
 

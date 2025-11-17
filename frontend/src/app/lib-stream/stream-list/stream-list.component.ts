@@ -82,9 +82,6 @@ export class StreamListComponent implements OnChanges {
     private dialogService: DialogService = inject(DialogService);
     private alertService: AlertService = inject(AlertService);
 
-    constructor() {
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['errObj'] && !!this.errObj) {
             this.alertService.showError(this.errObj.value, this.getTitleByKey(this.errObj.key));
