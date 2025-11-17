@@ -1,6 +1,6 @@
 import {
     ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges,
-    ViewEncapsulation, forwardRef
+    ViewEncapsulation, forwardRef, inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -128,9 +128,9 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ image: this.formControl });
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-    ) {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+
+    constructor() {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
