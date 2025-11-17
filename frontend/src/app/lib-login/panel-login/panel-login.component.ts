@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, Input, OnChanges, Output,
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, inject, Input, OnChanges, Output,
     SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -57,7 +57,7 @@ export class PanelLoginComponent implements OnChanges {
     public emailMinLen: number = EMAIL_MIN_LENGTH;
     public emailMaxLen: number = EMAIL_MAX_LENGTH;
 
-    constructor(private changeDetector: ChangeDetectorRef) { }
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     @HostListener('document:keypress', ['$event'])
     public keyEvent(event: KeyboardEvent): void {
