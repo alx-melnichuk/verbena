@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges,
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, inject, Input, OnChanges, Output, SimpleChanges,
     ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -53,8 +53,7 @@ export class SidebarComponent implements SidebarParent, OnChanges {
         return this.isOver ? '' : null;
     }
 
-    constructor(private changeDetector: ChangeDetectorRef) {
-    }
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isOpen'] && !!changes['isOpen'].currentValue != !!changes['isOpen'].previousValue) {
