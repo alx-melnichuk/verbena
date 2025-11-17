@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output,
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, inject, Input, OnChanges, OnInit, Output,
     SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -116,13 +116,12 @@ export class PanelProfileComponent implements OnInit, OnChanges {
 
     private origProfileDto: ProfileDto = ProfileDtoUtil.create();
 
-    constructor(
-        public hostRef: ElementRef<HTMLElement>,
-        private changeDetector: ChangeDetectorRef,
-        private translate: TranslateService,
-        private dialogService: DialogService,
-        private profileService: ProfileService,
-    ) {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private dialogService: DialogService = inject(DialogService);
+    private profileService: ProfileService = inject(ProfileService);
+    private translate: TranslateService = inject(TranslateService);
+
+    constructor(public hostRef: ElementRef<HTMLElement>) {
         this.formGroupPassword.setValidators(this.validatorsForPassword());
     }
 
