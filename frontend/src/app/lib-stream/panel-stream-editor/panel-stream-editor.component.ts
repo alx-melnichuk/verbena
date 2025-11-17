@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, Output,
+    ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, inject, Input, OnChanges, Output,
     SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -112,11 +112,10 @@ export class PanelStreamEditorComponent implements OnChanges {
     private origStreamDto: StreamDto = StreamDtoUtil.create();
     private isChange: boolean = false;
 
-    constructor(
-        public hostRef: ElementRef<HTMLElement>,
-        private alertService: AlertService,
-        private streamService: StreamService,
-    ) {
+    private alertService: AlertService = inject(AlertService);
+    private streamService: StreamService = inject(StreamService);
+
+    constructor(public hostRef: ElementRef<HTMLElement>) {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
