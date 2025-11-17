@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, Component, EventEmitter, Input, Output, ViewEncapsulation
+    ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -34,8 +34,7 @@ export class StreamEditComponent {
     @Output()
     readonly updateStream: EventEmitter<UpdateStreamFileDto> = new EventEmitter();
 
-    constructor(public localeService: LocaleService) {
-    }
+    public localeService: LocaleService = inject(LocaleService);
 
     // ** Public API **
 
