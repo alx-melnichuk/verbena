@@ -54,9 +54,7 @@ export class PanelStreamCalendarComponent implements OnChanges {
 
     private markedPeriodMap: MarkedDatesMapTp = {};
 
-    constructor(
-        public hostRef: ElementRef<HTMLElement>,
-    ) {
+    constructor(public hostRef: ElementRef<HTMLElement>) {
     }
 
     public ngOnChanges(changes: SimpleChanges): void {
