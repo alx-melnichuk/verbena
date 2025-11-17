@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { debounceFn } from 'src/app/common/debounce';
 import { StringDateTime } from 'src/app/common/string-date-time';
@@ -140,10 +140,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     private dialogService: DialogService = inject(DialogService);
-    private translateService: TranslateService = inject(TranslateService);
-
-    constructor() {
-    }
 
     @HostListener('window:resize', ['$event'])
     handlerResize() {
