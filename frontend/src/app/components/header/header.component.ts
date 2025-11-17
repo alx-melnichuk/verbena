@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, Input, OnChanges,
-    Output, Renderer2, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, inject, Input, OnChanges,
+    Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -12,7 +12,6 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { LOCALE_LIST, COLOR_SCHEME_LIST } from 'src/app/common/constants';
-import { InitializationService } from 'src/app/common/initialization.service';
 import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
 import { MAIN_MENU_LIST } from 'src/app/common/routes';
 import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
@@ -83,12 +82,7 @@ export class HeaderComponent implements OnChanges {
         }, CN_ResizeEventTimeout);
     }
 
-    constructor(
-        public renderer: Renderer2,
-        public initializationService: InitializationService,
-        private changeDetector: ChangeDetectorRef,
-    ) {
-    }
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['profileDto'] || !!changes['currentRoute']) {
