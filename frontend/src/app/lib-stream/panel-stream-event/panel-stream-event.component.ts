@@ -63,9 +63,6 @@ export class PanelStreamEventComponent {
         }
     }
 
-    constructor() {
-    }
-
     // ** Public API **
 
     public isFuture(startTime: string | null): boolean | null {
