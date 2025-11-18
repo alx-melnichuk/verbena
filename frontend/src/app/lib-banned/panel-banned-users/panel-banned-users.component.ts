@@ -53,7 +53,7 @@ export class PanelBannedUsersComponent {
         }
     }
 
-    public async doUnblockUser(nickname: string): Promise<void> {
+    public doUnblockUser(nickname: string): void {
         if (!!nickname) {
             this.unblockUser.emit(nickname);
         }

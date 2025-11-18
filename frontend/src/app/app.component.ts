@@ -59,7 +59,7 @@ export class AppComponent implements OnInit {
         this.initializationService.setColorScheme(theme, this.renderer);
     }
 
-    async ngOnInit(): Promise<void> {
+    ngOnInit(): void {
         this.locale = this.localeService.getLocale();
         this.colorScheme = this.initializationService.getColorScheme();
     }

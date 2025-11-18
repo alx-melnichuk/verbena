@@ -130,7 +130,7 @@ export class PanelStreamCalendarComponent implements OnChanges {
     private firstDayOfMonth(value: Date | null): Date | null {
         return value != null ? new Date(value.getFullYear(), value.getMonth(), 1, 0, 0, 0, 0) : null;
     }
-    private async changeCalendarEmit(newMonthDate: Date | null): Promise<any> {
+    private changeCalendarEmit(newMonthDate: Date | null): Promise<any> {
         return newMonthDate == null
             ? Promise.resolve()
             : Promise.resolve().then(() => {
