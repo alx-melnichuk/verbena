@@ -14,9 +14,6 @@ import { PanelAboutComponent } from '../lib-about/panel-about/panel-about.compon
 })
 export class PgAboutComponent {
 
-    constructor() {
-    }
-
     // ** Public API **
 
     // ** Private API **
