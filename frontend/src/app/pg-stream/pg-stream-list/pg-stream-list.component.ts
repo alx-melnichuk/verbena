@@ -25,28 +25,21 @@ const CN_INTERVAL_MINUTES = 5;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PgStreamListComponent implements OnInit {
-    public errObj: KeyValue<string, string> | null = null;
-    public isRefreshStreamEvent: boolean | null | undefined;
-    public profileDto: ProfileDto | null;
-
-    // "Future Streams"
-    public futureStreamHdlr: StreamHandler;
-    // "Past Streams"
-    public pastStreamHdlr: StreamHandler;
-    // "Calendar"
-    public calendarHdlr: CalendarHandler;
-
+    private alertService: AlertService = inject(AlertService);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     private route: ActivatedRoute = inject(ActivatedRoute);
-    private alertService: AlertService = inject(AlertService);
     private streamService: StreamService = inject(StreamService);
 
-    constructor() {
-        this.profileDto = this.route.snapshot.data['profileDto'];
-        this.futureStreamHdlr = new StreamHandler(this.streamService, true, CN_DEFAULT_LIMIT, CN_INTERVAL_MINUTES);
-        this.pastStreamHdlr = new StreamHandler(this.streamService, false, CN_DEFAULT_LIMIT, CN_INTERVAL_MINUTES);
-        this.calendarHdlr = new CalendarHandler(this.streamService);
-    }
+    public errObj: KeyValue<string, string> | null = null;
+    public isRefreshStreamEvent: boolean | null | undefined;
+    public profileDto: ProfileDto | null = this.route.snapshot.data['profileDto'];
+
+    // "Future Streams"
+    public futureStreamHdlr: StreamHandler = new StreamHandler(this.streamService, true, CN_DEFAULT_LIMIT, CN_INTERVAL_MINUTES);
+    // "Past Streams"
+    public pastStreamHdlr: StreamHandler = new StreamHandler(this.streamService, false, CN_DEFAULT_LIMIT, CN_INTERVAL_MINUTES);
+    // "Calendar"
+    public calendarHdlr: CalendarHandler = new CalendarHandler(this.streamService);
 
     ngOnInit(): void {
         this.loadFutureAndPastStreamsAndSchedule();
