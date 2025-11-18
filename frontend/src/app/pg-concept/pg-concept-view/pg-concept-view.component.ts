@@ -34,30 +34,6 @@ const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
 })
 export class PgConceptViewComponent implements OnInit, OnDestroy {
 
-    public chatBlockedUsers: string[] = []; // List of new blocked users.
-    public chatPastMsgs: ChatMessageDto[] = []; // List of past chat messages.
-    public chatNewMsgs: ChatMessageDto[] = []; // List of new chat messages.
-    public chatRmvIds: number[] = []; // List of IDs of permanently deleted chat messages.
-    public chatIsEditable: boolean | null = null;
-    public chatIsLoading: boolean | null = null; // Indicates that data is being loaded.
-
-    public chatSocketService: ChatSocketService = inject(ChatSocketService);
-    // List of blocked users.
-    public blockedNamesIsLoading: boolean | null = null;
-
-    public isLoadStream: boolean = false;
-    // An indication that the stream is in a chat-available status.
-    public isStreamAvailable: boolean = false;
-    // An indication that this is the owner of the stream.
-    public isStreamOwner: boolean = false;
-    public profileDto: ProfileDto | null = null;
-    public profileMiniDto: ProfileMiniDto | null = null;
-    public profileTokensDto: UserTokenResponseDto | null = null;
-    public streamDto: StreamDto | null = null;
-    public timerActive: boolean | null | undefined;
-    public timerIsShow: boolean | null | undefined;
-    public timerValue: number | null | undefined;
-
     private alertService: AlertService = inject(AlertService);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     private chatMessageService: ChatMessageService = inject(ChatMessageService);
@@ -66,16 +42,38 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     private streamService: StreamService = inject(StreamService);
     private translateService: TranslateService = inject(TranslateService);
 
+    public chatSocketService: ChatSocketService = inject(ChatSocketService);
+    // List of new blocked users.
+    public chatBlockedUsers: string[] = this.route.snapshot.data['conceptResponse']?.blockedNames || [];
+    // List of past chat messages.
+    public chatPastMsgs: ChatMessageDto[] = this.route.snapshot.data['chatMsgList'] || [];
+    // List of new chat messages.
+    public chatNewMsgs: ChatMessageDto[] = [];
+    // List of IDs of permanently deleted chat messages.
+    public chatRmvIds: number[] = [];
+    public chatIsEditable: boolean | null = null;
+    // Indicates that data is being loaded.
+    public chatIsLoading: boolean | null = null;
+
+    // List of blocked users.
+    public blockedNamesIsLoading: boolean | null = null;
+
+    public isLoadStream: boolean = false;
+    // An indication that the stream is in a chat-available status.
+    public isStreamAvailable: boolean = false;
+    // An indication that this is the owner of the stream.
+    public isStreamOwner: boolean = false;
+    public profileDto: ProfileDto | null = this.route.snapshot.data['profileDto'] || null;
+    public profileMiniDto: ProfileMiniDto | null = this.route.snapshot.data['conceptResponse']?.profileMiniDto || null;
+    public profileTokensDto: UserTokenResponseDto | null = this.route.snapshot.data['profileTokensDto'] || null;
+    public streamDto: StreamDto | null = null;
+    public timerActive: boolean | null | undefined;
+    public timerIsShow: boolean | null | undefined;
+    public timerValue: number | null | undefined;
+
     constructor() {
-        this.profileDto = this.route.snapshot.data['profileDto'];
-        this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
-        this.chatPastMsgs = this.route.snapshot.data['chatMsgList'];
         const conceptResponse = this.route.snapshot.data['conceptResponse'];
-        this.profileMiniDto = conceptResponse?.profileMiniDto;
-
-        this.chatBlockedUsers = conceptResponse?.blockedNames || [];
         const nickname: string = this.profileDto?.nickname || '';
-
         const streamDto = conceptResponse?.streamDto || null;
         this.setStreamDto(streamDto || null, this.profileDto?.id || 0);
 

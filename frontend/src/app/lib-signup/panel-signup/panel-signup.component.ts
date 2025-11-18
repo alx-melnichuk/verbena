@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, Input, OnChanges, Output,
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, inject, Input, OnChanges, Output,
     SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -44,6 +44,9 @@ export class PanelSignupComponent implements OnChanges {
     @HostBinding('class.global-scroll')
     public get isGlobalScroll(): boolean { return true; }
 
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private profileService: ProfileService = inject(ProfileService);
+
     public linkLogin = ROUTE_LOGIN;
     public debounceDelay: number = SG_DEBOUNCE_DELAY;
 
@@ -60,12 +63,6 @@ export class PanelSignupComponent implements OnChanges {
 
     public emailMinLen: number = EMAIL_MIN_LENGTH;
     public emailMaxLen: number = EMAIL_MAX_LENGTH;
-
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private profileService: ProfileService,
-    ) {
-    }
 
     @HostListener('document:keypress', ['$event'])
     public keyEvent(event: KeyboardEvent): void {

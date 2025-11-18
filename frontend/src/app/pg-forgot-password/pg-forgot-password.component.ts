@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -21,17 +21,14 @@ import { HttpErrorUtil } from '../utils/http-error.util';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PgForgotPasswordComponent {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private dialogService: DialogService = inject(DialogService);
+    private router: Router = inject(Router);
+    private profileService: ProfileService = inject(ProfileService);
+    private translate: TranslateService = inject(TranslateService);
+
     public isDisabledSubmit = false;
     public errMsgs: string[] = [];
-
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private router: Router,
-        private translate: TranslateService,
-        private dialogService: DialogService,
-        private profileService: ProfileService
-    ) {
-    }
 
     // ** Public API **
 

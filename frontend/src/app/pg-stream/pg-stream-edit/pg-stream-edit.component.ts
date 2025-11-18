@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
@@ -24,12 +24,7 @@ import { HttpErrorUtil } from 'src/app/utils/http-error.util';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PgStreamEditComponent implements IDeactivatePage {
-    public errMsgs: string[] = [];
-    public isLoadStream = false;
-    public streamDto: StreamDto | null = null;
-    public streamConfigDto: StreamConfigDto | null = null;
-
+export class PgStreamEditComponent implements OnInit, IDeactivatePage {
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     private dialogService: DialogService = inject(DialogService);
     private goBackToRoute: string = ROUTE_STREAM_LIST;
@@ -39,16 +34,17 @@ export class PgStreamEditComponent implements IDeactivatePage {
     private streamService: StreamService = inject(StreamService);
     private translateService: TranslateService = inject(TranslateService);
 
-    constructor() {
-        this.streamDto = this.route.snapshot.data['streamDto'];
-        this.streamConfigDto = this.route.snapshot.data['streamConfigDto'];
+    public errMsgs: string[] = [];
+    public isLoadStream = false;
+    public streamDto: StreamDto | null = this.route.snapshot.data['streamDto'] || null;
+    public streamConfigDto: StreamConfigDto | null = this.route.snapshot.data['streamConfigDto'] || null;
 
+    ngOnInit(): void {
         const previousNav = this.router.getCurrentNavigation()?.previousNavigation?.finalUrl?.toString() || '';
         if (!!previousNav && !previousNav.startsWith(ROUTE_STREAM_EDIT)) {
             this.goBackToRoute = previousNav;
         }
     }
-
 
     // ** IDeactivatePage **
 

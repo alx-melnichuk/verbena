@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, Component, ElementRef, Input, OnChanges, OnInit, Renderer2, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, Component, ElementRef, inject, Input, OnChanges, OnInit, Renderer2, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -23,6 +23,8 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
     @Input()
     public streamState: StreamState | null | undefined = null;
 
+    private renderer: Renderer2 = inject(Renderer2);
+
     public strmStWaiting: StreamState = StreamState.waiting;
     public strmStPreparing: StreamState = StreamState.preparing;
     public strmStStarted: StreamState = StreamState.started;
@@ -31,10 +33,8 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
 
     public valueText: string | null = null;
 
-    constructor(
-        private renderer: Renderer2,
-        public hostRef: ElementRef<HTMLElement>,
-    ) {
+
+    constructor(public hostRef: ElementRef<HTMLElement>) {
     }
 
     ngOnChanges(changes: SimpleChanges): void {

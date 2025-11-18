@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -25,16 +25,13 @@ export class PanelStreamActionsComponent {
     @Output()
     readonly changeState: EventEmitter<StreamState> = new EventEmitter();
 
+    private dialogService: DialogService = inject(DialogService);
+    private translate: TranslateService = inject(TranslateService);
+
     public statePreparing = StreamState.preparing;
     public stateStarted = StreamState.started;
     public statePaused = StreamState.paused;
     public stateStopped = StreamState.stopped;
-
-    constructor(
-        private translateService: TranslateService,
-        private dialogService: DialogService,
-    ) {
-    }
 
     // ** Public API **
 
@@ -58,7 +55,7 @@ export class PanelStreamActionsComponent {
     public doChangeState(newState: StreamState): void {
         if (this.state != null) {
             if (newState == StreamState.stopped) {
-                const message = this.translateService.instant('panel-stream-actions.sure_you_want_stop_stream', { title: this.title });
+                const message = this.translate.instant('panel-stream-actions.sure_you_want_stop_stream', { title: this.title });
                 const params = { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' };
                 this.dialogService.openConfirmation(message, '', params)
                     .then((response) => {

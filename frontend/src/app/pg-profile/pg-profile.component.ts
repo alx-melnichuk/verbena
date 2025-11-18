@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, Renderer2, ViewEncapsulation
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Renderer2, ViewEncapsulation
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
@@ -28,27 +28,26 @@ import { LocaleService } from '../common/locale.service';
 })
 export class PgProfileComponent {
 
-    public profileDto: ProfileDto;
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private renderer: Renderer2 = inject(Renderer2);
+    private route: ActivatedRoute = inject(ActivatedRoute);
+    private router: Router = inject(Router);
+
+    // private alertService: AlertService = inject(AlertService);
+    private dialogService: DialogService = inject(DialogService);
+    private localeService: LocaleService = inject(LocaleService);
+    private initializationService: InitializationService = inject(InitializationService);
+    private profileService: ProfileService = inject(ProfileService);
+    // private streamService: StreamService = inject(StreamService);
+    private translate: TranslateService = inject(TranslateService);
+
+
+    public profileDto: ProfileDto = this.route.snapshot.data['profileDto'];
     public isLoadData = false;
     public errMsgsProfile: string[] = [];
     public errMsgsPassword: string[] = [];
     public errMsgsAccount: string[] = [];
-    public profileConfigDto: ProfileConfigDto;
-
-    constructor(
-        private changeDetectorRef: ChangeDetectorRef,
-        private route: ActivatedRoute,
-        private router: Router,
-        private renderer: Renderer2,
-        private localeService: LocaleService,
-        private initializationService: InitializationService,
-        private translate: TranslateService,
-        private dialogService: DialogService,
-        private profileService: ProfileService,
-    ) {
-        this.profileDto = this.route.snapshot.data['profileDto'];
-        this.profileConfigDto = this.route.snapshot.data['profileConfigDto'];
-    }
+    public profileConfigDto: ProfileConfigDto = this.route.snapshot.data['profileConfigDto'];
 
     // ** Public API **
 
@@ -80,7 +79,7 @@ export class PgProfileComponent {
             })
             .finally(() => {
                 this.isLoadData = false;
-                this.changeDetectorRef.markForCheck();
+                this.changeDetector.markForCheck();
             });
     }
 
@@ -108,7 +107,7 @@ export class PgProfileComponent {
             })
             .finally(() => {
                 this.isLoadData = false;
-                this.changeDetectorRef.markForCheck();
+                this.changeDetector.markForCheck();
             });
     }
 
@@ -138,7 +137,7 @@ export class PgProfileComponent {
             })
             .finally(() => {
                 this.isLoadData = false;
-                this.changeDetectorRef.markForCheck();
+                this.changeDetector.markForCheck();
             });
     }
 
