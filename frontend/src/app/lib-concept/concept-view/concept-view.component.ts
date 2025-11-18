@@ -117,9 +117,6 @@ export class ConceptViewComponent implements AfterContentInit {
     private dialogService: DialogService = inject(DialogService);
     private translateService: TranslateService = inject(TranslateService);
 
-    constructor() {
-    }
-
     // To disable the jumping effect of the "stream-video" panel at startup.
     ngAfterContentInit(): void {
         this.isStreamVideo = true;

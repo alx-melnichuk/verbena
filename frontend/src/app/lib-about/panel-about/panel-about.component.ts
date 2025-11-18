@@ -27,9 +27,6 @@ export class PanelAboutComponent {
     public set appAbout(value: any) {
     }
 
-    constructor() {
-    }
-
     // ** Public API **
 
     public getKey(item: string): string {

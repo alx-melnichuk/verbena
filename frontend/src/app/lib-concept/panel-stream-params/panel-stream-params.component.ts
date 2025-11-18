@@ -41,9 +41,6 @@ export class PanelStreamParamsComponent implements OnChanges {
 
     public labelDays: Record<number, string> = this.createLabelDays(this.translate);
 
-    constructor() {
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['locale']) {
             this.labelDays = this.createLabelDays(this.translate);

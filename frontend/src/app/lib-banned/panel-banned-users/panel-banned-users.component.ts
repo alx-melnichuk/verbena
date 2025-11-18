@@ -44,9 +44,6 @@ export class PanelBannedUsersComponent {
     readonly colEmail: string = COL_EMAIL;
     readonly colBlockDate: string = COL_BLOCK_DATE;
 
-    constructor() {
-    }
-
     // ** Public API **
 
     public doSort(newColumn: string, sortColumn: string | undefined | null, sortDesc: boolean): void {
