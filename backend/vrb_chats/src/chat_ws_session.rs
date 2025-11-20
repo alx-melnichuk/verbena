@@ -437,6 +437,7 @@ impl Handler<CommandSrv> for ChatWsSession {
     type Result = MessageResult<CommandSrv>;
 
     fn handle(&mut self, command: CommandSrv, ctx: &mut Self::Context) -> Self::Result {
+        debug!("ChatWsSession.handle(command: {:?})", &command);
         match command {
             CommandSrv::Block(block) => self.handle_commandsrv_block(block, ctx),
             CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
