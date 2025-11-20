@@ -2,7 +2,7 @@ use actix::prelude::*;
 use actix_web_actors::ws::CloseReason;
 
 // ** Blocking client in a room by name. (Session -> Server) **
-#[derive(Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "bool")] // is_in_chat
 pub struct BlockClient(
     pub i32,    // room_id
@@ -11,7 +11,7 @@ pub struct BlockClient(
 );
 
 // ** Send a block to the client in the room. (Server -> Session) **
-#[derive(Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct BlockSsn(
     pub bool, // is_block
@@ -19,7 +19,7 @@ pub struct BlockSsn(
 );
 
 // ** Send a chat message to all clients in the room. (Server -> Session) **
-#[derive(Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct ChatMsgSsn(
     pub String, // message
@@ -27,7 +27,7 @@ pub struct ChatMsgSsn(
 
 
 // ** Commands that have one handler. (Session -> Server) **
-#[derive(Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub enum CommandSrv {
     Block(BlockSsn),
@@ -36,14 +36,14 @@ pub enum CommandSrv {
 }
 
 // ** Count of clients in the room. (Session -> Server) **
-#[derive(Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "usize")] // MAX 18_446_744_073_709_551_615usize
 pub struct CountMembers(
     pub i32, // room_id
 );
 
 // ** Join the client to the chat room. (Session -> Server) **
-#[derive(Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "(u64, usize)")] // (client_id, count)  // MAX 18_446_744_073_709_551_615u64
 pub struct JoinRoom(
     pub i32,                   // room_id
@@ -52,7 +52,7 @@ pub struct JoinRoom(
 );
 
 // ** Leave the client from the chat room. (Session -> Server) **
-#[derive(Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct LeaveRoom(
     pub i32,    // room_id
@@ -61,7 +61,7 @@ pub struct LeaveRoom(
 );
 
 // ** Send a text message to all clients in the room. (Server -> Session) **
-#[derive(Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct SendMessage(
     pub i32,    // room_id
