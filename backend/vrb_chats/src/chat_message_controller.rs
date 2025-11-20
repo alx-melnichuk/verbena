@@ -1,5 +1,7 @@
 use std::{borrow::Cow, collections::HashMap, ops::Deref, time::Instant as tm};
 
+// use actix::{SystemService, fut};
+use actix::SystemService;
 use actix_web::{
     HttpResponse, delete, get,
     http::StatusCode,
@@ -7,6 +9,7 @@ use actix_web::{
     web::{self, Query},
 };
 use chrono::{DateTime, Duration, TimeZone, Utc};
+// use futures_util::FutureExt;
 use log::{Level::Info, error, info, log_enabled};
 use serde_json::json;
 use utoipa;
@@ -23,10 +26,9 @@ use crate::chat_message_orm::impls::ChatMessageOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
-    chat_message_models::{
+    chat_message::BlockClient, chat_message_models::{
         BlockedUser, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto, SortingBlockedUsersDto
-    },
-    chat_message_orm::ChatMessageOrm,
+    }, chat_message_orm::ChatMessageOrm, chat_ws_server::ChatWsServer
 };
 
 // 403 Access denied - insufficient user rights.
@@ -1091,12 +1093,40 @@ pub async fn delete_blocked_user(
         info!("delete_blocked_user() time: {}", format!("{:.2?}", timer.elapsed()));
     }
     if let Some(blocked_user_dto) = opt_blocked_user_mini_dto {
+        let room_id: i32 = 952;
+        let blocked_name = blocked_user_dto.nickname.clone();
+        send_unblock_ews(room_id, blocked_name.clone()).await;
+
         Ok(HttpResponse::Ok().json(blocked_user_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
+async fn send_unblock_ews(room_id: i32, blocked_name: String) {
+    let is_block = false;
+    let block_client = BlockClient(room_id, blocked_name.clone(), is_block);
+
+    eprintln!("\n_ChatWsServer::from_registry().send(block_client) block_client: {:?} ...\n", &block_client); // #
+    let _ = ChatWsServer::from_registry()
+        .send(block_client)
+        /*.then(move |res| {
+            if let Ok(is_in_chat) = res {
+                #[rustfmt::skip]
+                let str = if is_block {
+                    format!("{{ block: {}, is_in_chat: {} }}", &blocked_name, is_in_chat)
+                } else {
+                    format!("{{ unblock: {}, is_in_chat: {} }}", &blocked_name, is_in_chat)
+                };
+                eprintln!("\n_handler<AsyncResultBlockClient>() is_block: {is_block}, str: {str}_"); // #
+                // ctx.text(str);
+            }
+            fut::ready(())
+        })*/
+        // .wait(ctx)
+        .await;
+    eprintln!("\n_ChatWsServer::from_registry().send(block_client)...Ok\n"); // #
+}
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
