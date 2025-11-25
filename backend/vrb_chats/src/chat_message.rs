@@ -18,6 +18,15 @@ pub struct BlockSsn(
     pub bool, // is_in_chat
 );
 
+// ** Blocking a user by their nickname. (Session -> Server) **
+#[derive(Debug, Clone, Message)]
+#[rtype(result = "bool")] // is_in_chat
+pub struct BlockUser(
+    pub String, // owner_name
+    pub String, // client_name
+    pub bool,   // is_block
+);
+
 // ** Send a chat message to all clients in the room. (Server -> Session) **
 #[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
@@ -47,6 +56,7 @@ pub struct CountMembers(
 #[rtype(result = "(u64, usize)")] // (client_id, count)  // MAX 18_446_744_073_709_551_615u64
 pub struct JoinRoom(
     pub i32,                   // room_id
+    pub i32,                   // owner_id
     pub String,                // client_name
     pub Recipient<CommandSrv>, // client_session: SessionCommand
 );
