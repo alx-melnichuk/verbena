@@ -276,11 +276,12 @@ impl ChatWsSession {
             let is_owner = if opt_user_id.is_some() { opt_user_id.unwrap() == chat_access.stream_owner } else { false };
             // Get the "block" value for the given user.
             let is_blocked = if opt_user_id.is_some() { chat_access.is_blocked } else { true };
+            let owner_id = chat_access.stream_owner;
 
             let user_id = opt_user_id.unwrap_or(i32::default());
             debug!("handle_ews_join_add_task() room_id:{room_id}, user_name:{user_name}, is_owner:{is_owner}, is_blocked:{is_blocked}");
             // Send the "AsyncResultEwsJoin" command for execution.
-            addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked));
+            addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked, owner_id));
         });
         Ok(())
     }
@@ -382,6 +383,7 @@ struct AsyncResultEwsJoin(
     String, // user_name
     bool,   // is_owner
     bool,   // is_blocked
+    i32,    // owner_id
 );
 
 impl Message for AsyncResultEwsJoin {
@@ -397,7 +399,7 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
             // Send message about "leave"
             let _ = self.handle_ews_leave(ctx);
         }
-        let AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked) = msg;
+        let AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked, owner_id) = msg;
 
         self.user_id = user_id;
         self.user_name = user_name.clone();
@@ -405,7 +407,7 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
         self.is_blocked = is_blocked;
 
         // Then send a join message for the new room
-        let join_room_srv = JoinRoom(room_id, self.user_name.clone(), ctx.address().recipient());
+        let join_room_srv = JoinRoom(room_id, owner_id, self.user_name.clone(), ctx.address().recipient());
         // Send the "JoinRoom" command to the server.
         ChatWsServer::from_registry()
             .send(join_room_srv)
