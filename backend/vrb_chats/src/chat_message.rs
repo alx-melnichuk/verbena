@@ -22,7 +22,7 @@ pub struct BlockSsn(
 #[derive(Debug, Clone, Message)]
 #[rtype(result = "bool")] // is_in_chat
 pub struct BlockUser(
-    pub String, // owner_name
+    pub i32,    // owner_id
     pub String, // client_name
     pub bool,   // is_block
 );
