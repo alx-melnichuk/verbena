@@ -11,7 +11,7 @@ use crate::{
     chat_message::{BlockClient, BlockSsn, BlockUser, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
 };
 
-type Client = Recipient<CommandSrv>; // ChatMessage
+type Client = Recipient<CommandSrv>;
 
 #[derive(Debug)]
 pub struct ClientInfo {
@@ -25,34 +25,63 @@ pub struct RoomInfo {
     map: HashMap<u64, ClientInfo>,
 }
 
-impl RoomInfo {
-    pub fn add_client(&mut self, opt_client_id: Option<u64>, client_info: ClientInfo) -> (u64, usize) {
-        let mut client_id = opt_client_id.unwrap_or_else(rand::random);
-        loop {
-            if self.map.contains_key(&client_id) { client_id = rand::random(); } else { break; }
-        }
-        self.map.insert(client_id, client_info);
-        let count = self.map.len();
-        (client_id, count)
+/** Add a new client to the map of all clients. -> ("id" - new client ID, "count" - number of clients) */
+fn add_client_to_map(client_map: &mut HashMap<u64, ClientInfo>, client_info: ClientInfo) -> (u64, usize) {
+    let mut client_id = rand::random();
+    loop {
+        if client_map.contains_key(&client_id) { client_id = rand::random(); } else { break; }
     }
-    pub fn remove_client(&mut self, client_id: u64) -> Option<ClientInfo> {
-        self.map.remove(&client_id)
-    }
-    pub fn get_owner_id(&self) -> i32 {
-        self.owner_id
-    }
+    client_map.insert(client_id, client_info);
+    let count = client_map.len();
+    (client_id, count)
 }
-
-type Room = HashMap<u64, ClientInfo>;
+/** Remove a client from the map of all clients of this room. */
+fn remove_client_from_map(client_map: &mut HashMap<u64, ClientInfo>, client_id: u64) -> Option<ClientInfo> {
+    client_map.remove(&client_id)
+}
 
 // ** ChatWsServer **
 
 #[derive(Default)]
 pub struct ChatWsServer {
-    room_map: HashMap<i32, Room>,
-    rooms2_map: HashMap<i32, RoomInfo>,
-    owners2_map: HashMap<i32, HashSet<i32>>,
+    rooms_map: HashMap<i32, RoomInfo>,
+    owners_map: HashMap<i32, HashSet<i32>>, // Map<owner_id: i32, Set<room_id: i32>>
 }
+
+/** Get a room by ID (or create a new room) from the map of all rooms. */
+fn get_or_create_room(rooms_map: &mut HashMap<i32, RoomInfo>, room_id: i32, owner_id: i32) -> &mut RoomInfo {
+    if !rooms_map.contains_key(&room_id) {
+        let mut room_info = RoomInfo::default();
+        room_info.owner_id = owner_id;
+        rooms_map.insert(room_id, room_info);
+    }
+    rooms_map.get_mut(&room_id).unwrap()
+}
+/** Remove room from all rooms map. */
+fn remove_room(rooms_map: &mut HashMap<i32, RoomInfo>, room_id: i32) -> Option<RoomInfo> {
+    rooms_map.remove(&room_id)
+}
+
+/** Add a new room to the set for the specified owner. */
+fn add_room_to_owner(owners_map: &mut HashMap<i32, HashSet<i32>>, owner_id: i32, room_id: i32) {
+    if let Some(room_id_set) = owners_map.get_mut(&owner_id) {
+        if !room_id_set.contains(&room_id) {
+            room_id_set.insert(room_id);
+        }
+    } else {
+        owners_map.insert(owner_id, HashSet::from([room_id]));
+    }
+}
+/** Remove a room from the set for the specified owner. */
+fn remove_room_from_owner(owners_map: &mut HashMap<i32, HashSet<i32>>, owner_id: i32, room_id: i32) {
+    if let Some(room_id_set) = owners_map.get_mut(&owner_id) {
+        room_id_set.remove(&room_id);
+        if room_id_set.len() == 0 {
+            owners_map.remove(&owner_id);
+        }
+    }
+}
+
 
 impl ChatWsServer {
     // Take up room for changes.
@@ -83,78 +112,14 @@ impl ChatWsServer {
         self.room_map.insert(room_id, room);
         (count, id)
     }*/
-    // Get the number of clients in the room.
-    /*fn count_clients_in_room(&self, room_id: i32) -> usize {
-        let count = self.room_map.get(&room_id).map(|room| room.len()).unwrap_or(0);
-        count
-    }*/
-    /** Send a chat message to all members. exclude - IDs of members to whom the message should not be sent.  */
-    /*fn send _chat_message_to_clients(&mut self, room_id: i32, msg: &str, exclude: &[u64]) {
-        let opt_room = self.take_room(room_id);
-        if opt_room.is_none() {
-            return;
-        }
-        let mut room = opt_room.unwrap();
-        let command_srv = CommandSrv::Chat(ChatMsgSsn(msg.to_owned()));
-        for (id, client_info) in room.drain() {
-            let is_add = if exclude.contains(&id) {
-                true
-            } else {
-                let is_connect = client_info.client.connected();
-                if !is_connect {
-                    let user_name = client_info.name.clone();
-                    debug!("send chat_message_to_clients() room_id:{room_id}, user_name: {user_name}, client.connected(): false");
-                }
-                // If the client has not yet broken the connection, then send a message.
-                is_connect && client_info.client.try_send(command_srv.clone()).is_ok()
-            };
-            if is_add {
-                self.add_client_to_room(room_id, Some(id), client_info);
-            }
-        }
-    }*/
-    /// Create a new room.
-    fn get_or_create_room(&mut self, room_id: i32, owner_id: i32) -> &mut RoomInfo {
-        if !self.rooms2_map.contains_key(&room_id) {
-            let mut room_info = RoomInfo::default();
-            room_info.owner_id = owner_id;
-            self.rooms2_map.insert(room_id, room_info);
 
-            if let Some(owner_set) = self.owners2_map.get_mut(&owner_id) {
-                if !owner_set.contains(&room_id) {
-                    owner_set.insert(room_id);
-                }
-            } else {
-                self.owners2_map.insert(owner_id, HashSet::from([room_id]));
-            }
-        }
-        self.rooms2_map.get_mut(&room_id).unwrap()
+    /** Get the number of clients in the room. */
+    fn count_clients_in_room(&self, room_id: i32) -> usize {
+        self.rooms_map.get(&room_id).map(|room| room.map.len()).unwrap_or(0)
     }
-    fn get_mut_room(&mut self, room_id: i32) -> Option<&mut RoomInfo> {
-        self.rooms2_map.get_mut(&room_id)
-    }
-    /// Delete a room.
-    fn remove_room(&mut self, room_id: i32) {
-        if let Some(room_info) = self.rooms2_map.remove(&room_id) {
-            let owner_id = room_info.get_owner_id();
-            if let Some(owner_set) = self.owners2_map.get_mut(&owner_id) {
-                owner_set.remove(&room_id);
-                if owner_set.len() == 0 {
-                    self.owners2_map.remove(&owner_id);
-                }
-            }
-        }
-    }
-    // Take up room for changes.
-    /*fn take_room_info(&mut self, room_id: i32) -> Option<RoomInfo> {
-        let room_info = self.rooms2_map.get_mut(&room_id)?;
-        let mut room_info2 = std::mem::take(room_info);
-        room_info2.owner_id = room_info.owner_id;
-        Some(room_info2)
-    }*/
-    /// Send a message to all participants. (exclude - IDs of members to whom the message should not be sent.)
+    /** Send a message to all participants. (exclude - IDs of members to whom the message should not be sent.) */
     fn send_message_to_clients(&mut self, room_id: i32, msg: &str, exclude: &[u64]) {
-        let opt_room_info = self.get_mut_room(room_id);
+        let opt_room_info = self.rooms_map.get_mut(&room_id);
         if opt_room_info.is_none() {
             return;
         }
@@ -176,14 +141,10 @@ impl ChatWsServer {
             }
         }
         for client_id in buff_ids_to_delete {
-            room_info.map.remove(&client_id);
+            // Remove a client from the map of all clients of this room.
+            remove_client_from_map(&mut room_info.map, client_id);
         }
     }
-    /// Get the number of clients in the room.
-    fn count_clients_in_room2(&self, room_id: i32) -> usize {
-        self.rooms2_map.get(&room_id).map(|room_info| room_info.map.len()).unwrap_or(0)
-    }
-
 }
 
 impl SystemService for ChatWsServer {}
@@ -214,9 +175,9 @@ impl Handler<BlockClient> for ChatWsServer {
             return MessageResult(is_in_chat);
         }
         // Get a chat room by its name.
-        if let Some(room) = self.room_map.get(&room_id) {
+        if let Some(room_info) = self.rooms_map.get(&room_id) {
             // Loop through all chat participants.
-            for (_id, client_info) in room {
+            for (_id, client_info) in &room_info.map {
                 // Checking the chat participant name with the name to block.
                 if client_info.name.eq(&user_name) {
                     is_in_chat = true;
@@ -237,30 +198,25 @@ impl Handler<BlockUser> for ChatWsServer {
 
     fn handle(&mut self, msg: BlockUser, _ctx: &mut Self::Context) -> Self::Result {
         let mut is_in_chat = false;
-        let BlockUser(_owner_name, user_name, is_block) = msg;
-        eprintln!("\n_handler<BlockUser>() user_name: {user_name}, is_block:{is_block}\n");
+        let BlockUser(owner_id, user_name, is_block) = msg;
         if user_name.len() == 0 {
             return MessageResult(is_in_chat);
         }
-        let mut opt_recipient: Option<Recipient<CommandSrv>> = None;
-        for room in self.room_map.values() {
-            // Loop through all chat participants.
-            for (_id, client_info) in room {
-                eprintln!("_handler<BlockUser>() client_info.name:{}", &client_info.name); // #
-                // Checking the chat participant name with the name to block.
-                if client_info.name.eq(&user_name) {
-                    is_in_chat = true;
-                    opt_recipient = Some(client_info.client.clone());
-                    // client_info.client.do_send(CommandSrv::Block(BlockSsn(is_block, is_in_chat)));
-                    break;
+        let room_id_set: HashSet<i32> = match self.owners_map.get(&owner_id) {
+            Some(room_ids) => room_ids.clone(),
+            None => HashSet::new(),
+        };
+        is_in_chat = true;
+        for room_id in room_id_set {
+            if let Some(room_info) = self.rooms_map.get(&room_id) {
+                for (_client_id, client_info) in &room_info.map {
+                    // Checking the chat participant's name against the name to be unblocked/blocked.
+                    if client_info.name.eq(&user_name) {
+                        client_info.client.do_send(CommandSrv::Block(BlockSsn(is_block, is_in_chat)));
+                        break;
+                    }
                 }
             }
-            if opt_recipient.is_some() {
-                break;
-            }
-        }
-        if let Some(recipient) = opt_recipient {
-            recipient.do_send(CommandSrv::Block(BlockSsn(is_block, is_in_chat)));
         }
         debug!("handler<BlockUser>() user_name: {user_name}, is_block:{is_block}, is_in_chat:{is_in_chat}");
         MessageResult(is_in_chat)
@@ -274,7 +230,7 @@ impl Handler<CountMembers> for ChatWsServer {
 
     fn handle(&mut self, msg: CountMembers, _ctx: &mut Self::Context) -> Self::Result {
         let CountMembers(room_id) = msg;
-        let count = self.count_clients_in_room2(room_id);
+        let count = self.count_clients_in_room(room_id);
         debug!("handler<CountMembers>() room_id: {room_id}, room.len(): {count}");
         MessageResult(count)
     }
@@ -289,33 +245,20 @@ impl Handler<JoinRoom> for ChatWsServer {
         let JoinRoom(room_id, owner_id, user_name, client) = msg;
         let name = user_name.clone();
         let member = name.clone();
-        // Create a new room with "room_id" or return an existing one.
-        let room_info = self.get_or_create_room(room_id, owner_id);
-        // Add a new client to the room. ("count" - number of members, "id" - new member ID)
-        let (id, count) = room_info.add_client(None, ClientInfo { name, client });
+        // Get a room by ID (or create a new room) from the map of all rooms.
+        let room_info = get_or_create_room(&mut self.rooms_map, room_id, owner_id);
+        // Add a new room for the specified owner.
+        add_room_to_owner(&mut self.owners_map, owner_id, room_id);
+        // Add a new client to the room. 
+        let (id, count) = add_client_to_map(&mut room_info.map, ClientInfo { name, client });
         #[rustfmt::skip]
         let join_str = to_string(&JoinEWS { join: room_id, member, count, is_owner: None, is_blocked: None }).unwrap();
         debug!("handler<JoinRoom>() room_id: {room_id}, user_name: {user_name}, room.len(): {count} Ok!");
         // Send a chat message to all members.
-        // #self.send_ chat_message_to_clients(room_id, &join_str, &[id]);
         self.send_message_to_clients(room_id, &join_str, &[id]);
         
-        dbg!("handler<JoinRoom>()", &self.rooms2_map, "handler<JoinRoom>()", &self.owners2_map); // #
         MessageResult((id, count))
     }
-    /*fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
-        let JoinRoom(room_id, user_name, client) = msg;
-        let name = user_name.clone();
-        let member = name.clone();
-        // Add a client to the room. (count - number of members, id - new member ID)
-        let (count, id) = self.add_client_to_room(room_id, None, ClientInfo { name, client });
-        #[rustfmt::skip]
-        let join_str = to_string(&JoinEWS { join: room_id, member, count, is_owner: None, is_blocked: None }).unwrap();
-        debug!("handler<JoinRoom>() room_id: {room_id}, user_name: {user_name}, room.len(): {count}");
-        // Send a chat message to all members.
-        self.send_chat_message_to_clients(room_id, &join_str, &[id]);
-        MessageResult((id, count))
-    }*/
 }
 
 // ** Leave the client from the chat room. (Session -> Server) **
@@ -327,10 +270,11 @@ impl Handler<LeaveRoom> for ChatWsServer {
         let room_id = msg.0;
         let client_id = msg.1;
         let user_name = msg.2;
+        let mut opt_owner_id: Option<i32> = None;
         // Get a room by its ID.
-        if let Some(room_info) = self.get_mut_room(room_id) {
-            // Remove client from this room.
-            let opt_recipient = room_info.remove_client(client_id);
+        if let Some(room_info) = self.rooms_map.get_mut(&room_id) {
+            // Remove a client from the map of all clients of this room.
+            let opt_recipient = remove_client_from_map(&mut room_info.map, client_id);
             // Get the number of clients in the room.
             let count = room_info.map.len();
             let member = user_name.clone();
@@ -338,12 +282,13 @@ impl Handler<LeaveRoom> for ChatWsServer {
             debug!("handler<LeaveRoom>() room_id: {room_id}, user_name: {user_name}, room.len(): {count}, client_id: {client_id}");
             #[rustfmt::skip]
             let leave_str = to_string(&LeaveEWS { leave: room_id, member, count }).unwrap();
-            
-            if count > 0 { // Send a chat message to all members.
-                // #self.send_ chat_message_to_clients(room_id, &leave_str, &[]);
+
+            // If there are no clients left for a given room, it must be removed from the map of all rooms.
+            if count == 0 {
+                opt_owner_id = Some(room_info.owner_id);
+            } else { // count > 0
+                // Send a chat message to all members.
                 self.send_message_to_clients(room_id, &leave_str, &[]);
-            } else { // If there are no clients left in the room, then delete this room.
-                self.remove_room(room_id);
             }
 
             if let Some(client_info) = opt_recipient {
@@ -351,36 +296,14 @@ impl Handler<LeaveRoom> for ChatWsServer {
                     client_info.client.do_send(CommandSrv::Chat(ChatMsgSsn(leave_str.to_owned())));
                 }
             }
-            dbg!("handler<LeaveRoom>()", &self.rooms2_map, "handler<LeaveRoom>()", &self.owners2_map); // #
+        }
+        if let Some(owner_id) = opt_owner_id {
+            // If there are no clients left in the room, then delete this room from all rooms map.
+            remove_room(&mut self.rooms_map, room_id);
+            // Remove a room from the set for the specified owner.
+            remove_room_from_owner(&mut self.owners_map, owner_id, room_id);
         }
     }
-    /*fn handle(&mut self, msg: LeaveRoom, _ctx: &mut Self::Context) {
-        let room_id = msg.0;
-        let client_id = msg.1;
-        let user_name = msg.2;
-
-        if let Some(room) = self.room_map.get_mut(&room_id) {
-            // Remove the client from the room.
-            let opt_recipient = room.remove(&client_id);
-            // Get the number of clients in the room.
-            let count = room.len();
-            let member = user_name.clone();
-            #[rustfmt::skip]
-            debug!("handler<LeaveRoom>() room_id: {room_id}, user_name: {user_name}, room.len(): {count}, room.remove(client_id): {} ",
-                opt_recipient.is_some());
-            #[rustfmt::skip]
-            let leave_str = to_string(&LeaveEWS { leave: room_id, member, count }).unwrap();
-            // Send a chat message to all members.
-            self.send_chat_message_to_clients(room_id, &leave_str, &[]);
-
-            if let Some(client_info) = opt_recipient {
-                if client_info.client.connected() {
-                    debug!("handler<LeaveRoom>() client_info.client.connected(): true");
-                    client_info.client.do_send(CommandSrv::Chat(ChatMsgSsn(leave_str.to_owned())));
-                }
-            }
-        }
-    }*/
 }
 
 // ** Send a text message to all clients in the room. (Server -> Session) **
