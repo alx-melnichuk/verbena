@@ -175,6 +175,7 @@ fn parse_json_to_i32(json_value: &serde_json::Value) -> Result<i32, &'static str
 
 // ** Block clients in a room by name. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct BlockEWS {
     pub block: String,
     pub is_in_chat: bool, // The user is in chat now.
@@ -194,6 +195,7 @@ pub struct EchoEWS {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct ErrEWS {
     pub err: u16,
     pub code: String,
