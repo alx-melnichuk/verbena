@@ -207,18 +207,24 @@ impl Handler<BlockUser> for ChatWsServer {
             None => HashSet::new(),
         };
         is_in_chat = true;
+        let mut is_exit = false;
+
         for room_id in room_id_set {
             if let Some(room_info) = self.rooms_map.get(&room_id) {
                 for (_client_id, client_info) in &room_info.map {
                     // Checking the chat participant's name against the name to be unblocked/blocked.
                     if client_info.name.eq(&user_name) {
                         client_info.client.do_send(CommandSrv::Block(BlockSsn(is_block, is_in_chat)));
+                        is_exit = true; 
                         break;
                     }
                 }
             }
+            if is_exit {
+                break;
+            }
         }
-        debug!("handler<BlockUser>() user_name: {user_name}, is_block:{is_block}, is_in_chat:{is_in_chat}");
+        debug!("handler<BlockUser>() owner_id: {owner_id}, user_name: {user_name}, is_block:{is_block}, is_in_chat:{is_in_chat}");
         MessageResult(is_in_chat)
     }
 }
