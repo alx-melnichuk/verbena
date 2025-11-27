@@ -15,7 +15,7 @@ pub mod chat_ws_msg;
 pub mod chat_ws_prm;
 pub mod chat_ws_server;
 pub mod chat_ws_session;
-pub mod chat_ws_test_1;
+pub mod chat_ws_test_base;
 pub mod chat_ws_test_blck;
 pub mod chat_ws_test_msg;
 pub mod chat_ws_test_prm;
