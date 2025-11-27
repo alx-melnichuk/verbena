@@ -1,6 +1,6 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{App, web::Bytes};
+    use actix_web::{App, http::StatusCode, web::Bytes};
     use actix_web_actors::ws::{Frame::Text as FrameText, Message::Text as MessageText};
     use futures_util::{SinkExt, StreamExt}; // this is needed for "send" method in Framed
     use serde_json::to_string;
@@ -12,9 +12,9 @@ mod tests {
 
     use crate::{
         chat_event_ws::{BlockEWS, JoinEWS, LeaveEWS, UnblockEWS},
-        chat_message_orm::tests::ChatMessageOrmTest,
-        chat_ws_controller::get_ws_chat,
-        chat_ws_tools::{get_err400, get_err403, get_err404, get_err406},
+        chat_message_controller::{delete_blocked_user, tests as ChatMessageCtrlTest},
+        chat_message_models::DeleteBlockedUserDto, chat_message_orm::tests::ChatMessageOrmTest, chat_ws_controller::get_ws_chat, 
+        chat_ws_tools::{get_err400, get_err403, get_err404, get_err406}
     };
 
     const URL_WS: &str = "/ws";
@@ -291,4 +291,80 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(value)));
     }
 
+    #[actix_web::test]
+    async fn test_get_ws_chat_ews_unblock_from_blocked_users_ok() {
+        // Create a test server without listening on a port.
+        let mut srv = actix_test::start(move || {
+            let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+            let user2_id = data_u.0.get(1).unwrap().id;
+            let user4_id = data_u.0.get(3).unwrap().id;
+            // Add session (num_token) for user2, user4.
+            data_u.1.get_mut(1).unwrap().num_token = Some(config_jwt::tests::get_num_token(user2_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
+            let data_cm = ChatMessageOrmTest::chat_messages(2);
+            App::new()
+                .service(get_ws_chat)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .service(delete_blocked_user)
+        });
+
+        // Open a websocket connection to the test server.
+        let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
+
+        let (profile_vec, _session_vec) = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let stream1_id = ChatMessageOrmTest::stream_ids().get(0).unwrap().clone(); // live: true
+
+        let user1_id = profile_vec.get(0).unwrap().id;
+        let member1 = profile_vec.get(0).unwrap().nickname.clone();
+        let token1 = config_jwt::tests::get_token(user1_id);
+
+        // Join user1.
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1.clone()).into());
+        framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let value = to_string(&JoinEWS { 
+            join: stream1_id, member: member1.clone(), count: 1, is_owner: Some(true), is_blocked: Some(false) }).unwrap();
+        assert_eq!(item, FrameText(Bytes::from(value)));
+
+        // Open a websocket connection to the test server.
+        let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
+        let user4_id = profile_vec.get(3).unwrap().id;
+        let member4 = profile_vec.get(3).unwrap().nickname.clone();
+        let token4 = config_jwt::tests::get_token(user4_id);
+
+        // Join user4.
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token4).into());
+        framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let value = to_string(&JoinEWS { 
+            join: stream1_id, member: member4.clone(), count: 2, is_owner: Some(false), is_blocked: Some(true) }).unwrap();
+        assert_eq!(item, FrameText(Bytes::from(value)));
+        // Message to user1 about user4 joining.
+        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let value = to_string(&JoinEWS { 
+            join: stream1_id, member: member4.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
+        assert_eq!(item, FrameText(Bytes::from(value)));
+
+        // Call the unblock method for the user (user4_id) who is in the chat.
+        #[rustfmt::skip]
+        let resp = srv.delete("/api/blocked_users")
+            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .send_json(&DeleteBlockedUserDto { blocked_id: Some(user4_id), blocked_nickname: None })
+            .await.unwrap();
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        // Check that the chat user (user4_id) will receive a message from the chat about the block being lifted.
+        #[rustfmt::skip]
+        let value = to_string(&UnblockEWS { unblock: member4.clone(), is_in_chat: true }).unwrap();
+        // Message to user4.
+        let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        assert_eq!(item, FrameText(Bytes::from(value)));
+    }
 }
