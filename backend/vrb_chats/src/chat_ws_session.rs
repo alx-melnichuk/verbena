@@ -23,7 +23,7 @@ pub const SPECIFIED_USER_NOT_FOUND: &str = "The specified user was not found.";
 // ** ChatWsSession **
 
 pub struct ChatWsSession {
-    id: u64,
+    id: u32, // client_id
     room_id: i32,
     user_id: i32,
     user_name: String,
@@ -99,7 +99,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
 
 impl ChatWsSession {
     pub fn new(
-        id: u64,
+        id: u32,
         room_id: i32,
         user_id: i32,
         user_name: String,

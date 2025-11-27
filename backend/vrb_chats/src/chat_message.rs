@@ -34,7 +34,6 @@ pub struct ChatMsgSsn(
     pub String, // message
 );
 
-
 // ** Commands that have one handler. (Session -> Server) **
 #[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
@@ -46,14 +45,14 @@ pub enum CommandSrv {
 
 // ** Count of clients in the room. (Session -> Server) **
 #[derive(Debug, Clone, Message)]
-#[rtype(result = "usize")] // MAX 18_446_744_073_709_551_615usize
+#[rtype(result = "usize")] // usize::MAX = 18_446_744_073_709_551_615
 pub struct CountMembers(
     pub i32, // room_id
 );
 
 // ** Join the client to the chat room. (Session -> Server) **
 #[derive(Debug, Clone, Message)]
-#[rtype(result = "(u64, usize)")] // (client_id, count)  // MAX 18_446_744_073_709_551_615u64
+#[rtype(result = "(u32, usize)")] // (client_id, count)  // u32::MAX = 4_294_967_295
 pub struct JoinRoom(
     pub i32,                   // room_id
     pub i32,                   // owner_id
@@ -66,7 +65,7 @@ pub struct JoinRoom(
 #[rtype(result = "()")]
 pub struct LeaveRoom(
     pub i32,    // room_id
-    pub u64,    // client_id
+    pub u32,    // client_id
     pub String, // client_name
 );
 

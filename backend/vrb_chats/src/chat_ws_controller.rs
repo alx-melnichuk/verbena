@@ -499,12 +499,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// `{ "prmBool": "param1_3", "valBool": "" }`<br/>
 /// *Server* :<br/>
 /// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'prmBool'" }`<br/>
-/// 
+///
 /// *Client* :<br/>
 /// `{ "prmBool": "param1_4", "valBool": false }`<br/>
 /// *Server* :<br/>
 /// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
-/// 
+///
 /// - ## The "PrmInt" command.
 /// Send a named parameter of type "integer" to a chat member. Available only to authorized users.
 ///
@@ -548,7 +548,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// `{ "prmInt": "param2_4", "valInt": 1 }`<br/>
 /// *Server* :<br/>
 /// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
-/// 
+///
 /// - ## The "PrmStr" command.
 /// Send a named parameter of type "string" to a chat member. Available only to authorized users.
 ///
@@ -587,7 +587,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// `{ "prmStr": "param3_3", "valStr": "text3_3" }`<br/>
 /// *Server* :<br/>
 /// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
-/// 
+///
 #[utoipa::path(
     responses(
         (status = 101, description = "Connecting a websocket to a server."),
@@ -609,7 +609,7 @@ pub async fn get_ws_chat(
         config_jwt, chat_message_orm_app, user_orm_app);
 
     let chat_ws_session = ChatWsSession::new(
-        u64::default(),    // id: u64,
+        u32::default(),    // id: u32 (client_id),
         i32::default(),    // room_id: i32,
         i32::default(),    // user_id: i32,
         String::default(), // user_name: String,
