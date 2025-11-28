@@ -1,6 +1,6 @@
 [package]
 name = "vrb_profiles"
-version = "0.1.0"
+version = "0.4.0"
 edition = "2024"
 description = "Library for working with the 'profile' entity (user)."
 keywords = ["vrb_profiles"]
@@ -20,10 +20,10 @@ mime = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 utoipa = { workspace = true }
-vrb_authent = { version = "0.1", path="../vrb_authent" }
-vrb_common = { version = "0.1", path="../vrb_common" }
-vrb_dbase = { version = "0.1", path="../vrb_dbase" }
-vrb_tools = { version = "0.1", path="../vrb_tools" }
+vrb_authent = { version = "0.4", path="../vrb_authent" }
+vrb_common = { version = "0.4", path="../vrb_common" }
+vrb_dbase = { version = "0.4", path="../vrb_dbase" }
+vrb_tools = { version = "0.4", path="../vrb_tools" }
 
 [features]
 # default = ["test", "mockdata"]
@@ -33,5 +33,5 @@ mockdata = []
 [dev-dependencies]
 # To test a web form with data and a file.
 actix-multipart-test = "0.0.3"
-vrb_authent = { version = "0.1", path="../vrb_authent", features = ["mockdata"] }
+vrb_authent = { version = "0.4", path="../vrb_authent", features = ["mockdata"] }
 
