@@ -1,35 +1,43 @@
-<div class="psp-title">
-  {{ 'panel-stream-params.title' | translate }} {{ title }}
-</div>
-<div class="psp-tags">
-  <span>{{ 'panel-stream-params.tags' | translate }}</span>
-  @for (tag of tags; track tag) {
-    <span class="psp-tag">{{ tag }}</span>
-  }
-</div>
-<div class="psp-start-date-time">
-  <span>{{ 'panel-stream-params.start' | translate }}</span>
-  <span psp-mr-lf-1>{{ innStartDate }}</span>
-  <span psp-mr-lf-1>{{ innStartTime }}</span>
-</div>
-<div class="psp-props">
-  <svg psp-mr-lf-1 class="psp-users-group psp-ver-md">
-    <use href="assets/icons/lib-concept/panel-stream-params/users-group-bin.svg#users-group-bin"></use>
-  </svg>
-  <span psp-mr-lf-1 class="psp-count psp-ver-md">{{ countOfViewer || 0 }}</span>
-  <svg psp-mr-lf-1 class="psp-clock-5hours psp-ver-md">
-    <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
-  </svg>
-  <span psp-mr-lf-1 class="psp-timer psp-ver-md">
-    <app-date-time-timer [isActive]="true" [startDate]="innStartDateTime">
-    </app-date-time-timer>
-  </span>
+<div class="psp-param">
+    <span psp-mr-r0_5 class="psp-param-label">
+        {{ (!streamStarted ? 'panel-stream-params.start' :'panel-stream-params.started') | translate }}
+    </span>
+    <span psp-mr-r0_5>{{ (streamStarted || streamStarttime)  | dateTimeFormat:locale:formatDateTime }} </span>
 </div>
 
-<!-- <div class="psp-author">
-  <img class="psp-author-avatar" [src]="avatar || '/assets/images/icon_man.png'" alt="image" />
-</div> -->
-<!-- <div class="hd-profile-avatar">
-  <span>{{ profileDto.nickname }}</span>
-  <img class="hd-avatar" [src]="profileDto.avatar || '/assets/images/icon_man.png'" alt="image" />
-</div> -->
+<div class="psp-param">
+    <span psp-mr-r0_5>
+        <svg psp-mr-r0_5 class="psp-icon-users psp-middle">
+            <use href="assets/icons/lib-concept/panel-stream-params/users-group-bin.svg#users-group-bin"></use>
+        </svg>
+        <span class="psp-middle">{{ countOfViewer || 0 }}</span>
+    </span>
+    @if (timerIsShow) {
+        <span psp-mr-r0_5 class="psp-clock">
+            <svg psp-mr-r0_5 class="psp-icon-clock">
+                <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
+            </svg>
+            <app-time-tracking
+                [initValue]="timerValue"
+                [isActive]="timerActive" 
+                [labelDays]="labelDays"
+                [locale]="locale">
+            </app-time-tracking>
+        </span>
+    }
+</div>
+
+@if (!!streamPaused && !streamStopped) {
+  <div class="psp-param">
+    <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.paused' | translate }}</span>
+    <span psp-mr-r0_5>{{ streamPaused | dateTimeFormat:locale:formatDateTime }} </span>
+  </div>
+}
+
+@if (!!streamStopped) {
+    <div class="psp-param">
+      <span psp-mr-r0_5 class="psp-param-label">{{ 'panel-stream-params.stopped' | translate }}</span>
+      <span psp-mr-r0_5>{{ streamStopped | dateTimeFormat:locale:formatDateTime }} </span>
+    </div>
+}
+  

@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, Component, EventEmitter, HostBinding, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -62,8 +62,7 @@ export class FieldFileUploadComponent implements OnChanges {
     public availableFileTypes: string = '';
     public availableMaxFileSize: string = '';
 
-    constructor(private translate: TranslateService) {
-    }
+    private translate: TranslateService = inject(TranslateService);
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['accepts']) {

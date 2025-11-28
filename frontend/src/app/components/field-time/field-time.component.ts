@@ -59,8 +59,6 @@ export class FieldTimeComponent implements OnChanges, ControlValueAccessor, Vali
     public innMinLimit: string | null = null;
     public innMaxLimit: string | null = null;
 
-    constructor() { }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['min'] || !!changes['max']) {
             const { min, minLimit } = this.getValueMin(this.min);
@@ -118,9 +116,9 @@ export class FieldTimeComponent implements OnChanges, ControlValueAccessor, Vali
         const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
         for (let index = 0; index < errorsProps.length && !result; index++) {
             const error: string = errorsProps[index];
-            result = !result && 'required' === error ? 'Validation.time:required' : result;
-            result = !result && 'min' === error ? 'Validation.time:min' : result;
-            result = !result && 'max' === error ? 'Validation.time:max' : result;
+            result = !result && 'required' === error ? 'ExpectationFailed.time:required' : result;
+            result = !result && 'min' === error ? 'ExpectationFailed.time:min' : result;
+            result = !result && 'max' === error ? 'ExpectationFailed.time:max' : result;
         }
         return result;
     }

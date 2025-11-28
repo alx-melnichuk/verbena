@@ -10,6 +10,7 @@ import { COLOR_SCHEME_LIST, ENV_IS_PROD, LOCALE_EN, LOCALE_LIST, SCHEME_DARK, SC
 import { LocaleService } from './locale.service';
 import { ROUTE_LOGIN } from './routes';
 
+export const THEME = 'theme';
 const COLOR_SCHEME = 'color-scheme';
 
 @Injectable({
@@ -40,11 +41,20 @@ export class InitializationService {
         this.translate.addLangs(LOCALE_LIST);
         this.translate.setDefaultLang(LOCALE_EN);
 
-        const locale = this.currLocale || this.getBrowserLanguage(LOCALE_EN);
-        const index = LOCALE_LIST.findIndex((item: string) => item.toLowerCase() == locale.toLowerCase());
-        const language = (index != 1 ? LOCALE_LIST[index] : LOCALE_EN);
-
-        return this.localeService.setLocale(language);
+        const localeFromLocalStorage = this.localeService.getLocaleFromLocalStorage();
+        let locale: string | null = this.currLocale || localeFromLocalStorage;
+        if (!!locale) {
+            locale = this.localeService.findLocale(LOCALE_LIST, locale);
+        }
+        if (!locale) {
+            const languages = this.getBrowserLanguages();
+            for (let index = 0; index < languages.length && !locale; index++) {
+                locale = this.localeService.findLocale(LOCALE_LIST, languages[index]);
+            }
+        }
+        locale = locale || LOCALE_EN;
+        console.log(`#initTranslate() localeService.setLocale(${locale});`); // #
+        return this.localeService.setLocale(locale);
     }
 
     public async initSession(): Promise<void> {
@@ -60,6 +70,7 @@ export class InitializationService {
                 if (!!locale && this.currLocale != locale) {
                     await this.localeService.setLocale(locale);
                 }
+                // You cannot set a color scheme because it requires a Render. This is done in the App constructor.
             } catch {
                 window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
             }
@@ -68,6 +79,7 @@ export class InitializationService {
     }
 
     // ** Theme **
+
     public getColorScheme(): string | null {
         return this.currColorScheme;
     }
@@ -93,18 +105,17 @@ export class InitializationService {
                 this.document.documentElement.style.setProperty('--' + COLOR_SCHEME, scheme);
                 renderer.addClass(this.document.documentElement, scheme);
             }
+            window.localStorage.setItem(THEME, theme);
         }
+    }
+
+    public getColorSchemeFromLocalStorage(): string | null {
+        return localStorage.getItem(THEME);
     }
 
     // ** Private Api **
 
-    private getBrowserLanguage(defaultValue: string): string {
-        if (typeof window === 'undefined' || typeof window.navigator === 'undefined') {
-            return defaultValue;
-        }
-        const wn = window.navigator as any;
-        const firstOnList = Array.isArray(wn.languages) ? wn.languages[0] : undefined;
-        const lang = wn.language || firstOnList || wn.browserLanguage || wn.userLanguage || defaultValue;
-        return lang;
+    private getBrowserLanguages(): string[] {
+        return (window.navigator as any).languages || [];
     }
 }

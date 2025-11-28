@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, ViewEncapsulation
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -40,8 +40,7 @@ export class UniquenessCheckComponent implements UniquenessCheck {
 
     public spinnerDiameter = UC_SPINNER_DIAMETER;
 
-    constructor(private changeDetectorRef: ChangeDetectorRef) {
-    }
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     // ** Public API **
 
@@ -53,12 +52,12 @@ export class UniquenessCheckComponent implements UniquenessCheck {
         }
         this.isUniquenessError = false;
         this.isChecking = true;
-        this.changeDetectorRef.markForCheck();
+        this.changeDetector.markForCheck();
         this.checkUniquenessFn(value)
             .then((response: boolean) => this.isUniquenessError = !response)
             .finally(() => {
                 this.isChecking = false;
-                this.changeDetectorRef.markForCheck();
+                this.changeDetector.markForCheck();
             });
     }
 

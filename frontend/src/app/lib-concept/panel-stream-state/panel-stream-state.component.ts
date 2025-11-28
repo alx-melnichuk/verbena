@@ -1,8 +1,8 @@
 import {
-    ChangeDetectionStrategy, Component, ElementRef, Input, OnChanges, OnInit, Renderer2, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, Component, ElementRef, inject, Input, OnChanges, OnInit, Renderer2, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { StreamState } from 'src/app/lib-stream/stream-api.interface';
 import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
@@ -13,7 +13,7 @@ const ATTR_STATE = 'state';
     selector: 'app-panel-stream-state',
     exportAs: 'appPanelStreamState',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, TranslatePipe],
     templateUrl: './panel-stream-state.component.html',
     styleUrl: './panel-stream-state.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -23,6 +23,8 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
     @Input()
     public streamState: StreamState | null | undefined = null;
 
+    private renderer: Renderer2 = inject(Renderer2);
+
     public strmStWaiting: StreamState = StreamState.waiting;
     public strmStPreparing: StreamState = StreamState.preparing;
     public strmStStarted: StreamState = StreamState.started;
@@ -31,18 +33,15 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
 
     public valueText: string | null = null;
 
-    constructor(
-        private renderer: Renderer2,
-        public hostRef: ElementRef<HTMLElement>,
-        private translateService: TranslateService,
-    ) {
+
+    constructor(public hostRef: ElementRef<HTMLElement>) {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['streamState']) {
-            const streamState = this.streamState || StreamState.waiting;
-            HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_STATE, streamState);
-            this.valueText = this.getValueText(streamState);
+            this.streamState = this.streamState || StreamState.waiting;
+            HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_STATE, this.streamState);
+            this.valueText = this.getValueText(this.streamState);
         }
     }
 
@@ -62,6 +61,6 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
             case StreamState.paused: res = 'stream_state.has_paused'; break;
             case StreamState.stopped: res = 'stream_state.has_ended'; break;
         }
-        return (!!res ? this.translateService.instant(res) : '');
+        return res;
     }
 }

@@ -26,9 +26,6 @@ export class FooterComponent {
 
     linkLogin = ROUTE_LOGIN;
 
-    constructor() {
-    }
-
     // ** Public API **
 
 }

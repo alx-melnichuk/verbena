@@ -64,8 +64,6 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
     private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
     private localeError: string | null = null;
 
-    constructor() { }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired']) {
             this.prepareFormGroup();
@@ -144,12 +142,12 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
         const errorList2 = (idxRequired > -1 ? errorList.splice(idxRequired, 1) : errorList);
         for (let index = 0; index < errorList2.length && !result; index++) {
             const error: string = errorList2[index];
-            result = !result && 'matDatepickerParse' === error ? 'Validation.date:invalid_format' : result;
-            result = !result && 'matDatepickerMin' === error ? 'Validation.date:minDate' : result;
-            result = !result && 'matDatepickerMax' === error ? 'Validation.date:maxDate' : result;
+            result = !result && 'matDatepickerParse' === error ? 'ExpectationFailed.date:invalid_format' : result;
+            result = !result && 'matDatepickerMin' === error ? 'ExpectationFailed.date:minDate' : result;
+            result = !result && 'matDatepickerMax' === error ? 'ExpectationFailed.date:maxDate' : result;
         }
         if (!result && idxRequired > -1) {
-            result = 'Validation.date:required';
+            result = 'ExpectationFailed.date:required';
         }
         return result;
     }

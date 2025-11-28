@@ -20,6 +20,7 @@
     "profile": "Profile",
     "stream_list": "My streams",
     "stream_create": "Create stream",
+    "banned": "Banned",
     "concept_list": "View",
     "my_follows_": "My follows",
     "theme": "Theme",
@@ -48,9 +49,9 @@
     "dark-orange-magenta": "dark orange",
     "dark-magenta-cyan": "dark magenta"
   },
-  "Forbidden": {
-    "status": 403,
-    "access_denied" : "Access is denied."
+  "BadRequest": {
+    "status": 400,
+    "parameter_not_defined": "Parameter is not defined."
   },
   "Unauthorized": {
     "status": 401,
@@ -61,17 +62,27 @@
     "nickname_or_email_incorrect" : "The nickname or email address is incorrect.",
     "password_incorrect" : "The password specified is incorrect."
   },
+  "Forbidden": {
+    "status": 403,
+    "access_denied" : "Access is denied.",
+    "block_on_sending_messages": "The user has been blocked from sending messages.",
+    "stream_owner_rights_missing": "The user does not have stream owner rights."
+  },  
   "NotFound": {
     "status": 404,
     "registration_not_found" : "An record for registering a new user was not found.",
     "user_not_found" : "User not found.",
-    "recovery_not_found" : "An record to recover the user's password was not found."
+    "recovery_not_found" : "An record to recover the user's password was not found.",
+    "stream_not_found": "The specified stream was not found.",
+    "chat_message_not_found": "Current user's message not found."
   },
   "NotAcceptable": {
     "status": 406,
     "finish_date_less_start_date" : "The finish date \"{{ invalidPeriod.streamPeriodFinish }}\" is less than the start date \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Error deserializing field \"tag\".",
-    "session_not_exist" : "There is no session for this user.",
+    "session_not_found": "Session not found for this user.",
+    "profile_not_found": "Profile not found for this user.",
+    "was_no_join_command": "The user has not joined the room yet.",
     "params_not_specified": "Parameters not specified",
     "invalid_stream_state": "Invalid stream state transition from \"{{ invalidState.oldState }}\" to \"{{ invalidState.newState }}\"."
   },
@@ -79,14 +90,16 @@
     "status": 409,
     "invalid_hash" : "Invalid password hash value.",
     "email_already_use" : "This email is already in use or is being registered.",
-    "nickname_already_use" : "This nickname is already in use or is being registered."
+    "nickname_already_use" : "This nickname is already in use or is being registered.",
+    "was_already_join_to_room": "The user has already joined the room.",
+    "stream_not_active": "The specified stream is not active."
   },
-  "ContentTooLarge": {
+  "PayloadTooLarge": {
     "status": 413,
     "finish_date_exceeds_limit" : "The finish date \"{{ periodTooLong.actualPeriodFinish }}\" of the search period exceeds the limit \"{{ periodTooLong.periodMaxNumberDays }}\".",
     "invalid_file_size" : "File size ({{ invalidFileSize.actualFileSize }}) exceeds max ({{ invalidFileSize.maxFileSize }})."
   },
-  "UnsupportedType": {
+  "UnsupportedMediaType": {
     "status": 415,
     "invalid_file_type" : "File type MIME upload ({{ invalidFileType.actualFileType }}) is not in the list of available ones ({{ invalidFileType.validFileType }})."
   },
@@ -94,8 +107,9 @@
     "status": 416,
     "parsing_type_not_supported" : "The data type is not supported during parsing."
   },
-  "Validation": {
+  "ExpectationFailed": {
     "status": 417,
+    "description": "Validation",
     "new_password:required" : "The \"newPassword\" field is required.",
     "new_password:min_length" : "The \"newPassword\"field must have at least {{ minlength.requiredLength }} characters.",
     "new_password:max_length" : "The \"newPassword\" field must have no more {{ maxlength.requiredLength }} characters.",
@@ -140,7 +154,10 @@
     "locale:min_length" : "The \"locale\" field must have at least {{ minlength.requiredLength }} characters.",
     "locale:max_length" : "The \"locale\" field must have no more {{ maxlength.requiredLength }} characters.",
     "user_role:invalid_value": "Invalid value for \"user role\" ({{ invalid.actualValue }}).",
-    "no_fields_to_update": "There are no fields to update. Valid names: {{ noRequiredFields.validNames }}."
+    "no_fields_to_update": "There are no fields to update. Valid names: {{ noRequiredFields.validNames }}.",
+    "message:required": "The \"message\" field is required.",
+    "message:min_length" : "The \"message\" field must have at least {{ minlength.requiredLength }} characters.",
+    "message:max_length" : "The \"message\" field must have no more {{ maxlength.requiredLength }} characters."
   },
   "UnprocessableEntity": {
     "status": 422,
@@ -153,12 +170,14 @@
     "error_upload_file" : "Error uploading file",
     "error_hashing_password" : "Error when hashing password"
   },
-  "Blocking": {
+  "VariantAlsoNegotiates": {
     "status": 506,
+    "description": "Blocking",
     "error_waiting_for_operations" : "An error occurred while waiting for the operation to complete."
   },
-  "Database": {
+  "InsufficientStorage": {
     "status": 507,
+    "description": "Database",
     "database_query_error" : "Error executing database query."
   },
   "NotExtended": {
@@ -173,17 +192,9 @@
   "field-date": {
     "label": "Date "
   },
-  "field-descript": {
-    "label": "Description"
-  },
-  "field-email": {
-    "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
-    "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",
-    "label": "Email "
-  },
   "field-file-upload": {
     "drag_files_or_browse": "Select file or drag file here.",
-    "supported_file_types": "Supported file types: {{validTypes}}.",
+    "supported_file_types": "Supported file types: {{validTypes}} (without transparency).",
     "upload_up_to": "Upload up to {{maxFileSize}}.",
     "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}} B ({{maxFileSizeShort}})."
@@ -192,8 +203,9 @@
     "label": "Image file",
     "remove_image": "Remove this image"
   },
-  "field-nickname": {
-    "label": "Nickname ",
+  "field-input": {
+    "email_label": "Email ",
+    "nickname_label": "Nickname ",
     "nickname_hint": "Used: lowercase letters, uppercase letters, numbers and underscores. Minimum 3 characters."
   },
   "field-password": {
@@ -203,14 +215,14 @@
   "field-locale": {
     "label": "Locale "
   },
+  "field-message": {
+    "editing_msg": "Editing a message"
+  },
   "field-theme": {
     "label": "Color theme "
   },
   "field-time": {
     "label": "Time "
-  },
-  "field-title": {
-    "label": "Title "
   },
   "panel-login": {
     "title": "Log in",
@@ -252,7 +264,8 @@
     "error_get_streams_for_active_period": "Error getting streams for the active period",
     "error_delete_stream": "Error while deleting stream",
     "error_get_future_streams": "Error while getting future streams",
-    "error_get_past_streams": "Error while getting past streams"
+    "error_get_past_streams": "Error while getting past streams",
+    "error_retrieving_data": "Error retrieving data."
   },
   "panel-stream-mini": {
     "buttons": {
@@ -265,6 +278,9 @@
     "buttons": {
       "edit": "Edit"
     }
+  },
+  "pg-stream-edit": {
+    "have_unsaved_you_want_to_leave": "You have unsaved changes. Are you sure you want to leave ?"
   },
   "panel-stream-editor": {
     "creating_stream": "Creating a Stream",
@@ -290,7 +306,7 @@
     "label_swagger": "\"swagger\" visual interface",
     "label_redoc": "\"redoc\" documentation",
     "label_rapidoc": "\"rapidoc\" documentation",
-    "frontend_used": "On the Frontend we used:",
+    "frontend_used": "On the Frontend the following was used:",
     "frontend_items": [
       "angular v.18",
       "ngx-translate v.15",
@@ -306,7 +322,42 @@
       "based on css-variables, 5 light and 5 dark color schemes have been prepared",
       "the site is adapted for the old version of Chrome 109 (Windows 7, 10)"
     ],
-    "backend_used": "On the Backend we used:"
+    "backend_used": "On the Backend the following was used:",
+    "backend": {
+        "actix": "- Actor framework",
+        "actix-broker": "Message broker for the Actix actor framework",
+        "actix-cors": "- Cross-Origin Resource Sharing (CORS) controls for Actix Web",
+        "actix-files": "- Static file serving for Actix Web",
+        "actix-multipart": "- Multipart form support for Actix Web",
+        "actix-web": "- Fast web framework",
+        "actix-web-actors": "Actix actors support for Actix Web",
+        "argon2": "- Implementation of password hashing function",
+        "chrono": "- Date and time library",
+        "diesel": "- ORM and query builder",
+        "diesel-derive-enum": "- Using enum with diesel ORM",
+        "diesel_migrations": "- Migration management for diesel ORM",
+        "dotenv": "- Loads environment variables from a .env file",
+        "email_address": "- Email verification",
+        "env_logger": "- A logging implementation for `log`",
+        "futures-util": "- Common utilities and extension traits for the futures-rs library",
+        "getrandom": "- Library for obtaining random data from sources (operating) system",
+        "handlebars": "- Templating implemented",
+        "image": "- An Image Processing Library",
+        "jsonwebtoken": "- Create and parses JWT (JSON Web Tokens)",
+        "lettre": "- Mail client",
+        "log": "- Provides a single API abstraction for logging",
+        "mime": "- Support MIME (Media Types)",
+        "openssl": "- HTTPS encryption library for websites",
+        "r2d2": "- Pool database",
+        "rand": "- Random number generators",
+        "regex": "- An implementation of regular expressions",
+        "serde": "- Serialization/Deserialization",
+        "serde_json": "- A JSON serialization file format",
+        "utoipa": "- Auto-generated OpenAPI documentation",
+        "utoipa-swagger-ui": "- Implementing Swagger via a web server",
+        "utoipa-redoc": "- Implementation of Redoc via a web server",
+        "utoipa-rapidoc": "- Implementation of Rapidoc via a web server"
+    }
   },
   "panel-profile": {
     "title_profile": "Personal information",
@@ -354,22 +405,64 @@
     "pause_stream": "Pause",
     "stop_stream": "Stop"
   },
-  "concept-view": {
+  "pg-concept-view": {
     "error_update_stream": "Error updating stream state",
-    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Chat commands",
+    "user_blocked": "User \"{{ username }}\" is blocked.",
+    "user_unblocked": "User \"{{ username }}\" is unblocked.",
+    "error_socket": "Socket error",
+    "error_blocked": "User blocked error",
+    "error_unblocked": "User unblocked error"
+  },
+  "concept-view": {
+    "title": "Title:",
+    "descript": "Description:",
+    "tags": "Tags:",
+    "state": "State:",
+    "waiting": "waiting",
+    "preparing": "preparing",
+    "started": "started",
+    "paused": "paused",
+    "stopped": "stopped",
+    "chat_title": "Stream chat",
+    "sure_you_want_delete_message": "Are you sure you want to delete the message: \"{{message}}\" ?",
+    "sure_you_want_permanently_delete_message": "Are you sure you want to permanently delete the message?"
   },
   "panel-stream-params": {
-    "title": "Title:",
     "tags": "Tags:",
-    "start": "Start:"
+    "start": "Start:",
+    "started": "Started:",
+    "paused": "Paused",
+    "stopped": "Stopped:",
+    "time-tracking": {
+        "-1": "days",
+        "1": "day"
+    }
   },
-  "panel-stream-admin": {
-    "btn_settings": "Settings",
-    "_followers": "Followers",
-    "_error_get_stream": "Error getting stream",
-    "_error_get_user_profile": "Error getting user profile",
-    "_error_get_profile_contact": "Error getting profile contact",
-    "_error_subscription": "Error while a subscription",
-    "_error_unsubscription": "Error while a unsubscription"
+  "panel-chat": {
+    "you": "you",
+    "menu": {
+        "edit": "Edit",
+        "cut": "Remove",
+        "remove": "Remove permanently",
+        "block_user": "Block",
+        "unblock_user": "Unblock"
+    },
+    "you_not_allowed_chat": "You are not allowed to use the public chat.",
+    "you_been_blocked": "You have been blocked.",
+    "message_edited": "changed",
+    "message_deleted": "This message has been removed.",
+    "msg_discard_draft": "Discard draft? (You won't be able to restore it.)"
+  },
+  "banned-users": {
+    "are_you_want_to_unblock_user": "Are you sure you want to unblock user: \"{{nickname}}\" ?"
+  },
+  "panel-banned-users": {
+    "title": "Blocked users",
+    "nickname": "User nickname",
+    "email": "User email",
+    "date_blocking": "Date of blocking",
+    "unblock_user": "Unblock"
   }
 }

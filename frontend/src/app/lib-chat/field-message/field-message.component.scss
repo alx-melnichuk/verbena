@@ -1,0 +1,22 @@
+/*# sourceURL=field-message.component.scss */
+
+app-field-message {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    &[scroll-thin] textarea.fm-textarea {
+        scrollbar-width: thin;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+}

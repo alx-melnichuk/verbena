@@ -3,20 +3,27 @@
         
     <div class="pse-title">{{(isCreate ? 'panel-stream-editor.creating_stream' : 'panel-stream-editor.editing_stream') | translate }}</div>
 
-    <app-field-title wd100 pse-mr-tp-0_5
+    <app-field-input wd100 pse-mr-tp-0_5
       formControlName="title"
+      gist="title"
       [isRequired]="true"
       label="panel-stream-editor.title"
-      (input)="updateErrMsgs();">
-    </app-field-title>
+      [maxLen]="titleMaxLen"
+      [minLen]="titleMinLen"
+      type="text"
+      (input)="updateErrMsgs();doChangeData();">
+    </app-field-input>
 
-    <app-field-descript wd100 pse-mr-tp-1
+    <app-field-textarea wd100 pse-mr-tp-1
+      gist="descript"
       formControlName="descript"
       [isRequired]="false"
       label="panel-stream-editor.descript"
-      [numberRows]="5"
-      (input)="updateErrMsgs();">
-    </app-field-descript>
+      [maxLen]="descriptMaxLen"
+      [minLen]="descriptMinLen"
+      [numRows]="5"
+      (input)="updateErrMsgs();doChangeData();">
+    </app-field-textarea>
 
     <div pse-mr-tp-1 class="pse-logo">
       <app-field-image-and-upload hg100
@@ -26,8 +33,8 @@
         [accepts]="accepts"
         label="panel-stream-editor.thumbnail"
         [maxSize]="maxSize"
-        (addFile)="updateErrMsgs();addLogoFile($event);"
-        (deleteFile)="updateErrMsgs();deleteLogoFile();">
+        (addFile)="updateErrMsgs();addLogoFile($event);doChangeData();"
+        (deleteFile)="updateErrMsgs();deleteLogoFile();doChangeData();">
       </app-field-image-and-upload>
     </div>
 
@@ -42,8 +49,8 @@
       [minAmount]="tagMinAmount"
       [maxAmount]="tagMaxAmount"
       [hint]="'panel-stream-editor.tags_hint'"
-      (input)="updateErrMsgs();"
-      (removedChip)="updateErrMsgs();">
+      (input)="updateErrMsgs();doChangeData();"
+      (removedChip)="updateErrMsgs();doChangeData();">
     </app-field-chip-grid>
 
     <div pse-mr-tp-0_5>
@@ -62,8 +69,8 @@
         [locale]="locale"
         [minDate]="minDate"
         [maxDate]="maxDate"
-        (dateInput)="updateErrMsgs();"
-        (dateChange)="updateErrMsgs();">
+        (dateInput)="updateErrMsgs();doChangeData();"
+        (dateChange)="updateErrMsgs();doChangeData();">
       </app-field-date>
 
       <app-field-time pse-mr-tp-0_5 class="pse-start-time"
@@ -71,7 +78,7 @@
         [isRequired]="true"
         [min]="'00:00'"
         [max]="'23:59'"
-        (input)="updateErrMsgs();">
+        (input)="updateErrMsgs();doChangeData();">
       </app-field-time>
     </div>
 
@@ -86,7 +93,8 @@
           autocomplete="new-password"
           autocapitalize="off" />
         <mat-icon matSuffix matTooltipPosition="above"
-          [matTooltip]="'panel-stream-editor.copy_stream_link_to_clipboard' | translate">
+          [matTooltip]="'panel-stream-editor.copy_stream_link_to_clipboard' | translate"
+          (click)="doCopyToClipboard(linkForVisitors)" >
           <svg class="pse-file-copy-bin">
             <use href="assets/icons/lib-stream/panel-stream-editor/file-copy-bin.svg#file-copy-bin"></use>
           </svg>

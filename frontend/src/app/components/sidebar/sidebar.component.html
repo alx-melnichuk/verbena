@@ -1,1 +1,10 @@
-<ng-content></ng-content> 
+<div class="sb-panel">
+  <div class="sb-layer">
+    <ng-content select="[sidebar-layer]"></ng-content>
+    <div class="sb-panel-box">
+      <div class="sb-panel-cont">
+        <ng-content></ng-content>
+      </div>
+    </div>
+  </div>
+</div>

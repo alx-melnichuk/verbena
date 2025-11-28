@@ -9,7 +9,6 @@
     <style type="text/css">
       html {
         font-family: Roboto, 'Helvetica Neue', sans-serif;
-        font-size: 14px;
         height: 100%;
         line-height: 1.5;
       }
@@ -42,7 +41,6 @@
       [tx-al-cen] { text-align: center; }
       [wd-100] { width: 100%; }
       [us-nn] { user-select: none; }
-
     </style>
   </head>
   <body>
@@ -77,27 +75,42 @@
       header { background-color: var(--a-hd-bg); border-bottom: 1px solid lightgrey; flex: 0 0 var(--a-hd-hg); }
       footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
       main { flex: 1 1 auto; height: fit-content; }
-  
-      .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
+
+      .hd-panel { padding: 0 1em; }
+      .hd-logo-mini {
+        background-image: url("assets/images/logo-bin.svg");
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        height: 3.5em;
+        width: 3.5em;
+      }
+      
+      .s-logo-text { font-size: 1.125rem; font-weight: bold; }
 
       .s-content {
         background-color: honeydew;
+        border-color: rgb(228, 243, 228);
+        border-style: solid;
         border-radius: var(--pd);
+        border-width: 2px;
+        box-shadow: rgba(0, 0, 0, 0.35) 0px 4px 11px;
         box-sizing: border-box;
-        margin-bottom: 7em;
+        display: flex;
+        flex-direction: column;
+        margin: auto;
         min-height: 10vh;
-        padding: var(--pd);
+        padding: calc(var(--pd) / 2) var(--pd);
         width: var(--wd);
       }
-
       .s-title {
-        font-size: calc(100% + 4px);
+        font-size: calc(100% + 6px);
         font-weight: bold;
+        text-align: center;
       }
-      .s-text { font-size: calc(100% - 2px); }
 
       .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
-      .s-hint { line-height: 1.2; font-size: calc(100% - 4px); }
+      .s-hint { line-height: 1.2; font-size: calc(0.75rem + 1px); }
       .s-hint:not(.s-err) { color: hsl(210, 8%, 35%); }
       .s-err { color: rgb(224,32,32); }
 
@@ -107,25 +120,24 @@
         padding-left: 0.8em;
       }
     </style>
-  
 
     <div ds-fl fl-dr-col hg-100 class="s-desktop">
       <header ds-fl js-cn-bet bx-sz-brd>
-        <div ds-fl al-it-cen pd-lf-05 pd-rg-05>
+        <div ds-fl al-it-cen class="hd-panel">
           <i bg-sz-cov class="hd-logo-mini"></i>
-          <span mr-lf-05 id="app_name_id1" style="font-size: x-large; font-weight: 600;"></span>
+          <span mr-lf-05 id="app_name_id1" class="s-logo-text"></span>
         </div>
       </header>
 
       <main>
         <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
-            <div id="content_id" class="s-content">
+            <div us-nn id="content_id" class="s-content">
               
-              <div mr-bt-05 tx-al-cen class="s-title" id="title_id"></div>
+              <div class="s-title" id="title_id"></div>
 
-              <span mr-bt-05 mr-tp-05 id="start_id">
-                <span class="s-text" id="label_id"></span>  
-                <p class="s-text" id="text_id"></p>
+              <span mr-tp-05 id="start_id">
+                <span id="label_id"></span>  
+                <p id="text_id"></p>
               </span>
   
             </div>

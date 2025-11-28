@@ -21,10 +21,14 @@
     "user_not_found":"User not found.",
     "recovery_not_found":"An record to recover the user's password was not found."
   },
-  "Blocking": {
+  "VariantAlsoNegotiates": {
+    "status": 506,
+    "description": "Blocking",
     "error_waiting_for_operations":"An error occurred while waiting for the operation to complete."
   },
-  "Database": {
+  "InsufficientStorage": {
+    "status": 507,
+    "description": "Database",
     "database_query_error":"Error executing database query."
   },
   "Change_password": {
@@ -41,7 +45,9 @@
     "placeholder":"New password",
     "password_hint":"Use at least 6 characters, with one lowercase letter, one uppercase letter and a number."
   },
-  "Validation": {
+  "ExpectationFailed": {
+    "status": 417,
+    "description": "Validation",
     "password:required":"The password field is required.",
     "password:min_length":"The password must have at least 6 characters.",
     "password:max_length":"The password must have no more 64 characters.",

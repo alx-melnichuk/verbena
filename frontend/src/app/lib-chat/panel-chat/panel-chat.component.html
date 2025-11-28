@@ -1,0 +1,167 @@
+<div [ngClass]="['pc-header', (!!title ? 'pc-hdr-pd' : '')]">
+  <div class="pc-label" >{{ !!title ? (title | translate) : '' }}</div>
+</div>
+
+<div class="pc-sepr"></div>
+
+<div class="pc-middle global-scroll" #scrollItem (scroll)="dbncScrollItem()">
+  @if (isLoading) {
+    <div class="pc-item-load">
+      <app-spinner [diameter]="30"></app-spinner>
+    </div>
+  }
+  @for (chatMsg of chatMsgList; track chatMsg.id) {
+    <div class="pc-item-wrap"
+      [matMenuTriggerFor]="!!getMenuItem(chatMsg, !!isOwner, nickname) ? menuItem : null"
+      [matMenuTriggerData]="getMenuItem(chatMsg, !!isOwner, nickname)"
+      menuOpened_="msgMarked=chatMsg;cleanNewMsg();"
+      (menuOpened)="msgMarked=chatMsg;"
+      (menuClosed)="msgMarked=null;">
+      <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
+        , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
+        attr.ch-msg-id="{{chatMsg.id}}"
+        (click)="doClickCheckSelection($event)">
+        <div class="pc-item-name-date">
+          <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
+            {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
+          </div>
+          <div [ngClass]="['pc-item-date', (!!chatMsg.dateEdt || !!chatMsg.dateRmv ? 'pc-item-modify' : '')]">
+            @if (!isToday(chatMsg.date)) {
+              <span>{{ chatMsg.date | dateTimeFormat:locale:formatDate }}</span>
+            }
+            <span>{{ chatMsg.date | dateTimeFormat:locale:formatTime }}</span>
+            @if (!!chatMsg.dateEdt && !chatMsg.dateRmv) {
+              <div>{{ 'panel-chat.message_edited' | translate }}</div>
+            }
+          </div>
+        </div>
+        @if (!chatMsg.dateRmv) {
+          <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
+            {{ chatMsg.msg }}
+          </div>
+        } @else {
+          <div class="pc-item-msg-rmv">
+            <i>{{ 'panel-chat.message_deleted' | translate }}</i>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+@if (countNotViewed > 0) {
+  <div class="pc-notviewed-box">
+    <div class="pc-notviewed">
+      <div [ngClass]="['pc-notviewed-count', (countNotViewed>99?'pc-nvcnt-pd2':(countNotViewed>9?'pc-nvcnt-pd1':''))]"
+        (click)="setScrollBottom(0)">
+        {{ countNotViewed }}
+      </div>
+      <button class="pc-btn-notviewed" (click)="setScrollBottom(0)">
+        <svg class="pc-angle">
+          <use href="assets/icons/lib-chat/panel-chat/angle-down-3-bin.svg#angle-down-3-bin"></use>
+        </svg>
+      </button>
+    </div>
+  </div>
+}
+
+<div class="pc-sepr"></div>
+
+@if (isEditable && !isBlocked) {
+  <form novalidate class="pc-msg-frm" [formGroup]="formGroup">
+    <div class="pc-msg-edt">
+      @if (!!msgEditing) {
+        <div class="pc-nmsg-label" [attr.is-focuse-msg]="isFocusMsg ? '': null">
+          <svg class="pc-svg-mini"><use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use></svg>
+          <span>{{ 'field-message.editing_msg' | translate }}</span>
+        </div>
+      }
+    
+      <app-field-message wd100 scroll-thin
+        [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
+        formControlName="newMsg"
+        gist="message"
+        [maxLen]="maxLenVal"
+        [minLen]="minLenVal"
+        [maxRows]="maxRows"
+        [minRows]="minRows"
+        (keydown.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value) : null"
+        (keydown.control.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value): null"
+        (keydown.escape)="cleanNewMsg()"
+        (focusin)="isFocusMsg=true"
+        (focusout)="isFocusMsg=false">
+      </app-field-message>
+    </div>
+
+    <div class="pc-msg-btns">
+      @if (!!msgEditing) {
+        <button matSuffix  mat-icon-button class="pc-msg-icon"
+          (click)="doResetValueForEditing()">
+          <svg><use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use></svg>
+        </button>
+        <div class="pc-msg-btns-sepr"></div>
+      }
+      <button matSuffix mat-icon-button class="pc-msg-icon"
+        [disabled]="(!checkValueForNotEmptyAndChanges(frmCtrlNewMsg.value?.trim(), initValue) || formGroup.invalid) ? '' : null"
+        (click)="doSendMessage(frmCtrlNewMsg.value)">
+        <svg><use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use></svg>
+      </button>
+    </div>
+  </form>
+}
+
+@if (isEditable && isBlocked) {
+  <div class="pc-blocked">
+    <div class="pc-blk-title">
+      <svg class="pc-svg-block">
+        <use href="assets/icons/lib-chat/panel-chat/lock-closed-bin.svg#lock-closed-bin"></use>
+      </svg>
+      <p>{{ 'panel-chat.you_been_blocked' | translate }}</p>
+    </div>
+    <p>{{ 'panel-chat.you_not_allowed_chat' | translate }}</p>
+</div>
+}
+
+<mat-menu #menuItem="matMenu" class="pc-menu-panel" xPosition="before" [overlapTrigger]="true">
+  <ng-template matMenuContent let-isEdit="isEdit" let-isCut="isCut" let-isRemove="isRemove" let-isBlock="isBlock" let-isUnblock="isUnblock">
+    @if (isEdit) {
+      <button mat-menu-item class="pn-menu-item" (click)="doSetValueForEditing(msgMarked)">
+        <svg class="pc-svg-box">
+          <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
+        </svg>
+        <span class="pc-menu-label">{{ 'panel-chat.menu.edit' | translate }}</span>
+      </button>
+    }
+    @if (isCut) {
+      <button mat-menu-item class="pn-item-menu" (click)="doCutMessage(msgMarked)">
+        <svg class="pc-svg-box">
+          <use href="assets/icons/lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
+        </svg>
+        <span class="pc-menu-label">{{ 'panel-chat.menu.cut' | translate }}</span>
+      </button>
+    }
+    @if (isRemove) {
+        <button mat-menu-item class="pn-item-menu" (click)="doRemoveMessage(msgMarked)">
+          <svg class="pc-svg-box">
+            <use href="assets/icons/lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
+          </svg>
+          <span class="pc-menu-label">{{ 'panel-chat.menu.remove' | translate }}</span>
+        </button>
+    }
+    @if (isBlock) {
+      <button mat-menu-item class="pn-item-menu" (click)="doBlockUser(msgMarked?.member, blockedUsers)">
+        <svg class="pc-svg-box">
+            <use href="assets/icons/lib-chat/panel-chat/lock-closed-bin.svg#lock-closed-bin"></use>
+        </svg>
+        <span class="pc-menu-label">{{ 'panel-chat.menu.block_user' | translate }}</span>
+      </button>
+    }
+    @if (isUnblock) {
+      <button mat-menu-item class="pn-item-menu" (click)="doUnblockUser(msgMarked?.member, blockedUsers)">
+        <svg class="pc-svg-box">
+            <use href="assets/icons/lib-chat/panel-chat/lock-open-bin.svg#lock-open-bin"></use>
+        </svg>
+        <span class="pc-menu-label">{{ 'panel-chat.menu.unblock_user' | translate }}</span>
+      </button>
+    }
+  </ng-template>
+</mat-menu>

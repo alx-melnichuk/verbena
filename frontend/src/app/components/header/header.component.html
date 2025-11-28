@@ -20,13 +20,9 @@
       <span class="h-nickname">{{ nickname }}</span>
     </button>
     <button mat-button [matMenuTriggerFor]="mainMenu" class="h-avatar-btn">
-      @if (!!profileDto.avatar) {
-        <img class="h-avatar-box" [src]="profileDto.avatar" />
-      } @else {
-        <svg class="h-avatar-box">
-          <use href="assets/icons/components/header/user-man-bin.svg#user-man-bin"></use>
-        </svg>
-      }
+      <app-avatar av-mx-wd-1_25-hg class="h-avatar"
+        [avatar]="profileDto.avatar">
+      </app-avatar>
     </button>
   } @else {
     <button mat-icon-button [matMenuTriggerFor]="mainMenu">

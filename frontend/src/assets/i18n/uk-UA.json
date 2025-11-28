@@ -20,6 +20,7 @@
     "profile": "Профіль",
     "stream_list": "Мої потоки",
     "stream_create": "Створити потік",
+    "banned": "Заблоковані",
     "my_follows_": "Мої підписники",
     "concept_list": "Перегляд",
     "theme": "Тема",
@@ -48,9 +49,9 @@
     "dark-orange-magenta": "темно помаранчевий",
     "dark-magenta-cyan": "темно пурпуровий"        
   },
-  "Forbidden": {
-    "status": 403,
-    "access_denied" : "Доступ заборонено."
+  "BadRequest": {
+    "status": 400,
+    "parameter_not_defined": "Параметр не визначено."
   },
   "Unauthorized": {
     "status": 401,
@@ -61,17 +62,27 @@
     "nickname_or_email_incorrect" : "Псевдонім або адреса електронної пошти некоректні.",
     "password_incorrect" : "Вказаний пароль некоректний."
   },
+  "Forbidden": {
+    "status": 403,
+    "access_denied" : "Доступ заборонено.",
+    "block_on_sending_messages": "Користувачеві заблоковано надсилати повідомлення.",
+    "stream_owner_rights_missing": "Користувач не має прав власника трансляції."
+  },
   "NotFound": {
     "status": 404,
     "registration_not_found" : "Запис для реєстрації нового користувача не знайдено.",
     "user_not_found" : "Користувача не знайдено.",
-    "recovery_not_found" : "Запис для відновлення пароля користувача не знайдено."
+    "recovery_not_found" : "Запис для відновлення пароля користувача не знайдено.",
+    "stream_not_found": "Вказану трансляцію не знайдено.",
+    "chat_message_not_found": "Повідомлення поточного користувача не знайдено."
   },
   "NotAcceptable": {
     "status": 406,
     "finish_date_less_start_date" : "Кінцева дата \"{{ invalidPeriod.streamPeriodFinish }}\" менша за дату початку \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Помилка десеріалізації поля \"tag\".",
-    "session_not_exist" : "Для цього користувача немає сесії.",
+    "session_not_found": "Сеанс для цього користувача не знайдено.",
+    "profile_not_found": "Профіль цього користувача не знайдено.",
+    "was_no_join_command": "Користувач ще не приєднався до кімнати.",
     "params_not_specified": "Параметри не вказані",
     "invalid_stream_state": "Недійсний перехід стану потоку з \"{{ invalidState.oldState }}\" до \"{{ invalidState.newState }}\"."
   },
@@ -79,14 +90,16 @@
     "status": 409,
     "invalid_hash" : "Недійсне хеш-значення пароля.",
     "email_already_use" : "Ця електронна адреса вже використовується або знаходиться на стадії реєстрації.",
-    "nickname_already_use" : "Цей псевдонім уже використовується або на стадії реєстрації."
+    "nickname_already_use" : "Цей псевдонім уже використовується або на стадії реєстрації.",
+    "was_already_join_to_room": "Користувач вже приєднався до кімнати.",
+    "stream_not_active": "Вказана трансляція неактивна."
   },
-  "ContentTooLarge": {
+  "PayloadTooLarge": {
     "status": 413,
     "finish_date_exceeds_limit" : "Кінцева дата \"{{ periodTooLong.actualPeriodFinish }}\" періоду пошуку перевищує обмеження \"{{ periodTooLong.periodMaxNumberDays }}\".",
     "invalid_file_size" : "Розмір файлу ({{ invalidFileSize.actualFileSize }}) перевищує максимальний ({{ invalidFileSize.maxFileSize }})."
   },
-  "UnsupportedType": {
+  "UnsupportedMediaType": {
     "status": 415,
     "invalid_file_type" : "Тип файлу завантаження MIME ({{ invalidFileType.actualFileType }}) відсутній у списку доступних ({{ invalidFileType.validFileType }})."
   },
@@ -94,8 +107,9 @@
     "status": 416,
     "parsing_type_not_supported" : "Тип даних не підтримується під час аналізу."
   },
-  "Validation": {
+  "ExpectationFailed": {
     "status": 417,
+    "description": "Validation",
     "new_password:required" : "Поле \"newPassword\" обов'язкове.",
     "new_password:min_length" : "Поле \"newPassword\" має містити принаймні {{ minlength.requiredLength }} символів.",
     "new_password:max_length" : "Поле \"newPassword\" не може містити більше {{ maxlength.requiredLength }} символів.",
@@ -140,7 +154,10 @@
     "locale:min_length" : "Поле \"locale\" має містити принаймні {{ minlength.requiredLength }} символів.",
     "locale:max_length" : "Поле \"locale\" не може містити більше {{ maxlength.requiredLength }} символів.",
     "user_role:invalid_value": "Недійсне значення для \"user role\" ({{ invalid.actualValue }}).",
-    "no_fields_to_update": "Немає полів для оновлення. Дійсні імена: {{ noRequiredFields.validNames }}."
+    "no_fields_to_update": "Немає полів для оновлення. Дійсні імена: {{ noRequiredFields.validNames }}.",
+    "message:required": "Поле \"message\" обов'язкове.",
+    "message:min_length" : "Поле \"message\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "message:max_length" : "Поле \"message\" не може містити більше {{ maxlength.requiredLength }} символів."
   } ,
   "UnprocessableEntity": {
     "status": 422,
@@ -153,12 +170,14 @@
     "error_upload_file" : "Помилка завантаження файлу",
     "error_hashing_password" : "Помилка під час хешування пароля"
   },
-  "Blocking": {
+  "VariantAlsoNegotiates": {
     "status": 506,
+    "description": "Blocking",
     "error_waiting_for_operations" : "Під час очікування завершення операції сталася помилка."
   },
-  "Database": {
+  "InsufficientStorage": {
     "status": 507,
+    "description": "Database",
     "database_query_error" : "Помилка виконання запиту до бази даних."
   },
   "NotExtended": {
@@ -173,17 +192,9 @@
   "field-date": {
     "label": "Дата "
   },
-  "field-descript": {
-    "label": "Опис"
-  },
-  "field-email": {
-    "err_minlength_symbol_search": "Пошук символів має містити {{value}} символів або більше.",
-    "err_maxlength_symbol_search": "Пошук символів має бути меншим ніж {{value}} символів.",
-    "label": "Електронна пошта "
-  },
   "field-file-upload": {
     "drag_files_or_browse": "Виберіть файл або перетягніть файл сюди.",
-    "supported_file_types": "Підтримувані типи файлів: {{validTypes}}.",
+    "supported_file_types": "Підтримувані типи файлів: {{validTypes}} (без прозорості).",
     "upload_up_to": "Завантажте до {{maxFileSize}}.",
     "err_upload_images_use_valid_types": "Завантажте зображення у правильному форматі: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "Розмір файлу не має перевищувати максимальний {{maxFileSize}} B ({{maxFileSizeShort}})."
@@ -192,8 +203,9 @@
     "label": "Файл зображення",
     "remove_image": "Видаліть це зображення"
   },
-  "field-nickname": {
-    "label": "Псевдонім ",
+  "field-input": {
+    "email_label": "Електронна пошта ",
+    "nickname_label": "Псевдонім ",
     "nickname_hint": "Використовуються: малі літери, великі літери, цифри та підкреслення. Мінімум 3 символи."
   },
   "field-password": {
@@ -203,14 +215,14 @@
   "field-locale": {
     "label": "Локаль "
   },
+  "field-message": {
+    "editing_msg": "Редагування повідомлення"
+  },
   "field-theme": {
     "label": "Кольорова тема "
   },
   "field-time": {
     "label": "Час "
-  },
-  "field-title": {
-    "label": "Назва "
   },
   "panel-login": {
     "title": "Авторизація",
@@ -251,8 +263,9 @@
     "error_get_streams_for_selected_day": "Помилка отримання потоків для вибраного дня",
     "error_get_streams_for_active_period": "Помилка отримання потоків за активний період",
     "error_delete_stream": "Помилка під час видалення потоку",
-    "error_get_future_streams": "Помилка під час отримання майбутніх потоків",
-    "error_get_past_streams": "Помилка під час отримання минулих потоків"
+    "error_get_future_streams": "Помилка під час отримання майбутніх трансляцій",
+    "error_get_past_streams": "Помилка під час отримання минулих трансляцій",
+    "error_retrieving_data": "Помилка отримання даних."
   },
   "demo": {
   },
@@ -267,6 +280,9 @@
     "buttons": {
       "edit": "Редагувати"
     }
+  },
+  "pg-stream-edit": {
+    "have_unsaved_you_want_to_leave": "У вас є незбережені зміни. Ви впевнені, що хочете вийти ?"
   },
   "panel-stream-editor": {
     "creating_stream": "Створення трансляції",
@@ -292,7 +308,7 @@
     "label_swagger": "\"swagger\" візуальний інтерфейс",
     "label_redoc": "\"redoc\" документація",
     "label_rapidoc": "\"rapidoc\" документація",
-    "frontend_used": "У Frontend я використовував:",
+    "frontend_used": "На Frontend було використано:",
     "frontend_items": [
       "angular v.18",
       "ngx-translate v.15",
@@ -308,7 +324,42 @@
       "на основі css-змінних підготовлено 5 світлих і 5 темних колірних схем",
       "сайт адаптований під стару версію Chrome 109 (Windows 7, 10)"
     ],
-    "backend_used": "На Backend я використовував:"
+    "backend_used": "На Backend було використано:",
+    "backend": {
+        "actix": "- 'Актор' фреймворк",
+        "actix-broker": "Посередник повідомлень для фреймворку актора Actix",
+        "actix-cors": "- Елементи керування спільним використанням ресурсів між джерелами (CORS) для Actix Web",
+        "actix-files": "- Обслуговування статичних файлів для Actix Web",
+        "actix-multipart": "- Підтримка багатокомпонентної форми для Actix Web",
+        "actix-web": "- Швидкий веб-фреймворк",
+        "actix-web-actors": "Підтримка акторів Actix для Actix Web",
+        "argon2": "- Реалізація функції хешування паролів",
+        "chrono": "- Бібліотека дат і часу",
+        "diesel": "- ORM і конструктор запитів",
+        "diesel-derive-enum": "- Використання типу enum з diesel ORM",
+        "diesel_migrations": "- Керування міграцією для diesel ORM",
+        "dotenv": "- Завантажує змінні середовища з файлу .env",
+        "email_address": "- Підтвердження електронної пошти",
+        "env_logger": "- Реалізація журналювання для `log`",
+        "futures-util": "- Загальні утиліти та особливості розширення для бібліотеки futures-rs",
+        "getrandom": "- Бібліотека для отримання випадкових даних з джерел (операційної) системи",
+        "handlebars": "- Реалізація шаблонів",
+        "image": "- Бібліотека обробки зображень",
+        "jsonwebtoken": "- Створення та аналіз JWT (веб-маркери JSON)",
+        "lettre": "- Поштовий клієнт",
+        "log": "- Надає єдину абстракцію API для журналювання",
+        "mime": "- Підтримка MIME (типи носіїв)",
+        "openssl": "- Бібліотека шифрування HTTPS для веб-сайтів",
+        "r2d2": "- Пул з'єднань із базою даних",
+        "rand": "- Генератори випадкових чисел",
+        "regex": "- Реалізація регулярних виразів",
+        "serde": "- Серіалізація/Десеріалізація",
+        "serde_json": "- Серіалізації файлу формата JSON",
+        "utoipa": "- Автоматичне створення OpenAPI документації",
+        "utoipa-swagger-ui": "- Автоматична реалізація Swagger через веб-сервер",
+        "utoipa-redoc": "- Автоматична реалізація Redoc через веб-сервер",
+        "utoipa-rapidoc": "- Автоматична реалізація Rapidoc через веб-сервер"
+    }
   },
   "panel-profile": {
     "title_profile": "Особиста інформація",
@@ -356,16 +407,71 @@
     "pause_stream": "Пауза",
     "stop_stream": "Зупинити"
   },
-  "concept-view": {
+  "pg-concept-view": {
     "error_update_stream": "Помилка оновлення стану потоку",
-    "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Команди чату",
+    "user_blocked": "Користувач \"{{ username }}\" заблокований.",
+    "user_unblocked": "Користувач \"{{ username }}\" розблокований.",
+    "error_socket": "Помилка сокета",
+    "error_blocked": "Помилка блокування користувача",
+    "error_unblocked": "Помилка розблокування користувача"
+  },
+  "concept-view": {
+    "title": "Назва:",
+    "descript": "Опис:",
+    "tags": "Теги:",
+    "state": "Стан:",
+    "waiting": "очікування",
+    "preparing": "підготовка",
+    "started": "розпочато",
+    "paused": "призупинено",
+    "stopped": "зупинено",
+    "chat_title": "Чат трансляції",
+    "sure_you_want_delete_message": "Ви впевнені, що хочете видалити повідомлення: \"{{message}}\" ?",
+    "sure_you_want_permanently_delete_message": "Ви впевнені, що хочете остаточно видалити повідомлення ?"
   },
   "panel-stream-params": {
-    "title": "Назва:",
     "tags": "Теги:",
-    "start": "Початок:"
+    "start": "Початок:",
+    "started": "Розпочато:",
+    "paused": "Призупинено",
+    "stopped": "Зупинено:",
+    "time-tracking": {
+        "-1": "днів",
+        "1": "день",
+        "2": "дні",
+        "3": "дні",
+        "4": "дні",
+        "11": "днів",
+        "12": "днів",
+        "13": "днів",
+        "14": "днів"
+    }
   },
-  "panel-stream-admin": {
-    "btn_settings": "Налаштування"
+  "panel-chat": {
+    "you": "ви",
+    "menu": {
+        "edit": "Редагувати",
+        "cut": "Видалити",
+        "remove": "Видалити остаточно",
+        "block_user": "Блокувати",
+        "unblock_user": "Розблокувати"
+    },
+    "you_not_allowed_chat": "Вам не дозволено користуватися публічним чатом.",
+    "you_been_blocked": "Вас заблокували.",
+    "message_edited": "змінено",
+    "message_deleted": "Це повідомлення видалено.",
+    "msg_discard_draft": "Відхилити чернетку ? (Ви не зможете її відновити.)"
+  },
+  "banned-users": {
+    "are_you_want_to_unblock_user": "Ви впевнені, що хочете розблокувати користувача: \"{{nickname}}\" ?"
+  },
+  "panel-banned-users": {
+    "title": "Заблоковані користувачі",
+    "nickname": "Користувач",
+    "email": "Електронна пошта",
+    "date_blocking": "Дата блокування",
+    "unblock_user": "Розблокувати"
   }
 }

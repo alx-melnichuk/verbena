@@ -1,22 +1,19 @@
 /*# sourceURL=panel-stream-actions.component.scss */
 
 app-panel-stream-actions {
+    --mat-outlined-button-horizontal-padding: 0.7rem;
+
     display: flex;
+    flex-wrap: wrap;
 
-    [psa-mr-lf-0_5] {
-        margin-left: 0.5rem;
+    [psa-btn] {
+        flex: 0 0 auto;
+        margin-right: 0.5rem;
+        margin-top: 0.25rem;
     }
 
-    [psa-mr-rg-0_25] {
+    [psa-mr-r0_25] {
         margin-right: 0.25rem;
-    }
-
-    [psa-pd-lf-0_5] {
-        padding-left: 0.5rem;
-    }
-
-    [psa-pd-lf-0_25] {
-        padding-left: 0.25rem;
     }
 
     .psa-ver-md {
@@ -27,5 +24,9 @@ app-panel-stream-actions {
     .psa-svg-sz {
         height: 1.75rem;
         width: 1.75rem;
+    }
+
+    .psa-scale {
+        scale: 1.15;
     }
 }

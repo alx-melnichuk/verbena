@@ -27,10 +27,13 @@ export class PanelAboutComponent {
     public set appAbout(value: any) {
     }
 
-    constructor() {
-    }
-
     // ** Public API **
+
+    public getKey(item: string): string {
+        const itemVal = (item || '');
+        const n = itemVal.indexOf('=');
+        return n > -1 ? itemVal.slice(0, n).trim() : '';
+    }
 
     // ** Private API **
 

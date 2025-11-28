@@ -1,6 +1,6 @@
 // ** Registration User **
 
-export interface RegistrProfileDto {
+export interface RegistrUserDto {
     nickname: string;
     email: string;
     password: string;
@@ -8,7 +8,7 @@ export interface RegistrProfileDto {
 
 // ** Recovery User **
 
-export interface RecoveryProfileDto {
+export interface RecoveryUserDto {
     email: string;
 }
 
@@ -16,7 +16,7 @@ export interface RecoveryProfileDto {
 
 import { HttpErrorResponse } from "@angular/common/http";
 
-export interface LoginProfileDto {
+export interface LoginDto {
     // nickname: MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
     // email: MIN=5,MAX=255,"email_type"
     nickname: string;
@@ -25,9 +25,22 @@ export interface LoginProfileDto {
     password: string;
 }
 
-export interface LoginProfileResponseDto {
-    profileDto: ProfileDto;
-    profileTokensDto: ProfileTokensDto;
+export interface LoginUserProfileDto {
+    id: number;
+    nickname: string; // max_len: 255
+    email: string; // max_len: 255
+    role: string; // UserRole ["User","Admin"]
+    avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
+    descript: string; // optional, default ""
+    theme: string; // Default color theme. ["light","dark"], min_len=2 max_len=32
+    locale: string; // Default locale. ["default"], min_len=2 max_len=32
+    createdAt: string; // DateTime<Utc> "rfc2822z"
+    updatedAt: string; // DateTime<Utc> "rfc2822z"
+}
+
+export interface LoginResponseDto {
+    userProfileDto: LoginUserProfileDto;
+    tokenUserResponseDto: UserTokenResponseDto;
 }
 
 // ** UniquenessDto **
@@ -40,13 +53,13 @@ export interface UniquenessDto {
 
 export interface ProfileDto {
     id: number;
-    nickname: string;
-    email: string;
+    nickname: string; // max_len: 255
+    email: string; // max_len: 255
     role: string; // UserRole ["User","Admin"]
-    avatar: string | undefined | null; // Link to user avatar, optional
+    avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
     descript: string;
-    theme: string; // Default color theme. ["light","dark"]
-    locale: string; // Default locale. ["default"]
+    theme: string; // Default color theme. ["light","dark"], min_len=2 max_len=32
+    locale: string; // Default locale. ["default"], min_len=2 max_len=32
     createdAt: string; // DateTime<Utc> "rfc2822z"
     updatedAt: string; // DateTime<Utc> "rfc2822z"
 }
@@ -82,16 +95,47 @@ export class ProfileDtoUtil {
     }
 }
 
+// ** ProfileMiniDto **
+
+export interface ProfileMiniDto {
+    id: number;
+    nickname: string; // max_len: 255
+    email: string; // max_len: 255
+    role: string; // UserRole ["User","Admin"]
+    avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
+}
+
+export class ProfileMiniDtoUtil {
+    public static new(value: any): ProfileMiniDto {
+        return {
+            id: value['id'],
+            nickname: value['nickname'],
+            email: value['email'],
+            role: value['role'],
+            avatar: value['avatar'],
+        };
+    }
+    public static create(profileMiniDto?: Partial<ProfileMiniDto>): ProfileMiniDto {
+        return {
+            id: (profileMiniDto?.id || -1),
+            nickname: (profileMiniDto?.nickname || ''),
+            email: (profileMiniDto?.email || ''),
+            role: (profileMiniDto?.role || ''),
+            avatar: (profileMiniDto?.avatar || ''),
+        };
+    }
+}
+
 // ** Profile Tokens **
 
-export interface ProfileTokensDto {
+export interface UserTokenResponseDto {
     accessToken: string;
     refreshToken: string;
 }
 
 // ** Refresh Token **
 
-export interface TokenDto {
+export interface UserTokenDto {
     // refreshToken
     token: string;
 }
@@ -102,7 +146,7 @@ export interface TokenUpdate {
     isCheckRefreshToken(method: string, url: string): boolean;
     isExistRefreshToken(): boolean;
     getAccessToken(): string | null;
-    refreshToken(): Promise<ProfileTokensDto | HttpErrorResponse>;
+    refreshToken(): Promise<UserTokenResponseDto | HttpErrorResponse>;
 }
 
 // ** ModifyProfileDto **

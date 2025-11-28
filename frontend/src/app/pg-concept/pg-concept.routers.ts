@@ -1,11 +1,14 @@
 import { Routes } from '@angular/router';
 
 import { E_CONCEPT_LIST, E_CONCEPT_VIEW, P_CONCEPT_ID } from '../common/routes';
-import { ConceptListComponent } from '../lib-concept/concept-list/concept-list.component';
-import { ConceptViewComponent } from '../lib-concept/concept-view/concept-view.component';
 
+import { pgChatMessagesResolver } from './pg-chat-messages.resolver';
 import { PgConceptComponent } from './pg-concept.component';
 import { pgConceptResolver } from './pg-concept.resolver';
+import { PgConceptListComponent } from './pg-concept-list/pg-concept-list.component';
+import { PgConceptViewComponent } from './pg-concept-view/pg-concept-view.component';
+import { pgProfileResolver } from './pg-profile.resolver';
+import { pgProfileTokensResolver } from './pg-profile-tokens.resolver';
 
 export const PG_CONCEPT_ROUTES: Routes = [
     {
@@ -14,12 +17,17 @@ export const PG_CONCEPT_ROUTES: Routes = [
         children: [
             {
                 path: E_CONCEPT_LIST, // 'ind/concept/list'
-                component: ConceptListComponent,
+                component: PgConceptListComponent,
             },
             {
                 path: E_CONCEPT_VIEW + '/:' + P_CONCEPT_ID, // 'ind/concept/view/:streamId'
-                component: ConceptViewComponent,
-                resolve: { streamDto: pgConceptResolver }
+                component: PgConceptViewComponent,
+                resolve: {
+                    profileDto: pgProfileResolver,
+                    profileTokensDto: pgProfileTokensResolver,
+                    chatMsgList: pgChatMessagesResolver,
+                    conceptResponse: pgConceptResolver,
+                }
             },
         ]
     },

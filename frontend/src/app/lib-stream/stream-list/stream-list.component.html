@@ -1,7 +1,6 @@
-@if (streamCalendarService.calendarLoading || streamCalendarService.eventsOfDayLoading
-    || streamListService.futureStreamLoading || streamListService.pastStreamLoading) {
-    <app-spinner isFillParent></app-spinner>
-}
+@if (isLoadStreams) {
+  <app-spinner isFillParent></app-spinner>
+}    
 <div class="sl-container global-scroll">
     
   <div class="sl-my-calendar">
@@ -12,32 +11,31 @@
       </div>
       <app-panel-stream-calendar
         [locale]="localeService.getLocale()"
-        [markedDates]="streamCalendarService.calendarMarkedDates"
-        [minDate]="streamCalendarService.calendarMinDate"
-        [maxDate]="streamCalendarService.calendarMaxDate"
-        [selected]="streamCalendarService.eventsOfDaySelected"
-        (changeSelected)="getListEventsForDate($event, 1)"
-        (changeCalendar)="getCalendarInfoForPeriod($event)">
+        [markedDates]="calendarMarkedDates"
+        [minDate]="calendarMinDate"
+        [maxDate]="calendarMaxDate"
+        [selected]="calendarDaySelected"
+        (changeSelected)="doStreamEventsForDate($event, 1)"
+        (changeCalendar)="doCalendarForPeriod($event)">
       </app-panel-stream-calendar>
     </div>
 
     <div class="sl-indent"></div>
 
     <div class="sl-events-box sl-border">
-      <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
-        class="sl-event-label">
+      <div [ngClass]="{ 'sl-event-label': true, 'sl-heavier': isShowEvents(calendarDaySelected, calendarMonth) }">
         <span>
-          {{ streamCalendarService.eventsOfDaySelected | dateTimeFormat:localeService.getLocale():formatDate }}
+          {{ calendarDaySelected | dateTimeFormat:localeService.getLocale():formatDate }}
         </span>
       </div>
       <div class="sl-event-list">
         <app-panel-stream-event
           [canEdit]="true"
-          [isRefresh]="isRefreshPanelStreamEvent"
+          [isRefresh]="isRefreshStreamEvent"
           [locale]="localeService.getLocale()"
-          [streamShortDtoList]="streamCalendarService.eventsOfDay"
-          (requestNextPage)="getListEventsForDate(streamCalendarService.eventsOfDaySelected, -1)"
-          (editStream)="actionEdit($event)">
+          [streamShortDtoList]="streamEventsForDay"
+          (requestNextPage)="doStreamEventsForDate(calendarDaySelected, -1)"
+          (editStream)="doActionEdit($event)">
         </app-panel-stream-event>
       </div>
     </div>
@@ -56,12 +54,12 @@
         [canDelete]="true"
         [isFuture]="true"
         [locale]="localeService.getLocale()"
-        [streamList]="streamListService.futureStreamsDto"
-        (requestNextPage)="searchInfoNextFutureStream()"
-        (redirectToStream)="redirectToStreamView($event)"
-        (actionDuplicate)="actionDuplicate($event)"
-        (actionEdit)="actionEdit($event)"
-        (actionDelete)="actionDelete($event)">
+        [streamList]="futureStreams"
+        (requestNextPage)="doFutureNextPage()"
+        (actionDuplicate)="doActionDuplicate($event)"
+        (actionEdit)="doActionEdit($event)"
+        (actionView)="doActionView($event)"
+        (actionDelete)="doActionDelete($event)">
       </app-panel-stream-info>
     </div>
 
@@ -73,11 +71,11 @@
         [canDuplicate]="true"
         [canDelete]="true"
         [locale]="localeService.getLocale()"
-        [streamList]="streamListService.pastStreamsDto"
-        (requestNextPage)="searchInfoNextPastStream()"
-        (redirectToStream)="redirectToStreamView($event)"
-        (actionDuplicate)="actionDuplicate($event)"
-        (actionDelete)="actionDelete($event)">
+        [streamList]="pastStreams"
+        (requestNextPage)="doPastNextPage()"
+        (actionDuplicate)="doActionDuplicate($event)"
+        (actionView)="doActionView($event)"
+        (actionDelete)="doActionDelete($event)">
       </app-panel-stream-info>
     </div>
 

@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, Output,
+    ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, inject, Input, OnChanges, Output,
     SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -16,10 +16,10 @@ import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants'
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { FieldChipGridComponent } from 'src/app/components/field-chip-grid/field-chip-grid.component';
 import { FieldDateComponent } from 'src/app/components/field-date/field-date.component';
-import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
+import { FieldInputComponent } from 'src/app/components/field-input/field-input.component';
+import { FieldTextareaComponent } from 'src/app/components/field-textarea/field-textarea.component';
 import { FieldTimeComponent } from 'src/app/components/field-time/field-time.component';
-import { FieldTitleComponent } from 'src/app/components/field-title/field-title.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ClipboardUtil } from 'src/app/utils/clipboard.util';
 import { FileSizeUtil } from 'src/app/utils/file_size.util';
@@ -40,8 +40,8 @@ export const PSE_LOGO_MX_WD = '---pse-logo-mx-wd';
     standalone: true,
     imports: [
         CommonModule, ReactiveFormsModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule,
-        MatTooltipModule, TranslatePipe, FieldDescriptComponent, FieldChipGridComponent, FieldImageAndUploadComponent,
-        FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
+        MatTooltipModule, TranslatePipe, FieldTextareaComponent, FieldChipGridComponent, FieldImageAndUploadComponent,
+        FieldTimeComponent, FieldInputComponent, FieldDateComponent,
     ],
     templateUrl: './panel-stream-editor.component.html',
     styleUrl: './panel-stream-editor.component.scss',
@@ -54,12 +54,14 @@ export class PanelStreamEditorComponent implements OnChanges {
     @Input()
     public locale: string | null = null;
     @Input()
-    public streamDto: StreamDto = StreamDtoUtil.create();
+    public streamDto: StreamDto | null = null;
     @Input()
     public streamConfigDto: StreamConfigDto | null = null;
     @Input()
     public errMsgs: string[] = [];
 
+    @Output()
+    readonly changeData: EventEmitter<void> = new EventEmitter();
     @Output()
     readonly updateStream: EventEmitter<UpdateStreamFileDto> = new EventEmitter();
 
@@ -69,6 +71,8 @@ export class PanelStreamEditorComponent implements OnChanges {
     public minDate: Date = new Date(Date.now());
     public maxDate: Date = new Date(this.minDate.getFullYear(), this.minDate.getMonth() + 7, 0);
 
+    public descriptMaxLen = 2048; // 2*1024
+    public descriptMinLen = 2;
     // FieldImageAndUpload parameters
     public accepts = IMAGE_VALID_FILE_TYPES;
     public maxSize = MAX_FILE_SIZE;
@@ -78,6 +82,9 @@ export class PanelStreamEditorComponent implements OnChanges {
     // FieldImageAndUpload FormControl
     public logoFile: File | null | undefined;
     public initIsLogo: boolean = false; // original has an logo.
+
+    readonly titleMaxLen: number = 255;
+    readonly titleMinLen: number = 2;
 
     readonly tagMaxLength: number = 255;
     readonly tagMinLength: number = 2;
@@ -103,12 +110,12 @@ export class PanelStreamEditorComponent implements OnChanges {
     public formGroup: FormGroup = new FormGroup(this.controls);
 
     private origStreamDto: StreamDto = StreamDtoUtil.create();
+    private isChange: boolean = false;
 
-    constructor(
-        public hostRef: ElementRef<HTMLElement>,
-        private alertService: AlertService,
-        private streamService: StreamService,
-    ) {
+    private alertService: AlertService = inject(AlertService);
+    private streamService: StreamService = inject(StreamService);
+
+    constructor(public hostRef: ElementRef<HTMLElement>) {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -151,6 +158,13 @@ export class PanelStreamEditorComponent implements OnChanges {
         this.errMsgs = errMsgs;
     }
 
+    public doChangeData(): void {
+        if (!this.isChange) {
+            this.isChange = true;
+            this.changeData.emit();
+        }
+    }
+
     public saveStream(formGroup: FormGroup): void {
         const cntlTitle = formGroup.get('title');
         const cntlDescript = formGroup.get('descript');
@@ -165,18 +179,18 @@ export class PanelStreamEditorComponent implements OnChanges {
 
         const title: string = cntlTitle.value || '';
         const descript: string = cntlDescript.value || '';
-        let starttime: StringDateTime | undefined;
+        let starttime: Date | undefined;
         if (!!cntlIsStartTime.value) {
-            const startDateTime = this.getStartDateTime(this.controls.startDate.value, this.controls.startTime.value);
-            starttime = !!startDateTime ? startDateTime.toISOString() : undefined;
+            const startDateTime: Date | null = this.getStartDateTime(this.controls.startDate.value, this.controls.startTime.value);
+            starttime = !!startDateTime ? startDateTime : undefined;
         }
         const tags: string[] = cntlTags.value || [];
 
         const updateStreamFileDto: UpdateStreamFileDto = {
-            id: (this.isCreate ? undefined : this.streamDto.id),
+            id: (this.isCreate ? undefined : this.streamDto?.id),
             title: (this.isCreate ? title : (this.origStreamDto.title != title ? title : undefined)),
             descript: (this.isCreate ? descript : (this.origStreamDto.descript != descript ? descript : undefined)),
-            starttime: (this.isCreate ? starttime : (this.origStreamDto.starttime != starttime ? starttime : undefined)),
+            starttime: (this.isCreate ? starttime : (this.origStreamDto.starttime != starttime ? starttime : undefined))?.toISOString(),
             tags: (this.isCreate ? tags : (this.origStreamDto.tags.join(',') != tags.join(',') ? tags : undefined)),
             logoFile: this.logoFile,
         };
@@ -185,25 +199,39 @@ export class PanelStreamEditorComponent implements OnChanges {
 
     public doCopyToClipboard(value: string): void {
         if (!!value) {
+            const message = 'panel-stream-editor.stream_link_copied_to_clipboard';
+            // if (window.navigator.clipboard) {
+            //     ClipboardUtil.setClipboardValue(value)
+            //         .then(() => {
+            //             console.log('clipboard.writeText(value)');
+            //             this.alertService.showInfo(message);
+            //         })
+            //         .catch((err) => {
+            //             ClipboardUtil.copyMessage(value);
+            //             this.alertService.showInfo(message);
+            //         });
+            // } else {
             ClipboardUtil.copyMessage(value);
-            this.alertService.showInfo('panel-stream-editor.stream_link_copied_to_clipboard');
+            this.alertService.showInfo(message);
+            // }
         }
     }
 
     // ** Private API **
 
     private prepareFormGroupByStreamDto(streamDto: StreamDto | null): void {
+        const isDuplicate = streamDto?.id == -1;
         if (!streamDto) {
-            return;
+            streamDto = StreamDtoUtil.create();
         }
         this.origStreamDto = { ...streamDto };
         Object.freeze(this.origStreamDto);
 
         this.isCreate = (streamDto.id < 0);
-        const now = new Date(Date.now())
-        const currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
-        // Date.parse("2019-01-01T00:00:00.000Z");
-        const startDate = (!!streamDto.starttime ? new Date(Date.parse(streamDto.starttime)) : currentTime);
+        const now = new Date(Date.now());
+        const year = now.getFullYear();
+        const currentTime = new Date(year, now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
+        const startDate = (!!streamDto.starttime ? new Date(streamDto.starttime.getTime()) : currentTime);
         const startHours = ('00' + startDate.getHours()).slice(-2);
         const startMinutes = ('00' + startDate.getMinutes()).slice(-2);
         const startTimeStr = startHours + ':' + startMinutes;
@@ -214,7 +242,7 @@ export class PanelStreamEditorComponent implements OnChanges {
             descript: streamDto.descript,
             logo: streamDto.logo,
             tags: (streamDto.tags || []),
-            starttime: streamDto.starttime,
+            starttime: streamDto.starttime?.toISOString(),
             isStartTime: (streamDto.id > 0 && !!streamDto.starttime),
             startDate: startDate,
             startTime: startTimeStr,
@@ -224,6 +252,10 @@ export class PanelStreamEditorComponent implements OnChanges {
         this.changeIsStartTime();
         this.logoFile = undefined;
         this.initIsLogo = !!streamDto.logo;
+        if (isDuplicate) {
+            this.formGroup.markAsDirty();
+        }
+        this.isChange = false;
     }
     // '10:12'
     private getStartDateTime(startDate: Date | null, startTime: string | null): Date | null {

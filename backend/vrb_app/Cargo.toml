@@ -1,0 +1,41 @@
+[package]
+name = "vrb_app"
+version = "0.1.0"
+edition = "2024"
+description = "Library for assembling a binary file."
+keywords = ["vrb_app"]
+license = { workspace = true }
+rust-version = { workspace = true }
+
+[[bin]]
+name = "verbena"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+actix-cors = { workspace = true }
+actix-files = { workspace = true }
+actix-multipart = { workspace = true }
+actix-web = { workspace = true }
+dotenv = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+utoipa-redoc = { workspace = true }
+utoipa-rapidoc = { workspace = true }
+vrb_authent = { version = "0.1", path="../vrb_authent" }
+vrb_chats = { version = "0.1", path="../vrb_chats" }
+vrb_common = { version = "0.1", path="../vrb_common" }
+vrb_dbase = { version = "0.1", path="../vrb_dbase" }
+vrb_profiles = { version = "0.1", path="../vrb_profiles" }
+vrb_streams = { version = "0.1", path="../vrb_streams" }
+vrb_tools = { version = "0.1", path="../vrb_tools" }
+
+[features]
+# default = ["test", "mockdata"]
+test=[]
+mockdata = []
+

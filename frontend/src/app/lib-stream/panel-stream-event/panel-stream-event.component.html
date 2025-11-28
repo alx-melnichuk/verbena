@@ -14,7 +14,7 @@
     <div class="pse-details-wrap">
       <div class="pse-details">
         <div class="pse-starttime pse-ellipsis">
-          {{ streamShort.starttime | dateTimeFormat:locale:(isFuture(streamShort.starttime) ? formatDateTime : formatDate)  }}
+          {{ streamShort.starttime | dateTimeFormat:locale:formatDateTime  }}
         </div>
         @if (canEdit && isFuture(streamShort.starttime)) {
           <button class="pse-edit-btn" (click)="doEditStream(streamShort.id)">

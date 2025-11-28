@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, Input, OnChanges, Output,
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, inject, Input, OnChanges, Output,
     SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -10,8 +10,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
 
-import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
-import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
+import {
+    EMAIL_MAX_LENGTH, EMAIL_MIN_LENGTH, FieldInputComponent, NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, NICKNAME_PATTERN
+} from 'src/app/components/field-input/field-input.component';
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
 import { StrParams } from 'src/app/common/str-params';
@@ -26,7 +27,7 @@ export const SG_DEBOUNCE_DELAY = 900;
     exportAs: 'appPanelSignup',
     standalone: true,
     imports: [CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
-        FieldEmailComponent, FieldNicknameComponent, FieldPasswordComponent, UniquenessCheckComponent],
+        FieldInputComponent, FieldPasswordComponent, UniquenessCheckComponent],
     templateUrl: './panel-signup.component.html',
     styleUrl: './panel-signup.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -43,6 +44,9 @@ export class PanelSignupComponent implements OnChanges {
     @HostBinding('class.global-scroll')
     public get isGlobalScroll(): boolean { return true; }
 
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private profileService: ProfileService = inject(ProfileService);
+
     public linkLogin = ROUTE_LOGIN;
     public debounceDelay: number = SG_DEBOUNCE_DELAY;
 
@@ -53,11 +57,12 @@ export class PanelSignupComponent implements OnChanges {
     };
     public formGroup: FormGroup = new FormGroup(this.controls);
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private profileService: ProfileService,
-    ) {
-    }
+    public nicknameMinLen: number = NICKNAME_MIN_LENGTH;
+    public nicknameMaxLen: number = NICKNAME_MAX_LENGTH;
+    public nicknamePattern: string = NICKNAME_PATTERN;
+
+    public emailMinLen: number = EMAIL_MIN_LENGTH;
+    public emailMaxLen: number = EMAIL_MAX_LENGTH;
 
     @HostListener('document:keypress', ['$event'])
     public keyEvent(event: KeyboardEvent): void {

@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 
 import { ConfirmationComponent, ConfirmationData } from './confirmation/confirmation.component';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
     providedIn: 'root',
@@ -39,6 +40,7 @@ export class DialogService {
         dialogConfig.disableClose = false;
         dialogConfig.data = dataParams;
 
+        this.removeActiveFocus();
         this.dialog.open(component, dialogConfig);
     }
 
@@ -57,6 +59,7 @@ export class DialogService {
             dialogCfg.data = { ...(dialogCfg.data || {}), ...dataParams };
         }
 
+        this.removeActiveFocus();
         const dialogRef = this.dialog.open(component, dialogCfg);
         // const answer = new Promise((resolve, reject) => {
         //   dialogRef.afterClosed().subscribe(result => {
@@ -64,6 +67,14 @@ export class DialogService {
         //   });
         // });
         // return answer;
-        return dialogRef.afterClosed().toPromise();
+        // return dialogRef.afterClosed().toPromise();
+        return firstValueFrom(dialogRef.afterClosed());
+    }
+
+    /** Remove active focus from the document */
+    private removeActiveFocus() {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
     }
 }

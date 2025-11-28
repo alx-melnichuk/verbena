@@ -1,6 +1,6 @@
 import {
     ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges,
-    ViewEncapsulation, forwardRef
+    ViewEncapsulation, forwardRef, inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -128,10 +128,7 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ image: this.formControl });
 
-    constructor(
-        private changeDetectorRef: ChangeDetectorRef,
-    ) {
-    }
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired']) {
@@ -209,7 +206,7 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
         }
         if (buffFile.length > 0) {
             this.imageView = buffFile[1];
-            this.changeDetectorRef.markForCheck();
+            this.changeDetector.markForCheck();
         }
         this.readFile.emit(buffFile);
     }

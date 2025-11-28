@@ -84,14 +84,11 @@ app-header {
         min-width: var(---hdr-hg);
     }
 
-    // -- image or svg for logged in user --
-    .h-avatar-box {
-        border-radius: var(--mdc-text-button-container-shape);
-        color: var(--app-svg-icon-cl); // for "svg"
-        display: block;
-        height: var(---hdr-hg);
-        object-fit: cover; // for "img"
-        width: var(---hdr-hg);
+    .h-avatar {
+        --av-hg: var(---hdr-hg);
+        --av-wd: auto;
+        --av-brd-rd: var(--mdc-text-button-container-shape);
+        min-width: 3rem;
     }
 
     // -- svg "more-vert" for unlogged in user --

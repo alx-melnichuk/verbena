@@ -7,10 +7,8 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 
 import {
-    LoginProfileDto, LoginProfileResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, ProfileTokensDto,
-    RecoveryProfileDto,
-    RegistrProfileDto,
-    TokenDto, UniquenessDto
+    LoginDto, LoginResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UserTokenResponseDto,
+    RecoveryUserDto, RegistrUserDto, UserTokenDto, UniquenessDto, ProfileMiniDto, ProfileMiniDtoUtil
 } from './profile-api.interface';
 
 @Injectable({
@@ -28,19 +26,19 @@ export class ProfileApiService {
             });
     }
 
-    public registration(registrProfileDto: RegistrProfileDto): Promise<null | HttpErrorResponse | undefined> {
+    public registration(registrProfileDto: RegistrUserDto): Promise<null | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://registration');
         return lastValueFrom(this.http.post<null | HttpErrorResponse>(url, registrProfileDto));
     }
 
-    public recovery(recoveryProfileDto: RecoveryProfileDto): Promise<null | HttpErrorResponse | undefined> {
+    public recovery(recoveryProfileDto: RecoveryUserDto): Promise<null | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://recovery');
         return lastValueFrom(this.http.post<null | HttpErrorResponse>(url, recoveryProfileDto));
     }
 
-    public login(loginProfileDto: LoginProfileDto): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
+    public login(loginProfileDto: LoginDto): Promise<LoginResponseDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://login');
-        return lastValueFrom(this.http.post<LoginProfileResponseDto | HttpErrorResponse>(url, loginProfileDto));
+        return lastValueFrom(this.http.post<LoginResponseDto | HttpErrorResponse>(url, loginProfileDto));
     }
 
     public logout(): Promise<void | HttpErrorResponse | undefined> {
@@ -52,9 +50,9 @@ export class ProfileApiService {
         return method === 'POST' && url === Uri.appUri('appApi://token');
     }
 
-    public refreshToken(tokenDto: TokenDto): Promise<ProfileTokensDto | HttpErrorResponse | undefined> {
+    public refreshToken(tokenDto: UserTokenDto): Promise<UserTokenResponseDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://token');
-        return lastValueFrom(this.http.post<ProfileTokensDto | HttpErrorResponse>(url, tokenDto));
+        return lastValueFrom(this.http.post<UserTokenResponseDto | HttpErrorResponse>(url, tokenDto));
     }
 
     public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {
@@ -64,8 +62,19 @@ export class ProfileApiService {
         const search = { nickname: (!nickname ? null : nickname), email: (!email ? null : email) };
         const params: HttpParams = HttpParamsUtil.create(search);
 
-        const url = Uri.appUri("appApi://profiles_uniqueness");
+        const url = Uri.appUri("appApi://users_uniqueness");
         return lastValueFrom(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
+    }
+
+    public profileMini(userId: number): Promise<ProfileMiniDto | HttpErrorResponse | undefined> {
+        if (!userId) {
+            return Promise.reject();
+        }
+        const url = Uri.appUri(`appApi://profiles_mini/${userId}`);
+        return lastValueFrom(this.http.get<ProfileMiniDto | HttpErrorResponse>(url))
+            .then((response: ProfileMiniDto | HttpErrorResponse | undefined) => {
+                return ProfileMiniDtoUtil.new(response as ProfileMiniDto)
+            });
     }
 
     public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Promise<ProfileDto | HttpErrorResponse | undefined> {

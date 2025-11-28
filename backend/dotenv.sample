@@ -4,122 +4,113 @@
 # RUST_LOG
 # -----------------------------------------------------------------------------
 # for release
-# RUST_LOG=info,actix_web=info,actix_server=info,verbena_backend=info
+# RUST_LOG=warn,actix_web=info,verbena=warn
 
 # for debugging
-L_COMM=info,actix_web=info,actix_server=info
-L_MAIN=verbena_backend=debug
-#L_DBASE=verbena_backend::dbase=info
-L_USER=users::user_controller=debug
-L_PROFILE_AUTH=profiles::profile_auth_controller=debug
-L_AUTH=extractors::authentication=debug
-
-RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_PROFILE_AUTH},${L_AUTH}
+# _ Section "authentication"
+LOG01=vrb_authent::authentication=debug
+# LOG02=vrb_authent::user_orm=info # _ Section "user_orm"
+# LOG02=verbena::chats=debug # _ Section "chat_message" ORM, CTRL
+RUST_LOG=warn,actix_web=info,verbena=warn,${LOG01},${LOG02}
 
 # -----------------------------------------------------------------------------
 # Application properties
 # -----------------------------------------------------------------------------
-APP_HOST=127.0.0.1
-# Takes values: "http" | "https". Default: "http".
-#APP_PROTOCOL=http
-APP_PROTOCOL=https
+# Default: 127.0.0.1
+# APP_HOST=127.0.0.1
+# Takes values: http | https. Default: http.
+# APP_PROTOCOL=http
 # Default: 80 - for the "http" protocol, 443 - for the "https" protocol.
-#APP_PORT=8080
-APP_PORT=8443
-# Maximum number of seconds the results can be cached. (600 seconds  = 10 minutes)
-APP_MAX_AGE=600
-# Waiting time for registration confirmation (in seconds). (900 seconds = 15 minutes)
-APP_REGISTR_DURATION=900
-# Waiting time for password recovery confirmation (in seconds). (600 seconds  = 10 minutes)
-APP_RECOVERY_DURATION=600
-# Site name.
-APP_NAME=Verbéna
-# SSL certificate and private key (for the "https" protocol)
-# APP_CERTIFICATE=example.crt.pem
-# SSL private key (for the "https" protocol)
-# The presence of a private key leads to encryption of the parameters: DATABASE_URL, JWT_SECRET_KEY, SMTP_HOST_PORT, SMTP_USER_PASS.
-# APP_PRIVATE_KEY=example.key.pem
-# Cors permissions "allowed_origin" (array of values, comma delimited). There should be no spaces. ("https://fonts.googleapis.com")
-# APP_ALLOWED_ORIGIN=
-# Directory for temporary files when uploading user files.
-APP_DIR_TMP=./tmp
+# APP_PORT=80
+# Maximum number of seconds the results can be cached. (Default: 600 seconds  = 10 minutes)
+# APP_MAX_AGE=600
+# Waiting time for registration confirmation (in seconds). (Default: 900 seconds = 15 minutes)
+# APP_REGISTR_DURATION=900
+# Waiting time for password recovery confirmation (in seconds). (Default: 600 seconds  = 10 minutes)
+# APP_RECOVERY_DURATION=600
+# Site name. Default: Verbéna
+# APP_NAME=Verbéna
+# SSL certificate and private key (for the "https" protocol default: ssl.crt.pem).
+# APP_CERTIFICATE=ssl.crt.pem
+# SSL private key (for the "https" protocol default: ssl.key.pem).
+# APP_PRIVATE_KEY=ssl.key.pem
+# Cors permissions "allowed_origin" (comma separated values ​​without spaces). 
+# If APP_HOST=127.0.0.1 then the default value is: http://localhost:4250,http://127.0.0.1:4250
+# APP_ALLOWED_ORIGIN=http://localhost:4250,http://127.0.0.1:4250
+# Directory for temporary files when uploading user files. Default: ./tmp
+# APP_DIR_TMP=./tmp
 # Number of worker services (this is the number of available physical CPU cores for parallel computing).
 # By default, it is detected automatically.
-# APP_NUM_WORKERS=5
-
-# -----------------------------------------------------------------------------
-# When APP_PRIVATE_KEY is present, the following will be encoded: DATABASE_URL, JWT_SECRET_KEY, SMTP_HOST_PORT, SMTP_USER_PASS.
-# And in order to view the decrypted values of these parameters, you need to enable this parameter.
-# IS_SHOW_DECRYPTED_PRMS=true
+# APP_NUM_WORKERS=
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
 # -----------------------------------------------------------------------------
-# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
-# DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
-# DATABASE_URL=postgresql://database_user:database_password@127.0.0.1:5432/database_name
+# DB_USER=
+# DB_PASSWORD=
+# DB_HOST=
+# DB_PORT=
+# DB_DATABASE=
+# 
+DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+# Sets the maximum number of connections managed by the pool. (Default: 10).
+# DATABASE_POOL_MAX_SIZE=10
 
 # -----------------------------------------------------------------------------
 # JSON Web Token Credentials
 # -----------------------------------------------------------------------------
-JWT_SECRET_KEY=jwt_secret_key
-# Access token duration (in seconds). (900 seconds = 15 minutes)
-JWT_ACCESS_TOKEN_DURATION=900
-# Refresh token duration (in seconds). (345600 seconds = 4 days  60sec*60min*24hour*4days)
-JWT_REFRESH_TOKEN_DURATION=345600
+# JWT_SECRET_KEY=jwt_secret_key
+# Access token duration (in seconds). (Default: 900 seconds = 15 minutes)
+# JWT_ACCESS_TOKEN_DURATION=900
+# Refresh token duration (in seconds). (Default: 345600 seconds = 4 days  60sec*60min*24hour*4days)
+# JWT_REFRESH_TOKEN_DURATION=345600
 
 # -----------------------------------------------------------------------------
 # SMTP
 # -----------------------------------------------------------------------------
-# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
 # The value of connection parameters to the SMTP server: `host:port`
 # SMTP_HOST_PORT=
-# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
 # The value of the SMTP server user parameters: `user:password`
 # SMTP_USER_PASS=
+# Path to letter text templates (default: "./templates")
+# SMTP_PATH_TEMPLATE=
 # Sign to disable sending letters (default: false)
-# SMTP_NOT_SEND_LETTER=true
+# SMTP_NOT_SEND_LETTER=false
 # Sign for saving the text of the letter (default: false)
-# SMTP_SAVE_LETTER=true
-
-# -----------------------------------------------------------------------------
-# User Controller Settings
-# -----------------------------------------------------------------------------
-# A flag to display the execution time of methods. (default false)
-USR_SHOW_LEAD_TIME=true
+# SMTP_SAVE_LETTER=false
 
 # -----------------------------------------------------------------------------
 # Stream Controller Settings
 # -----------------------------------------------------------------------------
-# Directory for storing logo files.
-STRM_LOGO_FILES_DIR=./imgs/logo
-# Maximum size for logo files. (5MB=5242880) If the value is 0, then there is no limit. (default 0)
-STRM_LOGO_MAX_SIZE=5242880
+# Directory for storing logo files. Default: ./imgs/logo
+# STRM_LOGO_FILES_DIR=./imgs/logo
+# Maximum size for logo files. (Default: 0) If the value is 0, then there is no limit. (5242880 = 5MB)
+# STRM_LOGO_MAX_SIZE=5242880
 # List of valid input mime types for logo files (comma delimited).
-# Valid values: image/jpeg,image/gif,image/png,image/bmp
-STRM_LOGO_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
+# Default (all valid values): image/jpeg,image/gif,image/png,image/bmp
+# STRM_LOGO_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
 # Logo files will be converted to this MIME type.
-# Valid values: jpeg,gif,png,bmp
-STRM_LOGO_EXT=jpeg
-# Maximum width for a logo file. (default 0)
-STRM_LOGO_MAX_WIDTH=1024
-# Maximum height for a logo file. (default 0)
-STRM_LOGO_MAX_HEIGHT=1024
+# Valid values: jpeg,gif,png,bmp (Default: "") The value ="" cancels the conversion.
+# STRM_LOGO_EXT=jpeg
+# Maximum width for a logo file. (Default: 0)
+# STRM_LOGO_MAX_WIDTH=1024
+# Maximum height for a logo file. (Default: 0)
+# STRM_LOGO_MAX_HEIGHT=1024
 
 # -----------------------------------------------------------------------------
 # Profile Controller Settings
 # -----------------------------------------------------------------------------
-# Directory for storing avatar files.
-PRFL_AVATAR_FILES_DIR=./imgs/avatar
-# Maximum size for avatar files. (5MB=5242880) If the value is 0, then there is no limit. (default 0)
-PRFL_AVATAR_MAX_SIZE=5242880
+# Directory for storing avatar files. Default: ./imgs/avatar
+# PRFL_AVATAR_FILES_DIR=./imgs/avatar
+# Maximum size for avatar files. (Default: 0) If the value is 0, then there is no limit. (5242880 = 5MB)
+# PRFL_AVATAR_MAX_SIZE=5242880
 # List of valid input mime types for avatar files (comma delimited).
-# Valid values: image/jpeg,image/gif,image/png,image/bmp
-PRFL_AVATAR_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
+# Default (all valid values): image/jpeg,image/gif,image/png,image/bmp
+# PRFL_AVATAR_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
 # Logo files will be converted to this MIME type.
-# Valid values: jpeg,gif,png,bmp
-PRFL_AVATAR_EXT=jpeg
+# Valid values: jpeg,gif,png,bmp (Default: "") The value ="" cancels the conversion.
+# PRFL_AVATAR_EXT=jpeg
 # Maximum width (px) for a avatar file. (default 0)
-PRFL_AVATAR_MAX_WIDTH=192
+# PRFL_AVATAR_MAX_WIDTH=192
 # Maximum height (px) for a avatar file. (default 0)
-PRFL_AVATAR_MAX_HEIGHT=192
+# PRFL_AVATAR_MAX_HEIGHT=192

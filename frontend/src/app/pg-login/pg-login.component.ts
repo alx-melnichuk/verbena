@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -23,16 +23,13 @@ export class PgLoginComponent {
     public isDisabledSubmit = false;
     public errMsgs: string[] = [];
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private router: Router,
-        private profileService: ProfileService,
-    ) {
-    }
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private router: Router = inject(Router);
+    private profileService: ProfileService = inject(ProfileService);
 
     // ** Public API **
 
-    public async doLogin(params: StrParams): Promise<void> {
+    public doLogin(params: StrParams): void {
         if (!params) {
             return;
         }
@@ -42,19 +39,22 @@ export class PgLoginComponent {
         if (!nickname || !password) {
             return;
         }
-
         this.isDisabledSubmit = true;
         this.errMsgs = [];
-        try {
-            await this.profileService.login(nickname, password);
-            window.setTimeout(() => this.router.navigateByUrl(REDIRECT_AFTER_LOGIN), 0);
-        } catch (error) {
-            this.errMsgs = HttpErrorUtil.getMsgs(error as HttpErrorResponse);
-            throw error;
-        } finally {
-            this.isDisabledSubmit = false;
-            this.changeDetector.markForCheck();
-        }
+        this.profileService.login(nickname, password)
+            .then(() => {
+                window.setTimeout(() => {
+                    this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
+                }, 0);
+            })
+            .catch((error) => {
+                this.errMsgs = HttpErrorUtil.getMsgs(error as HttpErrorResponse);
+                throw error;
+            })
+            .finally(() => {
+                this.isDisabledSubmit = false;
+                this.changeDetector.markForCheck();
+            })
     }
 
     // ** Private API **

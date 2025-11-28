@@ -9,32 +9,51 @@ export class HttpErrorUtil {
     public static getTranslate(): TranslateService | undefined {
         return HttpErrorUtil.translate;
     }
+    public static covertToMsg(error: any): string[] {
+        const result: string[] = [];
+        if (!error) {
+            return [];
+        }
+        const errResList = !Array.isArray(error) ? [error] : error;
+        for (let index = 0; index < errResList.length; index++) {
+            let value = '';
+            const appError = errResList[index];
+            if (typeof appError == 'object') {
+                const code = appError['code'] || '';
+                // Extract the first value up to the ";" delimiter.
+                const message = (appError['message'] || '').split(';')[0];
+                if (!!code) {
+                    const key = `${code}${!!message ? '.' + message : ''}`;
+                    const value2 = HttpErrorUtil.translate?.instant(key, appError['params'] || {}) || key;
+                    value = value2 != key ? value2 : `${code}${!!message ? ': ' + message : ''}`;
+                }
+            } else {
+                value = (appError || '').toString();
+            }
+            if (!!value) {
+                result.push(value);
+            }
+        }
+        return result;
+    }
     public static getMsgs(errRes: HttpErrorResponse): string[] {
         let result: string[] = [];
         if (!!errRes && !!errRes.error) {
-            const errResList = !Array.isArray(errRes.error) ? [errRes.error] : errRes.error;
-            for (let index = 0; index < errResList.length; index++) {
-                let value = '';
-                const appError = errResList[index];
-                if (typeof appError == 'object') {
-                    const code = appError['code'] || '';
-                    // Extract the first value up to the ";" delimiter.
-                    const message = (appError['message'] || '').split(';')[0];
-                    if (!!code) {
-                        const key = `${code}${!!message ? '.' + message : ''}`;
-                        const value2 = HttpErrorUtil.translate?.instant(key, appError['params'] || {}) || key;
-                        value = value2 != key ? value2 : `${code}${!!message ? ': ' + message : ''}`;
-                    }
-                } else {
-                    value = (appError || '').toString();
-                }
-                if (!!value) {
-                    result.push(value);
-                }
-            }
+            result = HttpErrorUtil.covertToMsg(errRes.error);
         }
         if (result.length == 0 && !!HttpErrorUtil.translate) {
             const txt = errRes.status > 299 ? ` ${errRes.status} ${errRes.statusText}` : ``;
+            result.push(HttpErrorUtil.translate.instant('error.server_api_call') + txt);
+        }
+        return result;
+    }
+    public static getMsg(error: any, statusText?: string | undefined): string[] {
+        let result: string[] = [];
+        if (!!error) {
+            result = HttpErrorUtil.covertToMsg(error);
+        }
+        if (result.length == 0 && !!HttpErrorUtil.translate) {
+            const txt = statusText != null ? ` ${statusText}` : ``;
             result.push(HttpErrorUtil.translate.instant('error.server_api_call') + txt);
         }
         return result;

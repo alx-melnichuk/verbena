@@ -1,0 +1,28 @@
+[package]
+name = "vrb_tools"
+version = "0.1.0"
+edition = "2024"
+description = "Tool library for the Verbena project."
+keywords = ["vrb_tools", "send_email", "consts", "err"]
+license = { workspace = true }
+rust-version = { workspace = true }
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+actix-web = { workspace = true }
+argon2 = { workspace = true }
+chrono = { workspace = true }
+getrandom = { workspace = true }
+handlebars = { workspace = true }
+image = { workspace = true }
+jsonwebtoken = { workspace = true }
+lettre = { workspace = true }
+log = { workspace = true }
+openssl = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+vrb_common = { version = "0.1", path="../vrb_common" }
+

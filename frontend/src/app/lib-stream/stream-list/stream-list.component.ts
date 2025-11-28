@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { CommonModule, KeyValue } from '@angular/common';
+import {
+    ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
+} from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
@@ -9,178 +9,154 @@ import { LocaleService } from 'src/app/common/locale.service';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { HttpErrorUtil } from 'src/app/utils/http-error.util';
+import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 import { PanelStreamCalendarComponent } from '../panel-stream-calendar/panel-stream-calendar.component';
 import { PanelStreamEventComponent } from '../panel-stream-event/panel-stream-event.component';
 import { PanelStreamInfoComponent } from '../panel-stream-info/panel-stream-info.component';
-import { StreamCalendarService } from '../stream-calendar.service';
-import { StreamListService } from '../stream-list.service';
-import { StreamService } from '../stream.service';
+import { StreamDto, StreamEventDto, StreamsPeriodDto } from '../stream-api.interface';
+import { DateUtil } from 'src/app/utils/date.utils';
+
+export const CN_DELETE_STREAM = "deleteStream";
 
 @Component({
     selector: 'app-stream-list',
     standalone: true,
-    imports: [CommonModule, TranslatePipe, SpinnerComponent, PanelStreamEventComponent, PanelStreamInfoComponent,
-        PanelStreamCalendarComponent, DateTimeFormatPipe],
+    imports: [CommonModule, TranslatePipe, PanelStreamEventComponent, PanelStreamInfoComponent,
+        PanelStreamCalendarComponent, DateTimeFormatPipe, SpinnerComponent],
     templateUrl: './stream-list.component.html',
     styleUrl: './stream-list.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StreamListComponent implements OnInit {
-    public userId: number;
-    public isRefreshPanelStreamEvent: boolean | null | undefined;
+export class StreamListComponent implements OnChanges {
+    @Input()
+    public errObj: KeyValue<string, string> | null = null;
+    @Input()
+    public calendarDaySelected: Date | null = null;
+    @Input()
+    public calendarMarkedDates: StreamsPeriodDto[] = [];
+    @Input()
+    public calendarMaxDate: Date | null = null;
+    @Input()
+    public calendarMinDate: Date | null = null;
+    @Input()
+    public futureStreams: StreamDto[] = [];
+    @Input()
+    public isLoadStreams = false;
+    @Input()
+    public isRefreshStreamEvent: boolean | null | undefined;
+    @Input()
+    public pastStreams: StreamDto[] = [];
+    @Input()
+    public profileDto: ProfileDto | null = null;
+    @Input()
+    public streamEventsForDay: StreamEventDto[] = [];
+
+    @Output()
+    readonly calendarForPeriod: EventEmitter<Date> = new EventEmitter();
+    @Output()
+    readonly futureNextPage: EventEmitter<void> = new EventEmitter();
+    @Output()
+    readonly pastNextPage: EventEmitter<void> = new EventEmitter();
+    @Output()
+    readonly streamEventsForDate: EventEmitter<{ selectedDate: Date | null, pageNum: number }> = new EventEmitter();
+
+    @Output()
+    readonly actionDuplicate: EventEmitter<number> = new EventEmitter();
+    @Output()
+    readonly actionEdit: EventEmitter<number> = new EventEmitter();
+    @Output()
+    readonly actionView: EventEmitter<number> = new EventEmitter();
+    @Output()
+    readonly actionDelete: EventEmitter<number> = new EventEmitter();
+
+    public calendarMonth: Date = new Date();
+    public isLoadData: boolean = false;
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'long' };
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private route: ActivatedRoute,
-        private translateService: TranslateService,
-        private dialogService: DialogService,
-        private streamService: StreamService,
-        private alertService: AlertService,
-        public localeService: LocaleService,
-        public streamListService: StreamListService,
-        public streamCalendarService: StreamCalendarService,
-    ) {
-        const userDto = this.route.snapshot.data['userDto'];
-        this.userId = userDto.id;
-    }
+    public localeService: LocaleService = inject(LocaleService);
 
-    async ngOnInit(): Promise<void> {
-        await this.loadFutureAndPastStreamsAndSchedule();
+    private translateService: TranslateService = inject(TranslateService);
+    private dialogService: DialogService = inject(DialogService);
+    private alertService: AlertService = inject(AlertService);
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['errObj'] && !!this.errObj) {
+            this.alertService.showError(this.errObj.value, this.getTitleByKey(this.errObj.key));
+        }
+        if (!!changes['calendarDaySelected'] && !!this.calendarDaySelected) {
+            let date = new Date(this.calendarDaySelected.getTime());
+            date.setHours(0, 0, 0, 0);
+            const startMonth = DateUtil.dateFirstDayOfMonth(date);
+            this.calendarMonth = startMonth;
+        }
     }
 
     // ** Public API **
 
     // ** "Streams Calendar" panel-stream-calendar **
 
-    public async getCalendarInfoForPeriod(calendarStart: Date): Promise<void> {
-        const buffPromise: Promise<unknown>[] = [];
-        // Get a list of events (streams) for a specified date.
-        buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(calendarStart, false));
-        if (this.streamCalendarService.isShowEvents(calendarStart)) {
-            buffPromise.push(this.getListEventsForDate(this.streamCalendarService.eventsOfDaySelected, 1));
-        } else {
-            this.streamCalendarService.clearStreamsEvent();
-        }
-        try {
-            await Promise.all(buffPromise)
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+    public doCalendarForPeriod(calendarStart: Date): void {
+        this.calendarMonth = calendarStart;
+        this.calendarForPeriod.emit(calendarStart);
     }
 
     // ** "Streams Event" panel-stream-event **
 
-    public async getListEventsForDate(selectedDate: Date | null, pageNum: number): Promise<void> {
-        try {
-            // Get the next page of the list of short streams for the selected date.
-            await this.streamCalendarService.getListEventsForDate(selectedDate, pageNum)
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+    public isShowEvents(calendarDaySelected: Date | null, calendarMonth: Date): boolean {
+        return !!calendarDaySelected ? DateUtil.compareYearMonth(calendarDaySelected, calendarMonth) == 0 : false;
+    }
+
+    public doStreamEventsForDate(selectedDate: Date | null, pageNum: number): void {
+        this.streamEventsForDate.emit({ selectedDate, pageNum });
     }
 
     // ** "Future Stream" and "Past Stream" panel-stream-info **
 
-    public async searchInfoNextFutureStream(): Promise<void> {
-        try {
-            // Get the next page of the "Future Stream".
-            await this.streamListService.searchNextFutureStream();
-            // Refresh view for "panel-stream-event".
-            this.isRefreshPanelStreamEvent = !this.isRefreshPanelStreamEvent ? true : undefined;
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+    public doFutureNextPage(): void {
+        this.futureNextPage.emit();
     }
 
-    public async searchInfoNextPastStream(): Promise<void> {
-        try {
-            // Get the next page of "Past Stream".
-            await this.streamListService.searchNextPastStream();
-            // Refresh view for "panel-stream-event".
-            this.isRefreshPanelStreamEvent = !this.isRefreshPanelStreamEvent ? true : undefined;
-        } finally {
-            this.changeDetector.markForCheck();
-        }
+    public doPastNextPage(): void {
+        this.pastNextPage.emit();
     }
 
     // ** **
 
-    public actionDuplicate(streamId: number): void {
-        this.streamService.redirectToStreamCreationPage(streamId);
+    public doActionDuplicate(streamId: number): void {
+        this.actionDuplicate.emit(streamId);
     }
 
-    public actionEdit(streamId: number): void {
-        this.streamService.redirectToStreamEditingPage(streamId);
+    public doActionEdit(streamId: number): void {
+        this.actionEdit.emit(streamId);
     }
 
-    public redirectToStreamView(streamId: number): void {
-        this.streamService.redirectToStreamViewPage(streamId);
+    public doActionView(streamId: number): void {
+        this.actionView.emit(streamId);
     }
 
-    public async actionDelete(info: { id: number, title: string }): Promise<void> {
-        this.alertService.hide();
+    public doActionDelete(info: { id: number, title: string }): void {
         if (!info || !info.id) {
-            return Promise.resolve();
+            return;
         }
         const message = this.translateService.instant('stream_list.sure_you_want_delete_stream', { title: info.title });
-        const res = await this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
-        if (!!res) {
-            await this.deleteDataStream(info.id);
-        }
+        this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' })
+            .then((res) => {
+                if (!!res) {
+                    this.actionDelete.emit(info.id);
+                }
+            });
     }
 
     // ** Private API **
 
-    private async loadFutureAndPastStreamsAndSchedule(): Promise<void> {
-        // Clear array of "Future Stream"
-        this.streamListService.clearFutureStream();
-        // Clear array of "Past Stream"
-        this.streamListService.clearPastStream();
-
-        const buffPromise: Promise<unknown>[] = [];
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-
-        // Get the next page of the "Future Stream".
-        buffPromise.push(this.streamListService.searchNextFutureStream());
-        // Get the next page of "Past Stream".
-        buffPromise.push(this.streamListService.searchNextPastStream());
-        const selectedDate = this.streamCalendarService.eventsOfDaySelected || now;
-        // Get a list of short streams for the selected date.
-        buffPromise.push(this.streamCalendarService.getListEventsForDate(selectedDate, 1));
-        const selectedMonth = this.streamCalendarService.calendarMonth || now;
-        // Get a list of events (streams) for a specified date.
-        buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(selectedMonth, true));
-
-        try {
-            await Promise.all(buffPromise);
-        } finally {
-            this.changeDetector.markForCheck();
+    private getTitleByKey(errKey: string): string {
+        let result = '';
+        if (CN_DELETE_STREAM == errKey) {
+            result = 'stream_list.error_delete_stream';
         }
-    }
-
-    private async deleteDataStream(streamId: number): Promise<void> {
-        this.alertService.hide();
-        if (!streamId) {
-            return Promise.reject();
-        }
-        let isRefres = false;
-        try {
-            await this.streamService.deleteStream(streamId);
-            isRefres = true;
-        } catch (error) {
-            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_delete_stream');
-            throw error;
-        } finally {
-            this.changeDetector.markForCheck();
-            if (isRefres) {
-                setTimeout(() => this.loadFutureAndPastStreamsAndSchedule(), 0);
-            }
-        }
+        return result;
     }
 }

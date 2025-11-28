@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -19,20 +19,16 @@ import { HttpErrorUtil } from '../utils/http-error.util';
     styleUrl: './pg-signup.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DialogService],
 })
 export class PgSignupComponent {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private router: Router = inject(Router);
+    private dialogService: DialogService = inject(DialogService);
+    private profileService: ProfileService = inject(ProfileService);
+    private translate: TranslateService = inject(TranslateService);
+
     public isDisabledSubmit = false;
     public errMsgs: string[] = [];
-
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private router: Router,
-        private translate: TranslateService,
-        private dialogService: DialogService,
-        private profileService: ProfileService,
-    ) {
-    }
 
     // ** Public API **
 

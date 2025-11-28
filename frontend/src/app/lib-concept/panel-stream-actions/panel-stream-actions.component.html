@@ -1,35 +1,35 @@
 @if (isShowBntPrepare(state)) {
-  <button mat-stroked-button psa-pd-lf-0_5 (click)="doChangeState(statePreparing)">
-    <svg psa-mr-rg-0_25 class="psa-svg-sz psa-ver-md">
+  <button mat-stroked-button psa-btn (click)="doChangeState(statePreparing)">
+    <svg psa-mr-r0_25 class="psa-svg-sz psa-ver-md">
       <use href="assets/icons/lib-concept/panel-stream-actions/prepare-bin.svg#prepare-bin"></use>
     </svg>
-    <span class="psa-ver-md">{{ 'panel-stream-actions.prepare_stream' | translate }}</span>
+    <span psa-mr-r0_25 class="psa-ver-md">{{ 'panel-stream-actions.prepare_stream' | translate }}</span>
   </button>
 }
 
 @if (isShowBntStart(state)) {
-  <button mat-stroked-button psa-pd-lf-0_25 (click)="doChangeState(stateStarted)">
-    <svg class="psa-svg-sz psa-ver-md">
+  <button mat-stroked-button psa-btn (click)="doChangeState(stateStarted)">
+    <svg psa-mr-r0_25 class="psa-svg-sz psa-ver-md psa-scale">
       <use href="assets/icons/lib-concept/panel-stream-actions/play-bin.svg#play-bin"></use>
     </svg>
-    <span class="psa-ver-md">{{ 'panel-stream-actions.go_live_stream' | translate }}</span>
+    <span psa-mr-r0_25 class="psa-ver-md">{{ 'panel-stream-actions.go_live_stream' | translate }}</span>
   </button>
 }
 
 @if (isShowBntPause(state)) {
-  <button mat-stroked-button psa-pd-lf-0_25 (click)="doChangeState(statePaused)">
-    <svg class="psa-svg-sz psa-ver-md">
+  <button mat-stroked-button psa-btn (click)="doChangeState(statePaused)">
+    <svg psa-mr-r0_25 class="psa-svg-sz psa-ver-md psa-scale">
       <use href="assets/icons/lib-concept/panel-stream-actions/pause-bin.svg#pause-bin"></use>
     </svg>
-    <span class="psa-ver-md">{{ 'panel-stream-actions.pause_stream' | translate }}</span>
+    <span psa-mr-r0_25 class="psa-ver-md">{{ 'panel-stream-actions.pause_stream' | translate }}</span>
   </button>
 }
 
 @if (isShowBtnStop(state)) {
-  <button mat-stroked-button psa-mr-lf-0_5 psa-pd-lf-0_25 (click)="doChangeState(stateStopped)">
-    <svg class="psa-svg-sz psa-ver-md">
+  <button mat-stroked-button psa-btn (click)="doChangeState(stateStopped)">
+    <svg psa-mr-r0_25 class="psa-svg-sz psa-ver-md psa-scale">
       <use href="assets/icons/lib-concept/panel-stream-actions/stop-bin.svg#stop-bin"></use>
     </svg>
-    <span class="psa-ver-md">{{ 'panel-stream-actions.stop_stream' | translate }}</span>
+    <span psa-mr-r0_25 class="psa-ver-md">{{ 'panel-stream-actions.stop_stream' | translate }}</span>
   </button>
 }

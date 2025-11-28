@@ -1,0 +1,406 @@
+#[cfg(all(test, feature = "mockdata"))]
+pub mod tests {
+    use std::{fs, path};
+
+    use actix_web::{
+        App, body, dev,
+        http::StatusCode,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
+    };
+    use serde_json;
+    use vrb_authent::{
+        config_jwt,
+        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
+    };
+    use vrb_common::{
+        api_error::{ApiError, code_to_str},
+        consts, env_var, err,
+    };
+    use vrb_tools::png_files;
+
+    use crate::{
+        config_prfl,
+        profile_controller::{delete_profile, delete_profile_current, tests as ProfileCtrlTest},
+        profile_models::UserProfileDto,
+        profile_orm::tests::ProfileOrmTest,
+    };
+
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+
+    #[rustfmt::skip]
+    fn stream_logo_path(files_dir: &str, user_id: i32) -> Option<String> {
+        let idx = user_id - USER1_ID;
+        if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", files_dir, idx)) } else { None }
+    }
+
+    // ** delete_profile **
+
+    #[actix_web::test]
+    async fn test_delete_profile_invalid_id() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile_id_bad = format!("{}a", data_u.0.get(0).unwrap().id);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id_bad))
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
+        #[rustfmt::skip]
+        let msg = format!("{}; `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, profile_id_bad);
+        assert_eq!(app_err.message, msg);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_non_existent_id() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let user_id = data_u.0.get(0).unwrap().id;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", user_id + 1))
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_existent_id() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile1 = profiles.get(0).unwrap().clone();
+        let profile1_id = profile1.user_id;
+        let user_profile1_dto = UserProfileDto::from(profile1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(user_profile1_dto).to_string();
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_with_img() {
+        let config_prfl = config_prfl::get_test_config();
+        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir; // "./tmp"
+
+        let name0_file = "test_delete_profile_with_img.png";
+        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
+        png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
+
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile1 = profiles.get_mut(0).unwrap();
+        profile1.avatar = Some(path_name0_alias);
+        let profile1_id = profile1.user_id;
+        let profile_dto = UserProfileDto::from(profile1.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert!(!is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile_dto).to_string();
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_with_img_not_alias() {
+        let config_prfl = config_prfl::get_test_config();
+        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir; // "./tmp"
+
+        let name0_file = "test_delete_profile_with_img_not_alias.png";
+        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
+        png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
+
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile1 = profiles.get_mut(0).unwrap();
+        profile1.avatar = Some(path_name0_alias);
+        let profile1_id = profile1.user_id;
+        let profile_dto = UserProfileDto::from(profile1.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert!(is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile_dto).to_string();
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_with_stream_img() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile1 = profiles.get_mut(0).unwrap();
+        let profile1_id = profile1.user_id;
+        let profile_dto = UserProfileDto::from(profile1.clone());
+
+        let config_prfl = config_prfl::get_test_config();
+        let files_dir = config_prfl.prfl_avatar_files_dir.clone();
+        env_var::env_set_var(consts::STRM_LOGO_FILES_DIR, &files_dir);
+        let path_logo0_file = stream_logo_path(&files_dir, profile1_id).unwrap();
+
+        // Create a logo file for this user's stream.
+        png_files::save_file_png(&(path_logo0_file.clone()), 1).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_logo0_file).exists();
+        let _ = fs::remove_file(&path_logo0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        // After deleting a user, the stream logo file should be deleted.
+        assert!(!is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile_dto).to_string();
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
+    }
+
+    // ** delete_profile_current **
+
+    #[actix_web::test]
+    async fn test_delete_profile_current_without_img() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER]);
+        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile1 = profiles.get(0).unwrap().clone();
+        let profile1_dto = UserProfileDto::from(profile1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile_current)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/profiles_current")
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile1_dto).to_string();
+        let profile1_dto_ser: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile1_dto_ser);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_current_with_img() {
+        let config_prfl = config_prfl::get_test_config();
+        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir; // "./tmp"
+
+        let name0_file = "test_delete_profile_current_with_img.png";
+        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
+        png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
+
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile1 = profiles.get_mut(0).unwrap();
+        profile1.avatar = Some(path_name0_alias);
+        let profile_dto = UserProfileDto::from(profile1.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile_current)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/profiles_current")
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert!(!is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile_dto).to_string();
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_current_with_img_not_alias() {
+        let config_prfl = config_prfl::get_test_config();
+        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir; // "./tmp"
+
+        let name0_file = "test_delete_profile_current_with_img_not_alias.png";
+        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
+        png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
+
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile1 = profiles.get_mut(0).unwrap();
+        profile1.avatar = Some(path_name0_alias);
+        let profile_dto = UserProfileDto::from(profile1.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile_current)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/profiles_current")
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert!(is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile_dto).to_string();
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_current_with_stream_img() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN]);
+        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let profile1 = profiles.get_mut(0).unwrap();
+        let profile1_id = profile1.user_id;
+        let profile_dto = UserProfileDto::from(profile1.clone());
+        let config_prfl = config_prfl::get_test_config();
+        let files_dir = config_prfl.prfl_avatar_files_dir.clone();
+        env_var::env_set_var(consts::STRM_LOGO_FILES_DIR, &files_dir);
+        let path_logo0_file = stream_logo_path(&files_dir, profile1_id).unwrap();
+        // Create a logo file for this user's stream.
+        png_files::save_file_png(&(path_logo0_file.clone()), 1).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile_current)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/profiles_current")
+            .insert_header(ProfileCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_logo0_file).exists();
+        let _ = fs::remove_file(&path_logo0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        // After deleting a user, the stream logo file should be deleted.
+        assert!(!is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: UserProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile_dto).to_string();
+        let profile_dto_org: UserProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
+    }
+}

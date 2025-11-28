@@ -3,7 +3,8 @@ import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
 import {
-    SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto, StreamsPeriodDto, UpdateStreamFileDto, StreamState,
+    SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto, UpdateStreamFileDto,
+    StreamState,
 } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
@@ -132,9 +133,8 @@ export class StreamService {
     }
 
     public redirectToStreamViewPage(streamId: number): void {
-        // TODO Currently under development.
-        // if (!!streamId) {
-        //     window.setTimeout(() => this.router.navigate([ROUTE_VIEW, streamId]), 0);
-        // }
+        if (!!streamId) {
+            window.setTimeout(() => this.router.navigate([ROUTE_CONCEPT_VIEW, streamId]), 0);
+        }
     }
 }

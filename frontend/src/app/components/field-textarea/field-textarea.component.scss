@@ -1,0 +1,24 @@
+/*# sourceURL=field-textarea.component.scss */
+
+app-field-textarea {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    &[scroll-thin] {
+        textarea.ft-textarea {
+            scrollbar-width: thin;
+        }
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+}

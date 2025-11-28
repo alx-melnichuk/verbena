@@ -1,111 +1,140 @@
-<!-- <p>concept-view works!</p> -->
+@if (isLoadStream) {
+  <app-spinner isFillParent></app-spinner>
+}
 
-<!-- @if (streamStateService.changeOfState) {
-  <app-spinner [isFullOwner]="true"></app-spinner>
+<!-- @if (isStreamOwner) {
+<app-sidebar class="cv-sidebar" mode="left"
+  [isOpen]="isSidebarLfOpen"
+  (click)="isSidebarLfOpen=(isSidebarLfOpen==false ? true: isSidebarLfOpen)">
+  <div sidebar-layer>
+    <button class="cv-sdb-btn cv-btn-arrow cv-btn-lf" (click)="clearEvent($event); isSidebarLfOpen = !isSidebarLfOpen;">
+      <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLfOpen ? 'cv-0deg' : 'cv-180deg')]">
+        <use href="assets/icons/lib-concept/concept-view/angle-left-bin.svg#angle-left-bin"></use>
+      </svg>
+    </button>
+  </div>
+  <div cv-hg100 cv-brd-bx cv-pd-rg0_5>
+  </div>
+</app-sidebar>
 } -->
 
-<app-sidebar class="cv-side-bar cv-brd-rg" [isOpen]="isSidebarLeftOpen">
-  <button class="cv-btn-arrow cv-left" (click)="isSidebarLeftOpen = !isSidebarLeftOpen;">
-    <div [ngClass]="['cv-icon cv-angle-left cv-rotate', (isSidebarLeftOpen ? 'cv-0deg' : 'cv-180deg')]"></div>
-  </button>
-  <aside class="cv-aside">
-    cv-bar-left
-  <!-- <app-panel-left-followers
-    [isMiniSize]="isMiniSidebarLeft"
-    [isLoading]="followersService.followersAndPopularLoading"
-    [followerList]="followersService.followerDTOList"
-    [popularList]="followersService.popularDTOList"
-  >
-    <div class="ticker" [appTradMarketOverview]="{ isDarkTheme: isDarkTheme }">
-    </div>
-  </app-panel-left-followers> -->
-  </aside>
-</app-sidebar>
-
-<div class="cv-center global-scroll">
-    
-  <div [ngClass]="[(isStreamVideo ? 'cv-stream-video' : '')]">
-    <!-- <div [ngClass]="['cv-box-video', classNameViewerSize()]"> -->
-      <!-- <div class="height-100ps" [appMillicastViewer]="millicastViewer"></div> -->
-      <div class="cv-hg100"></div>
-      <app-panel-stream-state class="cv-stream-state"
-        [streamState]="streamDto?.state || null">
-      </app-panel-stream-state>
-    <!-- </div> -->
+<div class="cv-center">
+  
+  <div [ngClass]="[(isStreamVideo ? 'cv-cnt-video' : '')]">
+  <!-- <div [ngClass]="['cv-box-video', classNameViewerSize()]"> -->
+    <!-- <div class="height-100ps" [appMillicastViewer]="millicastViewer"></div> -->
+    <div cv-hg100></div>
+    <app-panel-stream-state class="cv-stream-state"
+      [streamState]="streamDto?.state || null">
+    </app-panel-stream-state>
+  <!-- </div> -->
   </div>
 
-  <div class="cv-stream-panel">
-    
-    <app-panel-stream-params style9="outline: 1px dashed darkblue;"
-      [title]="streamDto?.title"
-      [tags]="streamDto?.tags || []"
-      [startDateTime]="getDate(streamDto?.starttime)">
-    </app-panel-stream-params>
-    
-    <div class="cv-stream-tools">
-      stream-tools
-    </div>
-    <div class="cv-stream-actions">
-      @if (isStreamOwner) {
-        <app-panel-stream-actions
-          [state]="streamDto?.state"
-          [title]="streamDto?.title"
-          (changeState)="doChangeState($event)">
-        </app-panel-stream-actions>
-      }
-    </div>
-  </div>
-  @if (!isStreamOwner) {
-    Is not Stream Owner
-    <!-- @if (subscribeLoading) {
-    <app-spinner [isFullOwner]="true" [diameter]="60"></app-spinner>
-    }
-    <app-panel-stream-info
-      [streamDTO]="streamDTO"
-      [extendedUserDTO]="extendedUserDTO"
-      [hasSubscribe]="hasSubscriptionToAuthor"
-      [countOfViewer]="socketService.countOfViewer$ | async"
-      [broadcastDuration]="broadcastDuration"
-      (actionSubscribe)="doActionSubscribe($event)">
-    </app-panel-stream-info> -->
-  } @else {
-    <!-- <div class="cv-stream-info">
-      <app-panel-stream-admin
-        countOfViewer9="socketService.countOfViewer$ | async"
-        [countOfViewer]="0"
-        [state]="streamDto?.state"
-        [startDate]="getDate(streamDto?.starttime)"
-        [title]="streamDto?.title"
-        (changeState)="doChangeState($event)">
-      </app-panel-stream-admin>
-    </div> -->
-  }
+  <div class="cv-cnt-sepr"></div>
 
-  <!-- <div class="user-portfolio">
-    <app-panel-portfolio-schedule class="details"
-      [isDarkTheme]="isDarkTheme"
-      [queryParamMap]="route.queryParamMap | async"
-      [userId]="streamDTO?.userId || null"
-    ></app-panel-portfolio-schedule>
-  </div> -->
+  <div class="cv-cnt-footer">
+
+    <div class="cv-cnt-title">
+      <span cv-mr-rg0_5 class="cv-cnt-label">{{ 'concept-view.title' | translate }}</span>
+      <span>{{ streamDto?.title }}</span>
+    </div>
+
+    <div class="cv-cnt-brd"></div>
+
+    <div class="cv-cnt-params">
+        
+      <div class="cv-cnt-nickname cv-cnt-prm">
+        <app-avatar av-mx-wd-1_5-hg cv-mr-rg0_5 class="cv-cnt-avatar"
+          [avatar]="ownerAvatar">
+        </app-avatar>
+        <div class="cv-cnt-name-tags">
+          <div>{{ ownerNickname }}</div>
+          <div class="cv-cnt-email">{{ ownerEmail }}</div>
+          <div class="cv-cnt-tags">
+            <span cv-mr-rg0_5>{{ 'concept-view.tags' | translate }}</span>
+            @for (tag of (streamDto?.tags || []); track tag) {
+              <span cv-mr-rg0_5>#{{ tag }}</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-cnt-prm cv-cnt-actions">
+        <span class="cv-cnt-label">{{ 'concept-view.state' | translate }}</span>
+        <span>@if (!!streamDto) {  {{ ('concept-view.' + streamDto.state) | translate }}  }</span>
+        @if (isStreamOwner && streamDto?.state != 'stopped') {
+          <app-panel-stream-actions
+            [state]="streamDto?.state"
+            [title]="streamDto?.title"
+            (changeState)="doChangeState($event)">
+          </app-panel-stream-actions>
+        }
+      </div>
+
+      <div class="cv-cnt-prm">
+        <app-panel-stream-params
+          [countOfViewer]="countOfViewer"
+          [locale]="localeService.getLocale()"
+          [streamStarttime]="streamDto?.starttime"
+          [streamStarted]="streamDto?.started"
+          [streamPaused]="streamDto?.paused"
+          [streamStopped]="streamDto?.stopped"
+          [timerActive]="timerActive"
+          [timerIsShow]="timerIsShow"
+          [timerValue]="timerValue">
+        </app-panel-stream-params>
+      </div>
+
+    </div>
+
+    <div class="cv-cnt-brd"></div>
+
+    <div class="cv-cnt-title">
+      <span cv-mr-rg0_5 class="cv-cnt-label">{{ 'concept-view.descript' | translate }}</span>
+      <span>{{ streamDto?.descript }}</span>
+    </div>
+ 
+  </div>
+    
 </div>
 
-<app-sidebar class="cv-side-bar cv-brd-lf" [isOpen]="isSidebarRightOpen">
-  <button class="cv-btn-arrow cv-right" (click)="isSidebarRightOpen = !isSidebarRightOpen;">
-    <div [ngClass]="['cv-icon cv-angle-right cv-rotate', (isSidebarRightOpen ? 'cv-0deg' : 'cv-180deg')]"></div>
-  </button>
-  <aside class="cv-aside">
-    cv-bar-right
-  <!-- <app-panel-right-chat
-    [isEditable]="isEditableChat"
-    [userId]="profileService.getUserId()"
-    [chatMessages]="chatMessages"
-    [isStreamOwner]="isStreamOwner"
-    [isUserBanned]="isUserBanned || (socketService.userBanned$ | async)"
-    (sendMessage)="doSendMessage($event)"
-    (removeMessage)="doRemoveMessage($event)"
-    (editMessage)="doEditMessage($event)"
-    (bannedUser)="doBannedUser($event)"
-  ></app-panel-right-chat> -->
-  </aside>
+<app-sidebar class="cv-sidebar" mode="right"
+  [isOpen]="isSidebarRgOpen"
+  (click)="isSidebarRgOpen=(isSidebarRgOpen==false ? true: isSidebarRgOpen)">
+  <div sidebar-layer>
+    <button class="cv-sdb-btn cv-btn-arrow cv-btn-rg" (click)="clearEvent($event); isSidebarRgOpen=!isSidebarRgOpen;">
+      <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarRgOpen ? 'cv-0deg' : 'cv-180deg')]">
+        <use href="assets/icons/lib-concept/concept-view/angle-right-bin.svg#angle-right-bin"></use>
+      </svg>
+    </button>
+  </div>
+  <div cv-hg100 cv-brd-bx cv-pd-lf0_5>
+    <app-panel-chat class="cv-prm-chat cv-sdb-brd cv-brd-lf"
+      [blockedUsers]="chatBlockedUsers"
+      [chatPastMsgs]="chatPastMsgs"
+      [chatNewMsgs]="chatNewMsgs"
+      [chatRmvIds]="chatRmvIds"
+      [isBlocked]="chatIsBlocked"
+      [isEditable]="chatIsEditable"
+      [isLoading]="chatIsLoading"
+      [isOwner]="chatIsOwner"  
+      [locale]="localeService.getLocale()"
+      [maxLen]="chatMaxLen"
+      [minLen]="chatMinLen"
+      [maxRows]="chatMaxRows"
+      [minRows]="chatMinRows"
+      [nickname]="chatNickname || ''"
+      [title]="'concept-view.chat_title'"
+      (blockUser)="doBlockUser($event)"
+      (unblockUser)="doUnblockUser($event)"
+      (sendMsg)="doSendMessage($event)"
+      (editMsg)="doEditMessage($event)"
+      (cutMsg)="doCutMessage($event)"
+      (rmvMsg)="doRmvMessage($event)"
+      (queryPastMsgs)="doQueryPastMsgs($event)">
+    </app-panel-chat>
+  </div>
+
 </app-sidebar>
+
+

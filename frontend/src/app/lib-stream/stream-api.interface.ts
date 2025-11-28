@@ -30,23 +30,30 @@ export type StreamSateType = 'waiting' | 'preparing' | 'started' | 'paused' | 's
 
 export interface StreamDto {
     id: number;
+    // Owner id
     userId: number;
+    // Custom title (min: 2, max: 255)
     title: string;
-    descript: string; // description
+    // Custom description (default: '') (min: 2, max: 2048)
+    descript: string;
+    // Link to stream logo, optional (min: 2, max: 255)
     logo: string | null;
-    starttime: StringDateTime | null;
+    // The stream start time. Required on create
+    starttime: Date | null;
+    // Stream live status, false means inactive
     live: boolean;
+    // Stream live state - waiting, preparing, start, paused, stop (waiting by default)
     state: StreamState; // ['waiting', 'preparing', 'started', 'paused', 'stopped']
-    started: StringDateTime | null; // Date | null;
-    stopped: StringDateTime | null; // Date | null;
-    // status: bool,
+    // The time the stream began.
+    started: Date | null;
+    // The time the stream began pausing.
+    paused: Date | null;
+    // The time the stream stopped.
+    stopped: Date | null;
     source: string;
     tags: string[];
-    isMyStream?: boolean;
-    // credentials: Credentials | null;
-    // publicTarget: string | null;
-    createdAt: StringDateTime;
-    updatedAt: StringDateTime;
+    createdAt: Date | null;
+    updatedAt: Date | null;
 }
 
 export class StreamDtoUtil {
@@ -57,19 +64,21 @@ export class StreamDtoUtil {
             title: (streamDto?.title || ''),
             descript: (streamDto?.descript || ''),
             logo: (streamDto?.logo || null),
-            starttime: (streamDto?.starttime || null), // Date;
+            starttime: this.getDate(streamDto?.starttime || null),
             live: (streamDto?.live || false),
-            started: (streamDto?.started || null),
-            stopped: (streamDto?.stopped || null),
+            started: this.getDate(streamDto?.started || null), // StringDateTime;
+            paused: this.getDate(streamDto?.paused || null), // StringDateTime;
+            stopped: this.getDate(streamDto?.stopped || null), // StringDateTime;
             state: (streamDto?.state || StreamState.waiting),
             tags: (streamDto?.tags || []),
             source: (streamDto?.source || 'obs'),
-            isMyStream: (streamDto?.isMyStream),
-            // credentials: (streamDto?.credentials || null),
-            // publicTarget: (streamDto?.publicTarget || null)
-            createdAt: (streamDto?.createdAt || ''),
-            updatedAt: (streamDto?.updatedAt || ''),
+            createdAt: this.getDate(streamDto?.createdAt || null), // StringDateTime;
+            updatedAt: this.getDate(streamDto?.updatedAt || null), // StringDateTime;
         };
+    }
+    public static getDate(value: StringDateTime | Date | null): Date | null {
+        const isString = value != null && typeof value == 'string';
+        return isString ? StringDateTimeUtil.toDate(value) : value;
     }
     public static isFuture(startTime: StringDateTime | null): boolean | null {
         let date: Date | null = StringDateTimeUtil.toDate(startTime);

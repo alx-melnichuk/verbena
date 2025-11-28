@@ -4,7 +4,7 @@
 
     <div class="pl-title">{{ 'panel-login.title' | translate }}</div>
   
-    <app-field-nickname wd100 pl-mr-tp-0_5
+    <app-field-input wd100 pl-mr-tp-0_5
       formControlName="nickname"
       [gist]="isEmail ? 'email' : 'nickname'"
       [isRequired]="true"
@@ -15,15 +15,15 @@
       [type]="isEmail ? 'email' : 'text'"
       (input)="changeType($event['target']);updateErrMsg();"
       (focusout)="nicknameFocusout()">
-    </app-field-nickname>
-  
+    </app-field-input>
+
     <app-field-password wd100 pl-mr-tp-1
       formControlName="password"
       [isRequired]="true"
       (input)="updateErrMsg()">
     </app-field-password>
   
-    <button mat-flat-button pl-mr-tp-1
+    <button mat-stroked-button pl-mr-tp-1
       class="mat-primary"
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
       (click)="doLogin()">

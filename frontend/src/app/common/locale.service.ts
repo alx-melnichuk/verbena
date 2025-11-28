@@ -7,6 +7,8 @@ import { HttpErrorUtil } from "../utils/http-error.util";
 
 import { ENV_IS_PROD, LOCALE_EN, LOCALE_LIST } from './constants';
 
+export const LOCALE = 'locale';
+
 @Injectable({
     providedIn: "root"
 })
@@ -21,12 +23,13 @@ export class LocaleService {
     }
 
     // ** Locale **
+
     public getLocale(): string | null {
         return this.currLocale;
     }
 
     public setLocale(value: string | null): Promise<void> {
-        const locale = !!value ? LOCALE_LIST.find((item: string) => item.toLowerCase() == value.toLowerCase()) : LOCALE_EN;
+        const locale = this.findLocale(LOCALE_LIST, value) || LOCALE_EN;
         if (!locale || LOCALE_LIST.indexOf(locale) == -1) {
             console.error(`Invalid locale value "${locale}" (available: "${LOCALE_LIST.join('","')}").`);
             return Promise.reject();
@@ -41,6 +44,7 @@ export class LocaleService {
                         this.currLocale = locale;
                         this.dateAdapter.setLocale(locale);
                         HttpErrorUtil.setTranslate(this.translate);
+                        window.localStorage.setItem(LOCALE, locale);
                         resolve();
                     },
                     error: (err) => reject(err)
@@ -48,4 +52,15 @@ export class LocaleService {
         });
     }
 
+    public findLocale(localeList: string[], value: string | null): string | null {
+        const localeList2: string[] = [];
+        for (let index = 0; index < localeList.length; index++) {
+            localeList2.push(localeList[index].toLowerCase());
+        }
+        return !!value && localeList2.indexOf(value.toLowerCase()) > -1 ? value : null;
+    }
+
+    public getLocaleFromLocalStorage(): string | null {
+        return localStorage.getItem(LOCALE);
+    }
 }

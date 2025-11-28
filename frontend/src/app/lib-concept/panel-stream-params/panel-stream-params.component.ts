@@ -1,43 +1,62 @@
-import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslatePipe } from '@ngx-translate/core';
+import { ChangeDetectionStrategy, Component, inject, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
-
+import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
+import { TimeTrackingComponent } from 'src/app/components/time-tracking/time-tracking.component';
 
 @Component({
     selector: 'app-panel-stream-params',
     exportAs: 'appPanelStreamParams',
     standalone: true,
-    imports: [CommonModule, TranslatePipe, DateTimeTimerComponent],
+    imports: [CommonModule, DateTimeFormatPipe, TranslatePipe, TimeTrackingComponent],
     templateUrl: './panel-stream-params.component.html',
     styleUrl: './panel-stream-params.component.scss',
     encapsulation: ViewEncapsulation.None,
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelStreamParamsComponent implements OnChanges {
     @Input()
-    public title: string | null | undefined;
-    @Input()
-    public tags: string[] = [];
-    @Input()
-    public startDateTime: Date | null | undefined;
-    @Input()
     public countOfViewer: number | null | undefined;
+    @Input()
+    public locale: string | null = null;
+    @Input()
+    public streamStarttime: Date | null | undefined;  // The stream start time.
+    @Input()
+    public streamStarted: Date | null | undefined; // The time the stream began.
+    @Input()
+    public streamPaused: Date | null | undefined; // The time the stream began pausing.
+    @Input()
+    public streamStopped: Date | null | undefined; // The time the stream stopped.
+    @Input()
+    public timerActive: boolean | null | undefined;
+    @Input()
+    public timerIsShow: boolean | null | undefined;
+    @Input()
+    public timerValue: number | null | undefined;
 
-    public innStartDate: string | null = null;
-    public innStartTime: string | null = null;
-    public innStartDateTime: Date | null | undefined;
+    readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'long', timeStyle: 'short' };
+
+    private translate: TranslateService = inject(TranslateService);
+
+    public labelDays: Record<number, string> = this.createLabelDays(this.translate);
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes['startDateTime']) {
-            this.innStartDateTime = this.startDateTime;
-            this.innStartDate = '';
-            this.innStartTime = '';
-            if (this.startDateTime != null) {
-                this.innStartDate = this.startDateTime.toISOString().slice(0, 10);
-                this.innStartTime = this.startDateTime.toTimeString().slice(0, 5);
+        if (!!changes['locale']) {
+            this.labelDays = this.createLabelDays(this.translate);
+        }
+    }
+
+    // ** Private API **
+
+    private createLabelDays(translate: TranslateService): Record<number, string> {
+        const result: Record<number, string> = {};
+        for (let idx = -1; idx <= 20; idx++) {
+            const key = `panel-stream-params.time-tracking.${idx}`;
+            if (translate.instant(key) != key) {
+                result[idx] = key;
             }
         }
+        return result;
     }
 }

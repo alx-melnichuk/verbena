@@ -8,7 +8,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { LogotypeComponent } from 'src/app/components/logotype/logotype.component';
-import { ScrollHasMaxUtil } from 'src/app/utils/scroll-has-max.util';
+import { ScrollElemUtil } from 'src/app/utils/scroll-elem.util';
 
 import { StreamDto } from '../stream-api.interface';
 
@@ -49,15 +49,14 @@ export class PanelStreamInfoComponent {
     @Output()
     readonly requestNextPage: EventEmitter<void> = new EventEmitter();
     @Output()
-    readonly redirectToStream: EventEmitter<number> = new EventEmitter();
-    @Output()
     readonly actionDuplicate: EventEmitter<number> = new EventEmitter();
     @Output()
     readonly actionEdit: EventEmitter<number> = new EventEmitter();
     @Output()
+    readonly actionView: EventEmitter<number> = new EventEmitter();
+    @Output()
     readonly actionDelete: EventEmitter<{ id: number, title: string }> = new EventEmitter();
 
-    readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'long' };
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'long', timeStyle: 'short' };
 
     @HostBinding('class.global-scroll')
@@ -76,7 +75,7 @@ export class PanelStreamInfoComponent {
             }
             this.timerScrollPanel = setTimeout(() => {
                 this.timerScrollPanel = null;
-                if (ScrollHasMaxUtil.check(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
+                if (ScrollElemUtil.relativeOffset(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight) > 0.98) {
                     this.requestNextPage.emit();
                 }
             }, CN_ScrollPanelTimeout);
@@ -88,7 +87,7 @@ export class PanelStreamInfoComponent {
     //   event.preventDefault();
     //   event.stopPropagation();
     //   const elem: Element | null = event.target as Element;
-    //   if (ScrollHasMaxUtil.check(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
+    //   if (ScrollElemUtil.relativeOffset(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight) > 0.98) {
     //     this.requestNextPage.emit();
     //   }
     // }
@@ -102,13 +101,6 @@ export class PanelStreamInfoComponent {
         return item.id;
     }
 
-
-    public doRedirectToStream(streamId: number): void {
-        if (!!streamId) {
-            this.redirectToStream.emit(streamId);
-        }
-    }
-
     public doActionDuplicate(streamId: number): void {
         if (!!streamId) {
             this.actionDuplicate.emit(streamId);
@@ -119,6 +111,13 @@ export class PanelStreamInfoComponent {
             this.actionEdit.emit(streamId);
         }
     }
+
+    public doActionView(streamId: number): void {
+        if (!!streamId) {
+            this.actionView.emit(streamId);
+        }
+    }
+
     public doActionDelete(streamDto: StreamDto): void {
         if (!!streamDto) {
             this.actionDelete.emit({ id: streamDto.id, title: streamDto.title });

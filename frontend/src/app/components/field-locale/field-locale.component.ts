@@ -53,9 +53,6 @@ export class FieldLocaleComponent implements OnChanges, ControlValueAccessor, Va
 
     public localeList: string[] = ['', ...LOCALE_LIST];
 
-    constructor() {
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired']) {
             this.prepareFormGroup();
@@ -116,7 +113,7 @@ export class FieldLocaleComponent implements OnChanges, ControlValueAccessor, Va
         const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
         for (let index = 0; index < errorsProps.length && !result; index++) {
             const error: string = errorsProps[index];
-            result = !result && 'required' === error ? 'Validation.locale:required' : result;
+            result = !result && 'required' === error ? 'ExpectationFailed.locale:required' : result;
         }
         return result;
     }

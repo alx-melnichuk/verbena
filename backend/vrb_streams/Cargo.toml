@@ -1,0 +1,36 @@
+[package]
+name = "vrb_streams"
+version = "0.1.0"
+edition = "2024"
+description = "The library stores modules for working with streams."
+keywords = ["vrb_streams"]
+license = { workspace = true }
+rust-version = { workspace = true }
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+actix-multipart = { workspace = true }
+actix-web = { workspace = true }
+chrono = { workspace = true }
+diesel = { workspace = true }
+log = { workspace = true }
+mime = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }
+vrb_authent = { version = "0.1", path="../vrb_authent" }
+vrb_common = { version = "0.1", path="../vrb_common" }
+vrb_dbase = { version = "0.1", path="../vrb_dbase" }
+vrb_tools = { version = "0.1", path="../vrb_tools" }
+
+[features]
+# default = ["test", "mockdata"]
+test=[]
+mockdata = []
+
+[dev-dependencies]
+# To test a web form with data and a file.
+actix-multipart-test = "0.0.3"
+vrb_authent = { version = "0.1", path="../vrb_authent", features = ["mockdata"] }

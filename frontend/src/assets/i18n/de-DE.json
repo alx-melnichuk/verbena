@@ -20,6 +20,7 @@
     "profile": "Profil",
     "stream_list": "Meine streams",
     "stream_create": "Stream erstellen",
+    "banned": "Gesperrte",
     "concept_list": "Sicht",
     "my_follows_": "Meine follower",
     "theme": "Thema",
@@ -48,9 +49,9 @@
     "dark-orange-magenta": "dunkles orange",
     "dark-magenta-cyan": "dunkles magenta"
   },
-  "Forbidden": {
-    "status": 403,
-    "access_denied" : "Der Zugriff wird verweigert."
+  "BadRequest": {
+    "status": 400,
+    "parameter_not_defined": "Parameter ist nicht definiert."
   },
   "Unauthorized": {
     "status": 401,
@@ -61,17 +62,27 @@
     "nickname_or_email_incorrect" : "Der spitzname oder die e-mail adresse ist falsch.",
     "password_incorrect" : "Das angegebene passwort ist falsch."
   },
+  "Forbidden": {
+    "status": 403,
+    "access_denied" : "Der Zugriff wird verweigert.",
+    "block_on_sending_messages": "Dem benutzer wurde das senden von nachrichten untersagt.",
+    "stream_owner_rights_missing": "Der benutzer verfügt nicht über die rechte eines stream-eigentümers."
+  },
   "NotFound": {
     "status": 404,
     "registration_not_found" : "Es wurde kein datensatz zur registrierung eines neuen benutzers gefunden.",
     "user_not_found" : "Benutzer nicht gefunden.",
-    "recovery_not_found" : "Es wurde kein datensatz zum wiederherstellen des benutzerkennworts gefunden."
+    "recovery_not_found" : "Es wurde kein datensatz zum wiederherstellen des benutzerkennworts gefunden.",
+    "stream_not_found": "Der angegebene stream wurde nicht gefunden.",
+    "chat_message_not_found": "Die nachricht des aktuellen benutzers wurde nicht gefunden."
   },
   "NotAcceptable": {
     "status": 406,
     "finish_date_less_start_date" : "Das enddatum \"{{ invalidPeriod.streamPeriodFinish }}\" ist später als das startdatum \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Fehler beim deserialisieren des felds \"tag\".",
-    "session_not_exist" : "Für diesen benutzer gibt es keine sitzung.",
+    "session_not_found": "Für diesen benutzer wurde keine sitzung gefunden.",
+    "profile_not_found": "Für diesen benutzer wurde kein profil gefunden.",
+    "was_no_join_command": "Der benutzer ist dem raum noch nicht beigetreten.",
     "params_not_specified": "Parameter nicht angegeben",
     "invalid_stream_state": "Ungültiger Stream-Statusübergang von \"{{ invalidState.oldState }}\" nach \"{{ invalidState.newState }}\"."
   },
@@ -79,14 +90,16 @@
     "status": 409,
     "invalid_hash" : "Ungültiger passwort hashwert.",
     "email_already_use" : "Diese e-mail wird bereits verwendet oder registriert.",
-    "nickname_already_use" : "Dieser spitzname wird bereits verwendet oder wird registriert."
+    "nickname_already_use" : "Dieser spitzname wird bereits verwendet oder wird registriert.",
+    "was_already_join_to_room": "Der benutzer ist dem raum bereits beigetreten.",
+    "stream_not_active": "Der angegebene stream ist nicht aktiv."
   },
-  "ContentTooLarge": {
+  "PayloadTooLarge": {
     "status": 413,
     "finish_date_exceeds_limit" : "Das enddatum \"{{ periodTooLong.actualPeriodFinish }}\" des suchzeitraums überschreitet den grenzwert \"{{ periodTooLong.periodMaxNumberDays }}\".",
     "invalid_file_size" : "Die dateigröße ({{ invalidFileSize.actualFileSize }}) überschreitet das maximum ({{ invalidFileSize.maxFileSize }})."
   },
-  "UnsupportedType": {
+  "UnsupportedMediaType": {
     "status": 415,
     "invalid_file_type" : "Der dateityp MIME-upload ({{ invalidFileType.actualFileType }}) ist nicht in der liste der verfügbaren ({{ invalidFileType.validFileType }})."
   },
@@ -94,8 +107,9 @@
     "status": 416,
     "parsing_type_not_supported" : "Der datentyp wird beim parsen nicht unterstützt."
   },
-  "Validation": {
+  "ExpectationFailed": {
     "status": 417,
+    "description": "Validation",
     "new_password:required" : "Das feld \"newPassword\" ist erforderlich.",
     "new_password:min_length" : "Das feld \"newPassword\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
     "new_password:max_length" : "Das feld \"newPassword\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
@@ -140,7 +154,10 @@
     "locale:min_length" : "Das feld \"locale\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
     "locale:max_length" : "Das feld \"locale\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
     "user_role:invalid_value": "Ungültiger wert für \"user role\" ({{ invalid.actualValue }}).",
-    "no_fields_to_update": "Es sind keine felder zum aktualisieren vorhanden. Gültige Namen: {{ noRequiredFields.validNames }}."
+    "no_fields_to_update": "Es sind keine felder zum aktualisieren vorhanden. Gültige Namen: {{ noRequiredFields.validNames }}.",
+    "message:required": "Das feld \"message\" ist erforderlich.",
+    "message:min_length" : "Das feld \"message\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "message:max_length" : "Das feld \"message\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben."
   } ,
   "UnprocessableEntity": {
     "status": 422,
@@ -153,12 +170,14 @@
     "error_upload_file" : "Fehler beim hochladen der datei",
     "error_hashing_password" : "Fehler beim hashen des passworts"
   },
-  "Blocking": {
+  "VariantAlsoNegotiates": {
     "status": 506,
+    "description": "Blocking",
     "error_waiting_for_operations" : "Beim warten auf den abschluss des vorgangs ist ein fehler aufgetreten."
   },
-  "Database": {
+  "InsufficientStorage": {
     "status": 507,
+    "description": "Database",
     "database_query_error" : "Fehler beim ausführen der datenbankabfrage."
   },
   "NotExtended": {
@@ -173,17 +192,9 @@
   "field-date": {
     "label": "Date "
   },
-  "field-descript": {
-    "label": "Beschreibung"
-  },
-  "field-email": {
-    "err_minlength_symbol_search": "Die symbolsuche sollte {{value}} zeichen oder mehr enthalten.",
-    "err_maxlength_symbol_search": "Die symbolsuche sollte weniger als {{value}} zeichen umfassen.",
-    "label": "E-Mail "
-  },
   "field-file-upload": {
     "drag_files_or_browse": "Wählen sie eine datei aus oder ziehen sie sie hierher.",
-    "supported_file_types": "Unterstützte dateitypen: {{validTypes}}.",
+    "supported_file_types": "Unterstützte dateitypen: {{validTypes}} (ohne transparenz).",
     "upload_up_to": "Laden Sie bis zu {{maxFileSize}} hoch.",
     "err_upload_images_use_valid_types": "Bitte laden sie bilder im gültigen format hoch: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "Die dateigröße darf das maximum von {{maxFileSize}} B ({{maxFileSizeShort}}) nicht überschreiten."
@@ -192,8 +203,9 @@
     "label": "Bilddatei",
     "remove_image": "Dieses Bild entfernen"
   },
-  "field-nickname": {
-    "label": "Spitzname ",
+  "field-input": {
+    "email_label": "E-Mail ",
+    "nickname_label": "Spitzname ",
     "nickname_hint": "Verwendet: kleinbuchstaben, großbuchstaben, zahlen und unterstriche. Mindestens 3 zeichen."
   },
   "field-password": {
@@ -203,14 +215,14 @@
   "field-locale": {
     "label": "Gebietsschema "
   },
+  "field-message": {
+    "editing_msg": "Bearbeiten einer nachricht"
+  },
   "field-theme": {
     "label": "Farbthema "
   },
   "field-time": {
     "label": "Zeit "
-  },
-  "field-title": {
-    "label": "Titel "
   },
   "panel-login": {
     "title": "Genehmigung",
@@ -252,7 +264,8 @@
     "error_get_streams_for_active_period": "Fehler beim Abrufen der Streams für den aktiven Zeitraum",
     "error_delete_stream": "Fehler beim löschen des streams",
     "error_get_future_streams": "Fehler beim abrufen zukünftiger streams",
-    "error_get_past_streams": "Fehler beim abrufen vergangener streams"
+    "error_get_past_streams": "Fehler beim abrufen vergangener streams",
+    "error_retrieving_data": "Fehler beim abrufen der daten."
   },
   "demo": {
   },
@@ -267,6 +280,9 @@
     "buttons": {
       "edit": "Bearbeiten"
     }
+  },
+  "pg-stream-edit": {
+    "have_unsaved_you_want_to_leave": "Sie haben nicht gespeicherte änderungen. Möchten sie wirklich gehen ?"
   },
   "panel-stream-editor": {
     "creating_stream": "Erstellen eines Streams",
@@ -292,7 +308,7 @@
     "label_swagger": "\"swagger\" visuelle schnittstelle",
     "label_redoc": "\"redoc\" dokumentation",
     "label_rapidoc": "\"rapidoc\" dokumentation",
-    "frontend_used": "Auf dem Frontend haben wir verwendet:",
+    "frontend_used": "Auf dem Frontend wurde folgendes verwendet:",
     "frontend_items": [
       "angular v.18",
       "ngx-translate v.15",
@@ -308,7 +324,42 @@
       "basierend auf css-variablen wurden 5 helle und 5 dunkle farbschemata vorbereitet",
       "die site ist für die alte version von Chrome 109 (Windows 7, 10) angepasst"
     ],
-    "backend_used": "Auf dem Backend haben wir verwendet:"
+    "backend_used": "Auf dem Backend wurde folgendes verwendet:",
+    "backend": {
+        "actix": "- Akteur-Framework",
+        "actix-broker": "Nachrichtenbroker für das Actix actor Framework",
+        "actix-cors": "- Cross-Origin Resource Sharing (CORS) - steuerelemente für Actix Web",
+        "actix-files": "- Statische dateibereitstellung für Actix Web",
+        "actix-multipart": "- Unterstützung mehrteiliger formulare für Actix Web",
+        "actix-web": "- Schnelles Webframework",
+        "actix-web-actors": "Actix akteure unterstützung für Actix Web",
+        "argon2": "- Implementierung der passwort-hashing-funktion",
+        "chrono": "- Datums- und uhrzeitbibliothek",
+        "diesel": "- ORM und abfrage-generator",
+        "diesel-derive-enum": "- Verwenden von enumeration mit diesel-ORM",
+        "diesel_migrations": "- Migrationsmanagement für diesel-ORM",
+        "dotenv": "- Lädt umgebungsvariablen aus einer .env-datei",
+        "email_address": "- E-Mail-verifizierung",
+        "env_logger": "- Eine protokollierungsimplementierung für `log`",
+        "futures-util": "- Allgemeine dienstprogramme und erweiterungsmerkmale für die bibliothek futures-rs",
+        "getrandom": "- Bibliothek zum abrufen zufälliger daten aus quellen (betriebssystemen)",
+        "handlebars": "- Vorlagengerät",
+        "image": "- Eine bildverarbeitungsbibliothek",
+        "jsonwebtoken": "- Erstellen und analysieren Sie JWT (JSON Web Tokens)",
+        "lettre": "- Mail-client",
+        "log": "- Bietet eine einzige API-abstraktion für die protokollierung",
+        "mime": "- Unterstützt MIME (Medientypen)",
+        "openssl": "- HTTPS-verschlüsselungsbibliothek für websites",
+        "r2d2": "- Pool-datenbank",
+        "rand": "- Zufallszahlengeneratoren",
+        "regex": "- Eine implementierung von regulären ausdrücken",
+        "serde": "- Serialisierung/Deserialisierung",
+        "serde_json": "- Ein JSON-serialisierungsdateiformat",
+        "utoipa": "- Automatisch generierte OpenAPI-dokumentation",
+        "utoipa-swagger-ui": "- Implementierung von Swagger über einen webserver",
+        "utoipa-redoc": "- Implementierung von Redoc über einen webserver",
+        "utoipa-rapidoc": "- Implementierung von Rapidoc über einen webserver"
+    }
   },
   "panel-profile": {
     "title_profile": "Persönliche informationen",
@@ -356,16 +407,64 @@
     "pause_stream": "Pause",
     "stop_stream": "Stoppen"
   },
-  "concept-view": {
+  "pg-concept-view": {
     "error_update_stream": "Fehler beim Aktualisieren des Streamstatus",
-    "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Chat befehle",
+    "user_blocked": "Benutzer \"{{ username }}\" ist gesperrt.",
+    "user_unblocked": "Benutzer \"{{ username }}\" ist entsperrt.",
+    "error_socket": "Socket fehler",
+    "error_blocked": "Benutzer blockiert",
+    "error_unblocked": "Benutzer entsperrt"
+  },
+  "concept-view": {
+    "title": "Titel:",
+    "descript": "Beschreibung:",
+    "tags": "Schlagwörter:",
+    "state": "Status:",
+    "waiting": "warten",
+    "preparing": "vorbereiten",
+    "started": "gestartet",
+    "paused": "pausiert",
+    "stopped": "gestoppt",
+    "chat_title": "Stream-Chat",
+    "sure_you_want_delete_message": "Möchten sie die nachricht \"{{message}}\" wirklich löschen ?",
+    "sure_you_want_permanently_delete_message": "Möchten sie die nachricht wirklich dauerhaft löschen?"
   },
   "panel-stream-params": {
-    "title": "Titel:",
     "tags": "Schlagwörter:",
-    "start": "Start:"
+    "start": "Start:",
+    "started": "Gestartet:",
+    "paused": "Pausiert",
+    "stopped": "Beendet:",
+    "time-tracking": {
+        "-1": "tage",
+        "1": "tag"
+    }
   },
-  "panel-stream-admin": {
-    "btn_settings": "Einstellungen"
+  "panel-chat": {
+    "you": "du",
+    "menu": {
+        "edit": "Bearbeiten",
+        "cut": "Löschen",
+        "remove": "Endgültig löschen",
+        "block_user": "Block",
+        "unblock_user": "Entsperren"
+    },
+    "you_not_allowed_chat": "Du darfst den öffentlichen chat nicht nutzen.",
+    "you_been_blocked": "Du wurdest gesperrt.",
+    "message_edited": "geändert",
+    "message_deleted": "Diese Nachricht wurde entfernt.",
+    "msg_discard_draft": "Entwurf verwerfen? (Er kann nicht wiederhergestellt werden.)"
+  },
+  "banned-users": {
+    "are_you_want_to_unblock_user": "Möchten Sie den Benutzer \"{{nickname}}\" wirklich entsperren?"
+  },
+  "panel-banned-users": {
+    "title": "Gesperrte Benutzer",
+    "nickname": "Benutzer-Spitzname",
+    "email": "Benutzer-E-Mail",
+    "date_blocking": "Datum der Sperrung",
+    "unblock_user": "Entsperren"
   }
 }

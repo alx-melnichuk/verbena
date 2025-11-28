@@ -3,71 +3,37 @@
 app-panel-stream-params {
     display: block;
     line-height: 1.7;
-    min-width: 18rem;
 
-    [psp-mr-lf-1] {
-        margin-left: 1rem;
+    [psp-mr-r0_5] {
+        margin-right: 0.5rem;
     }
 
-    .psp-title {
-        max-width: 400px;
+    .psp-param {
+        display: flex;
+        flex-wrap: wrap;
     }
 
-    .psp-tag {
-        background-color: rgb(224, 224, 224); // TODO replace on mat-x
-        border-bottom-left-radius: 16px;
-        border-bottom-right-radius: 16px;
-        border-top-left-radius: 16px;
-        border-top-right-radius: 16px;
-        cursor: default;
-        margin-left: 0.5rem;
-        padding: 0.25rem 0.75rem;
-    }
-
-    .psp-timer {
-        display: inline-block;
-        width: 18ch;
-    }
-
-    // ** icon **
-    .psp-ver-md {
+    .psp-middle {
         vertical-align: middle;
     }
 
-    .psp-users-group {
+    .psp-clock {
+        display: flex;
+        align-items: center;
+    }
+
+    // ** icon **
+
+    .psp-icon-users {
         color: var(--app-svg-icon-cl);
         height: 2.5rem;
         width: 2.5rem;
     }
 
-    .psp-clock-5hours {
+    .psp-icon-clock {
         color: var(--app-svg-icon-cl);
         height: 2.25rem;
         width: 2.25rem;
-    }
-
-
-    // ** author **
-    .psp-author>img {
-        border-radius: var(--hd-image-brd-rd, 0.3rem);
-        box-sizing: border-box;
-        height: calc(var(--app-header-hg, 62px) - 4px);
-        margin-left: 0.75rem;
-        object-fit: cover;
-        width: calc(var(--app-header-hg, 62px) - 4px);
-    }
-
-    //.hd-profile-avatar {
-    //  display: flex;
-    //  align-items: center;
-    //}
-    img.hd-avatar {
-        border-radius: var(--hd-image-brd-rd, 0.3rem);
-        box-sizing: border-box;
-        height: calc(var(--app-header-hg, 62px) - 4px);
-        margin-left: 0.75rem;
-        object-fit: cover;
-        width: calc(var(--app-header-hg, 62px) - 4px);
     }
 
 }

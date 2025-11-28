@@ -1,0 +1,33 @@
+<app-concept-view
+    [chatBlockedUsers]="chatBlockedUsers"
+    [chatPastMsgs]="chatPastMsgs"
+    [chatNewMsgs]="chatNewMsgs"
+    [chatRmvIds]="chatRmvIds"
+    [chatIsBlocked]="chatSocketService.isBlocked()"
+    [chatIsEditable]="!!profileDto?.id && chatIsEditable && chatSocketService.isJoined()"
+    [chatIsLoading]="chatIsLoading"
+    [chatIsOwner]="isStreamOwner"
+    [chatNickname]="profileDto?.nickname || null"
+  
+    [countOfViewer]="chatSocketService.countOfMembers"
+    [isLoadStream]="isLoadStream"
+    [isStreamOwner]="isStreamOwner"
+  
+    [ownerAvatar]="profileMiniDto?.avatar"
+    [ownerEmail]="profileMiniDto?.email"
+    [ownerNickname]="profileMiniDto?.nickname"
+
+    [streamDto]="streamDto"
+    [timerActive]="timerActive"
+    [timerIsShow]="timerIsShow"
+    [timerValue]="timerValue"
+
+    (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
+    (blockUser)="doModifyBlockUser(isStreamOwner, true, $event)"
+    (unblockUser)="doModifyBlockUser(isStreamOwner, false, $event)"
+    (sendMessage)="doSendMessage($event)"
+    (editMessage)="doEditMessage($event)"
+    (cutMessage)="doCutMessage($event)"
+    (rmvMessage)="doRmvMessage($event)"
+    (queryPastMsgs)="doQueryPastMsgs($event)">
+</app-concept-view>

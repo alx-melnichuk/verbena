@@ -1,0 +1,29 @@
+[package]
+name = "vrb_authent"
+version = "0.1.0"
+edition = "2024"
+description = "Library for authorization functions."
+keywords = ["vrb_authent", "authorization"]
+license = { workspace = true }
+rust-version = { workspace = true }
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+actix-web = { workspace = true }
+chrono = { workspace = true }
+diesel = { workspace = true }
+futures-util = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }
+vrb_common = { version = "0.1",  path = "../vrb_common" }
+vrb_dbase = { version = "0.1", path="../vrb_dbase" }
+vrb_tools = { version = "0.1", path="../vrb_tools" }
+
+[features]
+# default = ["test", "mockdata"]
+test=[]
+mockdata = []

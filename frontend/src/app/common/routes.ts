@@ -52,6 +52,11 @@ export const P_CONCEPT_ID = 'streamId';
 export const R_CONCEPT_VIEW = R_CONCEPT + '/' + E_CONCEPT_VIEW; //  'ind/concept/view' + '/:' + 'streamId'
 export const ROUTE_CONCEPT_VIEW = '/' + R_CONCEPT_VIEW;         // '/ind/concept/view' + '/:' + 'streamId'
 
+// ** Page: Banned users **
+
+export const R_BANNED = R_ROOT + '/' + 'banned'; // 'ind/banned'
+export const ROUTE_BANNED = '/' + R_BANNED;      // '/ind/banned'
+
 // ** **
 
 // Route for redirection after login.
@@ -61,10 +66,10 @@ export const AUTHORIZATION_REQUIRED = [
     ROUTE_ABOUT,
     ROUTE_PROFILE,
     ROUTE_STREAM,
-    ROUTE_CONCEPT,
+    // ROUTE_CONCEPT, // Authorization is not required.
     // ROUTE_FOLLOWERS,
     // ROUTE_FOLLOWS,
-    // ROUTE_BANNED
+    ROUTE_BANNED,
 ];
 export const AUTHORIZATION_DENIED = [
     ROUTE_ABOUT,
@@ -86,4 +91,5 @@ export const MAIN_MENU_LIST = [
     ROUTE_STREAM_LIST,
     ROUTE_STREAM_CREATE,
     // ROUTE_CONCEPT_LIST,
+    ROUTE_BANNED,
 ];

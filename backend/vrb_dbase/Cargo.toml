@@ -1,0 +1,24 @@
+[package]
+name = "vrb_dbase"
+version = "0.1.0"
+edition = "2024"
+description = "Library for the entire database structure of the Verbena project."
+keywords = ["vrb_dbase", "database", "db_enums"]
+license = { workspace = true }
+rust-version = { workspace = true }
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+actix-web = { workspace = true }
+chrono = { workspace = true }
+diesel = { workspace = true }
+diesel-derive-enum = { workspace = true }
+diesel_migrations = { workspace = true }
+log = { workspace = true }
+r2d2 = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }
+vrb_tools = { version = "0.1", path="../vrb_tools" }
