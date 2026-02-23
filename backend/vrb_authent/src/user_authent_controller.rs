@@ -212,9 +212,9 @@ fn get_login_user_profile() -> LoginUserProfileDto {
         ( status = 422, description = "Token encoding error.", body = ApiError,
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::new(506, "Error while blocking process."))),
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
-            example = json!(ApiError::new(507, "Error while querying the database."))),
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
 )]
 #[post("/api/login")]
@@ -375,9 +375,9 @@ pub async fn login(
         (status = 406, description = "Error session not found.", body = ApiError,
             example = json!(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, "user_id: 1"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::new(506, "Error while blocking process."))),
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
-            example = json!(ApiError::new(507, "Error while querying the database."))),
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = []))
 )]
@@ -459,9 +459,9 @@ pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp
         (status = 422, description = "Token encoding error.", body = ApiError,
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::new(506, "Error while blocking process."))),
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
-            example = json!(ApiError::new(507, "Error while querying the database."))),
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
 )]
 #[post("/api/token")]
