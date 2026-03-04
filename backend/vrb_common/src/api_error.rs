@@ -26,7 +26,7 @@ pub struct ApiError {
     #[serde(skip_serializing_if = "BTreeMap::is_empty", default = "ApiError::default_params")]
     // Parameters must be sorted by key.
     pub params: BTreeMap<borrow::Cow<'static, str>, Value>,
-    #[serde(skip, default = "ApiError::default_status")]
+    #[serde(default = "ApiError::default_status")]
     pub status: u16,
 }
 
