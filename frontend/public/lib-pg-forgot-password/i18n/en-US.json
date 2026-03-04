@@ -1,0 +1,20 @@
+{
+  "pg-forgot-password": {
+    "dialog_title": "Welcome to the {{appName}} !",
+    "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
+  },
+  "panel-forgot-password": {
+    "title": "Password change request",
+    "you_forgot_password": "If you have forgotten your password, please provide your email address and send a change request to it.",
+    "email_address": "Email Address",
+    "button_send": "Send request",
+    "go_to_login_page": "Go to the login page."
+  },
+  "404.user_not_found": "User not found.",
+  "417.field-email:required": "The \"{{field-email}}\" field is required.",
+  "417.field-email:minlength": "The \"{{field-email}}\" field must have at least {{minlength.requiredLength}} characters.",
+  "417.field-email:maxlength": "The \"{{field-email}}\" field must have no more {{maxlength.requiredLength}} characters.",
+  "417.field-email:email": "The \"{{field-email}}\" field must comply with the standard (your_name@example.com).",
+  "422.json_web_token_encode" : "Error encoding web token.",
+  "510.error_sending_email": "Error when sending email."
+}

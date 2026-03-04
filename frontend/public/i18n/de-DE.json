@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "Eisénkraut_de-DE",
+    "demo_site": " demo seite."
+  },
+  "buttons": {
+    "ok": "Ok",
+    "cancel": "Stornieren",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "main_menu": {
+    "about": "Um",
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "profile": "Profil",
+    "stream_list": "Meine streams",
+    "stream_create": "Stream erstellen",
+    "banned": "Gesperrte",
+    "browse_list": "Stöbern",
+    "my_follows_": "Meine follower",
+    "theme": "Thema",
+    "locale": "Gebietsschema",
+    "log_out": "Abmelden"
+  },
+  "dialog": {
+    "confirmation": "Bestätigung",
+    "confirm_exit_without_saving": "Sie haben ungespeicherte Änderungen. Diese Seite verlassen ?"
+  },
+  "locale": {
+    "": "nichts",
+    "en-US": "English [en-US]",
+    "de-DE": "Deutsch [de-DE]",
+    "uk-UA": "Українська [uk-UA]"
+  },
+  "theme": {
+    "": "nichts",
+    "light-azure-orange": "licht azurblau",
+    "light-cyan-orange": "licht cyan",
+    "light-violet-chartreuse": "licht violett",
+    "light-orange-magenta": "licht orange",
+    "light-magenta-cyan": "licht magenta",
+    "dark-azure-orange": "dunkles azurblau",
+    "dark-cyan-orange": "dunkles cyan",
+    "dark-violet-chartreuse": "dunkles violett",
+    "dark-orange-magenta": "dunkles orange",
+    "dark-magenta-cyan": "dunkles magenta"
+  },
+  "error.server_api_call": "Beim Aufrufen der Server-API ist ein Fehler aufgetreten.",
+  "401.token_missing": "Autorisierungstoken fehlt.",
+  "401.invalid_or_expired_token" : "Ungültiges oder abgelaufenes token.",
+  "401.unacceptable_token_num" : "Unzulässige token nummer",
+  "401.unacceptable_token_id" : "Unakzeptable token id",
+  "403.access_denied": "Der Zugriff wird verweigert.",
+  "406.session_not_found": "Für diesen benutzer wurde keine sitzung gefunden.",
+  "500.user_not_received_from_request": "Authentifizierung – die entität \"user\" wurde aus der anfrage nicht empfangen.",
+  "506.error_waiting_for_operations" : "Beim warten auf den abschluss des vorgangs ist ein fehler aufgetreten.",
+  "507.database_query_error" : "Fehler beim ausführen der datenbankabfrage.",
+  "field-file-upload": {
+    "drag_files_or_browse": "Wählen Sie die Miniaturansicht-Datei aus oder ziehen Sie sie hierher.",
+    "supported_file_types": "Unterstützte dateitypen: {{validTypes}} (ohne transparenz).",
+    "upload_no_more_than": "Laden Sie maximal {{maxFileSize}} hoch.",
+    "err_upload_images_use_valid_types": "Bitte laden sie bilder im gültigen format hoch: {{validTypes}}.",
+    "err_file_size_must_not_exceed_max": "Die dateigröße darf das maximum von {{maxFileSize}} B ({{maxFileSizeShort}}) nicht überschreiten."
+  },
+  "field-image": {
+    "label": "Bilddatei",
+    "remove_image": "Dieses Bild entfernen",
+    "not_found": "nicht gefunden"
+  }
+}

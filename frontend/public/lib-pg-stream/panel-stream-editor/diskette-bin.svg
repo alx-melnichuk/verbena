@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"
+id="diskette-bin" fill="none" stroke="currentColor" stroke-width="6"
+stroke-linecap="round" stroke-linejoin="round">
+<path d="M13.2,3 h63.2 l16,15 v64.5 a10,10 0,0,1 -10,10 h-69.1 a10,10 0,0,1 -10,-10 v-69.5 a10,10 0,0,1 10,-10 z" />
+<path d="M21,3 v33 h46 v-33" />
+<path fill="currentColor" d="M46.2,3 v23 h10 v-23 h-12 z" />
+<path d="M16,92 v-38 h65 v38" />
+</svg>

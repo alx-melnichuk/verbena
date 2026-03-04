@@ -1,0 +1,71 @@
+{
+  "app": {
+   "name": "Вербéна_uk-UA",
+   "demo_site": " демонстраційний сайт."
+  },
+  "buttons": {
+    "ok": "Ok",
+    "cancel": "Скасувати",
+    "yes": "Так",
+    "no": "Hi"
+  },
+  "main_menu": {
+    "about": "Про",
+    "login": "Увійти",
+    "signup": "Реєстрація",
+    "profile": "Профіль",
+    "stream_list": "Мої потоки",
+    "stream_create": "Створити потік",
+    "banned": "Заблоковані",
+    "my_follows_": "Мої підписники",
+    "browse_list": "Огляд",
+    "theme": "Тема",
+    "locale": "Локаль",
+    "log_out": "Вийти"
+  },
+  "dialog": {
+    "confirmation": "Підтвердження",
+    "confirm_exit_without_saving": "У вас є незбережені зміни. Вийти з цієї сторінки ?"
+  },
+  "locale": {
+    "": "нічого",
+    "en-US": "English [en-US]",
+    "de-DE": "Deutsch [de-DE]",
+    "uk-UA": "Українська [uk-UA]"
+  },
+  "theme": {
+    "": "нічого",
+    "light-azure-orange": "світло лазурний",
+    "light-cyan-orange": "світло блакитний",
+    "light-violet-chartreuse": "світло фіолетовий",
+    "light-orange-magenta": "світло помаранчевий",
+    "light-magenta-cyan": "світло пурпуровий",
+    "dark-azure-orange": "темно лазурний",
+    "dark-cyan-orange": "темно блакитний",
+    "dark-violet-chartreuse": "темно фіолетовий",
+    "dark-orange-magenta": "темно помаранчевий",
+    "dark-magenta-cyan": "темно пурпуровий"        
+  },
+  "error.server_api_call": "Під час виклику API сервера сталася помилка.",
+  "401.token_missing": "Маркер авторизації відсутній.",
+  "401.invalid_or_expired_token" : "Недійсний або прострочений маркер.",
+  "401.unacceptable_token_num" : "Неприйнятний номер маркера",
+  "401.unacceptable_token_id" : "Неприйнятний ідентифікатор маркера",
+  "403.access_denied": "Доступ заборонено.",
+  "406.session_not_found": "Сеанс для цього користувача не знайдено.",
+  "500.user_not_received_from_request": "Автентифікація - із запиту не отримано сутність \"user\".",
+  "506.error_waiting_for_operations" : "Під час очікування завершення операції сталася помилка.",
+  "507.database_query_error" : "Помилка виконання запиту до бази даних.",
+  "field-file-upload": {
+    "drag_files_or_browse": "Виберіть або перетягніть файл мініатюри сюди.",
+    "supported_file_types": "Підтримувані типи файлів: {{validTypes}} (без прозорості).",
+    "upload_no_more_than": "Завантажуйте не більше {{maxFileSize}}.",
+    "err_upload_images_use_valid_types": "Завантажте зображення у правильному форматі: {{validTypes}}.",
+    "err_file_size_must_not_exceed_max": "Розмір файлу не має перевищувати максимальний {{maxFileSize}} B ({{maxFileSizeShort}})."
+  },
+  "field-image": {
+    "label": "Файл зображення",
+    "remove_image": "Видаліть це зображення",
+    "not_found": "не знайдено"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "panel-login": {
+    "title": "Genehmigung",
+    "email_or_nickname": "E-Mail oder Spitzname",
+    "password_label": "Passwort",
+    "btn_login": "Einloggen",
+    "create_an_account": "Ein konto erstellen",
+    "forgot_password": "Passwort vergessen?"
+  },
+  "401.nickname_or_email_incorrect" : "Der spitzname oder die e-mail adresse ist falsch.",
+  "401.password_incorrect" : "Das angegebene passwort ist falsch.",
+  "409.invalid_hash": "Ungültiger passwort hashwert.",
+  "417.field-nickname:required": "Das feld \"{{field-nickname}}\" ist erforderlich.",
+  "417.field-nickname:minlength": "Das \"{{field-nickname}}\" feld muss mindestens {{minlength.requiredLength}} zeichen haben.",
+  "417.field-nickname:maxlength": "Das \"{{field-nickname}}\" feld darf nicht mehr als {{maxlength.requiredLength}} zeichen haben.",
+  "417.field-nickname:pattern": "Verfügbar in \"{{field-nickname}}\": klein- und großbuchstaben, zahlen und unterstriche.",
+  "417.field-password:required": "Das feld \"{{field-password}}\" ist erforderlich.",
+  "417.field-password:minlength": "Das feld \"{{field-password}}\" muss mindestens {{minlength.requiredLength}} zeichen haben.",
+  "417.field-password:maxlength": "Das feld \"{{field-password}}\" darf nicht mehr als {{maxlength.requiredLength}} zeichen haben.",
+  "417.field-password:pattern": "Das feld \"{{field-password}}\" muss enthalten: einen kleinbuchstaben, einen großbuchstaben und eine zahl.",
+  "422.json_web_token_encode" : "Fehler beim kodieren des web-tokens."
+}

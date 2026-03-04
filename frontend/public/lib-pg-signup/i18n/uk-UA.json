@@ -1,0 +1,37 @@
+{
+  "pg-signup": {
+    "dialog_title": "Ласкаво просимо до {{appName}}! !",
+    "dialog_message": "Ми надіслали реєстраційне посилання \"{{value}}\"."
+  },
+  "panel-signup": {
+    "title": "Реєстрація",
+    "button_signup": "Реєстрація",
+    "already_registered": "Вже зареєстровані ?",
+    "go_to_login_page": "Перейдіть на сторінку входу.",
+    "nickname_label": "Псевдонім",
+    "nickname_hint": "Використовуються: малі літери, великі літери, цифри та підкреслення. Мінімум 3 символи.",
+    "email_label": "Електронна пошта",
+    "password_label": "Пароль",
+    "password_hint": "Використовуйте принаймні 6 символів, одну малу літеру, одну велику літеру та цифру."
+  },
+  "401.password_incorrect" : "Вказаний пароль некоректний.",
+  "406.params_not_specified": "Параметри не вказані.",
+  "409.invalid_hash": "Недійсне хеш-значення пароля.",
+  "409.email_already_use" : "Ця електронна адреса вже використовується або знаходиться на стадії реєстрації.",
+  "409.nickname_already_use" : "Цей псевдонім уже використовується або на стадії реєстрації.",
+  "417.field-nickname:required" : "Поле \"{{field-nickname}}\" обов'язкове.",
+  "417.field-nickname:minlength" : "Поле \"{{field-nickname}}\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.field-nickname:maxlength" : "Поле \"{{field-nickname}}\" не може містити більше {{maxlength.requiredLength}} символів.",
+  "417.field-nickname:pattern" : "В полі \"{{field-nickname}}\" доступні: малі та великі літери, цифри та підкреслення.",
+  "417.field-email:required": "Поле \"{{field-email}}\" обов'язкове.",
+  "417.field-email:minlength": "Поле \"{{field-email}}\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.field-email:maxlength": "Поле \"{{field-email}}\" не може містити більше {{maxlength.requiredLength}} символів.",
+  "417.field-email:email": "Поле \"{{field-email}}\" має відповідати стандарту (your_name@example.com).",
+  "417.field-password:required": "Поле \"{{field-password}}\" обов'язкове.",
+  "417.field-password:minlength": "Поле \"{{field-password}}\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.field-password:maxlength": "Поле \"{{field-password}}\" не може містити більше {{maxlength.requiredLength}} символів.",
+  "417.field-password:pattern": "Поле \"{{field-password}}\" має містити: малу літеру, велику літеру та цифру.",
+  "422.json_web_token_encode" : "Помилка кодування веб-токена.",
+  "500.error_hashing_password" : "Помилка під час хешування пароля",
+  "510.error_sending_email": "Помилка під час надсилання електронної пошти."
+}

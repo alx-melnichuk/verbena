@@ -1,0 +1,69 @@
+{
+  "pg-stream-edit": {
+    "have_unsaved_you_want_to_leave": "У вас є незбережені зміни. Ви впевнені, що хочете вийти ?"
+  },
+  "panel-stream-editor": {
+    "creating_stream": "Створення трансляції",
+    "editing_stream": "Редагування трансляції",
+    "title": "Назва",
+    "save": "Зберегти",
+    "create": "Створити",
+    "descript": "Опис",
+    "thumbnail": "Мініатюра",
+    "tags": "Теги",
+    "add_tags": "Додати теги",
+    "tags_hint": "Тегів має бути: мінімум 1, максимум 4.",
+    "set_date_and_time_or_now": "Почніть зараз або заплануйте трансляцію",
+    "start_date": "Дата початку",
+    "start_time": "Час початку",
+    "link_for_visitors": "Посилання для відвідувачів",
+    "copy_stream_link_to_clipboard": "Копіювати посилання на трансляцію у буфер обміну",
+    "stream_link_copied_to_clipboard": "Посилання на трансляцію скопійовано в буфер обміну"
+  },
+  "pg-stream-list": {
+    "error_get_streams_for_selected_day": "Помилка отримання потоків для вибраного дня",
+    "error_get_streams_for_active_period": "Помилка отримання потоків за активний період",
+    "error_get_future_streams": "Помилка під час отримання майбутніх трансляцій",
+    "error_get_past_streams": "Помилка під час отримання минулих трансляцій",
+    "error_retrieving_data": "Помилка отримання даних.",
+    "error_delete_stream": "Помилка під час видалення потоку"
+  },
+  "panel-stream-list": {
+    "my_calendar": "Мій календар",
+    "my_future_streams": "Мої майбутні потоки",
+    "my_past_streams": "Мої минулі потоки",
+    "sure_you_want_delete_stream": "Ви впевнені, що бажаєте видалити потік \"{{title}}\"?"
+  },
+  "panel-stream-info": {
+    "btn-duplicate": "Дублікат",
+    "btn-edit": "Редагувати",
+    "btn-delete": "Видалити",
+    "not_found": "не знайдено",
+    "missing": "відсутнє"
+  },
+  "panel-stream-event": {
+    "btn-edit": "Редагувати",
+    "not_found": "не знайдено",
+    "missing": "відсутнє"
+  },
+  "416.parsing_type_not_supported": "Тип даних не підтримується під час аналізу.",
+  "417.field-title:required" : "Поле \"{{field-title}}\" обов'язкове.",
+  "417.field-title:minlength": "Поле \"{{field-title}}\" має містити принаймні {{ minlength.requiredLength }} символів.",
+  "417.field-title:maxlength": "Поле \"{{field-title}}\" не може містити більше {{ maxlength.requiredLength }} символів.",
+  "417.field-descript:minlength": "Поле \"{{field-descript}}\" має містити принаймні {{ minlength.requiredLength }} символів.",
+  "417.field-descript:maxlength": "Поле \"{{field-descript}}\" не може містити більше {{ maxlength.requiredLength }} символів.",
+  "417.field-tags:required" : "Поле \"{{field-tags}}\" обов'язкове.",
+  "417.field-tags:minAmount": "Кількість елементів \"{{field-tags}}\" ({{minAmount.actualAmount}}) менша за мінімальне значення ({{minAmount.requiredAmount}}).",
+  "417.field-tags:maxAmount": "Кількість елементів \"{{field-tags}}\" ({{maxAmount.actualAmount}}) перевищує максимальне значення ({{maxAmount.requiredAmount}}).",
+  "417.field-tags:minlength": "Елемент поля \"{{field-tags}}\" має містити не менше {{minlength.requiredLength}} символів (значення \"{{minlength.actualValue}}\").",
+  "417.field-tags:maxlength": "Елемент поля \"{{field-tags}}\" має містити не більше {{maxlength.requiredLength}} символів (значення \"{{maxlength.actualValue}}\").",
+  "417.field-datepicker:required": "Поле \"{{field-datepicker}}\" обов'язкове.",
+  "417.field-datepicker:invalid_format": "Недійсний формат дати.",
+  "417.field-datepicker:matDatepickerMin": "Значення поля \"{{field-datepicker}}\" \"{{appDatepickerExtTagsMin.actual}}\" менше за мінімальне значення \"{{appDatepickerExtTagsMin.min}}\".",
+  "417.field-datepicker:matDatepickerMax": "Значення поля \"{{field-datepicker}}\" \"{{appDatepickerExtTagsMax.actual}}\" більше за максимальне значення \"{{appDatepickerExtTagsMax.max}}\".",
+  "417.field-timepicker:required": "Поле \"{{field-timepicker}}\" обов'язкове.",
+  "417.field-timepicker:matTimepickerParse": "Недійсний формат часу.",
+  "417.field-timepicker:matTimepickerMin": "Значення поля \"{{field-timepicker}}\" \"{{appTimepickerExtTagsMin.actual}}\" менше за мінімальне значення \"{{appTimepickerExtTagsMin.min}}\".",
+  "417.field-timepicker:matTimepickerMax": "Значення поля \"{{field-timepicker}}\" \"{{appTimepickerExtTagsMax.actual}}\" більше за максимальне значення \"{{appTimepickerExtTagsMax.max}}\".",
+  "417.starttime:min_valid_date": "Поле \"date\" \"{{minValidDateTime.actualDateTime}}\" менше мінімального значення \"{{minValidDateTime.minDateTime}}\"."
+}

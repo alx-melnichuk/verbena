@@ -1,0 +1,20 @@
+{
+  "pg-forgot-password": {
+    "dialog_title": "Ласкаво просимо до {{appName}}!",
+    "dialog_message": "Ми надіслали посилання для зміни вашого пароля на \"{{value}}\"."
+  },
+  "panel-forgot-password": {
+    "title": "Запит на зміну пароля",
+    "you_forgot_password": "Якщо ви забули свій пароль, будь ласка, вкажіть адресу електронної пошти та надішліть на неї запит на зміну.",
+    "email_address": "Email адреса",
+    "button_send": "Надіслати запит",
+    "go_to_login_page": "Перейдіть на сторінку входу."
+  },
+  "404.user_not_found": "Користувача не знайдено.",
+  "417.field-email:required": "Поле \"{{field-email}}\" обов'язкове.",
+  "417.field-email:minlength": "Поле \"{{field-email}}\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.field-email:maxlength": "Поле \"{{field-email}}\" не може містити більше {{maxlength.requiredLength}} символів.",
+  "417.field-email:email": "Поле \"{{field-email}}\" має відповідати стандарту (your_name@example.com).",
+  "422.json_web_token_encode" : "Помилка кодування веб-токена.",
+  "510.error_sending_email": "Помилка під час надсилання електронної пошти."
+}

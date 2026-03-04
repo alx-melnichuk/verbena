@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" id="file-circle-plus-bin" preserveAspectRatio="xMinYMin meet">
+<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+<path d="M64,12.0  h-28 a4,4 0,0,0 -4,2  l-14,14 a4,4 0,0,0 -2,4  v44 a8,8 0,0,0 8,8 h12 m36,-48 v-16 a8,8 0,0,0 -8,-8  m-48,20 h14 a6,6 0,0,0 6,-6 v-14" />
+<path d="M80,55 a22,22 0,1,1 -40,0 22,22 0,0,1 40,0 Z" />
+<path d="M60,55 v18 M51,64 h18" />
+</g>
+</svg>

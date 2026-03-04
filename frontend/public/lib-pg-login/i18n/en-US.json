@@ -1,0 +1,22 @@
+{
+  "panel-login": {
+    "title": "Log in",
+    "email_or_nickname": "Email or Nickname",
+    "password_label": "Password",
+    "btn_login": "Log in",
+    "create_an_account": "Create an account",
+    "forgot_password": "Forgot password ?"
+  },
+  "401.nickname_or_email_incorrect" : "The nickname or email address is incorrect.",
+  "401.password_incorrect" : "The password specified is incorrect.",
+  "409.invalid_hash": "Invalid password hash value.",
+  "417.field-nickname:required": "The \"{{field-nickname}}\" field is required.",
+  "417.field-nickname:minlength": "The \"{{field-nickname}}\" field must have at least {{minlength.requiredLength}} characters.",
+  "417.field-nickname:maxlength": "The \"{{field-nickname}}\" field must have no more {{maxlength.requiredLength}} characters.",
+  "417.field-nickname:pattern": "Available in \"{{field-nickname}}\": lowercase and uppercase letters, numbers and underscores.",
+  "417.field-password:required": "The \"{{field-password}}\" field is required.",
+  "417.field-password:minlength": "The \"{{field-password}}\" field must have at least {{minlength.requiredLength}} characters.",
+  "417.field-password:maxlength": "The \"{{field-password}}\" field must have no more {{maxlength.requiredLength}} characters.",
+  "417.field-password:pattern": "The \"{{field-password}}\" field must contain: a lowercase letter, an uppercase letter and a number.",
+  "422.json_web_token_encode" : "Error encoding web token."
+}

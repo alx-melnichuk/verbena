@@ -1,0 +1,22 @@
+{
+  "panel-login": {
+    "title": "Авторизація",
+    "email_or_nickname": "Email або псевдонім",
+    "password_label": "Пароль",
+    "btn_login": "Аторизуватися",
+    "create_an_account": "Створіть обліковий запис",
+    "forgot_password": "Забули пароль?"
+  },
+  "401.nickname_or_email_incorrect" : "Псевдонім або адреса електронної пошти некоректні.",
+  "401.password_incorrect" : "Вказаний пароль некоректний.",
+  "409.invalid_hash": "Недійсне хеш-значення пароля.",
+  "417.field-nickname:required" : "Поле \"{{field-nickname}}\" обов'язкове.",
+  "417.field-nickname:minlength" : "Поле \"{{field-nickname}}\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.field-nickname:maxlength" : "Поле \"{{field-nickname}}\" не може містити більше {{maxlength.requiredLength}} символів.",
+  "417.field-nickname:pattern" : "В полі \"{{field-nickname}}\" доступні: малі та великі літери, цифри та підкреслення.",
+  "417.field-password:required": "Поле \"{{field-password}}\" обов'язкове.",
+  "417.field-password:minlength": "Поле \"{{field-password}}\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.field-password:maxlength": "Поле \"{{field-password}}\" не може містити більше {{maxlength.requiredLength}} символів.",
+  "417.field-password:pattern": "Поле \"{{field-password}}\" має містити: малу літеру, велику літеру та цифру.",
+  "422.json_web_token_encode" : "Помилка кодування веб-токена."
+}

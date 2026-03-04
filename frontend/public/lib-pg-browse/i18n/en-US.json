@@ -1,0 +1,72 @@
+{
+  "panel-chat": {
+    "you": "you",
+    "menu": {
+        "edit": "Edit",
+        "cut": "Remove",
+        "remove": "Remove permanently",
+        "block_user": "Block",
+        "unblock_user": "Unblock"
+    },
+    "you_not_allowed_chat": "You are not allowed to use the public chat.",
+    "you_been_blocked": "You have been blocked.",
+    "message_edited": "changed",
+    "message_deleted": "This message has been removed.",
+    "msg_discard_draft": "Discard draft? (You won't be able to restore it.)"
+  },
+  "pg-browse-view": {
+    "error_update_stream": "Error updating stream state",
+    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Chat commands",
+    "user_blocked": "User \"{{ username }}\" is blocked.",
+    "user_unblocked": "User \"{{ username }}\" is unblocked.",
+    "error_socket": "Socket error",
+    "error_blocked": "User blocked error",
+    "error_unblocked": "User unblocked error"
+  },
+  "panel-browse-view": {
+    "title": "Title:",
+    "not_found": "not found",
+    "descript": "Description:",
+    "tags": "Tags:",
+    "state": "State:",
+    "waiting": "waiting",
+    "preparing": "preparing",
+    "started": "started",
+    "paused": "paused",
+    "stopped": "stopped",
+    "chat_title": "Stream chat",
+    "sure_you_want_delete_message": "Are you sure you want to delete the message: \"{{message}}\" ?",
+    "sure_you_want_permanently_delete_message": "Are you sure you want to permanently delete the message?"
+  },
+  "panel-stream-state": {
+    "has_not_started": "The broadcast has not started yet.",
+    "has_paused": "The broadcast has been paused.",
+    "has_ended": "The broadcast has already ended.",
+    "error_preparing_broadcast"     : "Error preparing broadcast",
+    "error_when_starting_the_stream": "Error starting broadcast",
+    "error_when_stopping_the_stream": "Error stopping broadcast",
+    "error_while_pause_stream"      : "Error pausing broadcast"
+  },
+  "panel-stream-params": {
+    "tags": "Tags:",
+    "start": "Start:",
+    "started": "Started:",
+    "paused": "Paused",
+    "stopped": "Stopped:",
+    "time-tracking": {
+        "-1": "days",
+        "1": "day"
+    }
+  },
+  "panel-stream-actions": {
+    "sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
+    "prepare_stream": "Prepare",
+    "go_live_stream": "Go live",
+    "pause_stream": "Pause",
+    "stop_stream": "Stop"
+  },
+  "417.field-message:required": "The \"Message\" field is required.",
+  "417.field-message:minlength": "The \"Message\" field must have at least {{minlength.requiredLength}} characters.",
+  "417.field-message:maxlength": "The \"Message\" field must have no more {{maxlength.requiredLength}} characters."
+}

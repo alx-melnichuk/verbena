@@ -1,0 +1,71 @@
+{
+  "pg-stream-edit": {
+    "have_unsaved_you_want_to_leave": "You have unsaved changes. Are you sure you want to leave ?"
+  },
+  "panel-stream-editor": {
+    "creating_stream": "Creating a Stream",
+    "editing_stream": "Editing a Stream",
+    "title": "Title",
+    "save": "Save",
+    "create": "Create",
+    "descript": "Description",
+    "thumbnail": "Thumbnail",
+    "tags": "Tags",
+    "add_tags": "Add tags",
+    "tags_hint": "Tags should be: minimum 1, maximum 4.",
+    "set_date_and_time_or_now": "Begin Now or Schedule Stream",
+    "start_date": "Start date",
+    "start_time": "Start time",
+    "link_for_visitors": "Link for visitors",
+    "copy_stream_link_to_clipboard": "Copy stream link to clipboard",
+    "stream_link_copied_to_clipboard": "Stream link copied to clipboard"
+  },
+  "pg-stream-list": {
+    "error_get_streams_for_selected_day": "Error getting streams for the selected day",
+    "error_get_streams_for_active_period": "Error getting streams for the active period",
+    "error_get_future_streams": "Error while getting future streams",
+    "error_get_past_streams": "Error while getting past streams",
+    "error_retrieving_data": "Error retrieving data.",
+    "error_delete_stream": "Error while deleting stream"
+  },
+  "panel-stream-list": {
+    "my_calendar": "My calendar",
+    "my_future_streams": "My future streams",
+    "my_past_streams": "My past streams",
+    "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?"
+  },
+  "panel-stream-info": {
+    "btn-duplicate": "Duplicate",
+    "btn-edit": "Edit",
+    "btn-delete": "Delete",
+    "not_found": "not found",
+    "missing": "missing"
+  },
+  "panel-stream-event": {
+    "btn-edit": "Edit",
+    "not_found": "not found",
+    "missing": "missing"
+  },
+  "416.parsing_type_not_supported": "The data type is not supported during parsing.",
+  "417.field-title:required" : "The \"{{field-title}}\" field is required.",
+  "417.field-title:minlength" : "The \"{{field-title}}\" field must have at least {{minlength.requiredLength}} characters.",
+  "417.field-title:maxlength" : "The \"{{field-title}}\" field must have no more {{maxlength.requiredLength}} characters.",
+  "417.field-descript:minlength" : "The \"{{field-descript}}\" field must have at least {{minlength.requiredLength}} characters.",
+  "417.field-descript:maxlength" : "The \"{{field-descript}}\" field must have no more {{maxlength.requiredLength}} characters.",
+  "417.field-tags:required" : "The \"{{field-tags}}\" field is required.",
+  "417.field-tags:minAmount": "The number of \"{{field-tags}}\" elements ({{minAmount.actualAmount}}) is less than the minimum value ({{minAmount.requiredAmount}}).",
+  "417.field-tags:maxAmount": "The number of \"{{field-tags}}\" elements ({{maxAmount.actualAmount}}) is greater than the maximum value ({{maxAmount.requiredAmount}}).",
+  "417.field-tags:minlength": "The \"{{field-tags}}\" field element must contain at least {{minlength.requiredLength}} characters (value \"{{minlength.actualValue}}\").",
+  "417.field-tags:maxlength": "The \"{{field-tags}}\" field must have no more {{maxlength.requiredLength}} characters ({{maxlength.actualValue}}).",
+  "417.field-datepicker:required": "The \"{{field-datepicker}}\" field is required.",
+  "417.field-datepicker:matDatepickerParse": " {{matDatepickerParse.text}}",
+  "417.field-datepicker:matDatepickerFilter": "matDatepickerFilter",
+  "417.field-datepicker:invalid_format": "Invalid date format.",
+  "417.field-datepicker:matDatepickerMin": "The \"{{field-datepicker}}\" field \"{{appDatepickerExtTagsMin.actual}}\" is less than the minimum value \"{{appDatepickerExtTagsMin.min}}\".",
+  "417.field-datepicker:matDatepickerMax": "The \"{{field-datepicker}}\" field \"{{appDatepickerExtTagsMax.actual}}\" is greater than the maximum value \"{{appDatepickerExtTagsMax.max}}\".",
+  "417.field-timepicker:required": "The \"{{field-timepicker}}\" field is required.",
+  "417.field-timepicker:matTimepickerParse": "Invalid time format.",
+  "417.field-timepicker:matTimepickerMin": "The \"{{field-timepicker}}\" field \"{{appTimepickerExtTagsMin.actual}}\" is less than the minimum value \"{{appTimepickerExtTagsMin.min}}\".",
+  "417.field-timepicker:matTimepickerMax": "The \"{{field-timepicker}}\" field \"{{appTimepickerExtTagsMax.actual}}\" is greater than the maximum value \"{{appTimepickerExtTagsMax.max}}\".",
+  "417.starttime:min_valid_date": "The \"date\" field \"{{minValidDateTime.actualDateTime}}\" is less than the minimum value \"{{minValidDateTime.minDateTime}}\"."
+}

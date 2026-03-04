@@ -1,0 +1,72 @@
+{
+  "panel-chat": {
+    "you": "du",
+    "menu": {
+        "edit": "Bearbeiten",
+        "cut": "Löschen",
+        "remove": "Endgültig löschen",
+        "block_user": "Block",
+        "unblock_user": "Entsperren"
+    },
+    "you_not_allowed_chat": "Du darfst den öffentlichen chat nicht nutzen.",
+    "you_been_blocked": "Du wurdest gesperrt.",
+    "message_edited": "geändert",
+    "message_deleted": "Diese Nachricht wurde entfernt.",
+    "msg_discard_draft": "Entwurf verwerfen? (Er kann nicht wiederhergestellt werden.)"
+  },
+  "pg-browse-view": {
+    "error_update_stream": "Fehler beim Aktualisieren des Streamstatus",
+    "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Chat befehle",
+    "user_blocked": "Benutzer \"{{ username }}\" ist gesperrt.",
+    "user_unblocked": "Benutzer \"{{ username }}\" ist entsperrt.",
+    "error_socket": "Socket fehler",
+    "error_blocked": "Benutzer blockiert",
+    "error_unblocked": "Benutzer entsperrt"
+  },
+  "panel-browse-view": {
+    "title": "Titel:",
+    "not_found": "nicht gefunden",
+    "descript": "Beschreibung:",
+    "tags": "Schlagwörter:",
+    "state": "Status:",
+    "waiting": "warten",
+    "preparing": "vorbereiten",
+    "started": "gestartet",
+    "paused": "pausiert",
+    "stopped": "gestoppt",
+    "chat_title": "Stream-Chat",
+    "sure_you_want_delete_message": "Möchten sie die nachricht \"{{message}}\" wirklich löschen ?",
+    "sure_you_want_permanently_delete_message": "Möchten sie die nachricht wirklich dauerhaft löschen?"
+  },
+  "panel-stream-state": {
+    "has_not_started": "Die Übertragung hat noch nicht begonnen.",
+    "has_paused": "Die Übertragung wurde pausiert.",
+    "has_ended": "Die Übertragung ist bereits beendet.",
+    "error_preparing_broadcast"     : "Fehler beim Vorbereiten des Streams",
+    "error_when_starting_the_stream": "Fehler beim Starten des Streams",
+    "error_when_stopping_the_stream": "Fehler beim Stoppen des Streams",
+    "error_while_pause_stream"      : "Fehler beim Anhalten des Streams"
+  },
+  "panel-stream-params": {
+    "tags": "Schlagwörter:",
+    "start": "Start:",
+    "started": "Gestartet:",
+    "paused": "Pausiert",
+    "stopped": "Beendet:",
+    "time-tracking": {
+        "-1": "tage",
+        "1": "tag"
+    }
+  },
+  "panel-stream-actions": {
+    "sure_you_want_stop_stream": "Möchten Sie den Stream \"{{title}}\" wirklich stoppen?",
+    "prepare_stream": "Vorbereiten",
+    "go_live_stream": "Live gehen",
+    "pause_stream": "Pause",
+    "stop_stream": "Stoppen"
+  },
+  "417.field-message:required": "Das feld \"Nachricht\" ist erforderlich.",
+  "417.field-message:minlength": "Das \"Nachricht\" feld muss mindestens {{minlength.requiredLength}} zeichen haben.",
+  "417.field-message:maxlength": "Das \"Nachricht\" feld darf nicht mehr als {{maxlength.requiredLength}} zeichen haben."
+} 

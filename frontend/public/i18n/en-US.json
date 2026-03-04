@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "Verbéna_en-US",
+    "demo_site": " demo site."
+  },
+  "buttons": {
+    "ok": "Ok",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "main_menu": {
+    "about": "About",
+    "login": "Log in",
+    "signup": "Sign up",
+    "profile": "Profile",
+    "stream_list": "My streams",
+    "stream_create": "Create stream",
+    "banned": "Banned",
+    "browse_list": "Browse",
+    "my_follows_": "My follows",
+    "theme": "Theme",
+    "locale": "Locale",
+    "log_out": "Log Out"
+  },
+  "dialog": {
+    "confirmation": "Confirmation",
+    "confirm_exit_without_saving": "You have unsaved changes. Leave this page ?"
+  },
+  "locale": {
+    "": "nothing",
+    "en-US": "English [en-US]",
+    "de-DE": "Deutsch [de-DE]",
+    "uk-UA": "Українська [uk-UA]"
+  },
+  "theme": {
+    "": "nothing",
+    "light-azure-orange": "light azure",
+    "light-cyan-orange": "light cyan",
+    "light-violet-chartreuse": "light violet",
+    "light-orange-magenta": "light orange",
+    "light-magenta-cyan": "light magenta",
+    "dark-azure-orange": "dark azure",
+    "dark-cyan-orange": "dark cyan",
+    "dark-violet-chartreuse": "dark violet",
+    "dark-orange-magenta": "dark orange",
+    "dark-magenta-cyan": "dark magenta"
+  },
+  "error.server_api_call": "An error occurred while calling the server API.",
+  "401.token_missing": "Authorization token is missing.",
+  "401.invalid_or_expired_token": "Invalid or expired token.",
+  "401.unacceptable_token_num": "Unacceptable token number",
+  "401.unacceptable_token_id": "Unacceptable token id",
+  "403.access_denied": "Access is denied.",
+  "406.session_not_found": "Session not found for this user.",
+  "500.user_not_received_from_request": "Authentication - the entity \"user\" was not received from the request.",
+  "506.error_waiting_for_operations" : "An error occurred while waiting for the operation to complete.",
+  "507.database_query_error" : "Error executing database query.",
+  "field-file-upload": {
+    "drag_files_or_browse": "Select or drag the thumbnail file here.",
+    "supported_file_types": "Supported file types: {{validTypes}} (without transparency).",
+    "upload_no_more_than": "Upload no more than {{maxFileSize}}.",
+    "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
+    "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}} B ({{maxFileSizeShort}})."
+  },
+  "field-image": {
+    "label": "Image file",
+    "remove_image": "Remove this image",
+    "not_found": "not found"
+  }
+}
