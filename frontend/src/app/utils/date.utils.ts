@@ -16,23 +16,23 @@ export class DateUtil {
         timeZone?: string | undefined;
     }*/
     public static formatDateTime(d: Date, options: Intl.DateTimeFormatOptions | undefined, locales?: string | string[] | undefined): string {
-        return new Intl.DateTimeFormat(locales || 'default', options).format(d);
+        return new Intl.DateTimeFormat(locales || "default", options).format(d);
     }
     // const date: Date | null = DateUtil.toDate(value);
-    // const res = (date != null ? DateUtil.formatDateTime(date, options) : '');
+    // const res = (date != null ? DateUtil.formatDateTime(date, options) : "");
     public static toDate(value: string | Date | number | null | undefined): Date | null {
-        return typeof value == 'number' ? (!isNaN(value) ? new Date(value) : null)
-            : (typeof value == 'string' ? new Date(value) : ((value as Date) || null));
+        return typeof value == "number" ? (!isNaN(value) ? new Date(value) : null)
+            : (typeof value == "string" ? new Date(value) : ((value as Date) || null));
     }
-    /** The method removes the year label ('p.') for the "uk" locale. */
+    /** The method removes the year label ("p.") for the "uk" locale. */
     public static afterFormat(
         value: string | null | undefined,
         locale?: string | null | undefined,
         options?: Intl.DateTimeFormatOptions | null | undefined,
     ): string | null | undefined {
         let result: string | null | undefined = value;
-        if (!!result && result.length > 2 && !!locale && locale.slice(0, 2) == 'uk') {
-            const idx = result.lastIndexOf(' р.');
+        if (!!result && result.length > 2 && !!locale && locale.slice(0, 2) == "uk") {
+            const idx = result.lastIndexOf(" р.");
             if (idx > -1) {
                 result = result.slice(0, idx) + result.slice(idx + 3);
             }

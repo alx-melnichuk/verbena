@@ -1,4 +1,4 @@
-import { ElementRef, Renderer2 } from '@angular/core';
+import { ElementRef, Renderer2 } from "@angular/core";
 
 export class HtmlElemUtil {
     public static setProperty(element: ElementRef<HTMLElement> | null, name: string, value: string | null | undefined): void {

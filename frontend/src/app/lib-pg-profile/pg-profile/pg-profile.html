@@ -1,0 +1,14 @@
+@if (isLoadData) {
+  <app-spinner isFillParent></app-spinner>
+}
+<app-panel-profile
+  [errMsgObjsProfile]="errMsgObjsProfile"
+  [errMsgObjsPassword]="errMsgObjsPassword"
+  [errMsgObjsAccount]="errMsgObjsAccount"
+  [isDisabledSubmit]="isLoadData"
+  [profileDto]="profileDto"
+  [profileConfigDto]="profileConfigDto"
+  (updateProfile)="doUpdateProfile($event)"
+  (updatePassword)="doUpdatePassword($event)"
+  (deleteAccount)="doDeleteAccount()">
+</app-panel-profile>

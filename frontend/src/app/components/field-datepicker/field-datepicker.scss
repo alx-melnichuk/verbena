@@ -1,0 +1,37 @@
+/*# sourceURL=field-datepicker.scss */
+
+app-field-datepicker {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    &[fdp-no-pd-hint-error] {
+
+        .mat-mdc-form-field-hint-wrapper,
+        .mat-mdc-form-field-error-wrapper {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+}
+
+.fd-calendar.mat-calendar {
+    .mat-calendar-table-header-divider {
+        display: none;
+    }
+
+    .mat-calendar-body-label {
+        visibility: hidden;
+    }
+}

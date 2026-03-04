@@ -1,0 +1,56 @@
+/*# sourceURL=panel-about.scss */
+
+app-panel-about {
+    ---pa-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
+    ---pa-wd: min(100vw, calc((28px + 100vw / 128) * 18));
+    --app-pn-bg-h: 40; // hsl(40, 50%, 50%);
+
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+
+    [pa-mt-2] {
+        margin-top: 0.5rem;
+    }
+
+    [pa-mt-4] {
+        margin-top: 1rem;
+    }
+
+    [pa-mb-0] {
+        margin-bottom: 0px;
+    }
+
+    .pa-content {
+        background-color: var(--app-pn-bg);
+        background-image: var(--app-pn-bg-img);
+        border: 2px solid var(--app-pn-brd);
+        border-radius: var(--pa-pn-brd-rd, var(---pa-pd));
+        box-shadow: var(--pa-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        margin: auto;
+        padding: calc(var(---pa-pd) / 2) var(---pa-pd) calc(var(---pa-pd) / 1.5) var(---pa-pd);
+        width: var(---pa-wd);
+    }
+
+    .pa-form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .pa-title {
+        font-size: calc(100% + 6px);
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .pa-details {
+        ul {
+            margin-block-start: 0px;
+            padding-inline-start: 2em;
+        }
+    }
+}

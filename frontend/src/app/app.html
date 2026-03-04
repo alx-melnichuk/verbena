@@ -1,0 +1,11 @@
+<app-header
+  [currentRoute]="currentRoute"
+  [locale]="localeSrv.getLocale()"
+  [user]="sessionSrv.getUser()"
+  [colorScheme]="colorSchemeSrv.getColorScheme()"
+  (command)="doCommand($event)">
+</app-header>
+<main>
+  <router-outlet></router-outlet>
+</main>
+<app-footer [isAuthorized]="!!sessionSrv.getUser()"></app-footer>

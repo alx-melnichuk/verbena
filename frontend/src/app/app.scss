@@ -1,0 +1,92 @@
+/*# sourceURL=app.scss */
+
+app-root {
+    --app-footer-hg: 1.75em;
+    ---brd-wd: 1px;
+
+    display: block;
+    height: 100%;
+    overflow-y: hidden;
+    // If the app-spinner is expanded to full screen, then "position: relative;" should only be present on the root element.
+    position: relative;
+
+    @media screen and (width <=480px) {
+        --app-header-hg: min(18vh, 74px);
+    }
+
+    @media screen and (480px < width <=768px) {
+        --app-header-hg: 68px;
+    }
+
+    @media screen and (768px < width <=1024px) {
+        --app-header-hg: 66px;
+    }
+
+    @media screen and (1024px < width) {
+        --app-header-hg: 64px;
+    }
+
+    @supports not(color: hsl(from white h s l)) {
+        /* safe to use hsl() relative color syntax */
+        --app-is-relative-color: 0;
+    }
+
+    @supports (color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+        .app-pn-bg {
+            --app-pn-bg: color-mix(in srgb, hsl(var(--app-pn-bg-h), 50%, 50%) 10%, var(--mat-sys-surface));
+            --app-pn-brd: color-mix(in srgb, hsl(var(--app-pn-bg-h), 50%, 50%) 22%, var(--mat-sys-surface));
+        }
+    }
+
+    @supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+        --app-is-color-mix: 0;
+
+        .app-pn-bg {
+            --app-pn-bg-img: linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, 10%)), linear-gradient(var(--mat-sys-surface));
+            --app-pn-brd: hsla(var(--app-pn-bg-h), 50%, 50%, 22%)
+        }
+    }
+
+    // ---brd-cl: color-mix(in srgb, var(--mat-sys-outline-variant) 70%, transparent);
+    &>app-header {
+        border-bottom: var(---brd-wd) solid var(--mat-sys-surface-variant);
+    }
+
+    &>app-footer {
+        border-top: var(---brd-wd) solid var(--mat-sys-surface-variant);
+    }
+
+    &>main {
+        height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2 * var(---brd-wd));
+    }
+
+    // --app-site-unauth: hsl(27, 50%, 50%);
+    // --app-site-auth : hsl(120, 50%, 50%);
+
+    // --app-pn-about : hsl(40, 50%, 50%);
+
+    // --app-pn-login : hsl(25, 50%, 50%); unauth // hsl(85, 50%, 50%);
+
+    // --app-pn-signup: hsl(30, 50%, 50%); unauth // hsl(70, 50%, 50%);
+
+    // --app-pn-forgot-password-h: hsl(55, 50%, 50%);
+
+    // --app-pn-profile: hsl(180, 50%, 50%);
+
+    // --app-pn-strm-edt: hsl(210, 50%, 50%);
+
+    // --app-pn-stream : hsl(210, 50%, 50%);
+    // --app-pn-strm-calendr : hsl(190, 50%, 50%);
+    // --app-stream-pn-brd3: color-mix(in srgb, hsl(210, 50%, 50%) 65%, var(--mat-sys-surface));
+}
+
+/**/
+
+// --app-pn-concept: hsl(220, 50%, 50%);
+// --app-concept-pn-bg: color-mix(in srgb, hsl(var(---concept-h), 50%, 50%) 10%, var(--sys-surface));
+// --app-concept-pn-brd: color-mix(in srgb, hsl(var(---concept-h), 50%, 50%) 22%, var(--sys-surface));
+
+// ** color of SVG icons **
+// --app-svg-icon-cl: var(--sys-outline);
+
+/**/

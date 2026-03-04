@@ -1,0 +1,39 @@
+/*# sourceURL=field-color-theme.scss */
+
+app-field-color-theme {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+
+    .mat-mdc-form-field-infix {
+        width: 7em;
+    }
+
+    .fct-readonly {
+        pointer-events: none;
+    }
+
+    .fct-fn-it {
+        font-style: italic;
+        color: var(--fct-text-cl, var(--app-default-dis-cl))
+    }
+}
+
+
+.cdk-overlay-pane {
+    .fct-opt-fn-it {
+        font-style: italic;
+        color: var(--fct-text-cl, var(--app-default-dis-cl))
+    }
+}

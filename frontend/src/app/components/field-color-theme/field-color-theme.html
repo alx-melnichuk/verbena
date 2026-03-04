@@ -1,0 +1,33 @@
+<mat-form-field [formGroup]="formGroup" [ngClass]="(isReadOnly ? `fct-readonly` : ``)"
+  [subscriptSizing]="(formControl.touched && !!formControl.errors) || !!hint ? 'dynamic' : 'fixed'">
+
+  @if (!!label) {
+    <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
+  }
+  <ng-content select="[fct-prefix]"></ng-content>
+
+  <mat-select
+    formControlName="colorTheme"
+    panelClass="fct-select"
+    (openedChange)="doOpenedChange($event)"
+    (selectionChange)="doSelectionChange($event.value)">
+    <mat-select-trigger [ngClass]="(!formControl.value ? `fct-fn-it` : ``)">
+      {{ ("theme." + formControl.value) | translate }}
+    </mat-select-trigger>
+    @for (themeItem of themeList; track themeItem) {
+      <mat-option [ngClass]="(themeItem == `` ? `fct-opt-fn-it` : ``)" [value]="themeItem">
+        {{ ("theme." + themeItem) | translate }}
+      </mat-option>
+    }
+  </mat-select>
+
+  <ng-content select="[fct-suffix]"></ng-content>
+  @if (!!hint) {
+    <mat-hint>{{ hint | translate }}</mat-hint>
+  }
+  <mat-error>
+    {{ (errorMsg || getErrorMsg(formControl.errors))
+      | translate: getErrorObj(formControl.errors, (!!label ? (label | translate) : "")) }}
+  </mat-error>
+
+</mat-form-field>

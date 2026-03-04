@@ -1,0 +1,34 @@
+@for (streamShort of streamShortDtoList; track streamShort.id) {
+  <div class="pse-stream app-pn-bg">
+
+    <a class="pse-logo pse-img-shd" (click)="doViewStream(streamShort.id)">
+      @if (isFuture(streamShort.starttime)) {
+        <svg class="pse-logo-future">
+          <use href="./lib-pg-stream/panel-stream-event/logo-future.svg#logo-future"></use>
+        </svg>
+      } @else if (!!streamShort.logo) {
+        <img class="pse-logo-img"
+          [src]="streamShort.logo" [alt]="('panel-stream-event.not_found' | translate)"
+        />
+      } @else {
+        <div class="pse-logo-smb">{{ 'panel-stream-event.missing' | translate }}</div>
+      }
+    </a>
+
+    <div class="pse-details-wrap">
+      <div class="pse-details">
+        <div class="pse-starttime pse-ellipsis">
+          {{ streamShort.starttime | dateTimeFormat:locale:formatDateTime  }}
+        </div>
+        @if (canEdit && isFuture(streamShort.starttime)) {
+          <button class="pse-edit-btn" (click)="doEditStream(streamShort.id)">
+            {{ 'panel-stream-event.btn-edit' | translate }}
+          </button>
+        }
+      </div>
+
+      <div class="pse-ellipsis">{{ streamShort.title }}</div>
+    </div>
+
+  </div>
+}

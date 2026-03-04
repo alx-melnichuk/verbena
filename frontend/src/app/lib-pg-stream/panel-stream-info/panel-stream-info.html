@@ -1,0 +1,69 @@
+@for (stream of streamList; track stream.id) {
+  <div class="psi-stream-card app-pn-bg">
+
+    <a class="psi-logo psi-img-shd" (click)="doActionView(stream.id)">
+      @if (isFuture) {
+        <svg class="psi-logo-future">
+          <use href="./lib-pg-stream/panel-stream-info/logo-future.svg#logo-future"></use>
+        </svg>
+      } @else if (!!stream.logo) {
+        <img class="psi-logo-img"
+          [src]="stream.logo" [alt]="('panel-stream-info.not_found' | translate)"
+        />
+      } @else {
+        <div class="psi-logo-smb">{{ 'panel-stream-info.missing' | translate }}</div>
+      }
+    </a>
+
+    <div class="psi-details">
+      <div class="psi-date">
+        {{ stream.starttime | dateTimeFormat:locale:formatDateTime }}
+      </div>
+      <div class="psi-title">
+        <a href="javascript:void(0);" (click)="doActionView(stream.id)">
+          {{ stream.title }}
+        </a>
+      </div>
+      <div class="psi-descript">{{ stream.descript }}</div>
+    </div>
+
+    <div class="psi-actions">
+      @if (canDuplicate) {
+        <button matButton="elevated" class="psi-action-btn stl-btn-brd psi-actions-box"
+           (click)="doActionDuplicate(stream.id)" psi-mr-2>
+          <span class="psi-action-label">
+            <svg class="psi-duplicate-accent" psi-mr-1>
+              <use href="./lib-pg-stream/panel-stream-info/file-copy-bin.svg#file-copy-bin"></use>
+            </svg>
+            <span>{{ 'panel-stream-info.btn-duplicate' | translate }}</span>
+          </span>
+        </button>
+      }
+      <div class="psi-actions-both">
+        @if (canEdit) {
+          <button matButton="elevated" class="psi-action-btn stl-btn-brd"
+            (click)="doActionEdit(stream.id)" psi-mr-2>
+            <span class="psi-action-label">
+              <svg class="psi-edit-accent" psi-mr-1>
+                <use href="./lib-pg-stream/panel-stream-info/file-circle-pen-bin.svg#file-circle-pen-bin"></use>
+              </svg>
+              <span>{{ 'panel-stream-info.btn-edit' | translate }}</span>
+            </span>
+          </button>
+        }
+        @if (canDelete) {
+          <button matButton="elevated" class="psi-action-btn stl-btn-brd"
+            (click)="doActionDelete(stream)" psi-mr-2>
+            <span class="psi-action-label">
+              <svg class="psi-delete-accent" psi-mr-1>
+                <use href="./lib-pg-stream/panel-stream-info/file-circle-cross-bin.svg#file-circle-cross-bin"></use>
+              </svg>
+              <span>{{ 'panel-stream-info.btn-delete' | translate }}</span>
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+
+  </div>
+}

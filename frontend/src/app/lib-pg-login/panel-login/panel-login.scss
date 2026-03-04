@@ -1,0 +1,51 @@
+/*# sourceURL=panel-login.scss */
+
+app-panel-login {
+    ---pl-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
+    ---pl-wd: min(100vw, calc((26px + 100vw / 128) * 16));
+    --app-pn-bg-h: 25; // hsl(27, 50%, 50%); unauthoriz
+
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+
+    [pl-mt-2] {
+        margin-top: 0.5rem;
+    }
+
+    [pl-mt-4] {
+        margin-top: 1rem;
+    }
+
+    .pl-content {
+        background-color: var(--app-pn-bg);
+        background-image: var(--app-pn-bg-img);
+        border: 2px solid var(--app-pn-brd);
+        border-radius: var(--pl-pn-brd-rd, var(---pl-pd));
+        box-shadow: var(--pl-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        margin: auto;
+        padding: calc(var(---pl-pd) / 2) var(---pl-pd);
+        width: var(---pl-wd);
+    }
+
+    .pl-form {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: calc(var(---pl-pd) / 2);
+    }
+
+    .pl-title {
+        font-size: calc(100% + 6px);
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .pl-note {
+        display: flex;
+        justify-content: space-between;
+    }
+}

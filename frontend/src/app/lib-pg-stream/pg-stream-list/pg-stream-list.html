@@ -1,0 +1,20 @@
+<app-panel-stream-list
+  [calendarDaySelected]="calendarHdlr.eventsOfDaySelected"
+  [calendarMarkedDates]="calendarHdlr.calendarMarkedDates"
+  [calendarMaxDate]="calendarHdlr.calendarMaxDate"
+  [calendarMinDate]="calendarHdlr.calendarMinDate"
+  [futureStreams]="futureStreamHdlr.streamsDto"
+  [isLoadStreams]="calendarHdlr.calendarLoading || calendarHdlr.eventsOfDayLoading
+    || futureStreamHdlr.streamLoading || pastStreamHdlr.streamLoading"
+  [isRefreshStreamEvent]="isRefreshStreamEvent"
+  [pastStreams]="pastStreamHdlr.streamsDto"
+  [streamEventsForDay]="calendarHdlr.eventsOfDay"
+  (calendarForPeriod)="doCalendarForPeriod($event)"
+  (futureNextPage)="doSearchNextFutureStream()"
+  (pastNextPage)="doSearchNextPastStream()"
+  (streamEventsForDate)="doStreamEventsForDate($event)"
+  (actionDuplicate)="doActionDuplicate($event)"
+  (actionEdit)="doActionEdit($event)"
+  (actionView)="doActionView($event)"
+  (actionDelete)="doActionDelete($event)">
+</app-panel-stream-list>

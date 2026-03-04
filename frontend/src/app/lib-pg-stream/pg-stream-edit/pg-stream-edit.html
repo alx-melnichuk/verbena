@@ -1,0 +1,12 @@
+@if (isLoadStream) {
+  <app-spinner isFillParent></app-spinner>
+}
+<app-panel-stream-editor
+  [errMsgObjs]="errMsgObjs"
+  [isDisabledSubmit]="isLoadStream"
+  [locale]="localeSrv.getLocale()"
+  [streamDto]="streamDto"
+  [streamConfigDto]="streamConfigDto"
+  (changeData)="doChangeData($event)"
+  (updateStream)="doUpdateStream($event)">
+</app-panel-stream-editor>

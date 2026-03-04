@@ -1,0 +1,34 @@
+<mat-form-field [formGroup]="formGroup"
+  [subscriptSizing]="(formControl.touched && !!formControl.errors) || !!hint ? 'dynamic' : 'fixed'">
+
+  @if (!!label) {
+    <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
+  }
+  <ng-content select="[ft-prefix]"></ng-content>
+
+  <textarea matInput #itemInput
+    class="ft-textarea global-scroll"
+    formControlName="textarea"
+    autocomplete="new-password"
+    autocapitalize="off"
+    [required]="!!isRequired"
+    [attr.maxlength]="maxLen != null && maxLen > 0 ? maxLen + 1 : null"
+    [attr.spellcheck] ="!!isSpellcheck"
+    [rows]="numRows!=null ? numRows : null"
+    [cdkTextareaAutosize]="numRows==null &&(minRows!=null || maxRows!=null) ? `` : null"
+    [cdkAutosizeMinRows]="minRows"
+    [cdkAutosizeMaxRows]="maxRows"
+    (input)="onChange(formControl.value)"
+    (blur)="onTouched()">
+  </textarea>
+
+  <ng-content select="[ft-suffix]"></ng-content>
+  @if (!!hint) {
+    <mat-hint>{{ hint | translate }}</mat-hint>
+  }
+  <mat-error>
+    {{ (errorMsg || getErrorMsg(formControl.errors))
+      | translate: getErrorObj(formControl.errors, (!!label ? (label | translate) : "")) }}
+  </mat-error>
+
+</mat-form-field>

@@ -1,0 +1,33 @@
+<mat-form-field [formGroup]="formGroup" [ngClass]="(isReadOnly ? `fl-readonly` : ``)"
+  [subscriptSizing]="(formControl.touched && !!formControl.errors) || !!hint ? 'dynamic' : 'fixed'">
+
+  @if (!!label) {
+    <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
+  }
+  <ng-content select="[fl-prefix]"></ng-content>
+
+  <mat-select
+    formControlName="locale"
+    panelClass="fl-select"
+    (openedChange)="doOpenedChange($event)"
+    (selectionChange)="doSelectionChange($event.value)">
+    <mat-select-trigger [ngClass]="(!formControl.value ? `fl-fn-it` : ``)">
+      {{ ("locale." + formControl.value) | translate }}
+    </mat-select-trigger>
+    @for (localeItem of localeList; track localeItem) {
+      <mat-option [ngClass]="(localeItem == `` ? `fl-opt-fn-it` : ``)" [value]="localeItem">
+        {{ ("locale." + localeItem) | translate }}
+      </mat-option>
+    }
+  </mat-select>
+
+  <ng-content select="[fl-suffix]"></ng-content>
+  @if (!!hint) {
+    <mat-hint>{{ hint | translate }}</mat-hint>
+  }
+  <mat-error>
+    {{ (errorMsg || getErrorMsg(formControl.errors))
+      | translate: getErrorObj(formControl.errors, (!!label ? (label | translate) : "")) }}
+  </mat-error>
+
+</mat-form-field>

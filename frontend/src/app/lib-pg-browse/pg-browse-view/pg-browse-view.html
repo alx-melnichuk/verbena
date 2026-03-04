@@ -1,0 +1,37 @@
+<app-panel-browse-view
+[chatBlockedUsers]="chatBlockedUsers"
+[chatPastMsgs]="chatPastMsgs"
+[chatNewMsgs]="chatNewMsgs"
+[chatRmvIds]="chatRmvIds"
+[chatIsBlocked]="chatSocketService.isBlocked()"
+[chatIsEditable]="!!user?.id && chatIsEditable && chatSocketService.isJoined()"
+[chatIsLoading]="chatIsLoading"
+[chatIsOwner]="isStreamOwner"
+[chatMaxLen]="chatMaxLen"
+[chatMinLen]="chatMinLen"
+[chatMaxRows]="chatMaxRows"
+[chatMinRows]="chatMinRows"
+[chatNickname]="user?.nickname || null"
+
+[countOfViewer]="chatSocketService.countOfMembers"
+[isLoadStream]="isLoadStream"
+[isStreamOwner]="isStreamOwner"
+
+[ownerAvatar]="userShortDto?.avatar"
+[ownerEmail]="userShortDto?.email"
+[ownerNickname]="userShortDto?.nickname"
+
+[streamDto]="streamDto"
+[timerActive]="timerActive"
+[timerIsShow]="timerIsShow"
+[timerValue]="timerValue"
+
+(changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
+(blockUser)="doModifyBlockUser(isStreamOwner, true, $event)"
+(unblockUser)="doModifyBlockUser(isStreamOwner, false, $event)"
+(sendMessage)="doSendMessage($event)"
+(editMessage)="doEditMessage($event)"
+(cutMessage)="doCutMessage($event)"
+(rmvMessage)="doRmvMessage($event)"
+(queryPastMsgs)="doQueryPastMsgs($event)">
+</app-panel-browse-view>

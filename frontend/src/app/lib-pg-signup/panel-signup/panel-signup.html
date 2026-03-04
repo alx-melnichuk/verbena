@@ -1,0 +1,72 @@
+<div class="ps-content app-pn-bg">
+  <form novalidate class="ps-form"
+    [formGroup]="formGroup">
+
+    <div class="ps-title">{{ 'panel-signup.title' | translate }}</div>
+
+    <app-uniqueness-check ps-mt-2
+      #uniquenessCheckNickname="appUniquenessCheck"
+      [debounceDelay]="debounceDelay"
+      [checkUniqueFn]="checkUniqueNickname">
+      <app-field-input wd100
+        type="text"
+        formControlName="nickname"
+        hint="panel-signup.nickname_hint"
+        [isRequired]="true"
+        kind="nickname"
+        label="panel-signup.nickname_label"
+        [maxLen]="cn_nickname.maxLength"
+        [minLen]="cn_nickname.minLength"
+        [pattern]="cn_nickname.pattern"
+        [errorMsg]="uniquenessCheckNickname.isUniquenessError ? '409.nickname_already_use' : undefined"
+        (input)="updateErrMsgObjs(); uniquenessCheckNickname.checkParameter(controls.nickname.value);">
+      </app-field-input>
+    </app-uniqueness-check>
+
+
+    <app-uniqueness-check ps-mt-4
+      #uniquenessCheckEmail="appUniquenessCheck"
+      [debounceDelay]="debounceDelay"
+      [checkUniqueFn]="checkUniqueEmail">
+      <app-field-input wd100
+        type="email"
+        formControlName="email"
+        [isRequired]="true"
+        kind="email"
+        label="panel-signup.email_label"
+        [maxLen]="cn_email.maxLength"
+        [minLen]="cn_email.minLength"
+        [errorMsg]="uniquenessCheckEmail.isUniquenessError ? '409.email_already_use' : undefined"
+        (input)="updateErrMsgObjs(); uniquenessCheckEmail.checkParameter(controls.email.value);">
+      </app-field-input>
+    </app-uniqueness-check>
+
+    <app-field-password wd100 ps-mt-4
+      formControlName="password"
+      hint="panel-signup.password_hint"
+      [isRequired]="true"
+      label="panel-signup.password_label"
+      [maxLen]="cn_password.maxLength"
+      [minLen]="cn_password.minLength"
+      [pattern]="cn_password.pattern"
+      (input)="updateErrMsgObjs()">
+    </app-field-password>
+
+    <button matButton="elevated" ps-mt-4 class="mat-primary stl-btn-brd"
+      [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
+      (click)="doSignup()">
+      {{ 'panel-signup.button_signup' | translate }}
+    </button>
+
+    <div ps-mt-4 class="ps-note">
+      <span>{{ 'panel-signup.already_registered' | translate }}</span>
+      <a ps-ml-2 no-decor routerLink="{{linkLogin}}">{{ 'panel-signup.go_to_login_page' | translate }}</a>
+    </div>
+  </form>
+
+  <div class="mat-mdc-form-field-subscript-wrapper">
+    @for (errMsgObj of errMsgObjs; track errMsgObj.msg) {        
+      <mat-error>{{ errMsgObj.msg | translate: errMsgObj.obj }}</mat-error>
+    }
+  </div>
+</div>

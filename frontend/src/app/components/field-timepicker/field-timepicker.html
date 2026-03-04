@@ -1,0 +1,42 @@
+<mat-form-field [formGroup]="formGroup"
+  [subscriptSizing]="(formControl.touched && !!formControl.errors) || !!hint ? 'dynamic' : 'fixed'">
+  
+  @if (!!label) {
+    <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
+  }
+  <ng-content select="[ftp-prefix]"></ng-content>
+  
+  <input matInput class="ftp-input"
+    formControlName="time"
+    autocomplete="new-password"
+    autocapitalize="off"
+    [required]="!!isRequired"
+    [matTimepicker]="timepickerItem"
+    [matTimepickerMin]="minTime"
+    [matTimepickerMax]="maxTime"
+    [matTimepickerOpenOnClick]="false"
+    appTimepickerExtTags
+    [appTimepickerExtTagsMin]="minTime"
+    [appTimepickerExtTagsMax]="maxTime"
+    [appTimepickerExtTagsLocale]="locale"
+    (change)="onChange?.(formControl.value)"
+    (blur)="onTouched?.()"
+    (click)="handleClick()"
+  />
+
+  <mat-timepicker-toggle matIconSuffix [for]="timepickerItem"></mat-timepicker-toggle>
+  <mat-timepicker #timepickerItem
+    [interval]="interval || null"
+    (selected)="onChange?.(formControl.value)"
+  />
+
+  <ng-content select="[ftp-suffix]"></ng-content>
+  @if (!!hint) {
+    <mat-hint>{{ hint | translate }}</mat-hint>
+  }
+  <mat-error>
+    {{ (errorMsg || getErrorMsg(formControl.errors))
+      | translate: getErrorObj(formControl.errors, (!!label ? (label | translate) : "")) }}
+  </mat-error>
+
+</mat-form-field>

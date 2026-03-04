@@ -1,60 +1,44 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { TranslateService } from '@ngx-translate/core';
+export interface ErrMsgObj {
+    msg: string,
+    obj: unknown,
+}
 
 export class HttpErrorUtil {
-    private static translate: TranslateService | undefined;
-    public static setTranslate(translate: TranslateService | undefined): void {
-        HttpErrorUtil.translate = translate;
-    }
-    public static getTranslate(): TranslateService | undefined {
-        return HttpErrorUtil.translate;
-    }
-    public static covertToMsg(error: any): string[] {
-        const result: string[] = [];
-        if (!error) {
-            return [];
+    public static mapErrMsgObj(status: number, error: any): ErrMsgObj | null {
+        let msg: string = "";
+        let obj: unknown | null = null;
+        if (typeof error == "object") {
+            // Extract the first value up to the ";" delimiter.
+            const message = (error["message"] || "").split(";")[0];
+            msg = !!message ? `${status + "." + message}` : "";
+            const params = error["params"];
+            obj = !!params ? { ...params } : null;
+        } else {
+            msg = (error || "").toString();
         }
-        const errResList = !Array.isArray(error) ? [error] : error;
+        return !!msg ? { msg, obj } : null;
+    }
+    public static mapErrMsgObjs(status: number, error: any): ErrMsgObj[] {
+        const result: ErrMsgObj[] = [];
+        const errResList = (Array.isArray(error) ? error : (!error ? [] : [error]));
         for (let index = 0; index < errResList.length; index++) {
-            let value = '';
-            const appError = errResList[index];
-            if (typeof appError == 'object') {
-                const code = appError['code'] || '';
-                // Extract the first value up to the ";" delimiter.
-                const message = (appError['message'] || '').split(';')[0];
-                if (!!code) {
-                    const key = `${code}${!!message ? '.' + message : ''}`;
-                    const value2 = HttpErrorUtil.translate?.instant(key, appError['params'] || {}) || key;
-                    value = value2 != key ? value2 : `${code}${!!message ? ': ' + message : ''}`;
-                }
-            } else {
-                value = (appError || '').toString();
-            }
+            const value = this.mapErrMsgObj(status, errResList[index]);
             if (!!value) {
                 result.push(value);
             }
         }
         return result;
     }
-    public static getMsgs(errRes: HttpErrorResponse): string[] {
-        let result: string[] = [];
-        if (!!errRes && !!errRes.error) {
-            result = HttpErrorUtil.covertToMsg(errRes.error);
-        }
-        if (result.length == 0 && !!HttpErrorUtil.translate) {
-            const txt = errRes.status > 299 ? ` ${errRes.status} ${errRes.statusText}` : ``;
-            result.push(HttpErrorUtil.translate.instant('error.server_api_call') + txt);
-        }
-        return result;
-    }
-    public static getMsg(error: any, statusText?: string | undefined): string[] {
-        let result: string[] = [];
-        if (!!error) {
-            result = HttpErrorUtil.covertToMsg(error);
-        }
-        if (result.length == 0 && !!HttpErrorUtil.translate) {
-            const txt = statusText != null ? ` ${statusText}` : ``;
-            result.push(HttpErrorUtil.translate.instant('error.server_api_call') + txt);
+
+
+    public static covertToMsg(status: number, error: any): string {
+        let result: string = "";
+        if (typeof error == "object") {
+            // Extract the first value up to the ";" delimiter.
+            const message = (error["message"] || "").split(";")[0];
+            result = !!message ? `${status + "." + message}` : "";
+        } else {
+            result = (error || "").toString();
         }
         return result;
     }

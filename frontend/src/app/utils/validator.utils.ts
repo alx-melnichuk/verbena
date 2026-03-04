@@ -1,46 +1,32 @@
-import { ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { ValidatorFn, Validators } from "@angular/forms";
 
 export class ValidatorUtils {
     // Create an array of check rules based on the specified parameters.
     public static prepare(params: { [key: string]: null | undefined | number | string | boolean; }): ValidatorFn[] {
         const resultValidator: ValidatorFn[] = [];
-        if (typeof params['min'] == 'number' && params['min'] > -1) {
-            resultValidator.push(Validators.min(params['min']));
+        if (typeof params["min"] == "number" && params["min"] > -1) {
+            resultValidator.push(Validators.min(params["min"]));
         }
-        if (typeof params['max'] == 'number' && params['max'] > -1) {
-            resultValidator.push(Validators.max(params['max']));
+        if (typeof params["max"] == "number" && params["max"] > -1) {
+            resultValidator.push(Validators.max(params["max"]));
         }
-        if (!!params['required']) {
+        if (!!params["required"]) {
             resultValidator.push(Validators.required);
         }
-        if (!!params['email']) {
+        if (!!params["email"]) {
             resultValidator.push(Validators.email);
         }
-        const minLength = typeof params['minLength'] == 'number' ? params['minLength'] : -1;
+        const minLength = typeof params["minLength"] == "number" ? params["minLength"] : -1;
         if (minLength > -1) {
             resultValidator.push(Validators.minLength(minLength));
         }
-        const maxLength = typeof params['maxLength'] == 'number' ? params['maxLength'] : -1;
+        const maxLength = typeof params["maxLength"] == "number" ? params["maxLength"] : -1;
         if (maxLength > -1) {
             resultValidator.push(Validators.maxLength(maxLength));
         }
-        if (typeof params['pattern'] == 'string' && !!params['pattern']) {
-            resultValidator.push(Validators.pattern(params['pattern']));
+        if (typeof params["pattern"] == "string" && !!params["pattern"]) {
+            resultValidator.push(Validators.pattern(params["pattern"]));
         }
         return resultValidator;
-    }
-    // Get an error template based on the specified parameters.
-    public static getErrorMsg(errors: ValidationErrors | null, name: string): string {
-        let result: string = '';
-        const errorList: string[] = Object.keys(errors || {});
-        for (let index = 0; index < errorList.length && !result; index++) {
-            const error: string = errorList[index];
-            result = !result && 'required' === error ? `ExpectationFailed.${name}:required` : result;
-            result = !result && 'minlength' === error ? `ExpectationFailed.${name}:min_length` : result;
-            result = !result && 'maxlength' === error ? `ExpectationFailed.${name}:max_length` : result;
-            result = !result && 'pattern' === error ? `ExpectationFailed.${name}:regex` : result;
-            result = !result && 'email' === error ? `ExpectationFailed.${name}:email_type` : result;
-        }
-        return result;
     }
 }

@@ -1,0 +1,43 @@
+<mat-form-field [formGroup]="formGroup"
+  [subscriptSizing]="(formControl.touched && !!formControl.errors) ? 'dynamic' : 'fixed'">
+
+  @if (!!label) {
+    <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
+  }
+  <ng-content select="[fdp-prefix]"></ng-content>
+
+  <input matInput class="fdp-input"
+    formControlName="date"
+    autocomplete="new-password"
+    autocapitalize="off"
+    [required]="!!isRequired"
+    [matDatepicker]="datepickerItem"
+    [max]="maxDate"
+    [min]="minDate"
+    appDatepickerExtTags
+    [appDatepickerExtTagsMin]="minDate"
+    [appDatepickerExtTagsMax]="maxDate"
+    [appDatepickerExtTagsLocale]="locale"
+    (dateInput)="doDateInput($event)"
+    (dateChange)="doDateChange($event)"
+    (blur)="onTouched?.()"
+  />
+
+  <mat-datepicker-toggle matSuffix [for]="datepickerItem"></mat-datepicker-toggle>
+  <mat-datepicker #datepickerItem [calendarHeaderComponent]="calendarHeaderComp" panelClass="fd-calendar"></mat-datepicker>
+  
+  <ng-content select="[fdp-suffix]"></ng-content>
+  @if (!!hint) {
+    <mat-hint>{{ hint | translate }}</mat-hint>
+  }
+  <mat-error>
+    {{ (errorMsg || getErrorMsg(formControl.errors))
+      | translate: getErrorObj(formControl.errors, (!!label ? (label | translate) : "")) }}
+  </mat-error>
+
+</mat-form-field>
+
+<ng-template>
+  <app-calendar-header></app-calendar-header>
+</ng-template>
+    

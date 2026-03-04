@@ -1,80 +1,47 @@
 /*# sourceURL=styles.scss */
 
-// Custom Theming for Angular Material
-// For more information: https://material.angular.io/guide/theming
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
-// Plus imports for other components in your app.
 
-// Include the common styles for Angular Material. We include this here so that you only
-// have to load a single css file for Angular Material in your app.
-// Be sure that you only ever include this mixin once!
-@include mat.core();
-
-// Define the theme object.
-$verbena-theme: mat.define-theme((color: ( // 
-                theme-type: light,
-                // theme-type: dark,
-
-                primary : mat.$azure-palette, // 1p
-                tertiary: mat.$orange-palette, // 1t
-
-                // primary : mat.$cyan-palette, // 2p
-                // tertiary: mat.$orange-palette, // 2t
-
-                // primary : mat.$violet-palette, // 3p
-                // tertiary: mat.$chartreuse-palette, // 3t
-
-                // primary : mat.$orange-palette, // 4p
-                // tertiary: mat.$magenta-palette, // 4t
-
-                // primary : mat.$magenta-palette, // 5p
-                // tertiary: mat.$cyan-palette, // 5t
-
-                use-system-variables: true, // Added
-            ),
-            typography: (use-system-variables: true), // Added
-            density: (scale: 0)));
-
-// Include theme styles for core and each component used in your app.
-// Alternatively, you can import and @include the theme mixins for each component
-// that you are using.
-:root {
-    @include mat.all-component-themes($verbena-theme);
-    @include mat.system-level-colors($verbena-theme); // Added
-    @include mat.system-level-typography($verbena-theme); // Added
-}
-
-// Comment out the line below if you want to use the pre-defined typography utility classes.
-// For more information: https://material.angular.io/guide/typography#using-typography-styles-in-your-application.
-// @include mat.typography-hierarchy($verbena-theme);
-
-// Comment out the line below if you want to use the deprecated `color` inputs.
-// @include mat.color-variants-backwards-compatibility($verbena-theme);
-/* You can add global styles to this file, and also import other style files */
-
-
-@import './styles-theme.scss';
-@import './styles-mdc.scss';
+@use './styles-mdc.scss';
 
 html {
-    font-family: Roboto, 'Helvetica Neue', sans-serif;
+    @include mat.theme((color: (primary: mat.$azure-palette,
+                tertiary: mat.$blue-palette,
+            ),
+            typography: Roboto,
+            density: 0,
+        ));
+}
+
+
+html {
+    font-family: Roboto, 'Helvetica Neue', sans-serif; // #? Arial, Helvetica, sans-serif;
     height: 100%;
     line-height: 1.5;
-    // --scrollbarBG: rgb(207 216 220 / 20%);
-    // --thumbBG: #90a4ae;
-    // scrollbar-width: thin;
-    // scrollbar-color: var(--thumbBG) var(--scrollbarBG);
 }
 
 body {
-    height: 100%;
-    margin: 0;
     -webkit-text-size-adjust: 100% !important;
     -ms-text-size-adjust: 100% !important;
     -webkit-font-smoothing: antialiased !important;
-    // Define the default background color and text color.
-    background: var(--sys-surface);
-    color: var(--sys-on-surface);
+
+    // #Define the default background color and text color.
+    // #background-color: var(--sys-surface);
+    // #color: var(--sys-on-surface);
+
+    // #Learn more https://material.angular.dev/guide/system-variables
+    // #background-color: var(--mat-sys-surface);
+    // #color: var(--mat-sys-on-surface);
+    // #font: var(--mat-sys-body-medium); // 400 0.875rem / 1.25rem Roboto
+    // #color-scheme: light; // [`light`, `dark`]
+
+    height: 100%;
+    margin: 0;
 }
 
 h1,
@@ -107,13 +74,15 @@ a:hover {
 
 .global-scroll {
     --scr-bar-wd: thin;
+    scrollbar-width: var(--scr-bar-wd-firefox, var(--scr-bar-wd));
 
     // only for Firefox browser
     @-moz-document url-prefix() {
         --scr-bar-wd-firefox: auto;
     }
 
-    scrollbar-width: var(--scr-bar-wd-firefox, var(--scr-bar-wd));
+    // --scrollbarBG: rgb(207 216 220 / 20%);
+    // --thumbBG: #90a4ae;
     //   scrollbar-color: var(--thumbBG) var(--scrollbarBG);
     //   &::-webkit-scrollbar { width: 9px; height: 9px; }
     //   &::-webkit-scrollbar-track { background: var(--scrollbarBG); }

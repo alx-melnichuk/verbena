@@ -1,0 +1,50 @@
+/*# sourceURL=panel-stream-calendar.scss */
+
+app-panel-stream-calendar {
+    --app-pn-bg-h: 190; // hsl(190, 50%, 50%);
+
+    // Default value. The element is not a query container for any container size queries, 
+    // but remains a query container for container style queries.
+    display: block;
+
+    @supports (color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+        .psc-pn2-bg {
+            --psc-pn-sel-bg: color-mix(in srgb, hsl(var(--app-pn-bg-h), 50%, 50%) 13%, var(--mat-sys-inverse-primary));
+            --psc-pn-emblem-bg: color-mix(in srgb, hsl(var(--app-pn-bg-h), 50%, 50%) 10%, var(--mat-sys-tertiary-container));
+        }
+    }
+
+    @supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+        .psc-pn2-bg {
+            --psc-pn-sel-bg-img: linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, 13%)), linear-gradient(var(--mat-sys-inverse-primary));
+            --psc-pn-emblem-bg-img: linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, 10%)), linear-gradient(var(--mat-sys-tertiary-container));
+        }
+    }
+
+
+    // The units are "em" because - font-size: var(--mat-datepicker-calendar-text-size, var(--mat-app-body-medium-size));
+    .mat-calendar {
+        background-color: var(--app-pn-bg);
+        background-image: var(--app-pn-bg-img);
+        border: 1px solid var(--app-pn-brd);
+        border-radius: 1em;
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 19em;
+        min-width: 17em;
+
+        .mat-calendar-table-header-divider {
+            display: none;
+        }
+
+        .mat-calendar-body-label {
+            visibility: hidden;
+        }
+    }
+
+    button.psc-day-with-streams {
+        background-color: var(--psc-pn-sel-bg);
+        background-image: var(--psc-pn-sel-bg-img);
+        border-radius: 100%;
+    }
+}
