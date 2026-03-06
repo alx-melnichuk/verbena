@@ -1,1 +1,9 @@
-<p>image works!</p>
+@if (!!srcImg) {
+  <img class="i-img" [src]="srcImg" [alt]="'&ensp;' + ('image.not_found' | translate)"
+    onerror="this.setAttribute('i-not-loaded', ''); this.parentElement.setAttribute('i-mn-sz', '');"
+  />
+} @else {
+  <ng-content select="[img-is-missing]">
+    <div>{{ 'image.missing' | translate }}</div>
+  </ng-content>
+}

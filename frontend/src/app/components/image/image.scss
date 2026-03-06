@@ -1,3 +1,34 @@
-:host {
-  display: block;
+/*# sourceURL=image.scss */
+
+app-image {
+    align-items: center;
+    border-radius: var(--i-br-rd, inherit);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+
+    &[i-mn-sz] {
+        min-width: min(var(--i-mn-wd, 10rem), 100%);
+        min-height: min(var(--i-mn-hg, 6rem), 100%);
+    }
+
+    &[i-shd] {
+        box-shadow: var(--i-shd, 0px 1px 3px 1px var(--mat-sys-outline));
+    }
+
+    .i-img {
+        border-radius: inherit;
+        box-sizing: border-box;
+        display: block;
+        object-fit: cover;
+
+        &[i-not-loaded] {
+            ---i-mn-wd: auto;
+        }
+
+        &:not([i-not-loaded]) {
+            height: 100%;
+            width: 100%;
+        }
+    }
 }

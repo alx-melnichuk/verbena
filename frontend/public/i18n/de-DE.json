@@ -63,6 +63,10 @@
     "err_upload_images_use_valid_types": "Bitte laden sie bilder im gültigen format hoch: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "Die dateigröße darf das maximum von {{maxFileSize}} B ({{maxFileSizeShort}}) nicht überschreiten."
   },
+  "image": {
+    "not_found": "nicht gefunden",
+    "missing": "fehlt"
+  },
   "field-image": {
     "label": "Bilddatei",
     "remove_image": "Dieses Bild entfernen",
