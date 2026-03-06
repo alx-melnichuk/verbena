@@ -1,7 +1,7 @@
 /*# sourceURL=app.scss */
 
 app-root {
-    --app-footer-hg: 1.75em;
+    --app-footer-hg: 1.75rem;
     ---brd-wd: 1px;
 
     display: block;
@@ -60,14 +60,14 @@ app-root {
         height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2 * var(---brd-wd));
     }
 
-    // --app-site-unauth: hsl(27, 50%, 50%);
+    // --app-site-unauth: hsl(40, 50%, 50%);
     // --app-site-auth : hsl(120, 50%, 50%);
 
-    // --app-pn-about : hsl(40, 50%, 50%);
+    // --app-pn-about : hsl(25, 50%, 50%);
 
-    // --app-pn-login : hsl(25, 50%, 50%); unauth // hsl(85, 50%, 50%);
+    // --app-pn-login : hsl(40, 50%, 50%); unauth // old hsl(85, 50%, 50%);
 
-    // --app-pn-signup: hsl(30, 50%, 50%); unauth // hsl(70, 50%, 50%);
+    // --app-pn-signup: hsl(45, 50%, 50%); unauth // old hsl(70, 50%, 50%);
 
     // --app-pn-forgot-password-h: hsl(55, 50%, 50%);
 

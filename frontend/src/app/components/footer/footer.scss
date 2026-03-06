@@ -5,14 +5,14 @@ app-footer {
     display: flex;
     height: var(--app-footer-hg, 100%);
     line-height: 1;
-    padding-left: 0.8em;
+    padding-left: 0.8rem;
 
     &.f-is-authorized {
         --app-pn-bg-h: 120; // hsl(120, 50%, 50%);
     }
 
     &:not(.f-is-authorized) {
-        --app-pn-bg-h: 27; // hsl(27, 50%, 50%); unauthoriz
+        --app-pn-bg-h: 40; // hsl(40, 50%, 50%); unauthoriz
     }
 
     background-color: var(--app-pn-bg);

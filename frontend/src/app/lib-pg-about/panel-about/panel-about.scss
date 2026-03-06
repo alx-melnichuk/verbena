@@ -3,7 +3,7 @@
 app-panel-about {
     ---pa-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
     ---pa-wd: min(100vw, calc((28px + 100vw / 128) * 18));
-    --app-pn-bg-h: 40; // hsl(40, 50%, 50%);
+    --app-pn-bg-h: 25; // hsl(25, 50%, 50%);
 
     display: flex;
     flex-direction: column;
@@ -50,7 +50,7 @@ app-panel-about {
     .pa-details {
         ul {
             margin-block-start: 0px;
-            padding-inline-start: 2em;
+            padding-inline-start: 2rem;
         }
     }
 }

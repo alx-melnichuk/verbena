@@ -3,10 +3,8 @@
 app-alert-wrap {
     height: 100%;
     display: flex;
-    // #  line-height: 1.42857rem;
     border: 1px solid transparent;
     border-radius: 4px;
-    // #  white-space: normal;
 }
 
 .cdk-overlay-container {
@@ -18,7 +16,7 @@ app-alert-wrap {
         // border-width: 0;
         // background-color: transparent;
         .mdc-snackbar__label {
-            padding: 0.75em 0.25em 0.75em 0.75em;
+            padding: 0.75rem 0.25rem 0.75rem 0.75rem;
         }
 
         &.app-comment {

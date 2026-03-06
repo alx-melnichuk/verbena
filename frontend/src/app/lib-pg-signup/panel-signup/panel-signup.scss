@@ -3,7 +3,7 @@
 app-panel-signup {
     ---ps-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
     ---ps-wd: min(100vw, calc((26px + 100vw / 128) * 16));
-    --app-pn-bg-h: 30; // hsl(27, 50%, 50%); unauthoriz
+    --app-pn-bg-h: 45; // hsl(40, 50%, 50%); unauthoriz
 
     [ps-mt-2] {
         margin-top: 0.5rem;

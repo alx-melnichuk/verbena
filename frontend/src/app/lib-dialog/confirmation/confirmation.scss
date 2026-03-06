@@ -6,7 +6,7 @@ app-confirmation {
     --mat-dialog-actions-padding: 0.7rem 0.9rem;
     --mat-dialog-supporting-text-line-height: 1.5rem;
     --mat-dialog-supporting-text-size: 1rem;
-    --mat-dialog-with-actions-content-padding: 0.8em 1.3em;
+    --mat-dialog-with-actions-content-padding: 0.8rem 1.3rem;
 
     .dc-title {
         font-weight: 500;
@@ -15,7 +15,6 @@ app-confirmation {
     }
 
     .dc-close {
-        // background-color: transparent;
         background-color: var(--mat-sys-surface-container);
         border: none;
         border-radius: 2rem;
