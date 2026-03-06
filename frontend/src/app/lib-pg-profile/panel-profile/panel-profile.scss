@@ -71,6 +71,10 @@ app-panel-profile {
         text-align: center;
     }
 
+    .pp-avatar {
+        --fi-img-br-rd: 0.5rem;
+    }
+
     .pp-theme-locale {
         display: flex;
         flex-wrap: wrap;
@@ -104,7 +108,7 @@ app-panel-profile {
         color: var(--app-svg-icon-cl);
         display: block;
         height: 1.75rem;
-        margin-right: 0.75em;
+        margin-right: 0.75rem;
         opacity: var(---pp-svg-save-op, 1);
         width: 1.75rem;
     }
