@@ -95,25 +95,6 @@ app-panel-stream-info {
         box-shadow: var(--mat-sys-level3);
     }
 
-    .psi-logo-img {
-        border-radius: inherit;
-        height: 100%;
-        line-height: 6rem;
-        object-fit: cover;
-        width: 100%;
-    }
-
-    .psi-logo-smb {
-        align-items: center;
-        background-color: var(--mat-sys-inverse-on-surface);
-        border-radius: inherit;
-        box-sizing: border-box;
-        display: flex;
-        height: 100%;
-        justify-content: center;
-        padding: 0 0.25rem;
-    }
-
     .psi-logo-future {
         color: var(--app-svg-icon-cl);
         border-radius: inherit;
@@ -122,6 +103,12 @@ app-panel-stream-info {
         padding: 0.25rem 0.25rem;
         object-fit: cover;
         vertical-align: middle;
+        width: 100%;
+    }
+
+    .psi-logo-box {
+        border-radius: inherit;
+        height: 100%;
         width: 100%;
     }
 

@@ -6,12 +6,8 @@
         <svg class="psi-logo-future">
           <use href="./lib-pg-stream/panel-stream-info/logo-future.svg#logo-future"></use>
         </svg>
-      } @else if (!!stream.logo) {
-        <img class="psi-logo-img"
-          [src]="stream.logo" [alt]="('panel-stream-info.not_found' | translate)"
-        />
       } @else {
-        <div class="psi-logo-smb">{{ 'panel-stream-info.missing' | translate }}</div>
+        <app-image class="psi-logo-box" [srcImg]="stream.logo"></app-image>
       }
     </a>
 

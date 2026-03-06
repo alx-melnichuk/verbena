@@ -37,14 +37,10 @@
   "panel-stream-info": {
     "btn-duplicate": "Duplicate",
     "btn-edit": "Edit",
-    "btn-delete": "Delete",
-    "not_found": "not found",
-    "missing": "missing"
+    "btn-delete": "Delete"
   },
   "panel-stream-event": {
-    "btn-edit": "Edit",
-    "not_found": "not found",
-    "missing": "missing"
+    "btn-edit": "Edit"
   },
   "416.parsing_type_not_supported": "The data type is not supported during parsing.",
   "417.field-title:required" : "The \"{{field-title}}\" field is required.",

@@ -37,14 +37,10 @@
   "panel-stream-info": {
     "btn-duplicate": "Duplikat",
     "btn-edit": "Bearbeiten",
-    "btn-delete": "Löschen",
-    "not_found": "nicht gefunden",
-    "missing": "fehlt"
+    "btn-delete": "Löschen"
   },
   "panel-stream-event": {
-    "btn-edit": "Bearbeiten",
-    "not_found": "nicht gefunden",
-    "missing": "fehlt"
+    "btn-edit": "Bearbeiten"
   },
   "416.parsing_type_not_supported": "Der datentyp wird beim parsen nicht unterstützt.",
   "417.field-title:required" : "Das feld \"{{field-title}}\" ist erforderlich.",

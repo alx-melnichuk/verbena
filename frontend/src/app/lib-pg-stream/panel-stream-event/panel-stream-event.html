@@ -6,12 +6,8 @@
         <svg class="pse-logo-future">
           <use href="./lib-pg-stream/panel-stream-event/logo-future.svg#logo-future"></use>
         </svg>
-      } @else if (!!streamShort.logo) {
-        <img class="pse-logo-img"
-          [src]="streamShort.logo" [alt]="('panel-stream-event.not_found' | translate)"
-        />
       } @else {
-        <div class="pse-logo-smb">{{ 'panel-stream-event.missing' | translate }}</div>
+        <app-image class="pse-logo-box" [srcImg]="streamShort.logo"></app-image>
       }
     </a>
 

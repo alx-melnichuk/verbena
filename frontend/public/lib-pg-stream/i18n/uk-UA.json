@@ -37,14 +37,10 @@
   "panel-stream-info": {
     "btn-duplicate": "Дублікат",
     "btn-edit": "Редагувати",
-    "btn-delete": "Видалити",
-    "not_found": "не знайдено",
-    "missing": "відсутнє"
+    "btn-delete": "Видалити"
   },
   "panel-stream-event": {
-    "btn-edit": "Редагувати",
-    "not_found": "не знайдено",
-    "missing": "відсутнє"
+    "btn-edit": "Редагувати"
   },
   "416.parsing_type_not_supported": "Тип даних не підтримується під час аналізу.",
   "417.field-title:required" : "Поле \"{{field-title}}\" обов'язкове.",
