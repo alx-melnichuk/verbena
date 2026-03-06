@@ -2,8 +2,8 @@ import { HttpErrorResponse } from "@angular/common/http";
 import { inject } from "@angular/core";
 import { ActivatedRouteSnapshot, ResolveFn, Router, RouterStateSnapshot } from "@angular/router";
 import { P_STREAM_ID, E_STREAM_CREATE, E_STREAM_EDIT } from "../../common/routes";
-import { StreamDto } from "../stream-dto";
-import { StreamSrv } from "../stream-srv";
+import { StreamDto } from "../../lib-stream/stream-dto";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 
 
 function goToPageNotFound(router: Router): Promise<undefined> {

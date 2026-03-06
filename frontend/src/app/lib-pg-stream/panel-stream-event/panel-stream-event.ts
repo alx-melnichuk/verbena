@@ -4,8 +4,9 @@ import {
 } from "@angular/core";
 import { TranslatePipe } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
+import { Image } from "../../components/image/image";
 import { ScrollElemUtil } from "../../utils/scroll-elem.util";
-import { StreamEventDto, StreamDtoUtil } from "../stream-dto";
+import { StreamEventDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
 
 const CN_ScrollPanelTimeout = 200; // milliseconds
 
@@ -13,7 +14,7 @@ const CN_ScrollPanelTimeout = 200; // milliseconds
     selector: "app-panel-stream-event",
     exportAs: "appPanelStreamEvent",
     standalone: true,
-    imports: [CommonModule, TranslatePipe, DateTimeFormatPipe],
+    imports: [CommonModule, TranslatePipe, DateTimeFormatPipe, Image],
     templateUrl: "./panel-stream-event.html",
     styleUrl: "./panel-stream-event.scss",
     encapsulation: ViewEncapsulation.None,

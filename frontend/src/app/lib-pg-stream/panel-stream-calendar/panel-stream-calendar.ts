@@ -5,7 +5,7 @@ import {
 import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from "@angular/material/datepicker";
 import { APP_CALENDAR_HEADER_EVENT, CalendarHeader } from "../../components/field-datepicker/calendar-header/calendar-header";
 import { HtmlElemUtil } from "../../utils/html-elem.util";
-import { StreamsPeriodDto } from "../stream-dto";
+import { StreamsPeriodDto } from "../../lib-stream/stream-dto";
 
 export const PSC_DAY_WITH_STREAMS = "psc-day-with-streams";
 export const PSC_DAY = "--psc-day-";

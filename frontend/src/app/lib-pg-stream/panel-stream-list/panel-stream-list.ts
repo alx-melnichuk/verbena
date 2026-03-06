@@ -11,7 +11,7 @@ import { DateUtil } from "../../utils/date.utils";
 import { PanelStreamCalendar } from "../panel-stream-calendar/panel-stream-calendar";
 import { PanelStreamEvent } from "../panel-stream-event/panel-stream-event";
 import { PanelStreamInfo } from "../panel-stream-info/panel-stream-info";
-import { StreamsPeriodDto, StreamDto, StreamEventDto } from "../stream-dto";
+import { StreamsPeriodDto, StreamDto, StreamEventDto } from "../../lib-stream/stream-dto";
 
 @Component({
     selector: "app-panel-stream-list",
@@ -61,15 +61,15 @@ export class PanelStreamList implements OnChanges {
     @Output()
     readonly actionDelete: EventEmitter<number> = new EventEmitter();
 
-    private translateService: TranslateService = inject(TranslateService);
     private dialogSrv: DialogSrv = inject(DialogSrv);
+    public localeSrv: LocaleSrv = inject(LocaleSrv);
+    private translateService: TranslateService = inject(TranslateService);
 
     public calendarMonth: Date = new Date();
     public isLoadData: boolean = false;
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: "long" };
 
-    public localeSrv: LocaleSrv = inject(LocaleSrv);
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["calendarDaySelected"] && !!this.calendarDaySelected) {

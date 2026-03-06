@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { PageInfo, PageInfoUtil } from "../../common/page-info";
-import { StreamDto, StreamListDto, SearchStreamDto } from "../stream-dto";
-import { StreamSrv } from "../stream-srv";
+import { StreamDto, StreamListDto, SearchStreamDto } from "../../lib-stream/stream-dto";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 
 export class StreamHandler {
     public streamLoading = false;

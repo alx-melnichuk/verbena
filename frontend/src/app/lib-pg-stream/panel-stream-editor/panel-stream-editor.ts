@@ -26,8 +26,8 @@ import { FileSizeUtil } from "../../utils/file_size.util";
 import { ErrMsgObj } from "../../utils/http-error.util";
 import { ValidFileTypesUtil } from "../../utils/valid_file_types.util";
 import { StreamConfigDto } from "../stream-config-dto";
-import { StreamDto, UpdateStreamFileDto, StreamDtoUtil } from "../stream-dto";
-import { StreamSrv } from "../stream-srv";
+import { StreamDto, UpdateStreamFileDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 
 export const PSE_DELTA_BEFORE_START = 5; // minutes
 export const PSE_TIMEPICKER_INTERVAL = "1m";

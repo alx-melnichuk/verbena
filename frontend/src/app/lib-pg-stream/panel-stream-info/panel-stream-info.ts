@@ -6,8 +6,9 @@ import { MatButtonModule } from "@angular/material/button";
 import { MatCardModule } from "@angular/material/card";
 import { TranslatePipe } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
+import { Image } from "../../components/image/image";
 import { ScrollElemUtil } from "../../utils/scroll-elem.util";
-import { StreamDto } from "../stream-dto";
+import { StreamDto } from "../../lib-stream/stream-dto";
 
 const CN_ScrollPanelTimeout = 200; // milliseconds
 
@@ -15,7 +16,7 @@ const CN_ScrollPanelTimeout = 200; // milliseconds
     selector: "app-panel-stream-info",
     exportAs: "appPanelStreamInfo",
     standalone: true,
-    imports: [CommonModule, MatButtonModule, MatCardModule, TranslatePipe, DateTimeFormatPipe],
+    imports: [CommonModule, MatButtonModule, MatCardModule, TranslatePipe, DateTimeFormatPipe, Image],
     templateUrl: "./panel-stream-info.html",
     styleUrl: "./panel-stream-info.scss",
     encapsulation: ViewEncapsulation.None,

@@ -9,8 +9,8 @@ import { Spinner } from "../../components/spinner/spinner";
 import { ErrMsgObj, HttpErrorUtil } from "../../utils/http-error.util";
 import { PanelStreamEditor } from "../panel-stream-editor/panel-stream-editor";
 import { StreamConfigDto } from "../stream-config-dto";
-import { StreamDto, UpdateStreamFileDto } from "../stream-dto";
-import { StreamSrv } from "../stream-srv";
+import { StreamDto, UpdateStreamFileDto } from "../../lib-stream/stream-dto";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 
 @Component({
     selector: "app-pg-stream-edit",

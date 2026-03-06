@@ -5,7 +5,7 @@ import { TranslateService } from "@ngx-translate/core";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { HttpErrorUtil } from "../../utils/http-error.util";
 import { PanelStreamList } from "../panel-stream-list/panel-stream-list";
-import { StreamSrv } from "../stream-srv";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 import { CalendarHandler } from "./calendar-handler";
 import { StreamHandler } from "./stream-handler";
 

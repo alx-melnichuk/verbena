@@ -3,8 +3,8 @@ import { PageInfo, PageInfoUtil } from "../../common/page-info";
 import { StringDateTime } from "../../common/string-date-time";
 import { DateUtil } from "../../utils/date.utils";
 import { StringDateTimeUtil } from "../../utils/string-date-time.util";
-import { StreamsPeriodDto, StreamEventDto, StreamEventPageDto } from "../stream-dto";
-import { StreamSrv } from "../stream-srv";
+import { StreamsPeriodDto, StreamEventDto, StreamEventPageDto } from "../../lib-stream/stream-dto";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 
 
 export const SC_DEFAULT_LIMIT = 12;
