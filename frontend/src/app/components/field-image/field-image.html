@@ -18,7 +18,7 @@
       (readFile)="readImage($event)">
     </app-field-file-upload>
   } @else {
-    <img class="fi-image" [src]="imageView" [alt]="'&ensp;' + ('field-image.not_found' | translate)" />
+    <app-image i-shd class="fi-image" [srcImg]="imageView"></app-image>
 
     @if (!isDisabled && !isReadOnly) {
       <span class="fi-remove-wrap">

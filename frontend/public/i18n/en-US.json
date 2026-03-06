@@ -69,7 +69,6 @@
   },
   "field-image": {
     "label": "Image file",
-    "remove_image": "Remove this image",
-    "not_found": "not found"
+    "remove_image": "Remove this image"
   }
 }

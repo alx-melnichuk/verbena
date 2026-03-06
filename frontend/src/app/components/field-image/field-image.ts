@@ -12,8 +12,9 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { TranslatePipe } from "@ngx-translate/core";
-import { FieldFileUpload } from "../field-file-upload/field-file-upload";
 import { ValidatorUtils } from "../../utils/validator.utils";
+import { FieldFileUpload } from "../field-file-upload/field-file-upload";
+import { Image } from "../image/image";
 
 export const CUSTOM_ERROR = "customError";
 export const IMAGE = "image";
@@ -23,7 +24,7 @@ export const IMAGE = "image";
     exportAs: "appFieldImage",
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule,
-        MatInputModule, MatTooltipModule, TranslatePipe, FieldFileUpload],
+        MatInputModule, MatTooltipModule, TranslatePipe, FieldFileUpload, Image],
     templateUrl: "./field-image.html",
     styleUrl: "./field-image.scss",
     encapsulation: ViewEncapsulation.None,
