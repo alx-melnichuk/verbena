@@ -10,14 +10,14 @@ app-panel-stream-calendar {
         border-radius: 50%;
         content: counter(psc-day);
         display: flex;
-        font-size: calc(1em - 1px);
-        height: var(--psc-wd, 2em);
+        font-size: calc(1rem - 1px);
+        height: var(--psc-wd, 2rem);
         justify-content: center;
         left: calc(var(--psc-wd) * 1.2);
         overflow: hidden;
         pointer-events: none;
         top: calc(var(--psc-wd) * -0.5);
-        width: var(--psc-wd, 2em);
+        width: var(--psc-wd, 2rem);
         z-index: 1;
     }
 

@@ -45,7 +45,7 @@ app-panel-stream-editor {
     }
 
     .pse-date-toggle {
-        margin-left: 0.5em;
+        margin-left: 0.5rem;
     }
 
     .pse-start-date-time {
@@ -56,18 +56,18 @@ app-panel-stream-editor {
 
     .pse-start-date {
         margin-right: var(---pse-pd);
-        width: 18em;
+        width: 18rem;
     }
 
     .pse-start-time {
-        width: 16em;
+        width: 16rem;
     }
 
     .pse-file-copy-bin {
         color: var(--app-svg-icon-cl);
         display: block;
         height: 2rem;
-        margin-right: 0.75em;
+        margin-right: 0.75rem;
         width: 2rem;
     }
 
@@ -91,7 +91,7 @@ app-panel-stream-editor {
         color: var(--app-svg-icon-cl);
         display: block;
         height: 1.75rem;
-        margin-right: 0.75em;
+        margin-right: 0.75rem;
         opacity: var(---pp-svg-save-op, 1);
         width: 1.75rem;
     }
