@@ -17,6 +17,7 @@ import { MAIN_MENU_LIST } from "../../common/routes";
 import { User } from "../../common/session-srv";
 import { ReplaceWithZeroUtil } from "../../utils/replace-with-zero.util";
 import { StringUtil } from "../../utils/string.util";
+import { Image } from "../image/image";
 
 export const HM_LOGOUT = "logout";
 export const HM_SET_LOCALE = "setLocale";
@@ -30,7 +31,7 @@ const CN_ResizeEventTimeout = 150; // milliseconds
     exportAs: "appHeader",
     standalone: true,
     imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, MatButtonModule, MatMenuModule,
-        MatSlideToggleModule, MatToolbarModule, TranslatePipe],
+        MatSlideToggleModule, MatToolbarModule, TranslatePipe, Image],
     templateUrl: "./header.html",
     styleUrl: "./header.scss",
     encapsulation: ViewEncapsulation.None,
@@ -85,10 +86,10 @@ export class Header implements OnChanges {
 
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes["profile"] || !!changes["currentRoute"]) {
+        if (!!changes["user"] || !!changes["currentRoute"]) {
             this.prepareMenuItems(this.user, MAIN_MENU_LIST, CN_MIN_WINDOW_WIDTH < this.getWidth());
         }
-        if (!!changes["userProfile"]) {
+        if (!!changes["user"]) {
             this.userNameSymbols = (StringUtil.capitalizeOnlyFirstLetter(this.user?.nickname) || "").slice(0, 2);
         }
     }

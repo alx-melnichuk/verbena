@@ -13,8 +13,8 @@ app-header {
     container: cnt-header / inline-size;
     display: block;
 
-    [h-mr-lf-0_5] {
-        margin-left: 0.5em;
+    [h-ml-2] {
+        margin-left: 0.5rem;
     }
 
     // ** logo image **
@@ -39,7 +39,6 @@ app-header {
     }
 
     .h-logo-text {
-        margin-left: 0.5em;
         --mat-toolbar-title-text-weight: 500;
         --mat-toolbar-title-text-size: 1.125rem;
     }
@@ -50,12 +49,12 @@ app-header {
     }
 
     &:not(.h-is-authorized) {
-        --app-pn-bg-h: 27; // hsl(27, 50%, 50%); unauthoriz
+        --app-pn-bg-h: 40; // hsl(40, 50%, 50%); unauthoriz
     }
 
 
     .mat-toolbar {
-        --mat-button-text-container-shape: 1rem;
+        --mat-button-text-container-shape: 0.75rem;
         --mat-toolbar-container-background-color: var(--app-pn-bg);
         background-image: var(--app-pn-bg-img);
 
@@ -104,33 +103,16 @@ app-header {
         }
     }
 
-    .h-img-shd {
-        box-shadow: 0px 0px 2px 1px var(--mat-sys-outline);
-        border-radius: var(--h-avt-brd-rd, 1rem);
-    }
-
-    .h-avatar-img {
+    .h-avatar {
+        --i-br-rd: var(--h-avt-brd-rd, 0.75rem);
+        background-color: var(--mat-sys-inverse-on-surface);
         height: 100%;
+        min-width: var(---hdr-hg);
         width: auto;
     }
 
-    .h-avatar-smb {
-        align-items: center;
-        background-color: var(--mat-sys-inverse-on-surface);
-        box-sizing: border-box;
-        display: flex;
+    .h-img-smb {
         font-size: calc(var(---hdr-hg) / 2);
-        height: 100%;
-        justify-content: center;
-        min-width: var(---hdr-hg);
-        padding: 0 0.25rem;
-    }
-
-    .h-avatar {
-        --av-hg: var(---hdr-hg);
-        --av-wd: auto;
-        --av-brd-rd: var(--mdc-text-button-container-shape);
-        min-width: 3rem;
     }
 
     // -- svg "more-vert" for unlogged in user --
@@ -140,8 +122,8 @@ app-header {
 }
 
 .cdk-overlay-container .mat-mdc-menu-panel {
-    .mm-mr-lf-0_5 {
-        margin-left: 0.5em;
+    [mm-ml-2] {
+        margin-left: 0.5rem;
     }
 
     .mm-menu-btn {

@@ -1,8 +1,8 @@
 <mat-toolbar class="app-pn-bg">
   <i class="h-icon-bg h-logo-mini"></i>
-  <span h-mr-lf-0_5></span>
-  <h4 class="h-logo-text">{{ 'app.name' | translate }}</h4>
-  <span h-mr-lf-0_5></span>
+  <span h-ml-2></span>
+  <h4 h-ml-2 class="h-logo-text">{{ 'app.name' | translate }}</h4>
+  <span h-ml-2></span>
   
   @for (mainMenuItem of mainMenuItems; track mainMenuItem.name) {
     <a no-decor no-color mat-button class="h-elem-menu"
@@ -20,13 +20,9 @@
       <span class="h-nickname">{{ nickname }}</span>
     </button>
     <button mat-button [matMenuTriggerFor]="mainMenu" class="h-avatar-btn">
-      @if (!!user.avatar) {
-        <img class="h-img-shd h-avatar-img"
-         [src]="user.avatar" [alt]="('panel-browse-view.not_found' | translate) + '&ensp;'"
-        />
-      } @else {
-        <div class="h-img-shd h-avatar-smb">{{ userNameSymbols }}</div>
-      }
+      <app-image i-shd class="h-avatar" [srcImg]="user.avatar">
+        <div img-is-missing class="h-img-smb">{{ userNameSymbols }}</div>
+      </app-image>
     </button>
   } @else {
     <button mat-icon-button [matMenuTriggerFor]="mainMenu">
@@ -44,25 +40,25 @@
   @for (panelMenuItem of panelMenuItems; track panelMenuItem.name) {
     <button mat-menu-item class="pn-menu-item" routerLink="{{ panelMenuItem.link }}">
       <span [ngClass]="['mm-icon', ('mm-' + panelMenuItem.name) ]"></span>
-      <span class="mm-mr-lf-0_5">{{ ('main_menu.' + panelMenuItem.name) | translate }}</span>
+      <span mm-ml-2>{{ ('main_menu.' + panelMenuItem.name) | translate }}</span>
     </button>
   }
   @if (isShowTheme) {
     <button mat-menu-item class="pn-item-menu" [matMenuTriggerFor]="themes">
       <span class="mm-icon mm-theme"></span>
-      <span class="mm-mr-lf-0_5">{{ 'main_menu.theme' | translate }}</span>
+      <span mm-ml-2>{{ 'main_menu.theme' | translate }}</span>
     </button>
   }
   @if (isShowLocale) {
     <button mat-menu-item class="pn-item-menu" [matMenuTriggerFor]="locales">
       <span class="mm-icon mm-locale"></span>
-      <span class="mm-mr-lf-0_5">{{ 'main_menu.locale' | translate }}</span>
+      <span mm-ml-2>{{ 'main_menu.locale' | translate }}</span>
     </button>
   }
   @if (isShowLogout && !!user) {
     <button mat-menu-item class="pn-item-menu" (click)="doLogout()">
       <span class="mm-icon mm-log-out"></span>
-      <span class="mm-mr-lf-0_5">{{ 'main_menu.log_out' | translate }}</span>
+      <span mm-ml-2>{{ 'main_menu.log_out' | translate }}</span>
     </button>
   }
 </mat-menu>
