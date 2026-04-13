@@ -1,0 +1,10 @@
+<div class="vhl-container" #container>
+  @if (!!templateRef) {
+    @for (itemVal of dataList; track itemVal.id) {
+      <ng-container
+        [ngTemplateOutlet]="templateRef"
+        [ngTemplateOutletContext]="{ item: itemVal, paramObj: paramObj }">
+      </ng-container>
+    }
+  }
+</div>

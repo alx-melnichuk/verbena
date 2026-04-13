@@ -1,0 +1,62 @@
+/*# sourceURL=view-huge-list.scss */
+
+app-view-huge-list {
+
+    &[hg100] {
+        --vhl-hg: 100%;
+    }
+
+    &[vhl-h100] {
+        --vhl-hg: 100rem;
+    }
+
+    &[vhl-h200] {
+        --vhl-hg: 200rem;
+    }
+
+    &[wd100] {
+        --vhl-wd: 100%;
+    }
+
+    &[vhl-w100] {
+        --vhl-wd: 100rem;
+    }
+
+    &[vhl-w200] {
+        --vhl-wd: 200rem;
+    }
+
+    &[vhl-col] {
+        --vhl-flx-dir: column;
+        --vhl-ov-fl-y: auto;
+    }
+
+    &[vhl-col-rev] {
+        --vhl-flx-dir: column-reverse;
+        --vhl-ov-fl-y: auto;
+    }
+
+    &[vhl-row] {
+        --vhl-flx-dir: row;
+        --vhl-ov-fl-x: auto;
+    }
+
+    &[vhl-row-rev] {
+        --vhl-flx-dir: row-reverse;
+        --vhl-ov-fl-x: auto;
+    }
+
+    border-radius: var(--vhl-brd-rd, inherit);
+    display: block;
+    height: var(--vhl-hg);
+    width: var(--vhl-wd);
+
+    .vhl-container {
+        display: flex;
+        flex-direction: var(--vhl-flx-dir);
+        height: 100%;
+        overflow-x: var(--vhl-ov-fl-x);
+        overflow-y: var(--vhl-ov-fl-y);
+        width: 100%;
+    }
+}
