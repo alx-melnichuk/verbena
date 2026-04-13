@@ -83,13 +83,12 @@ export class PgLogin {
                 this.sessionSrv.setUser(res.userProfileDto);
                 this.sessionSrv.setUserTokens(res.tokenUserResponseDto.accessToken, res.tokenUserResponseDto.refreshToken);
 
-                window.setTimeout(() => {
-                    this.sessionSrv
+                Promise.resolve().then(() => {
                     // Get the link address to navigate to after login.
                     const urlAfterLogin = this.redirectSrv.getUrlAfterLogin() || REDIRECT_AFTER_LOGIN;
                     this.redirectSrv.setUrlAfterLogin("");
                     this.router.navigateByUrl(urlAfterLogin);
-                }, 0);
+                });
             })
             .catch((err: HttpErrorResponse) => {
                 this.errMsgObjs = HttpErrorUtil.mapErrMsgObjs(err.status, err.error);
