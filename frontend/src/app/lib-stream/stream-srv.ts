@@ -7,7 +7,8 @@ import { StringDateTime } from "../common/string-date-time";
 import { Uri } from "../common/uri";
 import { HttpParamsUtil } from "../utils/http-params.util";
 import {
-    SearchStreamsPeriodDto, SearchStreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, StreamDto, StreamState, StreamDtoUtil, UpdateStreamFileDto
+    SearchStreamAndTagsDto, StreamDto, StreamDtoUtil, PageStreamAndTagsDto, StreamState, UpdateStreamFileDto,
+    StreamTagDto, SearchStreamTagDto
 } from "./stream-dto";
 
 @Injectable({
@@ -17,6 +18,16 @@ export class StreamSrv {
     private router: Router = inject(Router);
     private http: HttpClient = inject(HttpClient);
 
+    /** Get streams popular tags
+     * @ route streams_popular_tags
+     * @ type get
+     * @ access public
+     */
+    public getStreamsPopularTags(search: SearchStreamTagDto): Promise<StreamTagDto[] | HttpErrorResponse> {
+        const params: HttpParams = HttpParamsUtil.create(search);
+        const url = Uri.appUri('appApi://streams_popural_tags');
+        return lastValueFrom(this.http.get<StreamTagDto[] | HttpErrorResponse>(url, { params }));
+    }
     /** Get streams calendar
      * @ streams/calendar/:userId/:month/:year
      * @ type get
@@ -26,37 +37,82 @@ export class StreamSrv {
      * @ required start, finish
      * @ access public
      */
-    public getStreamsPeriod(search: SearchStreamsPeriodDto): Promise<StringDateTime[] | HttpErrorResponse | undefined> {
-        const params: HttpParams = HttpParamsUtil.create(search);
-        const url = Uri.appUri(`appApi://streams_period`);
+    public getCalendarStreamsByDate(
+        userId: number, start: StringDateTime, finish: StringDateTime
+    ): Promise<StringDateTime[] | HttpErrorResponse | undefined> {
+        const params: HttpParams = HttpParamsUtil.create({ userId, start, finish });
+        const url = Uri.appUri(`appApi://streams_calendar`);
         return lastValueFrom(this.http.get<StringDateTime[] | HttpErrorResponse>(url, { params }));
+    }
+
+    public getStreamsByDate(
+        userId: number, date: Date, page: number, limit: number
+    ): Promise<PageStreamAndTagsDto | HttpErrorResponse> {
+        const startDate: Date = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        const finishDate: Date = new Date(startDate);
+        finishDate.setHours(23, 59, 59, 999);
+
+        const searchStreamDto: SearchStreamAndTagsDto = {
+            userId,
+            filter: "period",
+            starttime: startDate.toISOString(),
+            finishtime: finishDate.toISOString(),
+            page: (page != null && page > 0 ? page : 1), // default = 1;
+            limit: (limit != null && limit > 0 ? limit : 10), // Min(1) Max(100)        
+        };
+        const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
+        const url = Uri.appUri("appApi://streams");
+        return lastValueFrom(this.http.get<PageStreamAndTagsDto | HttpErrorResponse>(url, { params }));
+    }
+
+    public getFutureStreamsByPage(
+        userId: number, starttime: Date, page: number, limit: number
+    ): Promise<PageStreamAndTagsDto | HttpErrorResponse> {
+        const searchStreamDto: SearchStreamAndTagsDto = {
+            userId,
+            filter: "future",
+            starttime: starttime.toISOString(),
+            page: (page != null && page > 0 ? page : 1), // default = 1;
+            limit: (limit != null && limit > 0 ? limit : 10), // Min(1) Max(100)        
+        };
+        const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
+        const url = Uri.appUri("appApi://streams");
+        return lastValueFrom(this.http.get<PageStreamAndTagsDto | HttpErrorResponse>(url, { params }));
+    }
+
+    public getPastStreamsByPage(
+        userId: number, starttime: Date, page: number, limit: number
+    ): Promise<PageStreamAndTagsDto | HttpErrorResponse> {
+        const searchStreamDto: SearchStreamAndTagsDto = {
+            userId,
+            filter: "past",
+            starttime: starttime.toISOString(),
+            page: (page != null && page > 0 ? page : 1), // default = 1;
+            limit: (limit != null && limit > 0 ? limit : 10), // Min(1) Max(100)        
+        };
+        const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
+        const url = Uri.appUri("appApi://streams");
+        return lastValueFrom(this.http.get<PageStreamAndTagsDto | HttpErrorResponse>(url, { params }));
     }
     /** Get streams
      * @ route streams
-     * @ example streams?groupBy=date&userId=385e0469/9/2022&orderColumn=title&orderDirection=desc&live=true
      * @ type get
      * @ query pagination (optional):
-     * - userId (only for groupBy "date")
-     * - key (keyword by tag or date, the date should be YYYY-MM-DD)
+     * - userId
      * - live (false, true)
-     * - starttime (none, past, future)
-     * - groupBy (none / tag / date, none by default)
+     * - filter ("future", "past", "start")
+     * - starttime (StringDateTime)
+     * - sortIdDesc  (false, true)
+     * - tagName (string)
      * - page (number, 1 by default)
      * - limit (number, 10 by default)
-     * - orderColumn (starttime / title, starttime by default)
-     * - orderDirection (asc / desc, asc by default)
      * @ access public
      */
-    public getStreams(searchStreamDto: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    public getStreams(searchStreamDto: SearchStreamAndTagsDto): Promise<PageStreamAndTagsDto | HttpErrorResponse | undefined> {
         const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
         const url = Uri.appUri("appApi://streams");
-        return lastValueFrom(this.http.get<StreamListDto | HttpErrorResponse>(url, { params }));
-    }
-
-    public getStreamsEvent(searchStreamEventDto: SearchStreamEventDto): Promise<StreamEventPageDto | HttpErrorResponse | undefined> {
-        const params: HttpParams = HttpParamsUtil.create(searchStreamEventDto);
-        const url = Uri.appUri("appApi://streams_events");
-        return lastValueFrom(this.http.get<StreamEventPageDto | HttpErrorResponse>(url, { params }));
+        return lastValueFrom(this.http.get<PageStreamAndTagsDto | HttpErrorResponse>(url, { params }));
     }
 
     /** Get stream
@@ -162,9 +218,10 @@ export class StreamSrv {
      * @ required streamId
      * @ access protected
      */
-    public deleteStream(streamId: number): Promise<void | HttpErrorResponse | undefined> {
+    public deleteStream(streamId: number): Promise<StreamDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri(`appApi://streams/${streamId}`);
-        return lastValueFrom(this.http.delete<void | HttpErrorResponse>(url));
+        return lastValueFrom(this.http.delete<StreamDto | HttpErrorResponse>(url))
+            .then((response) => StreamDtoUtil.create(response as StreamDto));
     }
 
     public getLinkForVisitors(streamId: number, isFullPath: boolean): string {

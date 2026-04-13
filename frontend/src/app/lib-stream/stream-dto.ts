@@ -86,26 +86,17 @@ export class StreamDtoUtil {
         //   return (!!startTime ? moment().isBefore(moment(startTime, MOMENT_ISO8601), "day") : null);
         return date != null ? (now < date) : null;
     }
+    public static createList(streamList: Partial<StreamDto>[]): StreamDto[] {
+        const result: StreamDto[] = [];
+        for (let idx = 0; idx < streamList.length; idx++) {
+            result.push(this.create(streamList[idx]));
+        }
+        return result;
+    }
 }
 
-export interface StreamListDto {
+export interface PageStreamAndTagsDto {
     list: StreamDto[];
-    limit: number;
-    count: number;
-    page: number;
-    pages: number;
-}
-
-export interface StreamEventDto {
-    id: number;
-    userId: number;
-    title: string;
-    logo: string | null;
-    starttime: StringDateTime | null;
-}
-
-export interface StreamEventPageDto {
-    list: StreamEventDto[];
     limit: number;
     count: number;
     page: number;
@@ -122,34 +113,24 @@ export interface UpdateStreamFileDto {
     logoFile?: File | null | undefined;
 }
 
-// ** getStreams()  **
+// ** getStreams(), getStreamsByDate()  **
 
-export interface SearchStreamDto {
-    userId?: number;
-    live?: boolean;
-    // Future streams with a "starttime" greater than or equal to the specified one.
-    futureStarttime?: StringDateTime | null | undefined; // DateTime<Utc>,
-    // Past streams with a "starttime" greater than or equal to the specified one.
-    pastStarttime?: StringDateTime | null | undefined; // DateTime<Utc>,
-    orderColumn?: "starttime" | "title"; // default "starttime";
-    orderDirection?: "asc" | "desc"; // default "asc";
+export interface SearchStreamAndTagsDto {
+    userId?: number | undefined;
+    live?: boolean | undefined;
+    filter?: "future" | "past" | "period"
+    starttime?: StringDateTime | null | undefined; // DateTime<Utc>,
+    finishtime?: StringDateTime | null | undefined; // DateTime<Utc>,
+    sortIdDesc?: boolean | undefined;
+    tagName?: string | undefined;
     page?: number; // default 1;
     limit?: number; // default 10; Min(1) Max(100)
 }
 
-// ** getStreamsEvent()  **
+// ** getCalendarStreamsByDate()  **
 
-export interface SearchStreamEventDto {
-    userId?: number;
-    starttime: StringDate;
-    page?: number; // default 1;
-    limit?: number; // default 10; Min(1) Max(100)
-}
-
-// ** getStreamsPeriod()  **
-
-export interface SearchStreamsPeriodDto {
-    userId?: number;
+export interface SearchStreamsDateDto {
+    userId: number;
     start: StringDateTime;
     finish: StringDateTime;
 }
@@ -157,6 +138,23 @@ export interface SearchStreamsPeriodDto {
 export interface StreamsPeriodDto {
     date: StringDate;
     count: number;
+}
+
+// ** getStreamsPopularTags **
+
+export type StreamTagSortColumnType = "id" | "name" | "countLinks";
+
+export interface SearchStreamTagDto {
+    sortColumn?: StreamTagSortColumnType;
+    sortIdDesc?: boolean;
+    page?: number;
+    limit?: number;
+}
+
+export interface StreamTagDto {
+    id: number;
+    name: string;
+    countLinks: number;
 }
 
 // ** **
