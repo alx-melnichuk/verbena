@@ -80,8 +80,9 @@ export const appConfig: ApplicationConfig = {
             translate.setDefaultLang(localeSrv.localeDefault);
 
             const localeFromLocalStorage = localeSrv.getFromLocalStorage();
-            const value = localeSrv.findLocale(localeSrv.localeList, localeFromLocalStorage || NavigatorUtil.getBrowserLocale() || null) || null;
-            if (environment.logLevel > 0) { console.log(`provideAppInitializer() locale.setLocale(${value});`); }
+            const value = localeSrv.findLocale(localeSrv.localeList, localeFromLocalStorage || NavigatorUtil.getBrowserLocale() || null)
+                || null;
+            if (environment.logLevel > 0) { console.log(`provideAppInitializer(localeSrv) locale.setLocale(${value});`); }
             return localeSrv.setLocale(value);
         }),
         RedirectSrv,
@@ -97,10 +98,18 @@ export const appConfig: ApplicationConfig = {
             const isAuthentRequired = AUTHENT_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
             const isAuthentDenied = AUTHENT_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
             const isNotAuthentDeniedAndHasAccessToken = !isAuthentDenied && !!sessionSrv.getAccessToken();
+            if (environment.logLevel > 0) {
+                const s1 = `isNotAuthentDeniedAndHasAccessToken: ${isNotAuthentDeniedAndHasAccessToken}`;
+                console.log(`provideAppInitializer(userSrv) isAuthentRequired: ${isAuthentRequired}, ${s1}`);
+            }
 
             if (isAuthentRequired || isNotAuthentDeniedAndHasAccessToken) {
+                if (environment.logLevel > 0) { console.log(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...`); }
                 return userSrv.getCurrentUser()
                     .then((response: UserDto | HttpErrorResponse | undefined) => {
+                        if (environment.logLevel > 0) {
+                            console.log(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...Ok user:`, { ...response });
+                        }
                         sessionSrv.setUser(response as UserDto);
                         return Promise.resolve();
                     })

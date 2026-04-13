@@ -4,6 +4,7 @@ import { Observable } from "rxjs";
 import { RedirectSrv } from "./redirect-srv";
 import { ROUTE_LOGIN } from "./routes";
 import { SessionSrv } from "./session-srv";
+import { environment } from "../../environments/environment";
 
 export const authentCanActivateGuard: CanActivateFn = (
     _route: ActivatedRouteSnapshot, state: RouterStateSnapshot
@@ -12,6 +13,10 @@ export const authentCanActivateGuard: CanActivateFn = (
     const router: Router = inject(Router);
     const sessionSrv: SessionSrv = inject(SessionSrv);
 
+    if (environment.logLevel > 0) {
+        console.log(`authentCanActivateGuard() !!sessionSrv.getUser(): ${!!sessionSrv.getUser()}`); // #
+        console.log(`authentCanActivateGuard() sessionSrv.getUser(): ${sessionSrv.getUser()}`); // #
+    }
     if (!!sessionSrv.getUser()) {
         return true;
     }
