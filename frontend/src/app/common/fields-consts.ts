@@ -23,7 +23,7 @@ export const CN_PASSWORD = {
 export const CN_DESCRIPT = {
     "minLength": 2,
     "maxLength": 2048, // 2*1024
-    "numRows": 5,
+    "numRows": 4,
 };
 
 export const CN_TITLE = {

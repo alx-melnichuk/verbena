@@ -4,9 +4,10 @@ import {
     ChangeDetectionStrategy, Component, forwardRef, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation
 } from "@angular/core";
 import {
-    ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, AbstractControl, ControlValueAccessor, FormControl, FormGroup, ValidationErrors, Validator,
+    ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, AbstractControl, ControlValueAccessor, FormControl, FormGroup,
+    ValidationErrors, Validator,
 } from "@angular/forms";
-import { MatFormFieldModule, SubscriptSizing } from "@angular/material/form-field";
+import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInput, MatInputModule } from "@angular/material/input";
 import { TranslatePipe } from "@ngx-translate/core";
 import { ValidatorUtils } from "../../utils/validator.utils";
