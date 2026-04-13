@@ -73,11 +73,6 @@ export class UserSrv implements TokenUpdate {
     public getCurrentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri("appApi://profiles_current");
         return lastValueFrom(this.http.get<UserDto | HttpErrorResponse>(url));
-        // #.then((response: UserDto | HttpErrorResponse | undefined) => {
-        // #    const userDto = UserDtoUtil.new(response as UserDto);
-        // #    this.setUserDto(userDto);
-        // #    return userDto;
-        // #});
     }
 
     public getUserShort(userId: number): Promise<UserShortDto | HttpErrorResponse | undefined> {
