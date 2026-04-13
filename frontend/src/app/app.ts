@@ -44,7 +44,9 @@ export class App {
             this.sessionSrv.removeUserTokens();
             this.sessionSrv.removeUser();
             // And you need to go to the "login" tab.
-            window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
+            Promise.resolve().then(() => {
+                this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+            });
         }
     }
 
@@ -88,10 +90,10 @@ export class App {
             .then(() => {
                 this.sessionSrv.removeUser();
                 this.sessionSrv.removeUserTokens();
-                window.setTimeout(() => {
-                    return this.router.navigate([currRoute], { queryParams, onSameUrlNavigation: "reload" })
+                Promise.resolve().then(() => {
+                    this.router.navigate([currRoute], { queryParams, onSameUrlNavigation: "reload" })
                         .finally(() => this.changeDetector.markForCheck());
-                }, 0);
+                });
             });
     }
 
