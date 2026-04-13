@@ -1,30 +1,26 @@
-@for (streamShort of streamShortDtoList; track streamShort.id) {
-  <div class="pse-stream app-pn-bg">
+@if(!!streamDto) {
+  <a class="pse-logo pse-img-shd" (click)="doViewStream(streamDto.id)">
+    @if (isFuture(streamDto.starttime)) {
+      <svg class="pse-logo-future">
+        <use href="./lib-pg-stream/panel-stream-event/logo-future.svg#logo-future"></use>
+      </svg>
+    } @else {
+      <app-image class="pse-logo-box" [srcImg]="streamDto.logo"></app-image>
+    }
+  </a>
 
-    <a class="pse-logo pse-img-shd" (click)="doViewStream(streamShort.id)">
-      @if (isFuture(streamShort.starttime)) {
-        <svg class="pse-logo-future">
-          <use href="./lib-pg-stream/panel-stream-event/logo-future.svg#logo-future"></use>
-        </svg>
-      } @else {
-        <app-image class="pse-logo-box" [srcImg]="streamShort.logo"></app-image>
-      }
-    </a>
-
-    <div class="pse-details-wrap">
-      <div class="pse-details">
-        <div class="pse-starttime pse-ellipsis">
-          {{ streamShort.starttime | dateTimeFormat:locale:formatDateTime  }}
-        </div>
-        @if (canEdit && isFuture(streamShort.starttime)) {
-          <button class="pse-edit-btn" (click)="doEditStream(streamShort.id)">
-            {{ 'panel-stream-event.btn-edit' | translate }}
-          </button>
-        }
+  <div class="pse-details-wrap">
+    <div class="pse-details">
+      <div class="pse-starttime pse-ellipsis">
+        {{ streamDto.starttime | dateTimeFormat:locale:formatDateTime  }}
       </div>
-
-      <div class="pse-ellipsis">{{ streamShort.title }}</div>
+      @if (canEdit && isFuture(streamDto.starttime)) {
+        <button class="pse-edit-btn" (click)="doEditStream(streamDto.id)">
+          {{ 'panel-stream-event.btn-edit' | translate }}
+        </button>
+      }
     </div>
 
+    <div class="pse-ellipsis">{{ streamDto.title }}</div>
   </div>
 }

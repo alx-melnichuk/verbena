@@ -4,31 +4,22 @@ app-panel-stream-event {
     ---pse-logo-wd: 4.5rem;
     --app-pn-bg-h: 215; // hsl(215, 50%, 50%);
 
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
-
     .pse-img-shd {
         box-shadow: 0px 1px 3px 1px var(--mat-sys-outline);
     }
 
     // ** Stream **
-    .pse-stream {
-        align-items: center;
-        background-color: var(--app-pn-bg);
-        background-image: var(--app-pn-bg-img);
-        border: 1px solid var(--app-pn-brd);
-        border-radius: var(--pse-crd-brd-rd, 0.75rem);
-        box-sizing: border-box;
-        display: flex;
-        flex-shrink: 0;
-        height: var(---pse-logo-wd);
 
-        &:not(:first-of-type) {
-            margin-top: 0.75rem;
-        }
-    }
+    align-items: center;
+    background-color: var(--app-pn-bg);
+    background-image: var(--app-pn-bg-img);
+    border: 1px solid var(--app-pn-brd);
+    border-radius: var(--pse-crd-brd-rd, 0.75rem);
+    box-sizing: border-box;
+    display: flex;
+    flex-shrink: 0;
+    height: var(---pse-logo-wd);
+    margin: 0px 1px 1px 1px;
 
     .pse-logo {
         border-radius: inherit;
