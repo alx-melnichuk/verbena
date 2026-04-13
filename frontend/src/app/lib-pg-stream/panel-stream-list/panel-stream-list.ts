@@ -1,57 +1,92 @@
 import { CommonModule } from "@angular/common";
 import {
-    ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe, TranslateService } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
 import { LocaleSrv } from "../../common/locale-srv";
 import { Spinner } from "../../components/spinner/spinner";
+import { ViewHugeList, ItemViewPage } from "../../components/view-huge-list/view-huge-list";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
+import { StreamsPeriodDto } from "../../lib-stream/stream-dto";
 import { DateUtil } from "../../utils/date.utils";
 import { PanelStreamCalendar } from "../panel-stream-calendar/panel-stream-calendar";
 import { PanelStreamEvent } from "../panel-stream-event/panel-stream-event";
 import { PanelStreamInfo } from "../panel-stream-info/panel-stream-info";
-import { StreamsPeriodDto, StreamDto, StreamEventDto } from "../../lib-stream/stream-dto";
+
+const CN_DEFAULT_LIMIT = 10;
 
 @Component({
     selector: "app-panel-stream-list",
     exportAs: "appPanelStreamList",
     standalone: true,
-    imports: [CommonModule, TranslatePipe, Spinner, DateTimeFormatPipe, PanelStreamCalendar, PanelStreamEvent, PanelStreamInfo],
+    imports: [CommonModule, TranslatePipe, MatButtonModule, MatTooltipModule, Spinner, DateTimeFormatPipe,
+        PanelStreamCalendar, PanelStreamEvent, PanelStreamInfo, ViewHugeList,
+    ],
     templateUrl: "./panel-stream-list.html",
     styleUrl: "./panel-stream-list.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelStreamList implements OnChanges {
+    private dialogSrv: DialogSrv = inject(DialogSrv);
+    public localeSrv: LocaleSrv = inject(LocaleSrv);
+    private translateService: TranslateService = inject(TranslateService);
+
     @Input()
-    public calendarDaySelected: Date | null = null;
+    public clndDaySelected: Date | null = null;
     @Input()
-    public calendarMarkedDates: StreamsPeriodDto[] = [];
+    public clndIsLoading: boolean | null | undefined;
     @Input()
-    public calendarMaxDate: Date | null = null;
+    public clndMarkedDates: StreamsPeriodDto[] = [];
     @Input()
-    public calendarMinDate: Date | null = null;
+    public clndMaxDate: Date | null = null;
     @Input()
-    public futureStreams: StreamDto[] = [];
+    public clndMinDate: Date | null = null;
+
     @Input()
-    public isLoadStreams = false;
+    public strmMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
     @Input()
-    public isRefreshStreamEvent: boolean | null | undefined;
+    public strmFtrDeletedId: number | null | undefined;
     @Input()
-    public pastStreams: StreamDto[] = [];
+    public strmFtrIsLoading: boolean | null | undefined;
     @Input()
-    public streamEventsForDay: StreamEventDto[] = [];
+    public strmFtrIsReset: boolean | null | undefined;
+    @Input()
+    public strmFtrItemPage: ItemViewPage | null | undefined;
+    @Input()
+    public strmPstDeletedId: number | null | undefined;
+    @Input()
+    public strmPstIsLoading: boolean | null | undefined;
+    @Input()
+    public strmPstIsReset: boolean | null | undefined;
+    @Input()
+    public strmPstItemPage: ItemViewPage | null | undefined;
+
+    @Input()
+    public evntMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
+    @Input()
+    public evntDeletedId: number | null | undefined;
+    @Input()
+    public evntIsLoading: boolean | null | undefined;
+    @Input()
+    public evntIsReset: boolean | null | undefined;
+    @Input()
+    public evntItemPage: ItemViewPage | null | undefined;
 
     @Output()
     readonly calendarForPeriod: EventEmitter<Date> = new EventEmitter();
     @Output()
-    readonly futureNextPage: EventEmitter<void> = new EventEmitter();
+    readonly loadFuturePage: EventEmitter<{ page: number, limit: number }> = new EventEmitter();
     @Output()
-    readonly pastNextPage: EventEmitter<void> = new EventEmitter();
+    readonly loadPastPage: EventEmitter<{ page: number, limit: number }> = new EventEmitter();
     @Output()
-    readonly streamEventsForDate: EventEmitter<{ selectedDate: Date | null, pageNum: number }> = new EventEmitter();
+    readonly loadEventDatePage: EventEmitter<{ date: Date | null, page: number, limit: number }> = new EventEmitter();
 
+    @Output()
+    readonly resetInfo: EventEmitter<void> = new EventEmitter();
     @Output()
     readonly actionDuplicate: EventEmitter<number> = new EventEmitter();
     @Output()
@@ -59,21 +94,15 @@ export class PanelStreamList implements OnChanges {
     @Output()
     readonly actionView: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly actionDelete: EventEmitter<number> = new EventEmitter();
-
-    private dialogSrv: DialogSrv = inject(DialogSrv);
-    public localeSrv: LocaleSrv = inject(LocaleSrv);
-    private translateService: TranslateService = inject(TranslateService);
+    readonly actionDelete: EventEmitter<{ isFuture: boolean, id: number }> = new EventEmitter();
 
     public calendarMonth: Date = new Date();
-    public isLoadData: boolean = false;
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: "long" };
 
-
     ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes["calendarDaySelected"] && !!this.calendarDaySelected) {
-            let date = new Date(this.calendarDaySelected.getTime());
+        if (!!changes["clndDaySelected"] && !!this.clndDaySelected) {
+            let date = new Date(this.clndDaySelected.getTime());
             date.setHours(0, 0, 0, 0);
             const startMonth = DateUtil.dateFirstDayOfMonth(date);
             this.calendarMonth = startMonth;
@@ -91,25 +120,29 @@ export class PanelStreamList implements OnChanges {
 
     // ** "Streams Event" panel-stream-event **
 
-    public isShowEvents(calendarDaySelected: Date | null, calendarMonth: Date): boolean {
-        return !!calendarDaySelected ? DateUtil.compareYearMonth(calendarDaySelected, calendarMonth) == 0 : false;
+    public isShowEvents(clndDaySelected: Date | null, calendarMonth: Date): boolean {
+        return !!clndDaySelected ? DateUtil.compareYearMonth(clndDaySelected, calendarMonth) == 0 : false;
     }
 
-    public doStreamEventsForDate(selectedDate: Date | null, pageNum: number): void {
-        this.streamEventsForDate.emit({ selectedDate, pageNum });
+    public doLoadEventDatePage(selectedDate: Date | null, data: { page: number, limit: number } | null): void {
+        this.loadEventDatePage.emit({ date: selectedDate, page: (data?.page || 1), limit: (data?.limit || -1) });
     }
 
     // ** "Future Stream" and "Past Stream" panel-stream-info **
 
-    public doFutureNextPage(): void {
-        this.futureNextPage.emit();
+    public doLoadFuturePage(data: { page: number, limit: number }): void {
+        this.loadFuturePage.emit(data);
     }
 
-    public doPastNextPage(): void {
-        this.pastNextPage.emit();
+    public doLoadPastPage(data: { page: number, limit: number }): void {
+        this.loadPastPage.emit(data);
     }
 
     // ** **
+
+    public doResetInfo(): void {
+        this.resetInfo.emit();
+    }
 
     public doActionDuplicate(streamId: number): void {
         this.actionDuplicate.emit(streamId);
@@ -123,7 +156,7 @@ export class PanelStreamList implements OnChanges {
         this.actionView.emit(streamId);
     }
 
-    public doActionDelete(info: { id: number, title: string }): void {
+    public doActionDelete(isFuture: boolean, info: { id: number, title: string }): void {
         if (!info || !info.id) {
             return;
         }
@@ -131,7 +164,7 @@ export class PanelStreamList implements OnChanges {
         this.dialogSrv.openConfirmation(message, "", { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" })
             .then((res) => {
                 if (!!res) {
-                    this.actionDelete.emit(info.id);
+                    this.actionDelete.emit({ isFuture, id: info.id });
                 }
             });
     }

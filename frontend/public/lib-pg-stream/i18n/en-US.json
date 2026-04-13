@@ -25,14 +25,15 @@
     "error_get_streams_for_active_period": "Error getting streams for the active period",
     "error_get_future_streams": "Error while getting future streams",
     "error_get_past_streams": "Error while getting past streams",
-    "error_retrieving_data": "Error retrieving data.",
     "error_delete_stream": "Error while deleting stream"
   },
   "panel-stream-list": {
     "my_calendar": "My calendar",
     "my_future_streams": "My future streams",
     "my_past_streams": "My past streams",
-    "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?"
+    "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?",
+    "reset-data": "Reset data",
+    "reset-data_tooltip": "Load data for the current moment."
   },
   "panel-stream-info": {
     "btn-duplicate": "Duplicate",
