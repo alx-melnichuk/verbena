@@ -12,38 +12,23 @@ app-panel-stream-info {
         margin-right: 0.5rem;
     }
 
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 7rem;
-    overflow-y: auto;
-
     .psi-img-shd {
         box-shadow: 0px 1px 3px 1px var(--mat-sys-outline);
     }
 
     // ** Stream card **
-    .psi-stream-card {
-        align-items: center;
-        background-color: var(--app-pn-bg);
-        background-image: var(--app-pn-bg-img);
-        border: 1px solid var(--app-pn-brd);
-        border-radius: 1rem;
-        box-sizing: border-box;
-        container: cnt-stream-card / inline-size;
-        display: flex;
-        flex-shrink: 0;
-        margin: 0px 1px 1px 1px;
-        min-width: 25rem;
-
-        &:first-of-type {
-            margin-top: 1px;
-        }
-
-        &:not(:first-of-type) {
-            margin-top: 0.75rem;
-        }
-    }
+    align-items: center;
+    background-color: var(--app-pn-bg);
+    background-image: var(--app-pn-bg-img);
+    border: 1px solid var(--app-pn-brd);
+    border-radius: 1rem;
+    box-sizing: border-box;
+    container: cnt-stream-card / inline-size;
+    display: flex;
+    flex-shrink: 0;
+    margin: 0px 1px 1px 1px;
+    min-height: 6.25rem;
+    min-width: 25rem;
 
     @container cnt-stream-card (width < 43rem) {
 
