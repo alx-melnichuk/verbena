@@ -1,7 +1,11 @@
 use std::{borrow::Cow, env, fs, ops::Deref, path, time::Instant as tm};
 
 use actix_multipart::form::{MultipartForm, tempfile::TempFile, text::Text};
-use actix_web::{HttpResponse, delete, get, http::StatusCode, put, web};
+use actix_web::{
+    HttpResponse, delete, get,
+    http::{StatusCode, header},
+    put, web,
+};
 use chrono::{DateTime, Utc};
 use log::{Level::Info, error, info, log_enabled};
 use mime::IMAGE;
@@ -467,7 +471,10 @@ pub async fn get_profile_current(
     if let Some(timer) = timer {
         info!("get_profile_current() time: {}", format!("{:.2?}", timer.elapsed()));
     }
-    Ok(HttpResponse::Ok().json(user_profile_dto)) // 200
+
+    let mut response = HttpResponse::Ok().json(user_profile_dto); // 200
+    response.head_mut().headers_mut().insert(header::CACHE_CONTROL, header::HeaderValue::from_static("no-store"));
+    Ok(response)
 }
 
 // ** Section: put_profiles **
