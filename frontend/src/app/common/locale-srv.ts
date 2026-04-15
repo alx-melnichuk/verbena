@@ -64,7 +64,6 @@ export class LocaleSrv {
                     next: () => {
                         this.setIntoLocalStorage(this.currLocale = locale);
                         this.dateAdapter.setLocale(locale);
-                        // #?HttpErrorUtil.setTranslate(this.translate);
                         if (environment.logLevel > 0) { console.log(`Locale.translate.use(${locale})...Ok`); }
                         resolve(true);
                     },

@@ -92,11 +92,11 @@ export class AuthorizationInterceptor implements HttpInterceptor {
             .then((response: UserTokenResponseDto | HttpErrorResponse | undefined) => {
                 const res = response as UserTokenResponseDto;
                 this.sessionSrv.setUserTokens(res.accessToken, res.refreshToken);
-                console.log(`refreshAccessToken successful`); // #
+                if (environment.logLevel > 0) { console.log(`refreshAccessToken successful`); }
                 return Promise.resolve();
             })
             .catch((err: HttpErrorResponse) => {
-                console.log(`refreshAccessToken err:`, err); // #
+                if (environment.logLevel > 0) { console.log(`refreshAccessToken err:`, err); }
                 this.sessionSrv.removeUserTokens();
                 this.sessionSrv.removeUser();
                 return Promise.reject(err);

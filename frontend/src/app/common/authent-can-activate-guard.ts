@@ -14,8 +14,7 @@ export const authentCanActivateGuard: CanActivateFn = (
     const sessionSrv: SessionSrv = inject(SessionSrv);
 
     if (environment.logLevel > 0) {
-        console.log(`authentCanActivateGuard() !!sessionSrv.getUser(): ${!!sessionSrv.getUser()}`); // #
-        console.log(`authentCanActivateGuard() sessionSrv.getUser(): ${sessionSrv.getUser()}`); // #
+        console.log(`authentCanActivateGuard() !!sessionSrv.getUser(): ${!!sessionSrv.getUser()}, user.id: ${sessionSrv.getUser()?.id}`);
     }
     if (!!sessionSrv.getUser()) {
         return true;
