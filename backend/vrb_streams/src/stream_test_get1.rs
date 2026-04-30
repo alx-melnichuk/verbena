@@ -6,6 +6,7 @@ mod tests {
         http::header::{CONTENT_TYPE, HeaderValue},
         test,
     };
+
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
     use vrb_authent::{
@@ -16,15 +17,14 @@ mod tests {
         api_error::{ApiError, code_to_str},
         err,
     };
+    use vrb_dbase::enm_stream_state::StreamState;
 
     use crate::{
-        config_strm,
         stream_controller::{
-            MSG_FINISH_EXCEEDS_LIMIT, MSG_FINISH_LESS_START, MSG_GET_LIST_OTHER_USER_STREAMS, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS,
-            MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, PERIOD_MAX_NUMBER_DAYS, get_stream_by_id, get_stream_config, get_streams,
-            get_streams_events, get_streams_period, tests as StreamCtrlTest,
+            MSG_FINISH_EXCEEDS_LIMIT, MSG_FINISH_LESS_START, PERIOD_MAX_NUMBER_DAYS, get_stream_and_tags, get_stream_and_tags_by_id,
+            tests as StreamCtrlTest,
         },
-        stream_models::{self, StreamConfigDto, StreamEventDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto},
+        stream_models::{MSG_FINISHTIME_REQUIRED, MSG_STARTTIME_REQUIRED, PageStreamAndTagsDto, StreamAndTagsDto},
         stream_orm::tests::StreamOrmTest,
     };
 
@@ -35,10 +35,10 @@ mod tests {
         DateTime::from(value)
     }
 
-    // ** get_stream_by_id **
+    // ** get_stream_and_tags_by_id **
 
     #[actix_web::test]
-    async fn test_get_stream_by_id_invalid_id() {
+    async fn test_get_stream_and_tags_by_id_invalid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let streams = StreamOrmTest::streams(&[USER1]);
@@ -46,7 +46,7 @@ mod tests {
         let stream_id_bad = format!("{}a", stream_id);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id)
+            App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
@@ -67,14 +67,15 @@ mod tests {
         assert_eq!(app_err.message, msg);
     }
     #[actix_web::test]
-    async fn test_get_stream_by_id_valid_id() {
+    async fn test_get_stream_and_tags_by_id_valid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let streams = StreamOrmTest::streams(&[USER1]);
-        let stream_dto = streams.get(0).unwrap().clone();
+        let stream = streams.get(0).unwrap().clone();
+        let stream_dto: StreamAndTagsDto = stream.into();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id)
+            App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
@@ -88,21 +89,21 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream = serde_json::json!(stream_dto).to_string();
-        let stream_dto_ser: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
+        let stream_dto_ser: StreamAndTagsDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res, stream_dto_ser);
     }
     #[actix_web::test]
-    async fn test_get_stream_by_id_non_existent_id() {
+    async fn test_get_stream_and_tags_by_id_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let streams = StreamOrmTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id)
+            App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
@@ -114,20 +115,21 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
-    async fn test_get_stream_by_id_another_user() {
+    async fn test_get_stream_and_tags_by_id_another_user() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         let streams = StreamOrmTest::streams(&[0, 1]);
         let stream2 = streams.get(1).unwrap().clone();
+        let stream2_dto: StreamAndTagsDto = stream2.into();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id)
+            App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2.id))
+        let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2_dto.id))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -135,27 +137,28 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json_stream = serde_json::json!(stream2).to_string();
-        let stream_dto_ser: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
+        let json_stream = serde_json::json!(stream2_dto).to_string();
+        let stream_dto_ser: StreamAndTagsDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res, stream_dto_ser);
     }
     #[actix_web::test]
-    async fn test_get_stream_by_id_another_user_by_admin() {
+    async fn test_get_stream_and_tags_by_id_another_user_by_admin() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[ADMIN, USER]);
         let streams = StreamOrmTest::streams(&[USER1, USER2]);
         let stream2 = streams.get(1).unwrap().clone();
+        let stream2_dto: StreamAndTagsDto = stream2.into();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id)
+            App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2.id))
+        let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2_dto.id))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -163,17 +166,17 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json_stream = serde_json::json!(stream2).to_string();
-        let stream_dto_ser: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
+        let json_stream = serde_json::json!(stream2_dto).to_string();
+        let stream_dto_ser: StreamAndTagsDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res, stream_dto_ser);
     }
 
-    // ** get_streams **
+    // ** get_stream_and_tags **
 
     #[actix_web::test]
-    async fn test_get_streams_search_by_user_id() {
+    async fn test_get_stream_and_tags_by_user_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
@@ -181,11 +184,12 @@ mod tests {
         let streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2, USER2]);
         // Select streams with indices: 0,1.
         let streams1b = &streams.clone()[0..2];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
@@ -200,9 +204,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.list.len(), limit as usize);
         assert_eq!(response.limit, limit);
@@ -211,18 +215,21 @@ mod tests {
         assert_eq!(response.pages, 1);
     }
     #[actix_web::test]
-    async fn test_get_streams_search_by_page_limit_without_user_id() {
+    async fn test_get_stream_and_tags_by_page_limit_no_user_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         // Create streams for user1 and user2.
         let streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2, USER2]);
+        let count: u32 = streams.len() as u32;
         // Select streams with indices: 0,1.
         let streams1b = &streams.clone()[0..2];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
         let limit = 2;
         let page = 1;
+        let pages = (count as f32 / limit as f32).ceil() as u32;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
@@ -237,20 +244,20 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json_streams1b = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json_streams1b.as_bytes()).expect(MSG_FAILED_DESER);
+        let json_streams1b = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json_streams1b.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.list.len(), limit as usize);
         assert_eq!(response.limit, limit);
-        assert_eq!(response.count, 2);
+        assert_eq!(response.count, count);
         assert_eq!(response.page, page);
-        assert_eq!(response.pages, 1);
+        assert_eq!(response.pages, pages);
     }
     #[actix_web::test]
-    async fn test_get_streams_search_by_user_id_page2() {
+    async fn test_get_stream_and_tags_by_user_id_page2() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
@@ -258,11 +265,12 @@ mod tests {
         let streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
         // Select streams with indices: 4,5.
         let streams1b = &streams.clone()[4..6];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
         let limit = 2;
         let page = 2;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
@@ -277,10 +285,10 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json_streams1b = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json_streams1b.as_bytes()).expect(MSG_FAILED_DESER);
+        let json_streams1b = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json_streams1b.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.list.len(), limit as usize);
@@ -290,51 +298,18 @@ mod tests {
         assert_eq!(response.pages, 2);
     }
     #[actix_web::test]
-    async fn test_get_streams_search_by_another_user_id_with_role_user() {
+    async fn test_get_stream_and_tags_by_another_user_id_role_user() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
-        let user1_id = data_u.0.get(0).unwrap().id;
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
         let streams = StreamOrmTest::streams(&[USER2, USER2]);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_streams)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page=1&limit=2", user2_id))
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
-        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
-        #[rustfmt::skip]
-        let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
-        assert_eq!(app_err.message, message);
-    }
-    #[actix_web::test]
-    async fn test_get_streams_search_by_another_user_id_with_role_admin() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let user2_id = data_u.0.get(1).unwrap().id;
-        // Create streams for user2.
-        let streams = StreamOrmTest::streams(&[USER2, USER2]);
-        // Select streams with indices: 2,3.
-        let streams1b = &streams.clone();
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams.iter().map(|v| v.clone().into()).collect();
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
@@ -348,10 +323,10 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.list.len(), limit as usize);
         assert_eq!(response.limit, limit);
@@ -360,23 +335,64 @@ mod tests {
         assert_eq!(response.pages, 1);
     }
     #[actix_web::test]
-    async fn test_get_streams_search_by_live() {
+    async fn test_get_stream_and_tags_by_another_user_id_role_admin() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[ADMIN, USER]);
+        let user2_id = data_u.0.get(1).unwrap().id;
+        // Create streams for user2.
+        let streams = StreamOrmTest::streams(&[USER2, USER2]);
+        // Select streams with indices: 2,3.
+        let streams1b = &streams.clone();
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
+        let limit = 2;
+        let page = 1;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_stream_and_tags)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams?userId={}&page={}&limit={}", user2_id, page, limit))
+            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(response.list, streams1b_ser);
+        assert_eq!(response.list.len(), limit as usize);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 2);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+
+    // ** get_stream_and_tags (live) **
+
+    #[actix_web::test]
+    async fn test_get_stream_and_tags_by_live() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         let live = true;
         // Create streams for user1.
         let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
-        streams.get_mut(0).unwrap().live = !live;
-        streams.get_mut(1).unwrap().live = !live;
-        streams.get_mut(2).unwrap().live = live;
-        streams.get_mut(3).unwrap().live = live;
+        streams.get_mut(2).unwrap().state = StreamState::Preparing;
+        streams.get_mut(3).unwrap().state = StreamState::Preparing;
         // Select streams with indices: 2,3.
         let streams1b = &streams.clone()[2..4];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
@@ -391,10 +407,10 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let count = streams1b.len() as u32;
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.list[0].live, live);
@@ -403,8 +419,40 @@ mod tests {
         assert_eq!(response.page, page);
         assert_eq!(response.pages, 1);
     }
+
+    // ** get_stream_and_tags (filter="future") **
+
     #[actix_web::test]
-    async fn test_get_streams_search_by_is_future() {
+    async fn test_get_stream_and_tags_by_filter_future_no_starttime() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER, USER]);
+        // Create streams for user1.
+        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_stream_and_tags)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri("/api/streams?filter=future&page=1&limit=3")
+            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err = app_err_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_STARTTIME_REQUIRED]);
+        #[rustfmt::skip]
+        assert_eq!(*app_err.params.get("required").unwrap(), true);
+    }
+    #[actix_web::test]
+    async fn test_get_stream_and_tags_by_filter_future() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         // Create streams for user1.
@@ -421,19 +469,20 @@ mod tests {
         // Then return streams with a "starttime" date greater than or equal to "now".
         // Select streams with indices: 2,3,4.
         let streams1b = &streams.clone()[2..5];
-        let future_starttime = now.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
+        let starttime = now.to_rfc3339_opts(SecondsFormat::Millis, true);
         let limit = 3;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?futureStarttime={}&page={}&limit={}", future_starttime, page, limit))
+            .uri(&format!("/api/streams?filter=future&starttime={}&page={}&limit={}", starttime, page, limit))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -441,10 +490,10 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let count = streams1b.len() as u32;
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.limit, limit);
@@ -453,7 +502,89 @@ mod tests {
         assert_eq!(response.pages, 1);
     }
     #[actix_web::test]
-    async fn test_get_streams_search_by_is_not_future() {
+    async fn test_get_stream_and_tags_by_filter_future_sort_desc() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER, USER]);
+        // Create streams for user1.
+        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
+        let tomorrow = now + Duration::days(1);
+        let yesterday = now - Duration::days(1);
+        let sec = Duration::seconds(1);
+        streams.get_mut(0).unwrap().starttime = yesterday;
+        streams.get_mut(1).unwrap().starttime = now - sec;
+        streams.get_mut(2).unwrap().starttime = now;
+        streams.get_mut(3).unwrap().starttime = now + sec;
+        streams.get_mut(4).unwrap().starttime = tomorrow;
+        // Then return streams with a "starttime" date greater than or equal to "now".
+        // Select streams with indices: 2,3,4.
+        let streams1b = &streams.clone()[2..5];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().rev().map(|v| v.clone().into()).collect();
+        let starttime = now.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let limit = 3;
+        let page = 1;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_stream_and_tags)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams?filter=future&starttime={}&sortDesc=true&page={}&limit={}", starttime, page, limit))
+            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, streams1b_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, count);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+
+    // ** get_stream_and_tags (filter="past") **
+
+    #[actix_web::test]
+    async fn test_get_stream_and_tags_by_filter_past_no_starttime() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER, USER]);
+        // Create streams for user1.
+        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_stream_and_tags)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri("/api/streams?filter=past&page=1&limit=3")
+            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err = app_err_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_STARTTIME_REQUIRED]);
+        #[rustfmt::skip]
+        assert_eq!(*app_err.params.get("required").unwrap(), true);
+    }
+    #[actix_web::test]
+    async fn test_get_stream_and_tags_by_filter_past() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         // Create streams for user1.
@@ -470,19 +601,20 @@ mod tests {
         // Then return streams with a "startstarttime" date less than "now".
         // Select streams with indices: 0,1.
         let streams1b = &streams.clone()[0..2];
-        let past_starttime = now.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
+        let starttime = now.to_rfc3339_opts(SecondsFormat::Millis, true);
         let limit = 3;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?pastStarttime={}&page={}&limit={}", past_starttime, page, limit))
+            .uri(&format!("/api/streams?filter=past&starttime={}&page={}&limit={}", starttime, page, limit))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -490,10 +622,10 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let count = streams1b.len() as u32;
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.limit, limit);
@@ -502,35 +634,37 @@ mod tests {
         assert_eq!(response.pages, 1);
     }
     #[actix_web::test]
-    async fn test_get_streams_search_by_user_id_and_order_starttime_asc() {
+    async fn test_get_stream_and_tags_by_filter_past_sort_desc() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
-        let now = Utc::now();
-        let one_day = Duration::days(1);
-        let two_days = Duration::days(2);
-        streams.get_mut(0).unwrap().starttime = now + two_days;
-        streams.get_mut(1).unwrap().starttime = now + one_day;
-        streams.get_mut(2).unwrap().starttime = now - one_day;
-        streams.get_mut(3).unwrap().starttime = now - two_days;
-        // Select streams with indices: 3,2,1,0.
-        let streams1b: Vec<StreamInfoDto> = streams.clone().into_iter().rev().collect();
-        let order_column = stream_models::OrderColumn::Starttime.to_string();
-        let order_dir = stream_models::OrderDirection::Asc.to_string();
-        let limit = 4;
+        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
+        let tomorrow = now + Duration::days(1);
+        let yesterday = now - Duration::days(1);
+        let sec = Duration::seconds(1);
+        streams.get_mut(0).unwrap().starttime = yesterday;
+        streams.get_mut(1).unwrap().starttime = now - sec;
+        streams.get_mut(2).unwrap().starttime = now;
+        streams.get_mut(3).unwrap().starttime = now + sec;
+        streams.get_mut(4).unwrap().starttime = tomorrow;
+        // Then return streams with a "startstarttime" date less than "now".
+        // Select streams with indices: 0,1.
+        let streams1b = &streams.clone()[0..2];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().rev().map(|v| v.clone().into()).collect();
+        let starttime = now.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let limit = 3;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?orderColumn={}&orderDirection={}&page={}&limit={}",
-                order_column, order_dir, page, limit))
+            .uri(&format!("/api/streams?filter=past&starttime={}&sortDesc=true&page={}&limit={}", starttime, page, limit))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -538,58 +672,10 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let count = streams1b.len() as u32;
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(response.list, streams1b_ser);
-        assert_eq!(response.limit, limit);
-        assert_eq!(response.count, count);
-        assert_eq!(response.page, page);
-        assert_eq!(response.pages, 1);
-    }
-    #[actix_web::test]
-    async fn test_get_streams_search_by_user_id_and_order_starttime_desc() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
-        let now = Utc::now();
-        let one_day = Duration::days(1);
-        let two_days = Duration::days(2);
-        streams.get_mut(0).unwrap().starttime = now - two_days;
-        streams.get_mut(1).unwrap().starttime = now - one_day;
-        streams.get_mut(2).unwrap().starttime = now + one_day;
-        streams.get_mut(3).unwrap().starttime = now + two_days;
-        // Select streams with indices: 3,2,1,0.
-        let streams1b: Vec<StreamInfoDto> = streams.clone().into_iter().rev().collect();
-        let order_column = stream_models::OrderColumn::Starttime.to_string();
-        let order_dir = stream_models::OrderDirection::Desc.to_string();
-        let limit = 4;
-        let page = 1;
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_streams)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?orderColumn={}&orderDirection={}&page={}&limit={}",
-                order_column, order_dir, page, limit))
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let count = streams1b.len() as u32;
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.limit, limit);
@@ -598,342 +684,92 @@ mod tests {
         assert_eq!(response.pages, 1);
     }
 
-    // ** get_stream_config **
+    // ** get_stream_and_tags (filter="period") **
 
     #[actix_web::test]
-    async fn test_get_stream_config_data() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let config_strm = config_strm::get_test_config();
-        #[rustfmt::skip]
-        let stream_config_dto = StreamConfigDto::new(
-            if config_strm.strm_logo_max_size > 0 { Some(config_strm.strm_logo_max_size) } else { None },
-            config_strm.strm_logo_valid_types.clone(),
-            config_strm.strm_logo_ext.clone(),
-            if config_strm.strm_logo_max_width > 0 { Some(config_strm.strm_logo_max_width) } else { None },
-            if config_strm.strm_logo_max_height > 0 { Some(config_strm.strm_logo_max_height) } else { None },
-        );
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_stream_config)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri("/api/streams_config")
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-
-        let stream_config_dto_res: StreamConfigDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(stream_config_dto_res, stream_config_dto);
-    }
-
-    // ** get_streams_events **
-
-    #[actix_web::test]
-    async fn test_get_streams_events_search_by_user_id() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let user1_id = data_u.0.get(0).unwrap().id;
-        // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
-        let dt = Local::now();
-        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
-        let day = Duration::hours(23) + Duration::minutes(59) + Duration::seconds(59);
-        streams.get_mut(0).unwrap().starttime = to_utc(today - Duration::seconds(1));
-        streams.get_mut(1).unwrap().starttime = to_utc(today);
-        streams.get_mut(2).unwrap().starttime = to_utc(today + day);
-        streams.get_mut(3).unwrap().starttime = to_utc(today + Duration::hours(24));
-        // Select streams with indices: 1,2.
-        let streams1b = &streams.clone()[1..3];
-        let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
-        let limit = 2;
-        let page = 1;
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_streams_events)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}",
-                user1_id, starttime, page, limit))
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let count = streams1b.len() as u32;
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamEventDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(response.list, streams1b_ser);
-        assert_eq!(response.list.len(), limit as usize);
-        assert_eq!(response.limit, limit);
-        assert_eq!(response.count, count);
-        assert_eq!(response.page, page);
-        assert_eq!(response.pages, 1);
-    }
-    #[actix_web::test]
-    async fn test_get_streams_events_search_by_without_user_id() {
+    async fn test_get_stream_and_tags_by_filter_period_no_starttime() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2, USER1]);
-        let dt = Local::now();
-        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
-        let d23_59_59 = Duration::hours(23) + Duration::minutes(59) + Duration::seconds(59);
-        streams.get_mut(0).unwrap().starttime = to_utc(today - Duration::seconds(1));
-        streams.get_mut(1).unwrap().starttime = to_utc(today);
-        streams.get_mut(2).unwrap().starttime = to_utc(today + d23_59_59);
-        streams.get_mut(3).unwrap().starttime = to_utc(today + Duration::hours(24));
-        streams.get_mut(4).unwrap().starttime = to_utc(today);
-        // Select streams with indices: 1,2.
-        let streams1b = &[streams[1].clone(), streams[4].clone()];
-
-        let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
-        let limit = 2;
-        let page = 1;
+        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams_events)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?starttime={}&page={}&limit={}", starttime, page, limit))
+            .uri("/api/streams?filter=period&page=1&limit=3")
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let count = streams1b.len() as u32;
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamEventDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(response.list, streams1b_ser);
-        assert_eq!(response.list.len(), limit as usize);
-        assert_eq!(response.limit, limit);
-        assert_eq!(response.count, count);
-        assert_eq!(response.page, page);
-        assert_eq!(response.pages, 1);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err1 = app_err_vec.get(0).unwrap().clone();
+        let app_err2 = app_err_vec.get(1).unwrap().clone();
+        let msgs = [MSG_STARTTIME_REQUIRED, MSG_FINISHTIME_REQUIRED];
+        #[rustfmt::skip]
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &msgs);
+        #[rustfmt::skip]
+        assert_eq!(*app_err1.params.get("required").unwrap(), true);
+        #[rustfmt::skip]
+        assert_eq!(*app_err2.params.get("required").unwrap(), true);
     }
     #[actix_web::test]
-    async fn test_get_streams_events_search_by_page2() {
+    async fn test_get_stream_and_tags_by_filter_period_no_finishtime() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
-        let dt = Local::now();
-        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
-        streams.get_mut(0).unwrap().starttime = to_utc(today);
-        streams.get_mut(1).unwrap().starttime = to_utc(today);
-        streams.get_mut(2).unwrap().starttime = to_utc(today);
-        streams.get_mut(3).unwrap().starttime = to_utc(today);
-        streams.get_mut(4).unwrap().starttime = to_utc(today);
-        streams.get_mut(5).unwrap().starttime = to_utc(today);
-        // Select streams with indices: 4,5.
-        let streams1b = &streams.clone()[4..6];
-        let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
-        let limit = 2;
-        let page = 2;
+        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
+        let starttime = now.to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams_events)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?starttime={}&page={}&limit={}", starttime, page, limit))
+            .uri(&format!("/api/streams?filter=period&starttime={}&page=1&limit=3", starttime))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamEventDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(response.list, streams1b_ser);
-        assert_eq!(response.list.len(), limit as usize);
-        assert_eq!(response.limit, limit);
-        assert_eq!(response.count, 4);
-        assert_eq!(response.page, page);
-        assert_eq!(response.pages, 2);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err1 = app_err_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_FINISHTIME_REQUIRED]);
+        #[rustfmt::skip]
+        assert_eq!(*app_err1.params.get("required").unwrap(), true);
     }
     #[actix_web::test]
-    async fn test_get_streams_events_search_by_bad_starttime() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
-        let dt = Local::now();
-        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
-        let today_decrem1 = to_utc(today - Duration::days(1));
-        let today_increm1 = to_utc(today + Duration::days(2));
-        streams.get_mut(0).unwrap().starttime = today_decrem1;
-        streams.get_mut(1).unwrap().starttime = today_decrem1;
-        streams.get_mut(2).unwrap().starttime = today_increm1;
-        streams.get_mut(3).unwrap().starttime = today_increm1;
-        let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
-        let limit = 2;
-        let page = 1;
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_streams_events)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?starttime={}&page={}&limit={}", starttime, page, limit))
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(response.list, vec![]);
-        assert_eq!(response.list.len(), 0);
-        assert_eq!(response.limit, limit);
-        assert_eq!(response.count, 0);
-        assert_eq!(response.page, 1);
-        assert_eq!(response.pages, 0);
-    }
-    #[actix_web::test]
-    async fn test_get_streams_events_search_by_another_user_id_with_role_user() {
+    async fn test_get_stream_and_tags_by_filter_period_startime_gr_finishtime() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
-        let user1_id = data_u.0.get(0).unwrap().id;
-        let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2]);
-        let dt = Local::now();
-        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
-        streams.get_mut(0).unwrap().starttime = to_utc(today);
-        streams.get_mut(1).unwrap().starttime = to_utc(today);
-        streams.get_mut(2).unwrap().starttime = to_utc(today);
-        streams.get_mut(3).unwrap().starttime = to_utc(today);
-        let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
-        let limit = 2;
-        let page = 1;
+        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
+        let sec = Duration::seconds(1);
+        let starttime = (now + sec).to_rfc3339_opts(SecondsFormat::Millis, true);
+        let finishtime = (now - sec).to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams_events)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", user2_id, starttime, page, limit))
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
-        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
-        #[rustfmt::skip]
-        let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
-        assert_eq!(app_err.message, message);
-    }
-    #[actix_web::test]
-    async fn test_get_streams_events_search_by_another_user_id_with_role_admin() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let user2_id = data_u.0.get(1).unwrap().id;
-        // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2]);
-        let dt = Local::now();
-        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
-        streams.get_mut(0).unwrap().starttime = to_utc(today);
-        streams.get_mut(1).unwrap().starttime = to_utc(today);
-        streams.get_mut(2).unwrap().starttime = to_utc(today);
-        streams.get_mut(3).unwrap().starttime = to_utc(today);
-        // Select streams with indices: 2,3.
-        let streams1b = &streams.clone()[2..4];
-        let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
-        let limit = 2;
-        let page = 1;
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_streams_events)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", user2_id, starttime, page, limit))
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json = serde_json::json!(streams1b).to_string();
-        let streams1b_ser: Vec<StreamEventDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(response.list, streams1b_ser);
-        assert_eq!(response.list.len(), limit as usize);
-        assert_eq!(response.limit, limit);
-        assert_eq!(response.count, 2);
-        assert_eq!(response.page, page);
-        assert_eq!(response.pages, 1);
-    }
-
-    // ** get_streams_period **
-
-    #[actix_web::test]
-    async fn test_get_streams_period_by_finish_less_start() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let user1_id = data_u.0.get(0).unwrap().id;
-        let dt = Local::now();
-        let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
-        let finish = start - Duration::seconds(1);
-        let start_s = to_utc(start).to_rfc3339_opts(SecondsFormat::Millis, true);
-        let finish_s = to_utc(finish).to_rfc3339_opts(SecondsFormat::Millis, true);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_streams_period)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
+            .uri(&format!("/api/streams?filter=period&starttime={}&finishtime={}&page=1&limit=3", starttime, finishtime))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
@@ -944,14 +780,15 @@ mod tests {
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(app_err.message, MSG_FINISH_LESS_START);
-        let json = serde_json::json!({ "streamPeriodStart": start_s, "streamPeriodFinish": finish_s });
+        let json = serde_json::json!({ "streamPeriodStart": starttime, "streamPeriodFinish": finishtime });
         assert_eq!(*app_err.params.get("invalidPeriod").unwrap(), json);
     }
     #[actix_web::test]
-    async fn test_get_streams_period_by_finish_more_on_2_month() {
+    async fn test_get_stream_and_tags_by_filter_period_finish_too_big_start() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let user1_id = data_u.0.get(0).unwrap().id;
+        let data_u = UserOrmTest::users(&[USER, USER]);
+        // Create streams for user1.
+        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
         let finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
@@ -961,14 +798,14 @@ mod tests {
         let max_finish_s = to_utc(max_finish).to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams_period)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
+            .uri(&format!("/api/streams?filter=period&starttime={}&finishtime={}&page=1&limit=3", start_s, finish_s))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE); // 413
@@ -983,64 +820,38 @@ mod tests {
             , "maxPeriodFinish": max_finish_s, "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
         assert_eq!(*app_err.params.get("periodTooLong").unwrap(), json);
     }
-
-    fn get_streams2(user_idx: usize) -> (Vec<StreamInfoDto>, String, String, Vec<DateTime<Utc>>) {
-        let mut streams = StreamOrmTest::streams(&[user_idx, user_idx, user_idx, user_idx]);
-        let dt = Local::now();
-        let month1 = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
-        let month2 = Local.with_ymd_and_hms(dt.year(), dt.month() + 1, 1, 0, 0, 0).unwrap();
-        streams.get_mut(0).unwrap().starttime = to_utc(month1 - Duration::seconds(1));
-        streams.get_mut(1).unwrap().starttime = to_utc(month1);
-        streams.get_mut(2).unwrap().starttime = to_utc(month2 - Duration::seconds(1));
-        streams.get_mut(3).unwrap().starttime = to_utc(month2);
-        let period: Vec<DateTime<Utc>> = vec![to_utc(month1), to_utc(month2 - Duration::seconds(1))];
-        let start = to_utc(month1).to_rfc3339_opts(SecondsFormat::Millis, true);
-        let finish = to_utc(month2 - Duration::seconds(1)).to_rfc3339_opts(SecondsFormat::Millis, true);
-        (streams, start, finish, period)
-    }
     #[actix_web::test]
-    async fn test_get_streams_period_by_user_id() {
+    async fn test_get_stream_and_tags_by_filter_period() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let user1_id = data_u.0.get(0).unwrap().id;
-        let (streams, start, finish, period) = get_streams2(USER1);
+        let data_u = UserOrmTest::users(&[USER, USER]);
+        // Create streams for user1.
+        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
+        let tomorrow = now + Duration::days(1);
+        let yesterday = now - Duration::days(1);
+        let sec = Duration::seconds(1);
+        streams.get_mut(0).unwrap().starttime = yesterday;
+        streams.get_mut(1).unwrap().starttime = now - sec;
+        streams.get_mut(2).unwrap().starttime = now;
+        streams.get_mut(3).unwrap().starttime = now + sec;
+        streams.get_mut(4).unwrap().starttime = tomorrow;
+        // Select streams with indices: 1,2,3.
+        let streams1b = &streams.clone()[1..4];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
+        let starttime = (now - sec).to_rfc3339_opts(SecondsFormat::Millis, true);
+        let finishtime = (now + sec).to_rfc3339_opts(SecondsFormat::Millis, true);
+        let limit = 3;
+        let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams_period)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start, finish))
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json_period = serde_json::json!(period).to_string();
-        let period_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_period.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(response.len(), period_ser.len());
-        assert_eq!(response, period_ser);
-    }
-    #[actix_web::test]
-    async fn test_get_streams_period_by_without_user_id() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let (streams, start, finish, period) = get_streams2(USER1);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_streams_period)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?start={}&finish={}", start, finish))
+            .uri(&format!("/api/streams?filter=period&starttime={}&finishtime={}&page={}&limit={}", starttime, finishtime, page, limit))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -1048,59 +859,48 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json_period = serde_json::json!(period).to_string();
-        let period_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_period.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(response.len(), period_ser.len());
-        assert_eq!(response, period_ser);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, streams1b_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, count);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
     }
+
+    // ** get_stream_and_tags (user_id order starttime) **
+
     #[actix_web::test]
-    async fn test_get_streams_period_by_another_user_id_with_role_user() {
+    async fn test_get_stream_and_tags_by_user_id_order_starttime_asc() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let user2_id = data_u.0.get(1).unwrap().id;
-        let (streams, start, finish, _period) = get_streams2(USER2);
+        // Create streams for user1.
+        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
+        let now = Utc::now();
+        let one_day = Duration::days(1);
+        let two_days = Duration::days(2);
+        streams.get_mut(0).unwrap().starttime = now + two_days;
+        streams.get_mut(1).unwrap().starttime = now + one_day;
+        streams.get_mut(2).unwrap().starttime = now - one_day;
+        streams.get_mut(3).unwrap().starttime = now - two_days;
+        // Select streams with indices: 3,2,1,0.
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams.iter().rev().map(|v| v.clone().into()).collect();
+        let limit = 4;
+        let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams_period)
+            App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
-            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
-        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
-        #[rustfmt::skip]
-        let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
-        assert_eq!(app_err.message, message);
-    }
-    #[actix_web::test]
-    async fn test_get_streams_period_by_another_user_id_with_role_admin_99() {
-        let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let user2_id = data_u.0.get(1).unwrap().id;
-        let (streams, start, finish, period) = get_streams2(USER2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_streams_period)
-                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
-        ).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
+            .uri(&format!("/api/streams?userId={}&page={}&limit={}", user1_id, page, limit))
             .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -1108,10 +908,154 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json_period = serde_json::json!(period).to_string();
-        let period_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_period.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(response.len(), period_ser.len());
-        assert_eq!(response, period_ser);
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, streams1b_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, count);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+    #[actix_web::test]
+    async fn test_get_stream_and_tags_by_user_id_order_starttime_desc() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
+        // Create streams for user1.
+        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
+        let now = Utc::now();
+        let one_day = Duration::days(1);
+        let two_days = Duration::days(2);
+        streams.get_mut(0).unwrap().starttime = now - two_days;
+        streams.get_mut(1).unwrap().starttime = now - one_day;
+        streams.get_mut(2).unwrap().starttime = now + one_day;
+        streams.get_mut(3).unwrap().starttime = now + two_days;
+        // Select streams with indices: 3,2,1,0.
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams.iter().rev().map(|v| v.clone().into()).collect();
+        let limit = 4;
+        let page = 1;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_stream_and_tags)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams?userId={}&sortDesc=true&page={}&limit={}", user1_id, page, limit))
+            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, streams1b_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, count);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+
+    // ** get_stream_and_tags (tag order starttime) **
+
+    #[actix_web::test]
+    async fn test_get_stream_and_tags_by_user_id_tag_order_starttime_asc() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER]);
+        // Create streams for user1.
+        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2]);
+        let now = Utc::now();
+        streams.get_mut(0).unwrap().starttime = now + Duration::days(2);
+        streams.get_mut(1).unwrap().starttime = now + Duration::days(1);
+        streams.get_mut(2).unwrap().starttime = now - Duration::days(1);
+        streams.get_mut(3).unwrap().starttime = now - Duration::days(2);
+        let tag = "tag2";
+        // Select streams with indices: 2,3.
+        let streams1b = &streams.clone()[2..4];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().rev().map(|v| v.clone().into()).collect();
+        let limit = 2;
+        let page = 1;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_stream_and_tags)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams?tag={}&page={}&limit={}", tag, page, limit))
+            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, streams1b_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, count);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+    #[actix_web::test]
+    async fn test_get_stream_and_tags_by_user_id_tag_order_starttime_desc() {
+        let token1 = config_jwt::tests::get_token(USER1_ID);
+        let data_u = UserOrmTest::users(&[USER]);
+        // Create streams for user1, user2.
+        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2]);
+        let now = Utc::now();
+        streams.get_mut(0).unwrap().starttime = now + Duration::days(2);
+        streams.get_mut(1).unwrap().starttime = now + Duration::days(1);
+        streams.get_mut(2).unwrap().starttime = now - Duration::days(2);
+        streams.get_mut(3).unwrap().starttime = now - Duration::days(1);
+        let tag = "tag2";
+        // Select streams with indices: 2,3.
+        let streams1b = &streams.clone()[2..4];
+        let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().rev().map(|v| v.clone().into()).collect();
+        let limit = 2;
+        let page = 1;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_stream_and_tags)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams?tag={}&sortDesc=true&page={}&limit={}", tag, page, limit))
+            .insert_header(StreamCtrlTest::header_auth(&token1)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response: PageStreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = streams1b_dto.len() as u32;
+        let json = serde_json::json!(streams1b_dto).to_string();
+        let streams1b_ser: Vec<StreamAndTagsDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, streams1b_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, count);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
     }
 }
