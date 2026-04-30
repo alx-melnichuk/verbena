@@ -21,6 +21,12 @@ impl fmt::Display for StreamState {
     }
 }
 
+impl Default for StreamState {
+    fn default() -> Self {
+        Self::Waiting
+    }
+}
+
 impl StreamState {
     pub fn is_live(stream_state: StreamState) -> bool {
         stream_state == StreamState::Preparing || stream_state == StreamState::Started || stream_state == StreamState::Paused
