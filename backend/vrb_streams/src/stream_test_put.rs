@@ -25,10 +25,14 @@ mod tests {
     use crate::{
         config_strm,
         stream_controller::{
-            MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG, MSG_INVALID_STREAM_STATE, put_stream, put_toggle_state,
+            MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG, MSG_INVALID_STREAM_STATE, put_stream_and_tags, put_toggle_state,
             tests as StreamCtrlTest,
         },
-        stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamMock, ToggleStreamStateDto},
+        stream_models::{
+            MSG_DESCRIPT_MAX_LENGTH, MSG_DESCRIPT_MIN_LENGTH, MSG_MIN_VALID_STARTTIME, MSG_SOURCE_MAX_LENGTH, MSG_SOURCE_MIN_LENGTH,
+            MSG_TAG_MAX_AMOUNT, MSG_TAG_MAX_LENGTH, MSG_TAG_MIN_AMOUNT, MSG_TAG_MIN_LENGTH, MSG_TITLE_MAX_LENGTH, MSG_TITLE_MIN_LENGTH,
+            ModifyStreamAndTagsDto, StreamAndTagsDto, StreamMock, ToggleStreamStateDto,
+        },
         stream_orm::tests::StreamOrmTest,
     };
 
@@ -37,15 +41,15 @@ mod tests {
     const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
     const MSG_CONTENT_TYPE_NOT_FOUND: &str = "Could not find Content-Type header";
 
-    // ** put_stream **
+    // ** put_stream_and_tags **
 
     #[actix_web::test]
-    async fn test_put_stream_no_form() {
+    async fn test_put_stream_and_tags_no_form() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -65,14 +69,14 @@ mod tests {
         assert!(body_str.contains(MSG_CONTENT_TYPE_NOT_FOUND));
     }
     #[actix_web::test]
-    async fn test_put_stream_empty_form() {
+    async fn test_put_stream_and_tags_empty_form() {
         let (header, body) = MultiPartFormDataBuilder::new().build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -92,7 +96,7 @@ mod tests {
         assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
     }
     #[actix_web::test]
-    async fn test_put_stream_invalid_name() {
+    async fn test_put_stream_and_tags_invalid_name() {
         let name1_file = "test_put_stream_invalid_name.png";
         let path_name1_file = format!("./{}", &name1_file);
         png_files::save_file_png(&path_name1_file, 2).unwrap();
@@ -105,7 +109,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -129,11 +133,11 @@ mod tests {
         let key = Cow::Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
         #[rustfmt::skip]
         let names1 = app_err.params.get(&key).unwrap().get("validNames").unwrap().as_str().unwrap();
-        let names2 = [ModifyStreamInfoDto::valid_names(), vec!["logofile"]].concat().join(",");
+        let names2 = [ModifyStreamAndTagsDto::valid_names(), vec!["logofile"]].concat().join(",");
         assert_eq!(names1, &names2);
     }
     #[actix_web::test]
-    async fn test_put_stream_invalid_id() {
+    async fn test_put_stream_and_tags_invalid_id() {
         let stream_id_bad = "100a".to_string();
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -143,7 +147,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -165,14 +169,14 @@ mod tests {
         assert_eq!(app_err.message, format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &error));
     }
     #[actix_web::test]
-    async fn test_put_stream_title_min() {
+    async fn test_put_stream_and_tags_title_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamMock::title_min()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -189,17 +193,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TITLE_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TITLE_MIN_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_stream_title_max() {
+    async fn test_put_stream_and_tags_title_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamMock::title_max()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -216,17 +220,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TITLE_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TITLE_MAX_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_stream_descript_min() {
+    async fn test_put_stream_and_tags_descript_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", StreamMock::descript_min()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -243,17 +247,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_DESCRIPT_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_DESCRIPT_MIN_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_stream_descript_max() {
+    async fn test_put_stream_and_tags_descript_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", StreamMock::descript_max()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -270,10 +274,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_DESCRIPT_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_DESCRIPT_MAX_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_stream_starttime_now() {
+    async fn test_put_stream_and_tags_starttime_now() {
         let starttime_s = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -283,7 +287,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -300,17 +304,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_MIN_VALID_STARTTIME]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_MIN_VALID_STARTTIME]);
     }
     #[actix_web::test]
-    async fn test_put_stream_source_min() {
+    async fn test_put_stream_and_tags_source_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("source", StreamMock::source_min()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -327,17 +331,17 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_SOURCE_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_SOURCE_MIN_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_stream_source_max() {
+    async fn test_put_stream_and_tags_source_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("source", StreamMock::source_max()).build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -354,10 +358,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_SOURCE_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_SOURCE_MAX_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_stream_tags_min_amount() {
+    async fn test_put_stream_and_tags_tags_min_amount() {
         let tags = StreamMock::tag_names_min();
         if tags.len() <= 0 {
             return;
@@ -370,7 +374,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -387,10 +391,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MIN_AMOUNT]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TAG_MIN_AMOUNT]);
     }
     #[actix_web::test]
-    async fn test_put_stream_tags_max_amount() {
+    async fn test_put_stream_and_tags_tags_max_amount() {
         let tags = StreamMock::tag_names_max();
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", serde_json::to_string(&tags).unwrap())
@@ -400,7 +404,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -417,10 +421,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MAX_AMOUNT]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TAG_MAX_AMOUNT]);
     }
     #[actix_web::test]
-    async fn test_put_stream_tag_name_min() {
+    async fn test_put_stream_and_tags_tag_name_min() {
         let tags: Vec<String> = vec![StreamMock::tag_name_min()];
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", serde_json::to_string(&tags).unwrap())
@@ -430,7 +434,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -447,10 +451,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TAG_MIN_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_stream_tag_name_max() {
+    async fn test_put_stream_and_tags_tag_name_max() {
         let tags: Vec<String> = vec![StreamMock::tag_name_max()];
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", serde_json::to_string(&tags).unwrap())
@@ -460,7 +464,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -477,10 +481,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TAG_MAX_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_stream_invalid_tag() {
+    async fn test_put_stream_and_tags_invalid_tag() {
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", "aaa").build();
@@ -489,7 +493,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -511,7 +515,7 @@ mod tests {
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
-    async fn test_put_stream_invalid_tag_vec() {
+    async fn test_put_stream_and_tags_invalid_tag_vec() {
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", "[\"tag\"").build();
@@ -520,7 +524,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -542,7 +546,7 @@ mod tests {
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
-    async fn test_put_stream_invalid_file_size() {
+    async fn test_put_stream_and_tags_invalid_file_size() {
         let name1_file = "test_put_stream_invalid_file_size.png";
         let path_name1_file = format!("./{}", &name1_file);
         let (size, _name) = png_files::save_file_png(&path_name1_file, 2).unwrap();
@@ -558,7 +562,7 @@ mod tests {
         let strm_logo_max_size = config_strm.strm_logo_max_size;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm))
@@ -583,7 +587,7 @@ mod tests {
         assert_eq!(*app_err.params.get("invalidFileSize").unwrap(), json);
     }
     #[actix_web::test]
-    async fn test_put_stream_invalid_file_type() {
+    async fn test_put_stream_and_tags_invalid_file_type() {
         let name1_file = "test_put_stream_invalid_file_type.png";
         let path_name1_file = format!("./{}", &name1_file);
         png_files::save_file_png(&path_name1_file, 1).unwrap();
@@ -598,7 +602,7 @@ mod tests {
         let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm))
@@ -622,7 +626,7 @@ mod tests {
         assert_eq!(*app_err.params.get("invalidFileType").unwrap(), json);
     }
     #[actix_web::test]
-    async fn test_put_stream_non_existent_id() {
+    async fn test_put_stream_and_tags_non_existent_id() {
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("title", format!("{}a", StreamMock::title_min()))
@@ -634,7 +638,7 @@ mod tests {
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -649,7 +653,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
-    async fn test_put_stream_another_user() {
+    async fn test_put_stream_and_tags_another_user() {
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("title", format!("{}a", StreamMock::title_min()))
@@ -661,7 +665,7 @@ mod tests {
         let stream2_id = streams.get(1).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -676,7 +680,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
-    async fn test_put_stream_another_user_by_admin() {
+    async fn test_put_stream_and_tags_another_user_by_admin() {
         let new_title = format!("{}b", StreamMock::title_min());
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -689,7 +693,7 @@ mod tests {
         let stream2 = streams.get(1).unwrap().clone();
         let app = test::init_service(
             App::new()
-                .service(put_stream)
+                .service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -702,18 +706,10 @@ mod tests {
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(stream_dto_res.user_id, stream2.user_id);
-        assert_eq!(stream_dto_res.title, new_title);
-        assert_eq!(stream_dto_res.descript, stream2.descript);
-        assert_eq!(stream_dto_res.logo, stream2.logo);
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
-    async fn test_put_stream_valid_data_without_file() {
+    async fn test_put_stream_and_tags_valid_data_without_file() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let streams = StreamOrmTest::streams(&[USER1]);
@@ -739,7 +735,7 @@ mod tests {
 
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -755,7 +751,7 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(stream_dto_res.id, stream.id);
         assert_eq!(stream_dto_res.user_id, user_id);
@@ -780,7 +776,7 @@ mod tests {
         assert_eq!(stream_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true), old_updated_at);
     }
     #[actix_web::test]
-    async fn test_put_stream_a_with_old0_new1() {
+    async fn test_put_stream_and_tags_a_with_old0_new1() {
         let name1_file = "test_put_stream_a_with_old0_new1.png";
         let path_name1_file = format!("./{}", name1_file);
         png_files::save_file_png(&path_name1_file, 1).unwrap();
@@ -797,17 +793,17 @@ mod tests {
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir.clone();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(put_stream)
-                    .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                    .configure(UserOrmTest::cfg_user_orm(data_u))
-                    .configure(StreamOrmTest::cfg_config_strm(config_strm))
-                    .configure(StreamOrmTest::cfg_stream_orm(streams))
+        let app = test::init_service(
+            App::new().service(put_stream_and_tags)
+                .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
+                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(StreamOrmTest::cfg_config_strm(config_strm))
+                .configure(StreamOrmTest::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
-                .insert_header(StreamCtrlTest::header_auth(&token1))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
+            .insert_header(StreamCtrlTest::header_auth(&token1))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
@@ -816,7 +812,7 @@ mod tests {
         #[rustfmt::skip]
             assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
         let img_name_full_path = stream_dto_res_img.replacen(consts::ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
@@ -838,7 +834,7 @@ mod tests {
         assert_eq!(now_s, date_time2_s);
     }
     #[actix_web::test]
-    async fn test_put_stream_b_with_old0_new1_convert() {
+    async fn test_put_stream_and_tags_b_with_old0_new1_convert() {
         let name1_file = "test_put_stream_b_with_old0_new1_convert.png";
         let path_name1_file = format!("./{}", name1_file);
         png_files::save_file_png(&path_name1_file, 3).unwrap();
@@ -861,7 +857,7 @@ mod tests {
         let strm_logo_files_dir = config_strm.strm_logo_files_dir.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm))
@@ -879,7 +875,7 @@ mod tests {
         #[rustfmt::skip]
             assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
         let img_name_full_path = stream_dto_res_img.replacen(consts::ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let path = path::Path::new(&img_name_full_path);
@@ -904,7 +900,7 @@ mod tests {
         assert_eq!(now_s, date_time2_s);
     }
     #[actix_web::test]
-    async fn test_put_stream_c_with_old1_new1() {
+    async fn test_put_stream_and_tags_c_with_old1_new1() {
         let strm_logo_files_dir = config_strm::get_test_config().strm_logo_files_dir;
 
         let name0_file = "test_put_stream_c_with_old1_new1.png";
@@ -929,7 +925,7 @@ mod tests {
         let stream_id = stream.id;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -950,7 +946,7 @@ mod tests {
         #[rustfmt::skip]
             assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
         let img_name_full_path = stream_dto_res_img.replacen(consts::ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
@@ -973,7 +969,7 @@ mod tests {
         assert_eq!(now_s, date_time2_s);
     }
     #[actix_web::test]
-    async fn test_put_stream_d_with_old1_new0() {
+    async fn test_put_stream_and_tags_d_with_old1_new0() {
         let strm_logo_files_dir = config_strm::get_test_config().strm_logo_files_dir;
 
         let name0_file = "test_put_stream_d_with_old1_new0.png";
@@ -993,7 +989,7 @@ mod tests {
         let stream_id = stream.id;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -1012,14 +1008,14 @@ mod tests {
         #[rustfmt::skip]
             assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
         assert!(stream_dto_res_img.len() > 0);
         assert!(stream_dto_res_img.starts_with(consts::ALIAS_LOGO_FILES_DIR));
         assert_eq!(&path_name0_alias, &stream_dto_res_img);
     }
     #[actix_web::test]
-    async fn test_put_stream_e_with_old1_new_size0() {
+    async fn test_put_stream_and_tags_e_with_old1_new_size0() {
         let strm_logo_files_dir = config_strm::get_test_config().strm_logo_files_dir;
 
         let name0_file = "test_put_stream_e_with_old1_new_size0.png";
@@ -1043,7 +1039,7 @@ mod tests {
         let stream_id = stream.id;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -1063,11 +1059,11 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert!(stream_dto_res.logo.is_none());
     }
     #[actix_web::test]
-    async fn test_put_stream_f_with_old0_new_size0() {
+    async fn test_put_stream_and_tags_f_with_old0_new_size0() {
         let name1_file = "test_put_stream_f_with_old0_new_size0.png";
         let path_name1_file = format!("./{}", name1_file);
         png_files::save_empty_file(&path_name1_file).unwrap();
@@ -1082,7 +1078,7 @@ mod tests {
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_stream)
+            App::new().service(put_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
@@ -1098,7 +1094,7 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert!(stream_dto_res.logo.is_none());
     }
 
@@ -1369,7 +1365,7 @@ mod tests {
             #[rustfmt::skip]
             assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
             let body = body::to_bytes(resp.into_body()).await.unwrap();
-            let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+            let stream_dto_res: StreamAndTagsDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
             assert_eq!(stream_dto_res.id, stream_id);
             assert_eq!(stream_dto_res.user_id, stream_user_id);
             assert_eq!(stream_dto_res.state, new_state);
