@@ -26,9 +26,14 @@ use crate::chat_message_orm::impls::ChatMessageOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
-    chat_message::BlockUser, chat_message_models::{
-        BlockedUser, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto, SortingBlockedUsersDto
-    }, chat_message_orm::ChatMessageOrm, chat_ws_server::ChatWsServer
+    chat_message::BlockUser,
+    chat_message_models::{
+        BlockedUser, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser,
+        CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX,
+        ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto, SortingBlockedUsersDto,
+    },
+    chat_message_orm::ChatMessageOrm,
+    chat_ws_server::ChatWsServer,
 };
 
 // 403 Access denied - insufficient user rights.
@@ -219,7 +224,7 @@ pub async fn get_chat_message(
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    let chat_messages = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+    let chat_messages = res_data?;
     let chat_message_dto_list: Vec<ChatMessageDto> = chat_messages.iter()
         .map(|ch_msg| ChatMessageDto::from(ch_msg.clone()))
         .collect();
@@ -668,7 +673,6 @@ pub async fn delete_chat_message(
 }
 
 // ** Section: BlockedUsers **
-
 
 /// get_blocked_users_names
 ///
