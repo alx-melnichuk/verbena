@@ -37,15 +37,14 @@ use vrb_streams::{stream_controller, stream_models};
         profile_controller::delete_profile,
         profile_controller::delete_profile_current,
         //
-        stream_controller::get_stream_by_id,
-        stream_controller::get_streams,
+        stream_controller::get_stream_and_tags_by_id,
+        stream_controller::get_stream_and_tags,
         stream_controller::get_stream_config,
-        stream_controller::get_streams_events,
-        stream_controller::get_streams_period,
-        stream_controller::post_stream,
+        stream_controller::get_streams_calendar,
+        stream_controller::post_stream_and_tags,
         stream_controller::put_toggle_state,
-        stream_controller::put_stream,
-        stream_controller::delete_stream,
+        stream_controller::put_stream_and_tags,
+        stream_controller::delete_stream_and_tags,
         //
         chat_message_controller::get_chat_message,
         chat_message_controller::post_chat_message,
@@ -85,34 +84,34 @@ use vrb_streams::{stream_controller, stream_models};
             // ::get_profile_by_id, ::get_profile_current, ::put_profile, ::put_profile_new_password,
             // ::delete_profile, ::delete_profile_current
             profile_models::UserProfileDto,
-            profile_models::UserProfileMiniDto,        // ::get_profile_mini_by_id
-            profile_models::ProfileConfigDto,          // ::get_profile_config
-            profile_models::ModifyUserProfileDto,      // ::put_profile,
-            profile_models::NewPasswordUserProfileDto, // ::put_profile_new_password,
+            profile_models::UserProfileMiniDto,         // ::get_profile_mini_by_id
+            profile_models::ProfileConfigDto,           // ::get_profile_config
+            profile_models::ModifyUserProfileDto,       // ::put_profile,
+            profile_models::NewPasswordUserProfileDto,  // ::put_profile_new_password,
 
             // stream_controller
             enm_stream_state::StreamState,
-            // ::get_stream_by_id, ::post_stream, ::put_stream, ::put_toggle_state
-            stream_models::StreamInfoDto,
-            stream_models::SearchStreamInfoDto,   // ::get_streams
-            stream_models::StreamInfoPageDto,     // ::get_streams
-            stream_models::StreamConfigDto,       // ::get_stream_config
-            stream_models::SearchStreamEventDto,  // ::get_streams_events
-            stream_models::StreamEventPageDto,    // ::get_streams_events
-            stream_models::SearchStreamPeriodDto, // ::get_streams_period
-            stream_models::CreateStreamInfoDto,   // ::post_stream
-            stream_models::ModifyStreamInfoDto,   // ::put_stream
-            stream_models::ToggleStreamStateDto,  // ::put_toggle_state
+            // ::get_stream_and_tags_by_id, ::post_stream_and_tags, ::put_stream_and_tags, ::put_toggle_state
+            stream_models::StreamAndTagsDto,           // ::get_stream_and_tags
+            stream_models::SearchStreamAndTagsDto,     // ::get_stream_and_tags
+            stream_models::PageStreamAndTagsDto,       // ::get_stream_and_tags
+            stream_models::StreamConfigDto,            // ::get_stream_config
+            stream_models::SearchStreamDateDto,        // ::get_streams_calendar
+            stream_models::SearchStreamTagDto,         // ::get_stream_popural_tags
+            stream_models::PageStreamTagDto,           // ::get_stream_popural_tags
+            stream_models::CreateStreamAndTagsDto,     // ::post_stream_and_tags
+            stream_models::ModifyStreamAndTagsDto,     // ::put_stream_and_tags
+            stream_models::ToggleStreamStateDto,       // ::put_toggle_state
 
             // chat_message_controller
             // ::get_chat_message, ::post_chat_message, ::put_chat_message, ::delete_chat_message
             chat_message_models::ChatMessageDto,
-            chat_message_models::SearchChatMessageDto, // ::get_chat_message
-            chat_message_models::CreateChatMessageDto, // ::post_chat_message
-            chat_message_models::ModifyChatMessageDto, // ::put_chat_message
-            chat_message_models::BlockedUserDto,       // ::get_blocked_users, ::post_blocked_user, ::delete_blocked_user
-            chat_message_models::CreateBlockedUserDto, // ::post_blocked_user
-            chat_message_models::DeleteBlockedUserDto, // ::delete_blocked_user
+            chat_message_models::SearchChatMessageDto,  // ::get_chat_message
+            chat_message_models::CreateChatMessageDto,  // ::post_chat_message
+            chat_message_models::ModifyChatMessageDto,  // ::put_chat_message
+            chat_message_models::BlockedUserDto,        // ::get_blocked_users, ::post_blocked_user, ::delete_blocked_user
+            chat_message_models::CreateBlockedUserDto,  // ::post_blocked_user
+            chat_message_models::DeleteBlockedUserDto,  // ::delete_blocked_user
 
             // chat_ws_controller
             chat_event_ws::BlockEWS,   // ::get_ws_chat
