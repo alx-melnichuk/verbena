@@ -107,10 +107,12 @@ export const appConfig: ApplicationConfig = {
                 if (environment.logLevel > 0) { console.log(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...`); }
                 return userSrv.getCurrentUser()
                     .then((response: UserDto | HttpErrorResponse | undefined) => {
+                        const user = response as UserDto;
                         if (environment.logLevel > 0) {
-                            console.log(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...Ok user:`, { ...response });
+                            console.log(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...Ok`
+                                + ` user.id: ${user.id}, user.nickname: ${user.nickname} `);
                         }
-                        sessionSrv.setUser(response as UserDto);
+                        sessionSrv.setUser(user);
                         return Promise.resolve();
                     })
                     .catch((err: HttpErrorResponse) => {
