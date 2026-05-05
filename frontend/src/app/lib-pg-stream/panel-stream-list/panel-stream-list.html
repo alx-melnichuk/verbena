@@ -1,15 +1,15 @@
 @if (clndIsLoading || evntIsLoading || strmFtrIsLoading || strmPstIsLoading) {
   <app-spinner isFillParent></app-spinner>
-}    
-<div class="psl-container psl-pn2-bg global-scroll">
-    
+}
+<div class="psl-container app-pn-bg">
+
   <div class="psl-my-calendar">
     <div class="psl-calendar-box psl-border">
       <div class="psl-title">
         <span>{{ 'panel-stream-list.my_calendar' | translate }}</span>
       </div>
       <app-panel-stream-calendar
-        [locale]="localeSrv.getLocale()"
+        [locale]="locale"
         [markedDates]="clndMarkedDates"
         [minDate]="clndMinDate"
         [maxDate]="clndMaxDate"
@@ -24,11 +24,12 @@
     <div class="psl-events-box psl-border">
       <div [ngClass]="{ 'psl-event-label': true, 'psl-heavier': isShowEvents(clndDaySelected, calendarMonth) }">
         <span>
-          {{ clndDaySelected | dateTimeFormat:localeSrv.getLocale():formatDate }}
+          {{ clndDaySelected | dateTimeFormat:locale:formatDate }}
         </span>
       </div>
-      <app-view-huge-list class="psl-event-list"
-        [deletedId]="evntDeletedId"  
+      <app-view-list-by-pages class="psl-event-list"
+        containerClass="global-scroll"
+        [deletedId]="evntDeletedId"
         [isReset]="evntIsReset"
         [itemPage]="evntItemPage"
         [maxSizeRows]="evntMaxSizeRows"
@@ -36,19 +37,19 @@
         <ng-template let-streamDto="item">
           <app-panel-stream-event psl-mb-1
             [canEdit]="true"
-            [locale]="localeSrv.getLocale()"
+            [locale]="locale"
             [streamDto]="streamDto"
             (editStream)="doActionEdit($event)">
           </app-panel-stream-event>
         </ng-template>
-      </app-view-huge-list>
+      </app-view-list-by-pages>
     </div>
   </div>
 
   <div class="psl-indent"></div>
 
   <div class="psl-my-streams">
-    
+
     <div class="psl-stream-box psl-border">
       <div class="psl-lbl-future">
         <span class="psl-title">{{ 'panel-stream-list.my_future_streams' | translate }}</span>
@@ -62,10 +63,10 @@
           </button>
         </div>
       </div>
-      <app-view-huge-list class="psl-stream-future"
-        [deletedId]="strmFtrDeletedId"  
+      <app-view-list-by-pages class="psl-stream-future psl-logo_" vlbp-col-rev
+        containerClass="global-scroll"
+        [deletedId]="strmFtrDeletedId"
         [isReset]="strmFtrIsReset"
-        [isReverse]="true"
         [itemPage]="strmFtrItemPage"
         [maxSizeRows]="strmMaxSizeRows"
         (loadPage)="doLoadFuturePage($event)">
@@ -73,7 +74,7 @@
           <app-panel-stream-info psl-mb-1
             [canDuplicate]="true"
             [canDelete]="true"
-            [locale]="localeSrv.getLocale()"
+            [locale]="locale"
             [streamDto]="streamDto"
             (actionDuplicate)="doActionDuplicate($event)"
             (actionEdit)="doActionEdit($event)"
@@ -81,7 +82,7 @@
             (actionDelete)="doActionDelete(true, $event)">
           </app-panel-stream-info>
         </ng-template>
-      </app-view-huge-list>
+      </app-view-list-by-pages>
     </div>
 
     <div class="psl-indent"></div>
@@ -90,7 +91,8 @@
       <div>
         <span class="psl-title">{{ 'panel-stream-list.my_past_streams' | translate }}</span>
       </div>
-      <app-view-huge-list hg100 class="psl-stream-past"
+      <app-view-list-by-pages hg100 class="psl-stream-past psl-logo"
+        containerClass="global-scroll"
         [deletedId]="strmPstDeletedId"
         [isReset]="strmPstIsReset"
         [itemPage]="strmPstItemPage"
@@ -100,14 +102,14 @@
           <app-panel-stream-info psl-mb-1
             [canDuplicate]="true"
             [canDelete]="true"
-            [locale]="localeSrv.getLocale()"
+            [locale]="locale"
             [streamDto]="streamDto"
             (actionDuplicate)="doActionDuplicate($event)"
             (actionView)="doActionView($event)"
             (actionDelete)="doActionDelete(false, $event)">
           </app-panel-stream-info>
         </ng-template>
-      </app-view-huge-list>
+      </app-view-list-by-pages>
     </div>
 
     <div class="psl-indent"></div>

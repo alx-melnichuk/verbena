@@ -1,40 +1,28 @@
 /*# sourceURL=panel-stream-list.scss */
 
 app-panel-stream-list {
-    --psl-pn-bg-h: 210;
-    ---sl-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
-    ---sl-brd-pd: 2px;
-    ---sl-clnd-mn-wd: calc(17 * var(--mat-datepicker-calendar-text-size) + 2 * var(---sl-brd-pd));
+    --app-pn-bg-h: 220; // hsl(220, 50%, 50%);
+    --app-pn-brd-l: 40%;
+    ---psl-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
+    ---psl-brd-pd: 2px;
+    ---psl-clnd-mn-wd: calc(17 * var(--mat-datepicker-calendar-text-size) + 2 * var(---psl-brd-pd));
 
     container: cnt-stream-list / inline-size;
     display: block;
     height: 100%;
-    overflow-y: auto;
 
     [psl-mb-1] {
         margin-bottom: 0.25rem;
-    }
-
-    @supports (color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
-        .psl-pn2-bg {
-            --psc-pn2-brd: color-mix(in srgb, hsl(var(--psl-pn-bg-h), 50%, 50%) 65%, var(--mat-sys-surface));
-        }
-    }
-
-    @supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
-        .psl-pn2-bg {
-            --psc-pn2-brd: hsla(var(--psl-pn-bg-h), 50%, 50%, 65%);
-        }
     }
 
     @container cnt-stream-list (width < 37.5rem) {
 
         // width < 600px
         .psl-container {
-            ---sl-cont-fl-dr: column;
-            ---sl-my-clndr-wd: 100%;
-            ---sl-my-strms-wd: 100%;
-            ---sl-evnt-ls-hg: 22rem;
+            ---psl-cont-fl-dr: column;
+            ---psl-my-clndr-wd: 100%;
+            ---psl-my-strms-wd: 100%;
+            ---psl-evnt-ls-hg: 22rem;
         }
     }
 
@@ -42,10 +30,10 @@ app-panel-stream-list {
 
         // width < 896px
         .psl-container {
-            ---sl-cont-fl-dr: column;
-            ---sl-my-clndr-wd: 100%;
-            ---sl-my-strms-wd: 100%;
-            ---sl-my-clndr-fl-dr: row;
+            ---psl-cont-fl-dr: column;
+            ---psl-my-clndr-wd: 100%;
+            ---psl-my-strms-wd: 100%;
+            ---psl-my-clndr-fl-dr: row;
         }
 
         .psl-my-calendar {
@@ -57,8 +45,8 @@ app-panel-stream-list {
 
         // 896px <= width
         .psl-container {
-            ---sl-my-clndr-wd: calc(0.3333 * min(100vw, 1280px) - 67.965px); // 1050px: 283.50px; 1080px: 291.59px;
-            ---sl-my-strms-wd: calc(100vw - max(var(---sl-my-clndr-wd), var(---sl-clnd-mn-wd)) - 3 * var(---sl-pd));
+            ---psl-my-clndr-wd: calc(0.3333 * min(100vw, 1280px) - 67.965px); // 1050px: 283.50px; 1080px: 291.59px;
+            ---psl-my-strms-wd: calc(100vw - max(var(---psl-my-clndr-wd), var(---psl-clnd-mn-wd)) - 3 * var(---psl-pd));
         }
 
         .psl-my-calendar {
@@ -69,23 +57,28 @@ app-panel-stream-list {
     .psl-container {
         box-sizing: border-box;
         display: flex;
-        flex-direction: var(---sl-cont-fl-dr, row);
+        flex-direction: var(---psl-cont-fl-dr, row);
         height: 100%;
-        padding: var(---sl-pd);
+        justify-content: center;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 80rem;
+        padding: var(---psl-pd) 0;
     }
 
     // ** "indent" **
     .psl-indent {
         flex-shrink: 0;
-        height: var(---sl-pd);
-        width: var(---sl-pd);
+        height: var(---psl-pd);
+        width: var(---psl-pd);
     }
 
     // ** border **
     .psl-border {
-        border: 1px solid var(--psc-pn2-brd);
-        border-radius: 1rem 1rem 0.5rem 1rem;
+        border: 2px solid var(--app-pn-brd);
+        border-radius: 1rem;
         box-sizing: border-box;
+        box-shadow: var(--psl-pn-sh, 0px 1px 2px 1px rgba(0, 0, 0, 0.25));
     }
 
     // ** title **
@@ -100,16 +93,15 @@ app-panel-stream-list {
     .psl-my-calendar {
         display: flex;
         flex-shrink: 0;
-        flex-direction: var(---sl-my-clndr-fl-dr, column);
-        min-width: var(---sl-clnd-mn-wd);
-        width: var(---sl-my-clndr-wd);
+        flex-direction: var(---psl-my-clndr-fl-dr, column);
+        min-width: var(---psl-clnd-mn-wd);
+        width: var(---psl-my-clndr-wd);
     }
 
     .psl-calendar-box {
         display: flex;
-        // flex: 0 0 auto;
         flex-direction: column; // option!
-        padding: var(---sl-brd-pd);
+        padding: var(---psl-brd-pd);
     }
 
     // ** event list **  
@@ -117,7 +109,7 @@ app-panel-stream-list {
         display: flex;
         flex-grow: 1;
         flex-direction: column;
-        padding: var(---sl-brd-pd);
+        padding: var(---psl-brd-pd);
         overflow-y: hidden;
     }
 
@@ -134,7 +126,7 @@ app-panel-stream-list {
     }
 
     .psl-event-list {
-        height: var(---sl-evnt-ls-hg, calc(100% - 3rem));
+        height: var(---psl-evnt-ls-hg, calc(100% - 3rem));
     }
 
     // ** "My Streams" **
@@ -142,7 +134,7 @@ app-panel-stream-list {
         box-sizing: border-box;
         display: flex;
         flex-grow: 1;
-        width: var(---sl-my-strms-wd);
+        width: var(---psl-my-strms-wd);
         max-width: 43rem;
         flex-direction: column;
         height: 100%;
@@ -152,7 +144,13 @@ app-panel-stream-list {
         display: flex;
         flex-direction: column;
         flex: 0 0 auto;
-        height: max(calc((100% - var(---sl-pd)) / 2), 17rem);
+        height: max(calc((100% - var(---psl-pd)) / 2), 17rem);
+        padding: var(---psl-brd-pd);
+    }
+
+    .psl-logo {
+        --psi-logo-wd: calc(var(---psl-pd) * 4);
+        --psi-logo-hg: calc(var(---psl-pd) * 3);
     }
 
     .psl-lbl-future {

@@ -6,9 +6,8 @@ import { MatButtonModule } from "@angular/material/button";
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe, TranslateService } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
-import { LocaleSrv } from "../../common/locale-srv";
 import { Spinner } from "../../components/spinner/spinner";
-import { ViewHugeList, ItemViewPage } from "../../components/view-huge-list/view-huge-list";
+import { ViewListByPages, ItemViewPage } from "../../components/view-list-by-pages/view-list-by-pages";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { StreamsPeriodDto } from "../../lib-stream/stream-dto";
 import { DateUtil } from "../../utils/date.utils";
@@ -23,7 +22,7 @@ const CN_DEFAULT_LIMIT = 10;
     exportAs: "appPanelStreamList",
     standalone: true,
     imports: [CommonModule, TranslatePipe, MatButtonModule, MatTooltipModule, Spinner, DateTimeFormatPipe,
-        PanelStreamCalendar, PanelStreamEvent, PanelStreamInfo, ViewHugeList,
+        PanelStreamCalendar, PanelStreamEvent, PanelStreamInfo, ViewListByPages,
     ],
     templateUrl: "./panel-stream-list.html",
     styleUrl: "./panel-stream-list.scss",
@@ -32,19 +31,18 @@ const CN_DEFAULT_LIMIT = 10;
 })
 export class PanelStreamList implements OnChanges {
     private dialogSrv: DialogSrv = inject(DialogSrv);
-    public localeSrv: LocaleSrv = inject(LocaleSrv);
     private translateService: TranslateService = inject(TranslateService);
 
     @Input()
-    public clndDaySelected: Date | null = null;
+    public clndDaySelected: Date | null | undefined;
     @Input()
     public clndIsLoading: boolean | null | undefined;
     @Input()
     public clndMarkedDates: StreamsPeriodDto[] = [];
     @Input()
-    public clndMaxDate: Date | null = null;
+    public clndMaxDate: Date | null | undefined;
     @Input()
-    public clndMinDate: Date | null = null;
+    public clndMinDate: Date | null | undefined;
 
     @Input()
     public strmMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
@@ -75,6 +73,9 @@ export class PanelStreamList implements OnChanges {
     public evntIsReset: boolean | null | undefined;
     @Input()
     public evntItemPage: ItemViewPage | null | undefined;
+
+    @Input()
+    public locale: string | null | undefined;
 
     @Output()
     readonly calendarForPeriod: EventEmitter<Date> = new EventEmitter();
@@ -120,12 +121,12 @@ export class PanelStreamList implements OnChanges {
 
     // ** "Streams Event" panel-stream-event **
 
-    public isShowEvents(clndDaySelected: Date | null, calendarMonth: Date): boolean {
+    public isShowEvents(clndDaySelected: Date | null | undefined, calendarMonth: Date): boolean {
         return !!clndDaySelected ? DateUtil.compareYearMonth(clndDaySelected, calendarMonth) == 0 : false;
     }
 
     public doLoadEventDatePage(selectedDate: Date | null, data: { page: number, limit: number } | null): void {
-        this.loadEventDatePage.emit({ date: selectedDate, page: (data?.page || 1), limit: (data?.limit || -1) });
+        this.loadEventDatePage.emit({ date: selectedDate, page: (data?.page || 0), limit: (data?.limit || -1) });
     }
 
     // ** "Future Stream" and "Past Stream" panel-stream-info **
