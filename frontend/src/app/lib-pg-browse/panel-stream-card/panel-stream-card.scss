@@ -1,0 +1,68 @@
+/*# sourceURL=panel-stream-card.scss */
+
+app-panel-stream-card {
+    --app-pn-bg-h: 225; // hsl(225, 50%, 50%);
+    ---psc-pd: var(--psc-pd, 0.75rem);
+    ---psc-brd-rd: var(--psc-brd-rd, 0.75rem);
+    ---psc-img-hg: var(--psc-img-hg, 14rem);
+
+    background-color: var(--app-pn-bg);
+    background-image: var(--app-pn-bg-img);
+    border: 1px solid var(--app-pn-brd);
+    border-radius: var(---psc-brd-rd, inherit);
+    box-shadow: var(--psc-pn-sh, 0px 1px 4px 1px rgba(0, 0, 0, 0.25));
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: var(--psc-hg, min-content);
+    min-width: 17rem;
+    max-width: 19.4rem;
+    flex: 1 1 auto;
+
+    .psc-header {
+        padding: var(---psc-pd) var(---psc-pd) 0 var(---psc-pd);
+        height: var(--psc-hdr-hg, 2.8rem);
+        font-weight: var(--psc-hdr-fn-wg, 500);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+    }
+
+    .psc-logo-wrap {
+        padding: calc(var(---psc-pd) - 0.3rem);
+    }
+
+    .psc-logo {
+        border-radius: var(---psc-brd-rd);
+        height: var(---psc-img-hg);
+        width: 100%;
+    }
+
+    .psc-content {
+        padding: 0 1rem 1rem 1rem;
+    }
+
+    .psc-descript {
+        height: var(--psc-dsc-hg, 4.5rem);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+    }
+
+    .psc-starttime {
+        margin-top: 0.5rem;
+    }
+
+    .psc-tags {
+        font-size: calc(1rem - 2px);
+        height: 2.625rem;
+    }
+
+    .psc-active {
+        font-weight: 700;
+    }
+}

@@ -1,0 +1,24 @@
+@if (!!stream) {
+  <header class="psc-header">
+    {{ stream.title }}
+  </header>
+
+  <a href="javascript:void(0);"  class="psc-logo-wrap" (click)="doActionView(stream.id)">
+    <app-image i-shd class="psc-logo" [srcImg]="stream.logo"></app-image>
+  </a>
+
+  <section class="psc-content">
+    <div class="psc-descript">
+      {{ stream.descript }}
+    </div>
+    
+    <div class="psc-tags">
+      @for (tag of stream.tags; track tag) {
+        <span [ngClass]="{`psc-active`: tag == activeTag}">#{{ tag }}</span>&nbsp;
+      }
+    </div>
+    <div class="psc-starttime">
+      {{ stream.starttime | dateTimeFormat:locale:formatDateTime }}
+    </div>
+  </section>
+}
