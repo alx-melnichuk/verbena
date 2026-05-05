@@ -1,10 +1,10 @@
 <mat-calendar #calendar class="app-pn-bg psc-pn2-bg"
   [dateClass]="dateClassFn"
   [headerComponent]="calendarHeader"
-  [maxDate]="maxDate"
-  [minDate]="minDate"
+  [maxDate]="maxDate || null"
+  [minDate]="minDate || null"
   [startAt]="selected || startAtDate"
-  [selected]="selected"
+  [selected]="selected || null"
   [startView]="'month'"
   (selectedChange)="doChangeSelected($event)"
   (viewChanged)="doViewChanged($event)">

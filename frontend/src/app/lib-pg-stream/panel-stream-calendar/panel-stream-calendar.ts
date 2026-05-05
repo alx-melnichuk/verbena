@@ -25,15 +25,15 @@ type MarkedDatesMapTp = { [key: string]: number };
 })
 export class PanelStreamCalendar implements OnChanges {
     @Input()
-    public locale: string | null = null;
+    public locale: string | null | undefined;
     @Input()
     public markedDates: StreamsPeriodDto[] = [];
     @Input()
-    public minDate: Date | null = null;
+    public minDate: Date | null | undefined;
     @Input()
-    public maxDate: Date | null = null;
+    public maxDate: Date | null | undefined;
     @Input()
-    public selected: Date | null = null;
+    public selected: Date | null | undefined;
 
     @Output()
     readonly changeSelected: EventEmitter<Date | null> = new EventEmitter();
@@ -41,7 +41,7 @@ export class PanelStreamCalendar implements OnChanges {
     readonly changeCalendar: EventEmitter<Date> = new EventEmitter();
 
     @ViewChild("calendar")
-    public calendar: MatCalendar<Date> | null = null;
+    public calendar: MatCalendar<Date> | null | undefined;
 
     public startAtDate: Date = new Date(new Date(Date.now()).setHours(0, 0, 0, 0));
 
