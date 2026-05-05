@@ -4,10 +4,10 @@ import { ResolveFn, ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular
 import { P_BROWSE_ID, E_BROWSE_VIEW } from "../../common/routes";
 import { SessionSrv } from "../../common/session-srv";
 import { ChatMessageSrv } from "../../lib-chat/chat-message-srv";
-import { StreamDto } from "../../lib-pg-stream/stream-dto";
-import { StreamSrv } from "../../lib-pg-stream/stream-srv";
-import { UserSrv } from "../../lib-user/user-srv";
+import { StreamDto } from "../../lib-stream/stream-dto";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 import { UserShortDto } from "../../lib-user/user-dto";
+import { UserSrv } from "../../lib-user/user-srv";
 
 export interface BrowseStream {
     streamDto: StreamDto;
@@ -36,7 +36,6 @@ export const pgBrowseStreamResolver: ResolveFn<BrowseStream | HttpErrorResponse 
                 .then((response: StreamDto | HttpErrorResponse | undefined) => {
                     const streamDto: StreamDto = (response as StreamDto);
                     const blockedNames: string[] = [];
-
                     const buffPromise: Promise<unknown>[] = [];
                     // Get a mini profile of the stream owner.
                     buffPromise.push(userSrv.getUserShort(streamDto.userId));
