@@ -21,6 +21,8 @@
   [evntIsReset]="evntIsReset"
   [evntItemPage]="evntItemPage"
 
+  [locale]="localeSrv.getLocale()"
+
   (calendarForPeriod)="doCalendarForPeriod($event, userId)"
   (loadFuturePage)="doLoadFuturePage($event.page, $event.limit)"
   (loadPastPage)="doLoadPastPage($event.page, $event.limit)"

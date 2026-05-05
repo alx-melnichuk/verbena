@@ -2,12 +2,12 @@ import { CommonModule } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, ViewEncapsulation } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
-import { PageInfo, PageInfoUtil } from "../../common/page-info";
+import { LocaleSrv } from "../../common/locale-srv";
 import { SessionSrv } from "../../common/session-srv";
 import { StringDateTime } from "../../common/string-date-time";
-import { ItemView, ItemViewPage } from "../../components/view-huge-list/view-huge-list";
+import { ItemView, ItemViewPage } from "../../components/view-list-by-pages/view-list-by-pages";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
-import { StreamsPeriodDto, StreamDto, PageStreamAndTagsDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
+import { StreamsPeriodDto, PageStreamAndTagsDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
 import { StreamSrv } from "../../lib-stream/stream-srv";
 import { DateUtil } from "../../utils/date.utils";
 import { HttpErrorUtil } from "../../utils/http-error.util";
@@ -34,6 +34,7 @@ export class PgStreamList implements OnInit {
     private translateService: TranslateService = inject(TranslateService);
     private alertSrv: AlertSrv = inject(AlertSrv);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    public localeSrv: LocaleSrv = inject(LocaleSrv);
     private sessionSrv: SessionSrv = inject(SessionSrv);
     private streamSrv: StreamSrv = inject(StreamSrv);
 
@@ -62,12 +63,15 @@ export class PgStreamList implements OnInit {
     public evntDeletedId: number | null | undefined;
     public evntIsLoading: boolean = false;
     public evntIsReset: boolean = false;
-    public evntItemPage: ItemViewPage = { list: [], page: 0, pages: 0, limit: 0 };
+    public evntItemPage: ItemViewPage = { list: [], page: 0, limit: 0 };
     public evntDate: Date;
 
     public userId: number = this.sessionSrv.getUser()?.id || -1;
 
-    private streamSearchDate: Date = new Date();
+    private strmSearchDate: Date = new Date();
+    private strmFtrPages: number = 0;
+    private strmPstPages: number = 0;
+    private evntPages: number = 0;
 
     constructor() {
         const today = new Date();
@@ -103,10 +107,10 @@ export class PgStreamList implements OnInit {
 
         if (DateUtil.compareYearMonth(calendarStart, this.evntDate) == 0) {
             // Get the first page of short streams for the selected date.
-            arrayOfPromises.push(this.doLoadEventDatePage(this.evntDate, 1, -1, userId));
+            arrayOfPromises.push(this.doLoadEventDatePage(this.evntDate, 0, -1, userId));
         } else {
             this.evntIsReset = true;
-            this.evntItemPage = { list: [], page: 1, pages: 0, limit: EVNT_LIMIT_DEF };
+            this.evntItemPage = { list: [], page: 1, limit: EVNT_LIMIT_DEF };
         }
 
         return Promise.all(arrayOfPromises)
@@ -119,17 +123,24 @@ export class PgStreamList implements OnInit {
             .finally(() => this.changeDetector.markForCheck());
     }
     // ** "Streams Event" panel-stream-event **
-    public doLoadEventDatePage(date: Date | null, page: number, limit1: number, userId: number): Promise<void> {
+    public doLoadEventDatePage(date: Date | null, page1: number, limit1: number, userId: number): Promise<void> {
+        if (limit1 > 1 && page1 > 0 && this.evntPages > 0 && page1 > this.evntPages) {
+            return Promise.resolve();
+        }
         const dateStart: Date = new Date(date || this.evntDate);
         dateStart.setHours(0, 0, 0, 0);
+        this.evntIsReset = page1 < 1;
+        const page = page1 > 0 ? page1 : 1;
         const limit = limit1 > 0 ? limit1 : EVNT_LIMIT_DEF;
-        this.evntIsReset = !!date;
         this.evntIsLoading = true;
         return this.streamSrv.getStreamsByDate(userId, dateStart, page, limit)
             .then((response: PageStreamAndTagsDto | HttpErrorResponse | undefined) => {
                 this.evntDate = dateStart;
                 const streams = (response as PageStreamAndTagsDto);
-                this.evntItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, pages: streams.pages, limit };
+                this.evntItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, limit };
+                if (limit1 > 1) {
+                    this.evntPages = streams.pages;
+                }
             })
             .catch((err: HttpErrorResponse) => {
                 const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
@@ -143,14 +154,21 @@ export class PgStreamList implements OnInit {
 
     }
     // ** "Future Stream" and "Past Stream" panel-stream-info **
-    public doLoadFuturePage(page: number, limit1: number): Promise<void> {
+    public doLoadFuturePage(page1: number, limit1: number): Promise<void> {
+        if (limit1 > 1 && page1 > 0 && this.strmFtrPages > 0 && page1 > this.strmFtrPages) {
+            return Promise.resolve();
+        }
+        this.strmFtrIsReset = page1 < 1;
+        const page = page1 > 0 ? page1 : 1;
         const limit = limit1 > 0 ? limit1 : STRM_LIMIT_DEF;
-        this.strmFtrIsReset = false;
         this.strmFtrIsLoading = true;
-        return this.streamSrv.getFutureStreamsByPage(this.userId, this.streamSearchDate, page, limit)
+        return this.streamSrv.getFutureStreamsByPage(this.userId, this.strmSearchDate, page, limit)
             .then((response: PageStreamAndTagsDto | HttpErrorResponse | undefined) => {
                 const streams = (response as PageStreamAndTagsDto);
-                this.strmFtrItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, pages: streams.pages, limit };
+                this.strmFtrItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, limit };
+                if (limit1 > 1) {
+                    this.strmFtrPages = streams.pages;
+                }
             })
             .catch((err: HttpErrorResponse) => {
                 const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
@@ -163,14 +181,21 @@ export class PgStreamList implements OnInit {
             });
     }
 
-    public doLoadPastPage(page: number, limit1: number): Promise<void> {
+    public doLoadPastPage(page1: number, limit1: number): Promise<void> {
+        if (limit1 > 1 && page1 > 0 && this.strmPstPages > 0 && page1 > this.strmPstPages) {
+            return Promise.resolve();
+        }
+        this.strmPstIsReset = page1 < 1;
+        const page = page1 > 0 ? page1 : 1;
         const limit = limit1 > 0 ? limit1 : STRM_LIMIT_DEF;
-        this.strmPstIsReset = false;
         this.strmPstIsLoading = true;
-        return this.streamSrv.getPastStreamsByPage(this.userId, this.streamSearchDate, page, limit)
+        return this.streamSrv.getPastStreamsByPage(this.userId, this.strmSearchDate, page, limit)
             .then((response: PageStreamAndTagsDto | HttpErrorResponse | undefined) => {
                 const streams = (response as PageStreamAndTagsDto);
-                this.strmPstItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, pages: streams.pages, limit };
+                this.strmPstItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, limit };
+                if (limit1 > 1) {
+                    this.strmPstPages = streams.pages;
+                }
             })
             .catch((err: HttpErrorResponse) => {
                 const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
@@ -238,13 +263,13 @@ export class PgStreamList implements OnInit {
     private loadFutureAndPastStreamsAndSchedule(): void {
         const arrayOfPromises: Promise<unknown>[] = [];
 
-        this.streamSearchDate = new Date();
+        this.strmSearchDate = new Date();
 
         // Get the first page of "Future Stream".
-        arrayOfPromises.push(this.doLoadFuturePage(1, 0));
+        arrayOfPromises.push(this.doLoadFuturePage(0, 0));
 
         // Get the first page of "Past Stream".
-        arrayOfPromises.push(this.doLoadPastPage(1, 0));
+        arrayOfPromises.push(this.doLoadPastPage(0, 0));
 
         const calendarStart = new Date();
         // Get a list of events (streams) for a specified date.
@@ -253,8 +278,6 @@ export class PgStreamList implements OnInit {
         this.changeDetector.markForCheck();
         Promise.all(arrayOfPromises)
             .finally(() => {
-                this.strmFtrIsReset = true;
-                this.strmPstIsReset = true;
                 this.changeDetector.markForCheck();
             });
     }
