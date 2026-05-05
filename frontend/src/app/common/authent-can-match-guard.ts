@@ -14,7 +14,7 @@ export const authentCanMatchGuard: CanActivateFn = (
     const sessionSrv: SessionSrv = inject(SessionSrv);
 
     if (environment.logLevel > 0) {
-        console.log(`authentCanMatchGuard() !!sessionSrv.getUser(): ${!!sessionSrv.getUser()}, user.id: ${sessionSrv.getUser()?.id}`);
+        console.info(`authentCanMatchGuard() !!sessionSrv.getUser(): ${!!sessionSrv.getUser()}, user.id: ${sessionSrv.getUser()?.id}`);
     }
     if (!!sessionSrv.getUser()) {
         return true;

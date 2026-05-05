@@ -60,7 +60,7 @@ export class TimeTracking implements OnChanges, OnDestroy {
 
     constructor() {
         // Effect for logging state changes (useful for debugging)
-        // effect(() => { console.log(`this.timeValue: ${this.timeValue()}`); });
+        // effect(() => { console.info(`this.timeValue: ${this.timeValue()}`); });
     }
 
     ngOnChanges(changes: SimpleChanges): void {

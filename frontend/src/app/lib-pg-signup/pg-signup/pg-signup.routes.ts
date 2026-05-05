@@ -8,7 +8,7 @@ import { pgSignupTranslateResolver } from "./pg-signup-translate.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibSignupHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.log(`translateLibSignupHttpLoaderFactory()`); }
+    if (environment.logLevel > 0) { console.info(`translateLibSignupHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-signup/i18n/", ".json");
 };
 

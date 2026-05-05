@@ -16,7 +16,7 @@ import { pgAccessTokenResolver } from "./pg-access-token.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibBrowseHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.log(`translateLibBrowseHttpLoaderFactory()`); }
+    if (environment.logLevel > 0) { console.info(`translateLibBrowseHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-browse/i18n/", ".json");
 };
 

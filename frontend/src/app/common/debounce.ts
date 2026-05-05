@@ -14,7 +14,7 @@ export class Debounce {
 }
 
 //   const handlerChange = debounceFn((event) => handlerInput(event), 200);
-//   function handlerInput(event) { console.log(event.target.value); }
+//   function handlerInput(event) { console.info(event.target.value); }
 //   <input (input)="handlerChange($event)" />
 
 export type CallbackDebounceFnType = (...arg0: any) => void;

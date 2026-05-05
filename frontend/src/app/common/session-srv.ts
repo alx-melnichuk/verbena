@@ -36,7 +36,7 @@ export class SessionSrv {
     private user: User | null = null;
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`SessionSrv(); // 2 service`); }
+        if (environment.logLevel > 0) { console.info(`SessionSrv(); // 2 service`); }
         const accessToken = localStorage.getItem(ACCESS_TOKEN);
         const refreshToken = localStorage.getItem(REFRESH_TOKEN);
         if (!!accessToken && !!refreshToken) {

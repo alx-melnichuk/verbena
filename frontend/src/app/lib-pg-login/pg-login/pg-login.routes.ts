@@ -8,7 +8,7 @@ import { pgLoginTranslateResolver } from "./pg-login-translate.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibLoginHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.log(`translateLibLoginHttpLoaderFactory()`); }
+    if (environment.logLevel > 0) { console.info(`translateLibLoginHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-login/i18n/", ".json");
 };
 

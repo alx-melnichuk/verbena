@@ -8,7 +8,7 @@ import { pgAboutResolver } from "./pg-about.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibAboutHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.log(`translateLibAboutHttpLoaderFactory()`); }
+    if (environment.logLevel > 0) { console.info(`translateLibAboutHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-about/i18n/", ".json");
 };
 

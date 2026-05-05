@@ -27,7 +27,7 @@ import { UserDto } from "./lib-user/user-dto";
 
 // AoT requires an exported function for factories
 export function translateAppHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.log(`translateAppHttpLoaderFactory()`); }
+    if (environment.logLevel > 0) { console.info(`translateAppHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./i18n/", ".json");
 };
 
@@ -82,7 +82,7 @@ export const appConfig: ApplicationConfig = {
             const localeFromLocalStorage = localeSrv.getFromLocalStorage();
             const value = localeSrv.findLocale(localeSrv.localeList, localeFromLocalStorage || NavigatorUtil.getBrowserLocale() || null)
                 || null;
-            if (environment.logLevel > 0) { console.log(`provideAppInitializer(localeSrv) locale.setLocale(${value});`); }
+            if (environment.logLevel > 0) { console.info(`provideAppInitializer(localeSrv) locale.setLocale(${value});`); }
             return localeSrv.setLocale(value);
         }),
         RedirectSrv,
@@ -100,16 +100,16 @@ export const appConfig: ApplicationConfig = {
             const isNotAuthentDeniedAndHasAccessToken = !isAuthentDenied && !!sessionSrv.getAccessToken();
             if (environment.logLevel > 0) {
                 const s1 = `isNotAuthentDeniedAndHasAccessToken: ${isNotAuthentDeniedAndHasAccessToken}`;
-                console.log(`provideAppInitializer(userSrv) isAuthentRequired: ${isAuthentRequired}, ${s1}`);
+                console.info(`provideAppInitializer(userSrv) isAuthentRequired: ${isAuthentRequired}, ${s1}`);
             }
 
             if (isAuthentRequired || isNotAuthentDeniedAndHasAccessToken) {
-                if (environment.logLevel > 0) { console.log(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...`); }
+                if (environment.logLevel > 0) { console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...`); }
                 return userSrv.getCurrentUser()
                     .then((response: UserDto | HttpErrorResponse | undefined) => {
                         const user = response as UserDto;
                         if (environment.logLevel > 0) {
-                            console.log(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...Ok`
+                            console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...Ok`
                                 + ` user.id: ${user.id}, user.nickname: ${user.nickname} `);
                         }
                         sessionSrv.setUser(user);

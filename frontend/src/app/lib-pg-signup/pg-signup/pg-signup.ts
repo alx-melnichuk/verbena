@@ -42,7 +42,7 @@ export class PgSignup {
             const title = `PgSignup().onLangChange(${event.lang})`;
             if (!this.loadedLangs[event.lang] && !!this.translate.translations) {
                 if (environment.logLevel > 0) {
-                    console.log(`${title} translate.setTranslation(${event.lang}); trans:`, { ...event.translations });
+                    console.info(`${title} translate.setTranslation(${event.lang}); trans:`, { ...event.translations });
                 }
                 this.loadedLangs[event.lang] = true;
                 // Add translations from the main module to this module.
@@ -52,7 +52,7 @@ export class PgSignup {
         });
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`PgSignup(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
+        if (environment.logLevel > 0) { console.info(`PgSignup(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
     }
 
     // ** Public API **

@@ -51,7 +51,7 @@ export class App {
     }
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`App(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
+        if (environment.logLevel > 0) { console.info(`App(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
         const user = this.sessionSrv.getUser();
         this.localeSrv.setLocale(user?.locale || this.localeSrv.getFromLocalStorage());
         this.setHtmlLangAttribute(this.localeSrv.getLocale().slice(0, 2));

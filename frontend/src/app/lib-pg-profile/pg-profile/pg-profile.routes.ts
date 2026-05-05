@@ -10,7 +10,7 @@ import { pgProfileTranslateResolver } from "./pg-profile-translate.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibProfileHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.log(`translateLibProfileHttpLoaderFactory()`); }
+    if (environment.logLevel > 0) { console.info(`translateLibProfileHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-profile/i18n/", ".json");
 };
 

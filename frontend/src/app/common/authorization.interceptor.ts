@@ -28,7 +28,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
     private tokenUpdateSrv: TokenUpdate = this.userSrv;
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`AuthorizationInterceptor(); // 4 service`); }
+        if (environment.logLevel > 0) { console.info(`AuthorizationInterceptor(); // 4 service`); }
     }
 
     intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
@@ -92,11 +92,11 @@ export class AuthorizationInterceptor implements HttpInterceptor {
             .then((response: UserTokenResponseDto | HttpErrorResponse | undefined) => {
                 const res = response as UserTokenResponseDto;
                 this.sessionSrv.setUserTokens(res.accessToken, res.refreshToken);
-                if (environment.logLevel > 0) { console.log(`refreshAccessToken successful`); }
+                if (environment.logLevel > 0) { console.info(`refreshAccessToken successful`); }
                 return Promise.resolve();
             })
             .catch((err: HttpErrorResponse) => {
-                if (environment.logLevel > 0) { console.log(`refreshAccessToken err:`, err); }
+                if (environment.logLevel > 0) { console.info(`refreshAccessToken err:`, err); }
                 this.sessionSrv.removeUserTokens();
                 this.sessionSrv.removeUser();
                 return Promise.reject(err);

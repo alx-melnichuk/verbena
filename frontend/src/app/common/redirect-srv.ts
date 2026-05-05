@@ -8,7 +8,7 @@ export class RedirectSrv {
     private innUrlAfterLogin: string = "";
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`RedirectSrv(); // service`); }
+        if (environment.logLevel > 0) { console.info(`RedirectSrv(); // service`); }
     }
 
     public getUrlAfterLogin(): string {

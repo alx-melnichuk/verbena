@@ -40,7 +40,7 @@ export class LocaleSrv {
     public set localeDefault(_val: string) { }
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`LocaleSrv(); // 1 service`); }
+        if (environment.logLevel > 0) { console.info(`LocaleSrv(); // 1 service`); }
     }
 
     // ** Public Api **
@@ -64,7 +64,7 @@ export class LocaleSrv {
                     next: () => {
                         this.setIntoLocalStorage(this.currLocale = locale);
                         this.dateAdapter.setLocale(locale);
-                        if (environment.logLevel > 0) { console.log(`Locale.translate.use(${locale})...Ok`); }
+                        if (environment.logLevel > 0) { console.info(`Locale.translate.use(${locale})...Ok`); }
                         resolve(true);
                     },
                     error: (err) => reject(err)

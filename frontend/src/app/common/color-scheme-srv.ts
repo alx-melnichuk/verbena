@@ -41,7 +41,7 @@ export class ColorSchemeSrv {
     private schemeLight: string | null = null;
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`ColorSchemeSrv(); // 5 service`); }
+        if (environment.logLevel > 0) { console.info(`ColorSchemeSrv(); // 5 service`); }
     }
 
     // ** Theme **

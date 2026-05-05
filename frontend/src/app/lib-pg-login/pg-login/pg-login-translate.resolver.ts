@@ -19,7 +19,7 @@ export const pgLoginTranslateResolver: ResolveFn<Observable<InterpolatableTransl
         // Get translations for the current locale from the core module.
         const translationObject = locale.translationsByLang(localeLanguage);
         if (!!translationObject) {
-            // #if (environment.logLevel > 0) { console.log(`pgLoginResolver() translate.setTranslation(${localeLanguage}); obj:`, { ...translationObject }); }
+            // #if (environment.logLevel > 0) { console.info(`pgLoginResolver() translate.setTranslation(${localeLanguage}); obj:`, { ...translationObject }); }
             // Add translations from the main module to this module.
             translate.setTranslation(localeLanguage, translationObject, true);
         }
@@ -28,7 +28,7 @@ export const pgLoginTranslateResolver: ResolveFn<Observable<InterpolatableTransl
             translate.use(localeLanguage).pipe(first())
                 .subscribe({
                     next: (data) => {
-                        if (environment.logLevel > 0) { console.log(`pgSignupResolver() translate.use((${localeLanguage})...Ok data:`, data); }
+                        if (environment.logLevel > 0) { console.info(`pgSignupResolver() translate.use((${localeLanguage})...Ok data:`, data); }
                         resolve();
                     },
                     error: (err) => reject(err)

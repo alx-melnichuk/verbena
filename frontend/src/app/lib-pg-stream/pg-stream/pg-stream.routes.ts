@@ -14,7 +14,7 @@ import { pgStreamTranslateResolver } from "./pg-stream-translate.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibStreamHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.log(`translateLibStreamHttpLoaderFactory()`); }
+    if (environment.logLevel > 0) { console.info(`translateLibStreamHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-stream/i18n/", ".json");
 };
 

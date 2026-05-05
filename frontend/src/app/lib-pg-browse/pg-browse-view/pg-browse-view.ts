@@ -229,7 +229,7 @@ export class PgBrowseView implements OnInit, OnDestroy {
             const errMsg = HttpErrorUtil.mapErrMsgObjs(status, errHttp)?.[0].msg || "error.server_api_call";
             this.alertService.showError(errMsg, "pg-browse-view.error_socket");
         } else if (eventWS.et == EWSType.Echo) {
-            console.log(`echo: ${eventWS.getStr("echo") || ""}`);
+            console.info(`echo: ${eventWS.getStr("echo") || ""}`);
         } else if (eventWS.et == EWSType.Msg) {
             this.addChatMsg(val);
         } else if (eventWS.et == EWSType.MsgRmv) {

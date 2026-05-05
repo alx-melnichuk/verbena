@@ -8,7 +8,7 @@ import { pgForgotPasswordTranslateResolver } from "./pg-forgot-password-translat
 
 // AoT requires an exported function for factories
 export function translateLibForgotPasswordHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.log(`translateLibForgotPasswordHttpLoaderFactory()`); }
+    if (environment.logLevel > 0) { console.info(`translateLibForgotPasswordHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-forgot-password/i18n/", ".json");
 };
 

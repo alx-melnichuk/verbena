@@ -15,7 +15,7 @@ export class UserSrv implements TokenUpdate {
     private http: HttpClient = inject(HttpClient);
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`UserSrv(); // 3 service`); }
+        if (environment.logLevel > 0) { console.info(`UserSrv(); // 3 service`); }
     }
 
     // ** Public Api **

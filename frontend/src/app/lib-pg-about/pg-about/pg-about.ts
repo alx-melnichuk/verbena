@@ -36,7 +36,7 @@ export class PgAbout {
         .subscribe((event: LangChangeEvent) => {
             if (!this.loadedLangs[event.lang] && !!this.translate.translations) {
                 if (environment.logLevel > 0) {
-                    console.log(`PgAbout().onLangChange(${event.lang}) translate.setTranslation(${event.lang}); trans:`
+                    console.info(`PgAbout().onLangChange(${event.lang}) translate.setTranslation(${event.lang}); trans:`
                         , { ...event.translations });
                 }
                 this.loadedLangs[event.lang] = true;
@@ -47,7 +47,7 @@ export class PgAbout {
         });
 
     constructor() {
-        if (environment.logLevel > 0) { console.log(`PgAbout(); locale.getLocale(): ${this.locale.getLocale()}`); }
+        if (environment.logLevel > 0) { console.info(`PgAbout(); locale.getLocale(): ${this.locale.getLocale()}`); }
     }
 
     // ** Public API **
