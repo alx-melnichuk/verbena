@@ -72,8 +72,8 @@ app-panel-stream-info {
     .psi-logo {
         border-radius: 1rem;
         cursor: pointer;
-        flex: 0 0 8rem;
-        height: 6rem;
+        flex: 0 0 max(var(--psi-logo-wd, 0px), 8rem);
+        height: max(var(--psi-logo-hg, 0px), 6rem);
     }
 
     .psi-logo-shd {

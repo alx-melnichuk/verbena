@@ -26,12 +26,10 @@ export class PanelStreamInfo {
     @Input()
     public isFuture = false;
     @Input()
-    public locale: string | null = null;
+    public locale: string | null | undefined;
     @Input()
     public streamDto: StreamDto | null | undefined;
 
-    @Output()
-    readonly requestNextPage: EventEmitter<void> = new EventEmitter();
     @Output()
     readonly actionDuplicate: EventEmitter<number> = new EventEmitter();
     @Output()
