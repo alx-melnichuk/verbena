@@ -3,7 +3,7 @@ import {
     ChangeDetectionStrategy, Component, ElementRef, inject, Input, OnChanges, Renderer2, SimpleChanges, ViewEncapsulation
 } from "@angular/core";
 import { TranslatePipe } from "@ngx-translate/core";
-import { StreamState } from "../../lib-pg-stream/stream-dto";
+import { StreamState } from "../../lib-stream/stream-dto";
 import { HtmlElemUtil } from "../../utils/html-elem.util";
 
 const ATTR_STATE = "state";
