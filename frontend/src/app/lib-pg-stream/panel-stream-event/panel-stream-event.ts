@@ -21,7 +21,7 @@ export class PanelStreamEvent {
     @Input()
     public canEdit = false;
     @Input()
-    public locale: string | null = null;
+    public locale: string | null | undefined;
     @Input()
     public streamDto: StreamDto | null | undefined;
 
