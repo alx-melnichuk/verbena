@@ -1,17 +1,12 @@
 <app-panel-browse-list
->
+  [isLive]="isLive"
+  [locale]="localeSrv.getLocale()"
+  [popTagIsLoading]="popTagIsLoading"
+  [popTagList]="popTagList"
+  [strmCrdIsLoading]="strmCrdIsLoading"
+  [strmCrdIsReset]="strmCrdIsReset"
+  [strmCrdItemPage]="strmCrdItemPage"
+  [tag]="tag"
+  (loadStrmCrdPage)="doLoadStrmCrdPage($event.isLive, $event.tag, $event.page, $event.limit)"
+  (actionView)="doActionView($event)">
 </app-panel-browse-list>
-<!-- 
-  <app-page-view-list
-    [sessionDTO]="profileService.sessionDTO"
-    [followersAndPopularLoading]="followersService.followersAndPopularLoading"
-    [followerList]="followersService.followerDTOList"
-    [popularList]="followersService.popularDTOList"
-    [isDarkTheme]="isDarkTheme"
-     settingTradAdvancedChartLoading9="profileWidgetDataService.settingTradAdvancedChartLoading"
-     settingTradAdvancedChartPrm9="profileWidgetDataService.settingTradAdvancedChartPrm"
-    [popularTagsLoading]="popularTagsLoading"
-    [streamsPopularTags]="streamsPopularTags"
-    (changeSettingTradAdvancedChartPrm)="doChangeSettingTradAdvancedChartPrm($event)"
-  ></app-page-view-list>
--->
