@@ -46,6 +46,9 @@ export const ROUTE_BROWSE = "/" + R_BROWSE;      // "/ind/browse"
 export const E_BROWSE_LIST = "list";
 export const R_BROWSE_LIST = R_BROWSE + "/" + E_BROWSE_LIST; //  "ind/browse/list"
 export const ROUTE_BROWSE_LIST = "/" + R_BROWSE_LIST;         // "/ind/browse/list"
+export const G_BROWSE_LIVE = "live";
+export const G_BROWSE_TAG = "tag";
+export const G_BROWSE_PAGE = "page";
 
 export const E_BROWSE_VIEW = "view";
 export const P_BROWSE_ID = "streamId";
