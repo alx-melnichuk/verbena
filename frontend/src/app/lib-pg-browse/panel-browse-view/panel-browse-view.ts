@@ -11,7 +11,7 @@ import { Spinner } from "../../components/spinner/spinner";
 import { ChatMessageDto, ParamQueryPastMsg } from "../../lib-chat/chat-message";
 import { PanelChat } from "../../lib-chat/panel-chat/panel-chat";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
-import { StreamDto, StreamState } from "../../lib-pg-stream/stream-dto";
+import { StreamDto, StreamState } from "../../lib-stream/stream-dto";
 import { StringDateTimeUtil } from "../../utils/string-date-time.util";
 import { StringUtil } from "../../utils/string.util";
 import { PanelStreamActions } from "../panel-stream-actions/panel-stream-actions";
@@ -22,7 +22,7 @@ import { PanelStreamState } from "../panel-stream-state/panel-stream-state";
     selector: "app-panel-browse-view",
     exportAs: "appPanelBrowseView",
     standalone: true,
-    imports: [CommonModule, /*Avatar,*/ Spinner, Sidebar, /*SidebarHandler,*/ TranslatePipe,
+    imports: [CommonModule, Spinner, Sidebar, TranslatePipe,
         PanelStreamState, PanelStreamParams, PanelStreamActions, PanelChat],
     templateUrl: "./panel-browse-view.html",
     styleUrl: "./panel-browse-view.scss",
@@ -107,7 +107,7 @@ export class PanelBrowseView implements AfterContentInit, OnChanges {
     private translateService: TranslateService = inject(TranslateService);
 
     public isSidebarLfOpen: boolean = false;
-    public isSidebarRgOpen: boolean = true; // false;
+    public isSidebarRgOpen: boolean = false;
     // To disable the jumping effect of the "stream-video" panel at startup.
     public isStreamVideo = false;
     public ownerNameSymbols: string = "";

@@ -2,6 +2,7 @@
 
 app-panel-browse-view {
     --app-pn-bg-h: 220; // hsl(220, 50%, 50%);
+    --app-pn-brd-l: 40%;
     // Parameters for the "SideBar" panel.
     --sb-mn-wd: var(--pbv-sb-mn-wd, 57px);
     --sb-mx-wd: var(--pbv-sb-mx-wd, 350px);
@@ -38,13 +39,14 @@ app-panel-browse-view {
     // ** left, right side **
 
     .pbv-sidebar {
+        --sb-bg: transparent;
         flex-shrink: 0;
         z-index: 2;
     }
 
     .pbv-sdb-btn {
         position: absolute;
-        top: 0.5em;
+        top: 0.5rem;
         z-index: 1;
 
         &.pbv-btn-lf {
@@ -71,13 +73,19 @@ app-panel-browse-view {
         }
     }
 
-    // ** center **
+    // ** border **
+    .pbv-border {
+        border: 1px solid var(--app-pn-brd);
+        box-shadow: var(--pbl-pn-sh, 0px 1px 3px 1px rgba(0, 0, 0, 0.25));
+    }
 
+    // ** center **
     .pbv-center {
         box-sizing: border-box;
         display: flex;
         flex: 1 1 auto;
         flex-direction: column;
+        padding: 0.25rem 0 0.25rem 0.5rem;
         z-index: 1;
     }
 
@@ -91,7 +99,6 @@ app-panel-browse-view {
     .pbv-stream-state {
         background-color: var(--app-pn-bg);
         background-image: var(--app-pn-bg-img);
-        border: 1px solid var(--app-pn-brd);
         bottom: 0;
         left: 0;
         position: absolute;
@@ -107,7 +114,6 @@ app-panel-browse-view {
     .pbv-cnt-footer {
         background-color: var(--app-pn-bg);
         background-image: var(--app-pn-bg-img);
-        border: 1px solid var(--app-pn-brd);
         box-sizing: border-box;
         padding: 0.25rem 0.5rem;
     }
@@ -176,7 +182,7 @@ app-panel-browse-view {
     }
 
     .pbv-cnt-email {
-        font-size: calc(1em - 2px);
+        font-size: calc(1rem - 2px);
         font-style: italic;
     }
 
@@ -191,6 +197,7 @@ app-panel-browse-view {
         --pc-brd-sz: var(---pbv-brd-sz);
         --pc-mdl-fn-sz: 0.9rem;
         --pc-pd-lf: 3px;
+        background-color: var(--mat-sys-background);
     }
 
     // ** **

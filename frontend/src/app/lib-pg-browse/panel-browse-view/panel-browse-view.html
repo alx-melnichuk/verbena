@@ -2,9 +2,9 @@
   <app-spinner isFillParent></app-spinner>
 }
 
-<div pbv-pl-2 class="pbv-center app-pn-bg">
+<div class="pbv-center app-pn-bg">
   
-  <div [ngClass]="[(isStreamVideo ? 'pbv-cnt-video' : '')]">
+  <div [ngClass]="[(isStreamVideo ? 'pbv-cnt-video pbv-border' : '')]">
     <div pbv-hg100></div>
     <app-panel-stream-state class="pbv-stream-state"
       [streamState]="streamDto?.state || null">
@@ -13,7 +13,7 @@
 
   <div class="pbv-cnt-sepr"></div>
 
-  <div class="pbv-cnt-footer">
+  <div class="pbv-cnt-footer pbv-border">
 
     <div class="pbv-cnt-title">
       <span pbv-mr-2>{{ 'panel-browse-view.title' | translate }}</span>
