@@ -12,8 +12,6 @@ import { pgChatMessagesResolver } from "./pg-chat-messages.resolver";
 import { pgUserResolver } from "./pg-user.resolver";
 import { pgBrowseStreamResolver } from "./pg-browse-stream.resolver";
 import { pgAccessTokenResolver } from "./pg-access-token.resolver";
-import { SessionSrv } from "../../common/session-srv";
-import { inject } from "@angular/core";
 
 
 // AoT requires an exported function for factories
