@@ -1,17 +1,17 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, ViewEncapsulation } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { DialogSrv } from '../../lib-dialog/dialog-srv';
-import { StreamState } from '../../lib-pg-stream/stream-dto';
+import { CommonModule } from "@angular/common";
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, ViewEncapsulation } from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
+import { TranslatePipe, TranslateService } from "@ngx-translate/core";
+import { DialogSrv } from "../../lib-dialog/dialog-srv";
+import { StreamState } from "../../lib-stream/stream-dto";
 
 @Component({
-    selector: 'app-panel-stream-actions',
-    exportAs: 'appPanelStreamActions',
+    selector: "app-panel-stream-actions",
+    exportAs: "appPanelStreamActions",
     standalone: true,
     imports: [CommonModule, MatButtonModule, TranslatePipe],
-    templateUrl: './panel-stream-actions.html',
-    styleUrl: './panel-stream-actions.scss',
+    templateUrl: "./panel-stream-actions.html",
+    styleUrl: "./panel-stream-actions.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -54,9 +54,9 @@ export class PanelStreamActions {
     public doChangeState(newState: StreamState): void {
         if (this.state != null) {
             if (newState == StreamState.stopped) {
-                const message = this.translate.instant('panel-stream-actions.sure_you_want_stop_stream', { title: this.title });
-                const params = { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' };
-                this.dialogService.openConfirmation(message, '', params)
+                const message = this.translate.instant("panel-stream-actions.sure_you_want_stop_stream", { title: this.title });
+                const params = { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" };
+                this.dialogService.openConfirmation(message, "", params)
                     .then((response) => {
                         if (!!response) {
                             this.changeState.emit(StreamState.stopped);
