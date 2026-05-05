@@ -3,8 +3,8 @@
 ### Introduction
 
 This project is a demonstration project.
-When developing the backend, I used rust 1.73.0.
-When developing the frontend, I used angular 16.1.7.
+When developing the backend, I used rust 1.91.
+When developing the frontend, I used angular 20.3.17.
 
 
 ### Frontend build
