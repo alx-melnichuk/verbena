@@ -126,7 +126,11 @@ BEGIN
 
     --   call add_streams_by_interval(user_id, 30, user_nick, trip, starttime2, '1 months');
 
-      IF user_nick IN ('logan_lewis', 'evelyn_allen') THEN
+      IF user_nick = 'logan_lewis' AND trip = 'france' THEN
+        call add_streams_by_interval(user_id, 40, user_nick, trip, starttime3, '30 minute');
+      END IF;
+
+      IF user_nick = 'evelyn_allen' AND trip = 'cyprus' THEN
         call add_streams_by_interval(user_id, 40, user_nick, trip, starttime3, '30 minute');
       END IF;
 
