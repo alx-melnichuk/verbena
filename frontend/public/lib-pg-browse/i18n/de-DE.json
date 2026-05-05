@@ -1,12 +1,16 @@
 {
-  "panel-chat": {
+  "panel-stream-card": {
+    "not_found": "nicht gefunden",
+    "missing": "fehlt"
+  },
+    "panel-chat": {
     "you": "du",
     "menu": {
-        "edit": "Bearbeiten",
-        "cut": "Löschen",
-        "remove": "Endgültig löschen",
-        "block_user": "Block",
-        "unblock_user": "Entsperren"
+      "edit": "Bearbeiten",
+      "cut": "Löschen",
+      "remove": "Endgültig löschen",
+      "block_user": "Block",
+      "unblock_user": "Entsperren"
     },
     "you_not_allowed_chat": "Du darfst den öffentlichen chat nicht nutzen.",
     "you_been_blocked": "Du wurdest gesperrt.",
@@ -23,6 +27,11 @@
     "error_socket": "Socket fehler",
     "error_blocked": "Benutzer blockiert",
     "error_unblocked": "Benutzer entsperrt"
+  },
+  "panel-browse-list": {
+     "tag_value": "Tag-Wert",
+     "live_streams_only": "Nur Live-Streams",
+     "search_for_streams": "Suche nach Streams"
   },
   "panel-browse-view": {
     "title": "Titel:",
@@ -55,8 +64,8 @@
     "paused": "Pausiert",
     "stopped": "Beendet:",
     "time-tracking": {
-        "-1": "tage",
-        "1": "tag"
+      "-1": "tage",
+      "1": "tag"
     }
   },
   "panel-stream-actions": {

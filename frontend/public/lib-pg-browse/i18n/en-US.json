@@ -1,12 +1,16 @@
 {
+  "panel-stream-card": {
+    "not_found": "not found",
+    "missing": "missing"
+  },
   "panel-chat": {
     "you": "you",
     "menu": {
-        "edit": "Edit",
-        "cut": "Remove",
-        "remove": "Remove permanently",
-        "block_user": "Block",
-        "unblock_user": "Unblock"
+      "edit": "Edit",
+      "cut": "Remove",
+      "remove": "Remove permanently",
+      "block_user": "Block",
+      "unblock_user": "Unblock"
     },
     "you_not_allowed_chat": "You are not allowed to use the public chat.",
     "you_been_blocked": "You have been blocked.",
@@ -23,6 +27,11 @@
     "error_socket": "Socket error",
     "error_blocked": "User blocked error",
     "error_unblocked": "User unblocked error"
+  },
+  "panel-browse-list": {
+     "tag_value": "Tag value",
+     "live_streams_only": "Live streams only",
+     "search_for_streams": "Search for streams"
   },
   "panel-browse-view": {
     "title": "Title:",
@@ -55,8 +64,8 @@
     "paused": "Paused",
     "stopped": "Stopped:",
     "time-tracking": {
-        "-1": "days",
-        "1": "day"
+      "-1": "days",
+      "1": "day"
     }
   },
   "panel-stream-actions": {
