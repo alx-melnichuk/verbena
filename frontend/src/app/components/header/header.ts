@@ -45,7 +45,7 @@ export class Header implements OnChanges {
     @Input()
     public user: User | null = null;
     @Input()
-    public colorScheme: string | null = null;
+    public currentScheme: string | null = null;
 
     @Output()
     readonly command: EventEmitter<Record<string, string>> = new EventEmitter();

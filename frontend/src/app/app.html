@@ -2,7 +2,7 @@
   [currentRoute]="currentRoute"
   [locale]="localeSrv.getLocale()"
   [user]="sessionSrv.getUser()"
-  [colorScheme]="colorSchemeSrv.getColorScheme()"
+  [currentScheme]="colorSchemeSrv.getSchemeLightName()"
   (command)="doCommand($event)">
 </app-header>
 <main>

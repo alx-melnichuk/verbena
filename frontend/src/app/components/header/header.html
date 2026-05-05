@@ -64,12 +64,12 @@
 </mat-menu>
   
 <mat-menu #themes="matMenu" class="h-menu-panel">
-  @for (colorSchemeItem of colorSchemeList; track colorSchemeItem) {
-    <button mat-menu-item [value]="colorSchemeItem"
-      [ngClass]="['pn-item-menu', 'mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : '')]"
-      (click)="doSetColorScheme(colorSchemeItem)">
-      <span>{{ ('theme.' + colorSchemeItem) | translate }}</span>
-      <span [ngClass]="['mm-menu-item-min', (colorScheme == colorSchemeItem ? 'mm-check' : '')]"></span>
+  @for (schemeItem of colorSchemeList; track schemeItem) {
+    <button mat-menu-item [value]="schemeItem"
+      [ngClass]="['pn-item-menu', 'mm-menu-btn', (currentScheme == schemeItem ? 'mm-curr' : '')]"
+      (click)="doSetColorScheme(schemeItem)">
+      <span>{{ ('theme.' + schemeItem) | translate }}</span>
+      <span [ngClass]="['mm-menu-item-min', (currentScheme == schemeItem ? 'mm-check' : '')]"></span>
     </button>
   }
 </mat-menu>

@@ -55,7 +55,7 @@ export class App {
         const user = this.sessionSrv.getUser();
         this.localeSrv.setLocale(user?.locale || this.localeSrv.getFromLocalStorage());
         this.setHtmlLangAttribute(this.localeSrv.getLocale().slice(0, 2));
-        this.colorSchemeSrv.setColorScheme(user?.theme || this.colorSchemeSrv.getFromLocalStorage(), this.renderer);
+        this.colorSchemeSrv.setSchemeLightName(user?.theme || this.colorSchemeSrv.getFromLocalStorage(), this.renderer);
     }
 
     // ** Public API **
@@ -66,7 +66,7 @@ export class App {
         switch (key) {
             case HM_LOGOUT: this.doLogout(); break;
             case HM_SET_LOCALE: this.doSetLocale(value); break;
-            case HM_SET_COLOR_SCHEME: this.colorSchemeSrv.setColorScheme(value, this.renderer); break;
+            case HM_SET_COLOR_SCHEME: this.colorSchemeSrv.setSchemeLightName(value, this.renderer); break;
         }
     }
 

@@ -7,33 +7,25 @@ import { environment } from "../../environments/environment";
 export const SCHEME_LIGHT = "light";
 export const SCHEME_DARK = "dark";
 
-export const COLOR_SCHEME_LIGHT_AZURE_ORANGE = "light-azure-orange";
-export const COLOR_SCHEME_LIGHT_CYAN_ORANGE = "light-cyan-orange";
-export const COLOR_SCHEME_LIGHT_VIOLET_CHARTREUSE = "light-violet-chartreuse";
-export const COLOR_SCHEME_LIGHT_ORANGE_MAGENTA = "light-orange-magenta";
-export const COLOR_SCHEME_LIGHT_MAGENTA_CYAN = "light-magenta-cyan";
-
-export const COLOR_SCHEME_DARK_AZURE_ORANGE = "dark-azure-orange";
-export const COLOR_SCHEME_DARK_CYAN_MAGENTA = "dark-cyan-orange";
-export const COLOR_SCHEME_DARK_VIOLET_CHARTREUSE = "dark-violet-chartreuse";
-export const COLOR_SCHEME_DARK_ORANGE_MAGENTA = "dark-orange-magenta";
-export const COLOR_SCHEME_DARK_MAGENTA_CYAN = "dark-magenta-cyan";
+export const SCHEME_AZURE_ORANGE = "azure-orange";
+export const SCHEME_CYAN_ORANGE = "cyan-orange";
+export const SCHEME_VIOLET_CHARTREUSE = "violet-chartreuse";
+export const SCHEME_ORANGE_MAGENTA = "orange-magenta";
+export const SCHEME_MAGENTA_CYAN = "magenta-cyan";
 
 export const COLOR_SCHEME_LIST = [
     // `light-*`
-    COLOR_SCHEME_LIGHT_AZURE_ORANGE,
-    COLOR_SCHEME_LIGHT_CYAN_ORANGE,
-    // COLOR_SCHEME_LIGHT_VIOLET_MAGENTA,
-    COLOR_SCHEME_LIGHT_VIOLET_CHARTREUSE,
-    COLOR_SCHEME_LIGHT_ORANGE_MAGENTA,
-    COLOR_SCHEME_LIGHT_MAGENTA_CYAN,
+    SCHEME_LIGHT + "-" + SCHEME_AZURE_ORANGE,
+    SCHEME_LIGHT + "-" + SCHEME_CYAN_ORANGE,
+    SCHEME_LIGHT + "-" + SCHEME_VIOLET_CHARTREUSE,
+    SCHEME_LIGHT + "-" + SCHEME_ORANGE_MAGENTA,
+    SCHEME_LIGHT + "-" + SCHEME_MAGENTA_CYAN,
     // `dark-*`
-    COLOR_SCHEME_DARK_AZURE_ORANGE,
-    COLOR_SCHEME_DARK_CYAN_MAGENTA,
-    // COLOR_SCHEME_DARK_VIOLET_MAGENTA,
-    COLOR_SCHEME_DARK_VIOLET_CHARTREUSE,
-    COLOR_SCHEME_DARK_ORANGE_MAGENTA,
-    COLOR_SCHEME_DARK_MAGENTA_CYAN,
+    SCHEME_DARK + "-" + SCHEME_AZURE_ORANGE,
+    SCHEME_DARK + "-" + SCHEME_CYAN_ORANGE,
+    SCHEME_DARK + "-" + SCHEME_VIOLET_CHARTREUSE,
+    SCHEME_DARK + "-" + SCHEME_ORANGE_MAGENTA,
+    SCHEME_DARK + "-" + SCHEME_MAGENTA_CYAN,
 ];
 
 export const THEME = "theme";
@@ -45,10 +37,8 @@ const COLOR_SCHEME = "color-scheme";
 export class ColorSchemeSrv {
     private document: Document = inject(DOCUMENT);
 
-    private currColorScheme: string | null = null;
-
-    // get theme(): string | null { return this.currColorScheme; }
-    // set theme(value: string | null) { }
+    private schemeName: string | null = null;
+    private schemeLight: string | null = null;
 
     constructor() {
         if (environment.logLevel > 0) { console.log(`ColorSchemeSrv(); // 5 service`); }
@@ -56,32 +46,58 @@ export class ColorSchemeSrv {
 
     // ** Theme **
 
-    public getColorScheme(): string | null {
-        return this.currColorScheme;
+    public getSchemeLight(): string | null {
+        return this.schemeLight;
+    }
+    public setSchemeLight(value: string | null, renderer: Renderer2): void {
+        const element: HTMLElement = this.document.documentElement;
+        if (!!value && this.schemeLight != value && this.checkSchemeLight(value)) {
+            if (!!this.schemeLight) {
+                renderer.removeClass(element, this.schemeLight);
+            }
+            this.schemeLight = value;
+            element.style.setProperty(COLOR_SCHEME, value);
+            element.style.setProperty("--" + COLOR_SCHEME, value);
+            renderer.addClass(element, value);
+        }
+    }
+    public checkSchemeLight(value: string | null): boolean {
+        return [SCHEME_LIGHT, SCHEME_DARK].indexOf(value || "") > -1;
     }
 
-    public setColorScheme(value: string | null | undefined, renderer: Renderer2): void {
+    public getSchemeName(): string | null {
+        return this.schemeName;
+    }
+    public setSchemeName(value: string | null, renderer: Renderer2): void {
+        const element: HTMLElement = this.document.documentElement;
+        if (!!value && this.schemeName != value && this.checkSchemeName(value)) {
+            if (!!this.schemeName) {
+                renderer.removeClass(element, this.schemeName);
+            }
+            this.schemeName = value;
+            renderer.addClass(element, value);
+        }
+    }
+    public checkSchemeName(value: string | null): boolean {
+        return [
+            SCHEME_AZURE_ORANGE, SCHEME_CYAN_ORANGE, SCHEME_VIOLET_CHARTREUSE, SCHEME_ORANGE_MAGENTA, SCHEME_MAGENTA_CYAN
+        ].indexOf(value || "") > -1;
+    }
+
+    public getSchemeLightName(): string | null {
+        return this.schemeLight + "-" + this.schemeName;
+    }
+    public setSchemeLightName(value: string | null, renderer: Renderer2): void {
         const index = COLOR_SCHEME_LIST.indexOf(value || "");
-        const theme = COLOR_SCHEME_LIST[index > -1 ? index : 0];
-        if (this.currColorScheme != theme) {
-            if (!!this.currColorScheme) {
-                this.document.documentElement.style.setProperty(COLOR_SCHEME, null);
-                this.document.documentElement.style.setProperty("--" + COLOR_SCHEME, null);
-                renderer.removeClass(this.document.documentElement, this.currColorScheme);
-                const scheme = this.currColorScheme.split("-")[0];
-                if ([SCHEME_LIGHT, SCHEME_DARK].includes(scheme)) {
-                    renderer.removeClass(this.document.documentElement, scheme);
-                }
-            }
-            this.currColorScheme = theme;
-            renderer.addClass(this.document.documentElement, theme);
-            const scheme = this.currColorScheme.split("-")[0];
-            if ([SCHEME_LIGHT, SCHEME_DARK].includes(scheme)) {
-                this.document.documentElement.style.setProperty(COLOR_SCHEME, scheme);
-                this.document.documentElement.style.setProperty("--" + COLOR_SCHEME, scheme);
-                renderer.addClass(this.document.documentElement, scheme);
-            }
-            this.setIntoLocalStorage(theme);
+        const schemeValue = COLOR_SCHEME_LIST[index > -1 ? index : 0];
+
+        const idx = schemeValue.indexOf("-");
+        const schemeLight = idx > -1 ? schemeValue.slice(0, idx) : "";
+        const schemeName = idx > -1 ? schemeValue.slice(idx + 1) : "";
+
+        if (this.checkSchemeLight(schemeLight) && this.checkSchemeName(schemeName)) {
+            this.setSchemeLight(schemeLight, renderer);
+            this.setSchemeName(schemeName, renderer);
         }
     }
 

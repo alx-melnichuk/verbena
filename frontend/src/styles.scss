@@ -5,18 +5,53 @@
 // components according to the Material 3 design spec.
 // Learn more about theming and how to use it for your application's
 // custom components at https://material.angular.dev/guide/theming
-@use '@angular/material' as mat;
+@use "@angular/material" as mat;
 
-@use './styles-mdc.scss';
+@use "./styles-mdc.scss";
 
-html {
-    @include mat.theme((color: (primary: mat.$azure-palette,
-                tertiary: mat.$blue-palette,
+/*html {
+    @include mat.theme( //
+        (color: ( // old
+                primary: mat.$azure-palette, // old
+                tertiary: mat.$blue-palette, // old
+
+                // theme-type: light,
+                // theme-type: dark,
+
+                // primary : mat.$azure-palette, //  1p azure-orange
+                // tertiary: mat.$orange-palette, // 1t azure-orange
+
+                // primary : mat.$cyan-palette, //   2p cyan-orange
+                // tertiary: mat.$orange-palette, // 2t cyan-orange
+
+                // primary : mat.$violet-palette, //     3p violet-chartreuse
+                // tertiary: mat.$chartreuse-palette, // 3t violet-chartreuse
+
+                // primary : mat.$orange-palette, //  4p orange-magenta
+                // tertiary: mat.$magenta-palette, // 4t orange-magenta
+
+                // primary : mat.$magenta-palette, // 5p magenta-cyan
+                // tertiary: mat.$cyan-palette, //    5t magenta-cyan
+
+                // primary : mat.$azure-palette,
+                // tertiary: mat.$blue-palette, // -
+                // primary : mat.$rose-palette, // - 
+                // tertiary: mat.$red-palette, // -
+                // primary : mat.$magenta-palette, 
+                // tertiary: mat.$violet-palette,
+                // primary : mat.$cyan-palette,
+                // tertiary: mat.$orange-palette,
+                // primary : mat.$green-palette, // -
+                // tertiary: mat.$cyan-palette,
             ),
             typography: Roboto,
             density: 0,
         ));
-}
+}*/
+
+@use "./styles-theme.scss";
+@use "./styles-typography.scss";
+
 
 
 html {
@@ -30,13 +65,9 @@ body {
     -ms-text-size-adjust: 100% !important;
     -webkit-font-smoothing: antialiased !important;
 
-    // #Define the default background color and text color.
-    // #background-color: var(--sys-surface);
-    // #color: var(--sys-on-surface);
-
-    // #Learn more https://material.angular.dev/guide/system-variables
-    // #background-color: var(--mat-sys-surface);
-    // #color: var(--mat-sys-on-surface);
+    // Learn more https://material.angular.dev/guide/system-variables
+    background-color: var(--mat-sys-surface);
+    color: var(--mat-sys-on-surface);
     // #font: var(--mat-sys-body-medium); // 400 0.875rem / 1.25rem Roboto
     // #color-scheme: light; // [`light`, `dark`]
 
