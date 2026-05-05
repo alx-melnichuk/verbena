@@ -121,8 +121,8 @@ export interface SearchStreamAndTagsDto {
     filter?: "future" | "past" | "period"
     starttime?: StringDateTime | null | undefined; // DateTime<Utc>,
     finishtime?: StringDateTime | null | undefined; // DateTime<Utc>,
-    sortIdDesc?: boolean | undefined;
-    tagName?: string | undefined;
+    sortDesc?: boolean | undefined;
+    tag?: string | undefined;
     page?: number; // default 1;
     limit?: number; // default 10; Min(1) Max(100)
 }
@@ -142,13 +142,19 @@ export interface StreamsPeriodDto {
 
 // ** getStreamsPopularTags **
 
-export type StreamTagSortColumnType = "id" | "name" | "countLinks";
+export type StreamTagSortColumnType = "id" | "name" | "countlinks";
 
 export interface SearchStreamTagDto {
     sortColumn?: StreamTagSortColumnType;
-    sortIdDesc?: boolean;
+    sortDesc?: boolean;
     page?: number;
     limit?: number;
+}
+
+export interface PageStreamTagDto {
+    list: StreamTagDto[];
+    limit: number;
+    page: number;
 }
 
 export interface StreamTagDto {

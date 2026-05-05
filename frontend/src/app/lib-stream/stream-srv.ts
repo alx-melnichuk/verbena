@@ -8,7 +8,7 @@ import { Uri } from "../common/uri";
 import { HttpParamsUtil } from "../utils/http-params.util";
 import {
     SearchStreamAndTagsDto, StreamDto, StreamDtoUtil, PageStreamAndTagsDto, StreamState, UpdateStreamFileDto,
-    StreamTagDto, SearchStreamTagDto
+    SearchStreamTagDto, PageStreamTagDto
 } from "./stream-dto";
 
 @Injectable({
@@ -23,10 +23,10 @@ export class StreamSrv {
      * @ type get
      * @ access public
      */
-    public getStreamsPopularTags(search: SearchStreamTagDto): Promise<StreamTagDto[] | HttpErrorResponse> {
+    public getStreamsPopularTags(search: SearchStreamTagDto): Promise<PageStreamTagDto | HttpErrorResponse> {
         const params: HttpParams = HttpParamsUtil.create(search);
         const url = Uri.appUri('appApi://streams_popural_tags');
-        return lastValueFrom(this.http.get<StreamTagDto[] | HttpErrorResponse>(url, { params }));
+        return lastValueFrom(this.http.get<PageStreamTagDto | HttpErrorResponse>(url, { params }));
     }
     /** Get streams calendar
      * @ streams/calendar/:userId/:month/:year
@@ -88,9 +88,28 @@ export class StreamSrv {
             userId,
             filter: "past",
             starttime: starttime.toISOString(),
+            sortDesc: true,
             page: (page != null && page > 0 ? page : 1), // default = 1;
             limit: (limit != null && limit > 0 ? limit : 10), // Min(1) Max(100)        
         };
+        const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
+        const url = Uri.appUri("appApi://streams");
+        return lastValueFrom(this.http.get<PageStreamAndTagsDto | HttpErrorResponse>(url, { params }));
+    }
+
+    public getStreamsWithTagByPage(
+        tag: string | null, live: boolean | undefined, page: number, limit: number
+    ): Promise<PageStreamAndTagsDto | HttpErrorResponse> {
+        const searchStreamDto: SearchStreamAndTagsDto = {
+            page: (page != null && page > 0 ? page : 1), // default = 1;
+            limit: (limit != null && limit > 0 ? limit : 10), // Min(1) Max(100)        
+        };
+        if (!!tag) {
+            searchStreamDto.tag = tag;
+        }
+        if (live != undefined) {
+            searchStreamDto.live = live;
+        }
         const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
         const url = Uri.appUri("appApi://streams");
         return lastValueFrom(this.http.get<PageStreamAndTagsDto | HttpErrorResponse>(url, { params }));
@@ -103,8 +122,8 @@ export class StreamSrv {
      * - live (false, true)
      * - filter ("future", "past", "start")
      * - starttime (StringDateTime)
-     * - sortIdDesc  (false, true)
-     * - tagName (string)
+     * - sortDesc  (false, true)
+     * - tag (string)
      * - page (number, 1 by default)
      * - limit (number, 10 by default)
      * @ access public
