@@ -567,7 +567,7 @@ BEGIN
 
   IF (rec1.id IS NULL) THEN
     -- RAISE NOTICE 'g.s.a.s.t() rec1.id IS NULL';
-    tags := NULL;
+    tags := ARRAY[]::VARCHAR[];
     RETURN;
   END IF;
 
