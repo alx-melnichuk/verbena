@@ -8,20 +8,20 @@
         --mat-form-field-subscript-text-line-height: 0.9rem; // 15.2px
         --mat-form-field-subscript-text-size: calc(0.75rem + 1px); // 13px
 
-        // mat-hint,
-        // mat-error {
-        //     display: flex; // !
-        // }
+        // mat-hint, mat-error { display: flex; }
     }
 
     // ** mat-button **
     // Buttons with "semi-circle" edges have been changed to buttons with "oval" edges.
-    --mdc-outlined-button-container-shape: 4rem / 8rem;
-    --mdc-filled-button-container-shape: 4rem / 8rem;
+    --mat-button-text-container-shape: 4rem / 8rem; // Text
+    --mat-button-protected-container-shape: 4rem / 8rem; // Elevated
+    --mat-button-outlined-container-shape: 4rem / 8rem; // Outlined
+    --mat-button-filled-container-shape: 4rem / 8rem; // Filled
+    --mat-button-tonal-container-shape: 4rem / 8rem; // Tonal
 
     // ** mat-form-field **
     // Changed the input field frame radius from 4px to 8px.
-    --mdc-outlined-text-field-container-shape: 0.5rem;
+    --mat-form-field-outlined-container-shape: 0.5rem; // 0rem; 0.5rem(8px); 0.75rem(12px); 1rem(16px);
 
     // ** mat-dialog **
     .cdk-overlay-pane.app-modal-panel {

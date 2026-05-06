@@ -20,9 +20,8 @@ app-calendar-header {
     }
 
     .ch-period-button {
-        --mdc-text-button-label-text-color: var(--mat-datepicker-calendar-period-button-text-color, var(--mat-app-on-surface-variant));
-        font-size: var(--mat-datepicker-calendar-period-button-text-size, var(--mat-app-title-small-size));
-        font-weight: var(--mat-datepicker-calendar-period-button-text-weight, var(--mat-app-title-small-weight));
+        font-size: var(--mat-datepicker-calendar-period-button-text-size, var(--mat-sys-title-small-size));
+        font-weight: var(--mat-datepicker-calendar-period-button-text-weight, var(--mat-sys-title-small-weight));
         min-width: 0;
 
         &>.mdc-button__label {
@@ -36,7 +35,7 @@ app-calendar-header {
 
     .ch-arrow {
         display: inline-block;
-        fill: var(--mat-datepicker-calendar-period-button-icon-color, var(--mat-app-on-surface-variant));
+        fill: var(--mat-datepicker-calendar-period-button-icon-color, var(--mat-sys-on-surface-variant));
         height: 5px;
         margin: 0 0 0 5px;
         vertical-align: middle;

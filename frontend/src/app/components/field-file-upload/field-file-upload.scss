@@ -15,9 +15,9 @@ app-field-file-upload {
     }
 
     &.is-border {
-        border-color: var(--ffu-brd-cl, var(--mdc-outlined-text-field-outline-color));
+        border-color: var(--ffu-brd-cl, var(--mat-sys-outline-variant));
         border-style: var(--ffu-brd-st, dashed);
-        border-width: var(--ffu-brd-wd, 1px);
+        border-width: var(--ffu-brd-wd, 2px);
         box-sizing: border-box;
     }
 

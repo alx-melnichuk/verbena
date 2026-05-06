@@ -87,7 +87,8 @@ app-field-image {
     }
 
     .fi-remove {
-        --mdc-icon-button-icon-size: 1.75rem;
+        --mat-icon-button-icon-size: 1.75rem;
+        --mat-icon-button-icon-color: var(--mat-sys-secondary);
         position: absolute;
         right: -2rem;
         top: -1.4rem;

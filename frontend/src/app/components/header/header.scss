@@ -3,10 +3,8 @@
 app-header {
     --mat-toolbar-standard-height: var(--app-header-hg);
     --mat-toolbar-mobile-height: var(--app-header-hg);
-    --mdc-text-button-label-text-size: 1rem; // 16px
-    --mdc-text-button-container-shape: 0.75rem; // 12px
-
-    // --mat-button-text-state-layer-color: green;
+    --mat-button-text-label-text-size: 1rem; // 16px
+    --mat-button-text-container-shape: 0.75rem; // 12px
 
     ---hdr-hg: calc(var(--app-header-hg, 62px) - 2px);
 
@@ -54,12 +52,11 @@ app-header {
 
 
     .mat-toolbar {
-        --mat-button-text-container-shape: 0.75rem;
         --mat-toolbar-container-background-color: var(--app-pn-bg);
         background-image: var(--app-pn-bg-img);
 
         .h-elem-menu.mat-mdc-button-base.mat-mdc-button-base.mat-unthemed {
-            --mdc-text-button-label-text-color: var(--mat-sys-primary);
+            --mat-button-text-label-text-color: var(--mat-sys-primary);
         }
     }
 
@@ -76,7 +73,7 @@ app-header {
 
     // ** menu button "nickname" **
     .h-nickname-btn {
-        --mat-text-button-horizontal-padding: 0.5rem;
+        --mat-button-text-horizontal-padding: 0.5rem;
 
         .mdc-button__label {
             max-width: 100%;
@@ -91,10 +88,8 @@ app-header {
 
     // ** menu button "avatar" **
     .h-avatar-btn {
-        --mdc-text-button-container-height: var(---hdr-hg);
-        --mdc-text-button-container-shape: calc(0.16 * var(---hdr-hg)); // border-radius for "mat-button"
-        --mat-text-button-horizontal-padding: 0px;
         --mat-button-text-container-height: var(---hdr-hg);
+        --mat-button-text-container-shape: calc(0.16 * var(---hdr-hg)); // border-radius for "mat-button"
         --mat-button-text-horizontal-padding: 0.5rem;
         min-width: var(---hdr-hg);
 

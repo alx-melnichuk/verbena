@@ -68,7 +68,7 @@ app-panel-chat {
         background-color: var(---itm-bg, var(---pc-itm-bg));
         box-shadow: var(---itm-bx-sh, 0 0 2px 1px var(---itm-sh, var(---pc-itm-sh)));
         box-sizing: border-box;
-        border-radius: var(--pc-br-rd, 0.75rem);
+        border-radius: var(--pc-br-rd, 0.5rem);
         display: flex;
         flex-direction: column;
         gap: var(--pc-itm-gp, 0.25rem);
@@ -207,11 +207,11 @@ app-panel-chat {
 
     .pc-nmsg-label {
         &:not([is-focuse-msg]) {
-            ---pc-nmsg-label-cl: var(--mdc-outlined-text-field-outline-color, var(--mat-app-outline));
+            ---pc-nmsg-label-cl: var(--mat-sys-outline);
         }
 
         &[is-focuse-msg] {
-            ---pc-nmsg-label-cl: var(--mdc-outlined-text-field-focus-outline-color, var(--mat-app-primary));
+            ---pc-nmsg-label-cl: var(--mat-sys-primary);
         }
 
         align-items: center;
@@ -257,9 +257,9 @@ app-panel-chat {
     }
 
     .pc-msg-icon {
-        --mdc-icon-button-state-layer-size: 36px;
-        --mdc-icon-button-icon-size: 36px;
-        --mdc-icon-button-icon-color: var(--app-svg-icon-cl);
+        --mat-icon-button-state-layer-size: 2.25rem; // 36px;
+        --mat-icon-button-icon-size: 2.25rem; // 36px;
+        --mat-icon-button-icon-color: var(--app-svg-icon-cl);
     }
 
     .pc-blocked {
