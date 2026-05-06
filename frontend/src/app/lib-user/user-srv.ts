@@ -5,7 +5,8 @@ import { environment } from "../../environments/environment";
 import { Uri } from "../common/uri";
 import { HttpParamsUtil } from "../utils/http-params.util";
 import {
-    RegistrUserDto, RecoveryUserDto, LoginResponseDto, LoginDto, UserDtoUtil, UserTokenResponseDto, UserTokenDto, UniquenessDto, UserDto, UserShortDto, UserShortDtoUtil, TokenUpdate
+    RegistrUserDto, RecoveryUserDto, LoginResponseDto, LoginDto, UserTokenResponseDto, UserTokenDto, UniquenessDto, UserDto,
+    UserShortDto, UserShortDtoUtil, TokenUpdate
 } from "./user-dto";
 
 @Injectable({

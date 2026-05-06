@@ -31,7 +31,7 @@ const CN_DEFAULT_LIMIT = 10;
 })
 export class PanelStreamList implements OnChanges {
     private dialogSrv: DialogSrv = inject(DialogSrv);
-    private translateService: TranslateService = inject(TranslateService);
+    private translate: TranslateService = inject(TranslateService);
 
     @Input()
     public clndDaySelected: Date | null | undefined;
@@ -161,7 +161,7 @@ export class PanelStreamList implements OnChanges {
         if (!info || !info.id) {
             return;
         }
-        const message = this.translateService.instant("panel-stream-list.sure_you_want_delete_stream", { title: info.title });
+        const message = this.translate.instant("panel-stream-list.sure_you_want_delete_stream", { title: info.title });
         this.dialogSrv.openConfirmation(message, "", { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" })
             .then((res) => {
                 if (!!res) {

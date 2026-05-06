@@ -45,7 +45,7 @@ export class PgBrowseView implements OnInit, OnDestroy {
     private dialogService: DialogSrv = inject(DialogSrv);
     private route: ActivatedRoute = inject(ActivatedRoute);
     private streamService: StreamSrv = inject(StreamSrv);
-    private translateService: TranslateService = inject(TranslateService);
+    private translate: TranslateService = inject(TranslateService);
 
     public chatSocketService: ChatSocketSrv = inject(ChatSocketSrv);
 
@@ -198,7 +198,7 @@ export class PgBrowseView implements OnInit, OnDestroy {
                     const link = this.streamService.getLinkForVisitors(errParams["activeStream"]["id"] || -1, false);
                     const name = errParams["activeStream"]["title"] || "";
                     const confirmData: ConfirmationData = {
-                        messageHtml: this.translateService.instant("pg-browse-view.exist_is_active_stream", { link, name }),
+                        messageHtml: this.translate.instant("pg-browse-view.exist_is_active_stream", { link, name }),
                     };
                     this.dialogService.openConfirmation(
                         "", title, { btnNameCancel: null, btnNameAccept: "buttons.ok" }, { data: confirmData });
@@ -242,7 +242,7 @@ export class PgBrowseView implements OnInit, OnDestroy {
             }
             const nickname = user?.nickname || "";
             if (!!username && (isStreamOwner || nickname == username)) {
-                const msg = this.translateService.instant(`pg-browse-view.user_${(!isBlock ? "un" : "")}blocked`, { username });
+                const msg = this.translate.instant(`pg-browse-view.user_${(!isBlock ? "un" : "")}blocked`, { username });
                 this.alertService.showWarning(msg, "pg-browse-view.chat_commands");
             }
         } else if (eventWS.et == EWSType.PrmStr) {
