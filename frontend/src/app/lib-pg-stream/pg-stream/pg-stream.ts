@@ -5,6 +5,7 @@ import { RouterOutlet } from "@angular/router";
 import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
 import { environment } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
+import { AlertSrv } from "../../lib-dialog/alert-srv";
 
 @Component({
     selector: "app-pg-stream",
@@ -15,6 +16,9 @@ import { LocaleSrv } from "../../common/locale-srv";
     styleUrl: "./pg-stream.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [ // Create a separate instance of "AlertSrv" to access translations of the current module.
+        { provide: AlertSrv, useClass: AlertSrv },
+    ],
 })
 export class PgStream {
     private localeSrv: LocaleSrv = inject(LocaleSrv);

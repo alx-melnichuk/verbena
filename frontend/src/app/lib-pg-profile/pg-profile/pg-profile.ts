@@ -9,12 +9,13 @@ import { LocaleSrv } from "../../common/locale-srv";
 import { ROUTE_LOGIN } from "../../common/routes";
 import { SessionSrv } from "../../common/session-srv";
 import { Spinner } from "../../components/spinner/spinner";
+import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
+import { ErrMsgObj, HttpErrorUtil } from "../../utils/http-error.util";
 import { PanelProfile } from "../panel-profile/panel-profile";
 import { ProfileConfigDto } from "../profile-config-dto";
-import { ModifyProfileDto, NewPasswordProfileDto, ProfileDto } from "../profile-dto";
+import { ProfileDto, ModifyProfileDto, NewPasswordProfileDto } from "../profile-dto";
 import { ProfileSrv } from "../profile-srv";
-import { ErrMsgObj, HttpErrorUtil } from "../../utils/http-error.util";
 
 @Component({
     selector: "app-pg-profile",
@@ -25,6 +26,9 @@ import { ErrMsgObj, HttpErrorUtil } from "../../utils/http-error.util";
     styleUrl: "./pg-profile.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [ // Create a separate instance of "AlertSrv" to access translations of the current module.
+        { provide: AlertSrv, useClass: AlertSrv },
+    ],
 })
 export class PgProfile {
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);

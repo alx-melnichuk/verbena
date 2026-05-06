@@ -7,6 +7,7 @@ import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
 import { environment } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
 import { ROUTE_LOGIN } from "../../common/routes";
+import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { UserSrv } from "../../lib-user/user-srv";
 import { ErrMsgObj, HttpErrorUtil } from "../../utils/http-error.util";
@@ -21,6 +22,9 @@ import { PanelForgotPassword } from "../panel-forgot-password/panel-forgot-passw
     styleUrl: "./pg-forgot-password.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [ // Create a separate instance of "AlertSrv" to access translations of the current module.
+        { provide: AlertSrv, useClass: AlertSrv },
+    ],
 })
 export class PgForgotPassword {
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
