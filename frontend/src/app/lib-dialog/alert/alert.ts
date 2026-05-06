@@ -1,8 +1,7 @@
 import { CommonModule } from "@angular/common";
 import {
-    Component, ViewEncapsulation, ChangeDetectionStrategy, OnInit, Input, Output, EventEmitter, HostBinding, inject
+    Component, ViewEncapsulation, ChangeDetectionStrategy, Input, Output, EventEmitter, HostBinding
 } from "@angular/core";
-import { TranslateService } from "@ngx-translate/core";
 import { AlertMode } from "./alert-info";
 
 @Component({
@@ -15,7 +14,7 @@ import { AlertMode } from "./alert-info";
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Alert implements OnInit {
+export class Alert {
     @Input()
     public isOneLine: boolean | undefined = false;
     @Input()
@@ -37,8 +36,6 @@ export class Alert implements OnInit {
         return this.mode === AlertMode.comment;
     }
 
-    private translate: TranslateService = inject(TranslateService);
-
     @HostBinding("class.app-info")
     public get isInfo(): boolean {
         return this.mode === AlertMode.info;
@@ -57,11 +54,6 @@ export class Alert implements OnInit {
     @HostBinding("class.app-success")
     public get isSuccess(): boolean {
         return this.mode === AlertMode.success;
-    }
-
-    ngOnInit(): void {
-        this.title = !!this.title ? this.translate.instant(this.title) : this.title;
-        this.message = !!this.message ? this.translate.instant(this.message) : this.message;
     }
 
     // ** Public API **
