@@ -1,7 +1,8 @@
-import { Injectable } from "@angular/core";
+import { inject, Injectable } from "@angular/core";
 import {
     MatSnackBar, MatSnackBarConfig, MatSnackBarHorizontalPosition, MatSnackBarRef, MatSnackBarVerticalPosition,
 } from "@angular/material/snack-bar";
+import { TranslateService } from "@ngx-translate/core";
 import { firstValueFrom } from "rxjs";
 import { AlertMode, AlertDurationByMode } from "./alert/alert-info";
 import { AlertWrap } from "./alert-wrap/alert-wrap";
@@ -10,9 +11,10 @@ import { AlertWrap } from "./alert-wrap/alert-wrap";
     providedIn: "root",
 })
 export class AlertSrv {
-    private currentSnackBarRef: MatSnackBarRef<AlertWrap> | null = null;
+    private translate: TranslateService = inject(TranslateService);
+    private snackBar: MatSnackBar = inject(MatSnackBar);
 
-    constructor(private snackBar: MatSnackBar) { }
+    private currentSnackBarRef: MatSnackBarRef<AlertWrap> | null = null;
 
     /**
      * Display title and message in toaster.
@@ -36,11 +38,14 @@ export class AlertSrv {
         const horizontalPosition: MatSnackBarHorizontalPosition = "center"; // ["start" | "center" | "end" | "left" | "right"]
         const verticalPosition: MatSnackBarVerticalPosition = "bottom"; // ["top" | "bottom"]
 
+        const title2 = !!title ? this.translate.instant(title) : title;
+        const message2 = !!message ? this.translate.instant(message) : message;
+
         const innConfig: MatSnackBarConfig<any> = {
             ...{ duration, horizontalPosition, verticalPosition },
             ...(config || {}),
             ...{ panelClass: ["app-alert-wrap-panel", "app-" + mode] },
-            ...{ data: { mode, title, message } },
+            ...{ data: { mode, title: title2, message: message2 } },
         };
         this.currentSnackBarRef = this.snackBar.openFromComponent(AlertWrap, innConfig);
         firstValueFrom(this.currentSnackBarRef.afterDismissed())
