@@ -2,9 +2,6 @@
 
 app-panel-stream-calendar {
     --app-pn-bg-h: 190; // hsl(190, 50%, 50%);
-
-    // Default value. The element is not a query container for any container size queries, 
-    // but remains a query container for container style queries.
     display: block;
 
     @supports (color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
@@ -21,8 +18,6 @@ app-panel-stream-calendar {
         }
     }
 
-
-    // The units are "em" because - font-size: var(--mat-datepicker-calendar-text-size, var(--mat-app-body-medium-size));
     .mat-calendar {
         background-color: var(--app-pn-bg);
         background-image: var(--app-pn-bg-img);
