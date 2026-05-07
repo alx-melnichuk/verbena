@@ -24,6 +24,7 @@ import { PanelForgotPassword } from "../panel-forgot-password/panel-forgot-passw
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [ // Create a separate instance of "AlertSrv" to access translations of the current module.
         { provide: AlertSrv, useClass: AlertSrv },
+        { provide: DialogSrv, useClass: DialogSrv },
     ],
 })
 export class PgForgotPassword {

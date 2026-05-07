@@ -6,6 +6,7 @@ import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
 import { environment } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
+import { DialogSrv } from "../../lib-dialog/dialog-srv";
 
 @Component({
     selector: "app-pg-stream",
@@ -18,6 +19,7 @@ import { AlertSrv } from "../../lib-dialog/alert-srv";
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [ // Create a separate instance of "AlertSrv" to access translations of the current module.
         { provide: AlertSrv, useClass: AlertSrv },
+        { provide: DialogSrv, useClass: DialogSrv },
     ],
 })
 export class PgStream {

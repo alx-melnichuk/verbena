@@ -10,6 +10,7 @@ import { RedirectSrv } from "../../common/redirect-srv";
 import { REDIRECT_AFTER_LOGIN } from "../../common/routes";
 import { SessionSrv } from "../../common/session-srv";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
+import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { LoginResponseDto } from "../../lib-user/user-dto";
 import { UserSrv } from "../../lib-user/user-srv";
 import { ErrMsgObj, HttpErrorUtil } from "../../utils/http-error.util";
@@ -26,6 +27,7 @@ import { PanelLogin } from "../panel-login/panel-login";
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [ // Create a separate instance of "AlertSrv" to access translations of the current module.
         { provide: AlertSrv, useClass: AlertSrv },
+        { provide: DialogSrv, useClass: DialogSrv },
     ],
 })
 export class PgLogin {
