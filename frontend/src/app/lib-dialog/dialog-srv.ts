@@ -1,14 +1,16 @@
 import { ComponentType } from "@angular/cdk/overlay";
 import { inject, Injectable } from "@angular/core";
 import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
+import { TranslateService } from "@ngx-translate/core";
 import { firstValueFrom } from "rxjs";
-import { Confirmation, ConfirmationData } from "./confirmation/confirmation";
+import { ConfirmationData, Confirmation } from "./confirmation/confirmation";
 
 @Injectable({
     providedIn: "root",
 })
 export class DialogSrv {
     private dialog: MatDialog = inject(MatDialog);
+    private translate: TranslateService = inject(TranslateService);
 
     // ** Public API **
 
@@ -44,6 +46,19 @@ export class DialogSrv {
         // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
         dialogCfg.disableClose = false;
         if (dataParams != null) {
+            const prm: ConfirmationData = dataParams as ConfirmationData;
+            if (!!prm.title) {
+                prm.title = this.translate.instant(prm.title);
+            }
+            if (!!prm.message) {
+                prm.message = this.translate.instant(prm.message);
+            }
+            if (!!prm.btnNameCancel) {
+                prm.btnNameCancel = this.translate.instant(prm.btnNameCancel);
+            }
+            if (!!prm.btnNameAccept) {
+                prm.btnNameAccept = this.translate.instant(prm.btnNameAccept);
+            }
             dialogCfg.data = { ...(dialogCfg.data || {}), ...dataParams };
         }
 
