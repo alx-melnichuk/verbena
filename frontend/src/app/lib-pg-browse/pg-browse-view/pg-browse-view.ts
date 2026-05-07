@@ -1,6 +1,6 @@
 import { CommonModule, KeyValue } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
-import { Component, ViewEncapsulation, ChangeDetectionStrategy, OnInit, OnDestroy, inject, ChangeDetectorRef } from "@angular/core";
+import { Component, ViewEncapsulation, ChangeDetectionStrategy, OnDestroy, inject, ChangeDetectorRef } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
 import { environment } from "../../../environments/environment";
@@ -37,7 +37,7 @@ const MESSAGE_MIN_ROWS = 1;
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [ChatSocketSrv],
 })
-export class PgBrowseView implements OnInit, OnDestroy {
+export class PgBrowseView implements OnDestroy {
 
     private alertService: AlertSrv = inject(AlertSrv);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
@@ -105,13 +105,10 @@ export class PgBrowseView implements OnInit, OnDestroy {
         this.updateSocketConnect(this.streamDto?.state);
     }
 
-    ngOnInit(): void {
-        // throw new Error("Method not implemented.");
-    }
-
     ngOnDestroy(): void {
         this.chatSocketService.disconnect(); // Disconnect to the server web socket chat.
     }
+
     // ** Public API **
 
     // Section: "panel stream admin"
@@ -134,8 +131,8 @@ export class PgBrowseView implements OnInit, OnDestroy {
                     .then(() =>
                         this.chatBlockedUsers = this.updateBlockedNames(this.chatBlockedUsers, isPost, user_name))
                     .catch((err: HttpErrorResponse) => {
-                        const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                        this.alertService.showError(message, `pg-browse-view.error_${isPost ? "" : "un"}blocked`);
+                        const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                        this.alertService.showError(errMsg, `pg-browse-view.error_${isPost ? "" : "un"}blocked`);
                     });
             }
         }
@@ -203,8 +200,7 @@ export class PgBrowseView implements OnInit, OnDestroy {
                     this.dialogService.openConfirmation(
                         "", title, { btnNameCancel: null, btnNameAccept: "buttons.ok" }, { data: confirmData });
                 } else {
-                    console.error(`ToggleStreamStateErr:`, err);
-                    const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err)?.[0].msg || "error.server_api_call";
+                    const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
                     this.alertService.showError(errMsg, title);
                 }
             })
@@ -226,7 +222,7 @@ export class PgBrowseView implements OnInit, OnDestroy {
             // const errHttp = new HttpErrorResponse({ error: { code: eventWS.getStr("code"), message: eventWS.getStr("message") } });
             const status = eventWS.getInt("status") || 500;
             const errHttp = new HttpErrorResponse({ error: { status, message: eventWS.getStr("message") } });
-            const errMsg = HttpErrorUtil.mapErrMsgObjs(status, errHttp)?.[0].msg || "error.server_api_call";
+            const errMsg = HttpErrorUtil.mapErrMsgObjs(status, errHttp.error)?.[0].msg || "error.server_api_call";
             this.alertService.showError(errMsg, "pg-browse-view.error_socket");
         } else if (eventWS.et == EWSType.Echo) {
             console.info(`echo: ${eventWS.getStr("echo") || ""}`);

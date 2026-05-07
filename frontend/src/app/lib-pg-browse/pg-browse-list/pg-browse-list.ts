@@ -76,8 +76,8 @@ export class PgBrowseList implements OnInit, OnDestroy {
                 this.popTagList = (response as PageStreamTagDto).list;
             })
             .catch((err: HttpErrorResponse) => {
-                const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(message, "pg-browse-list?.error_get_popular_tags");
+                const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                this.alertSrv.showError(errMsg, "pg-browse-list?.error_get_popular_tags");
                 throw err;
             })
             .finally(() => {
@@ -128,8 +128,8 @@ export class PgBrowseList implements OnInit, OnDestroy {
                 this.pages = streams.pages;
             })
             .catch((err: HttpErrorResponse) => {
-                const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(message, "pg-browse-list?.error_get_streams_by_tag");
+                const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                this.alertSrv.showError(errMsg, "pg-browse-list?.error_get_streams_by_tag");
                 throw err;
             })
             .finally(() => {

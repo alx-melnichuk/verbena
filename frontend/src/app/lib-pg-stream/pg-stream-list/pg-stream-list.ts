@@ -116,8 +116,8 @@ export class PgStreamList implements OnInit {
         return Promise.all(arrayOfPromises)
             .then(() => { return })
             .catch((err: HttpErrorResponse) => {
-                const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(message, "pg-stream-list.error_get_streams_for_active_period");
+                const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                this.alertSrv.showError(errMsg, "pg-stream-list.error_get_streams_for_active_period");
                 throw err;
             })
             .finally(() => this.changeDetector.markForCheck());
@@ -143,8 +143,8 @@ export class PgStreamList implements OnInit {
                 }
             })
             .catch((err: HttpErrorResponse) => {
-                const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(message, "pg-stream-list.error_get_streams_for_selected_day");
+                const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                this.alertSrv.showError(errMsg, "pg-stream-list.error_get_streams_for_selected_day");
                 throw err;
             })
             .finally(() => {
@@ -171,8 +171,8 @@ export class PgStreamList implements OnInit {
                 }
             })
             .catch((err: HttpErrorResponse) => {
-                const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(message, "pg-stream-list.error_get_future_streams");
+                const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                this.alertSrv.showError(errMsg, "pg-stream-list.error_get_future_streams");
                 throw err;
             })
             .finally(() => {
@@ -198,8 +198,8 @@ export class PgStreamList implements OnInit {
                 }
             })
             .catch((err: HttpErrorResponse) => {
-                const message = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(message, "pg-stream-list.error_get_past_streams");
+                const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                this.alertSrv.showError(errMsg, "pg-stream-list.error_get_past_streams");
                 throw err;
             })
             .finally(() => {
@@ -290,8 +290,8 @@ export class PgStreamList implements OnInit {
                 return Promise.resolve();
             })
             .catch((err: HttpErrorResponse) => {
-                const msg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                const message = this.translate.instant(msg);
+                const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                const message = this.translate.instant(errMsg);
                 const title = this.translate.instant("pg-stream-list.error_delete_stream");
                 this.alertSrv.showError(message, title);
                 throw err;
