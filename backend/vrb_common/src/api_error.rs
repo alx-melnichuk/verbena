@@ -307,7 +307,7 @@ mod tests {
     async fn test_create_error_and_convert_to_string() {
         let text = "Error text 400.";
         let err = ApiError::new(400, &text);
-        let json = json!({ "code": code_to_str(StatusCode::BAD_REQUEST), "message": text });
+        let json = json!({ "status": 400, "code": code_to_str(StatusCode::BAD_REQUEST), "message": text });
         assert_eq!(err.to_string(), json.to_string());
     }
     #[actix_web::test]
