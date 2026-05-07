@@ -11,8 +11,8 @@ import { AlertWrap } from "./alert-wrap/alert-wrap";
     providedIn: "root",
 })
 export class AlertSrv {
-    private translate: TranslateService = inject(TranslateService);
     private snackBar: MatSnackBar = inject(MatSnackBar);
+    private translate: TranslateService = inject(TranslateService);
 
     private currentSnackBarRef: MatSnackBarRef<AlertWrap> | null = null;
 
