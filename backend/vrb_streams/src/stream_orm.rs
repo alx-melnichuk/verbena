@@ -195,7 +195,7 @@ pub mod impls {
                 "SELECT s.*, ARRAY[]::VARCHAR[] AS tags, NULL AS old_logo \
                  FROM streams s, \
                  filter_stream_and_stream_tag_by_pages_ids($1,true,null,null,null,null,null,2,null) f \
-                 WHERE s.id = f.id AND s.id != $2; \
+                 WHERE s.id = f.id AND s.id != $2 \
                  LIMIT 1")
                 .bind::<sql_types::Integer, _>(user_id) // $1
                 .bind::<sql_types::Integer, _>(exclude_id); // $2
