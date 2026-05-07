@@ -371,7 +371,7 @@ impl Handler<AsyncResultError> for ChatWsSession {
     fn handle(&mut self, msg: AsyncResultError, ctx: &mut Self::Context) {
         debug!("handle<AsyncResultError>() err: {}, code: {}, message: {}", msg.0, &msg.1, &msg.2);
         #[rustfmt::skip]
-        ctx.text(to_string(&ErrEWS { err: msg.0, code: msg.1, message: msg.2 }).unwrap());
+        ctx.text(to_string(&ErrEWS { status: msg.0, code: msg.1, message: msg.2 }).unwrap());
     }
 }
 

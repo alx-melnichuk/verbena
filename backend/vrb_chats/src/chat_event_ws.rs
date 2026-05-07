@@ -197,7 +197,7 @@ pub struct EchoEWS {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrEWS {
-    pub err: u16,
+    pub status: u16,
     pub code: String,
     pub message: String,
 }
@@ -210,8 +210,8 @@ impl fmt::Display for ErrEWS {
 
 impl ErrEWS {
     #[rustfmt::skip]
-    pub fn new(err: u16, code: String, message: String) -> Self {
-        ErrEWS { err, code, message }
+    pub fn new(status: u16, code: String, message: String) -> Self {
+        ErrEWS { status, code, message }
     }
 }
 
