@@ -1,5 +1,5 @@
 @if(!!streamDto) {
-  <a class="pse-logo pse-img-shd" (click)="doViewStream(streamDto.id)">
+  <a class="pse-logo pse-img-shd" [href]="linkToStream">
     @if (isFuture(streamDto.starttime)) {
       <svg class="pse-logo-future">
         <use href="./lib-pg-stream/panel-stream-event/logo-future.svg#logo-future"></use>

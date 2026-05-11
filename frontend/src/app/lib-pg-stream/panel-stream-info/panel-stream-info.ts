@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation } from '@angular/core';
+import {
+    ChangeDetectionStrategy, Component, EventEmitter, HostBinding, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DateTimeFormatPipe } from '../../common/date-time-format-pipe';
 import { Image } from "../../components/image/image";
 import { StreamDto } from '../../lib-stream/stream-dto';
+import { StreamSrv } from '../../lib-stream/stream-srv';
 
 @Component({
     selector: 'app-panel-stream-info',
@@ -16,7 +19,9 @@ import { StreamDto } from '../../lib-stream/stream-dto';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelStreamInfo {
+export class PanelStreamInfo implements OnChanges {
+    private streamSrv: StreamSrv = inject(StreamSrv);
+
     @Input()
     public canDuplicate = false;
     @Input()
@@ -35,14 +40,20 @@ export class PanelStreamInfo {
     @Output()
     readonly actionEdit: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly actionView: EventEmitter<number> = new EventEmitter();
-    @Output()
     readonly actionDelete: EventEmitter<{ id: number, title: string }> = new EventEmitter();
 
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: "long", timeStyle: "short" };
 
     @HostBinding("class.app-pn-bg")
     public get isPnBg(): boolean { return true; }
+
+    public linkToStream: string = "";
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes["streamDto"]) {
+            this.linkToStream = !!this.streamDto ? this.streamSrv.getLinkToStream(this.streamDto.id, true) : "";
+        }
+    }
 
     // ** Public API **
 
@@ -58,12 +69,6 @@ export class PanelStreamInfo {
     public doActionEdit(streamId?: number | null | undefined): void {
         if (!!streamId) {
             this.actionEdit.emit(streamId);
-        }
-    }
-
-    public doActionView(streamId?: number | null | undefined): void {
-        if (!!streamId) {
-            this.actionView.emit(streamId);
         }
     }
 

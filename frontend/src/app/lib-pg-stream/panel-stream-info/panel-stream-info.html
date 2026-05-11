@@ -1,5 +1,5 @@
 @if(!!streamDto) {
-  <a class="psi-logo psi-img-shd" (click)="doActionView(streamDto.id)">
+  <a class="psi-logo psi-img-shd" [href]="linkToStream">
     @if (isFuture) {
       <svg class="psi-logo-future">
         <use href="./lib-pg-stream/panel-stream-info/logo-future.svg#logo-future"></use>
@@ -14,7 +14,7 @@
       {{ streamDto.starttime | dateTimeFormat:locale:formatDateTime }} 
     </div>
     <div class="psi-title">
-      <a href="javascript:void(0);" (click)="doActionView(streamDto.id)">
+      <a [href]="linkToStream">
         {{ streamDto.title }}
       </a>
     </div>

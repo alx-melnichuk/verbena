@@ -222,10 +222,6 @@ export class PgStreamList implements OnInit {
         this.streamSrv.redirectToStreamEditingPage(streamId);
     }
 
-    public doActionView(streamId: number): void {
-        this.streamSrv.redirectToStreamViewPage(streamId);
-    }
-
     public doActionDelete(info: { isFuture: boolean, id: number }): void {
         if (info.isFuture) {
             this.strmFtrIsLoading = true;

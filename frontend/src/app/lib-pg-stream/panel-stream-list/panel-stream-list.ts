@@ -93,8 +93,6 @@ export class PanelStreamList implements OnChanges {
     @Output()
     readonly actionEdit: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly actionView: EventEmitter<number> = new EventEmitter();
-    @Output()
     readonly actionDelete: EventEmitter<{ isFuture: boolean, id: number }> = new EventEmitter();
 
     public calendarMonth: Date = new Date();
@@ -151,10 +149,6 @@ export class PanelStreamList implements OnChanges {
 
     public doActionEdit(streamId: number): void {
         this.actionEdit.emit(streamId);
-    }
-
-    public doActionView(streamId: number): void {
-        this.actionView.emit(streamId);
     }
 
     public doActionDelete(isFuture: boolean, info: { id: number, title: string }): void {

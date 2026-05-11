@@ -243,7 +243,7 @@ export class StreamSrv {
             .then((response) => StreamDtoUtil.create(response as StreamDto));
     }
 
-    public getLinkForVisitors(streamId: number, isFullPath: boolean): string {
+    public getLinkToStream(streamId: number, isFullPath: boolean): string {
         let prefix = ((isFullPath ? Uri.get("appRoot://") : "") as string);
         if (prefix.slice(-1) === "/") {
             prefix = prefix.slice(0, prefix.length - 1);

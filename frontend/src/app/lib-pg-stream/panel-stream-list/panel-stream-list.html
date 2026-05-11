@@ -78,7 +78,6 @@
             [streamDto]="streamDto"
             (actionDuplicate)="doActionDuplicate($event)"
             (actionEdit)="doActionEdit($event)"
-            (actionView)="doActionView($event)"
             (actionDelete)="doActionDelete(true, $event)">
           </app-panel-stream-info>
         </ng-template>
@@ -105,7 +104,6 @@
             [locale]="locale"
             [streamDto]="streamDto"
             (actionDuplicate)="doActionDuplicate($event)"
-            (actionView)="doActionView($event)"
             (actionDelete)="doActionDelete(false, $event)">
           </app-panel-stream-info>
         </ng-template>
