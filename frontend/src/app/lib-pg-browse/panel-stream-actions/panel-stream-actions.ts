@@ -24,8 +24,8 @@ export class PanelStreamActions {
     @Output()
     readonly changeState: EventEmitter<StreamState> = new EventEmitter();
 
-    private dialogService: DialogSrv = inject(DialogSrv);
-    private translate: TranslateService = inject(TranslateService);
+    private dialogSrv: DialogSrv = inject(DialogSrv);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     public statePreparing = StreamState.preparing;
     public stateStarted = StreamState.started;
@@ -54,9 +54,9 @@ export class PanelStreamActions {
     public doChangeState(newState: StreamState): void {
         if (this.state != null) {
             if (newState == StreamState.stopped) {
-                const message = this.translate.instant("panel-stream-actions.sure_you_want_stop_stream", { title: this.title });
+                const message = this.translateSrv.instant("panel-stream-actions.sure_you_want_stop_stream", { title: this.title });
                 const params = { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" };
-                this.dialogService.openConfirmation(message, "", params)
+                this.dialogSrv.openConfirmation(message, "", params)
                     .then((response) => {
                         if (!!response) {
                             this.changeState.emit(StreamState.stopped);

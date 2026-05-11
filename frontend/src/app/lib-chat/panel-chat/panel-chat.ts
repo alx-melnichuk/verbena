@@ -105,7 +105,7 @@ export class PanelChat implements OnChanges, AfterViewInit {
     readonly queryPastMsgs: EventEmitter<ParamQueryPastMsg> = new EventEmitter();
 
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
-    private dialogService: DialogSrv = inject(DialogSrv);
+    private dialogSrv: DialogSrv = inject(DialogSrv);
 
     @ViewChild("scrollItem")
     private scrollItem: ElementRef<HTMLElement> | undefined;
@@ -438,7 +438,7 @@ export class PanelChat implements OnChanges, AfterViewInit {
     private checkForEdit(newMsg: string | null): Promise<boolean> {
         const newMsgVal = (newMsg || "").trim();
         if (this.isEditable && newMsgVal.length > 0) {
-            return this.dialogService.openConfirmation("panel-chat.msg_discard_draft", "dialog.confirmation",
+            return this.dialogSrv.openConfirmation("panel-chat.msg_discard_draft", "dialog.confirmation",
                 { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" }).then((res) => !!res);
         } else {
             return Promise.reject();

@@ -39,7 +39,7 @@ export class PgProfile {
     private route: ActivatedRoute = inject(ActivatedRoute);
     private router: Router = inject(Router);
     private sessionSrv: SessionSrv = inject(SessionSrv);
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     public errMsgObjsProfile: ErrMsgObj[] = [];
     public errMsgsPassword: string[] = [];
@@ -56,15 +56,15 @@ export class PgProfile {
     private langChange$ = this.localeSrv.onLangChange.pipe(takeUntilDestroyed())
         .subscribe((event: LangChangeEvent) => {
             const title = `PgProfile().onLangChange(${event.lang})`;
-            if (!this.loadedLangs[event.lang] && !!this.translate.translations) {
+            if (!this.loadedLangs[event.lang] && !!this.translateSrv.translations) {
                 if (environment.logLevel > 0) {
                     console.log(`${title} translate.setTranslation(${event.lang}); trans:`, { ...event.translations });
                 }
                 this.loadedLangs[event.lang] = true;
                 // Add translations from the main module to this module.
-                this.translate.setTranslation(event.lang, event.translations, true);
+                this.translateSrv.setTranslation(event.lang, event.translations, true);
             }
-            this.translate.use(event.lang);
+            this.translateSrv.use(event.lang);
         });
 
     constructor() {
@@ -84,14 +84,14 @@ export class PgProfile {
         this.profileSrv.modifyProfile(obj.modifyProfile, obj.avatarFile)
             .then((response: ProfileDto | HttpErrorResponse | undefined) => {
                 if (response == null) {
-                    this.errMsgObjsProfile = [{ msg: this.translate.instant("pg-profile.error_editing_profile"), obj: null }];
+                    this.errMsgObjsProfile = [{ msg: this.translateSrv.instant("pg-profile.error_editing_profile"), obj: null }];
                 } else {
                     this.profileDto = response as ProfileDto;
                     this.sessionSrv.setUser(this.profileDto);
                     this.localeSrv.setLocale(this.profileDto.locale)
                         .finally(() => {
-                            const title = this.translate.instant("pg-profile.dialog_title_editing");
-                            const message = this.translate.instant("pg-profile.dialog_message_editing");
+                            const title = this.translateSrv.instant("pg-profile.dialog_title_editing");
+                            const message = this.translateSrv.instant("pg-profile.dialog_message_editing");
                             this.dialogSrv.openConfirmation(message, title, { btnNameAccept: "buttons.ok" }, { maxWidth: "40vw" });
                         });
                 }
@@ -116,12 +116,12 @@ export class PgProfile {
         this.profileSrv.newPassword(newPasswordProfile)
             .then((response: ProfileDto | HttpErrorResponse | undefined) => {
                 if (!response) {
-                    const msg = this.translate.instant("pg-profile.error_update_password", { nickname: this.profileDto.nickname });
+                    const msg = this.translateSrv.instant("pg-profile.error_update_password", { nickname: this.profileDto.nickname });
                     this.errMsgObjsPassword = [{ msg, obj: null }];
                 } else {
                     this.profileDto = response as ProfileDto;
-                    const title = this.translate.instant("pg-profile.dialog_title_password");
-                    const message = this.translate.instant("pg-profile.dialog_message_password");
+                    const title = this.translateSrv.instant("pg-profile.dialog_title_password");
+                    const message = this.translateSrv.instant("pg-profile.dialog_message_password");
                     this.dialogSrv.openConfirmation(message, title, { btnNameAccept: "buttons.ok" }, { maxWidth: "40vw" });
                 }
             })
@@ -143,13 +143,13 @@ export class PgProfile {
             .then((response: ProfileDto | HttpErrorResponse | undefined) => {
                 const nickname = this.profileDto.nickname;
                 if (!response) {
-                    this.errMsgObjsAccount = [{ msg: this.translate.instant("pg-profile.error_delete_account", { nickname }), obj: null }];
+                    this.errMsgObjsAccount = [{ msg: this.translateSrv.instant("pg-profile.error_delete_account", { nickname }), obj: null }];
                 } else {
                     // Closing the session.
                     this.sessionSrv.removeUserTokens();
                     this.sessionSrv.removeUser();
-                    const title = this.translate.instant("pg-profile.dialog_title_delete");
-                    const message = this.translate.instant("pg-profile.dialog_message_delete", { nickname });
+                    const title = this.translateSrv.instant("pg-profile.dialog_title_delete");
+                    const message = this.translateSrv.instant("pg-profile.dialog_message_delete", { nickname });
                     this.dialogSrv.openConfirmation(message, title, { btnNameAccept: "buttons.ok" }, { maxWidth: "40vw" })
                         .finally(() => {
                             window.setTimeout(() => this.router.navigate([ROUTE_LOGIN]), 0);

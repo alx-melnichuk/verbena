@@ -12,7 +12,7 @@ import { AlertWrap } from "./alert-wrap/alert-wrap";
 })
 export class AlertSrv {
     private snackBar: MatSnackBar = inject(MatSnackBar);
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     private currentSnackBarRef: MatSnackBarRef<AlertWrap> | null = null;
 
@@ -38,8 +38,8 @@ export class AlertSrv {
         const horizontalPosition: MatSnackBarHorizontalPosition = "center"; // ["start" | "center" | "end" | "left" | "right"]
         const verticalPosition: MatSnackBarVerticalPosition = "bottom"; // ["top" | "bottom"]
 
-        const title2 = !!title ? this.translate.instant(title) : title;
-        const message2 = !!message ? this.translate.instant(message) : message;
+        const title2 = !!title ? this.translateSrv.instant(title) : title;
+        const message2 = !!message ? this.translateSrv.instant(message) : message;
 
         const innConfig: MatSnackBarConfig<any> = {
             ...{ duration, horizontalPosition, verticalPosition },

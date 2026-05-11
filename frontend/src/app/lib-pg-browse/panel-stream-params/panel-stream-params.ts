@@ -36,23 +36,23 @@ export class PanelStreamParams implements OnChanges {
 
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: "long", timeStyle: "short" };
 
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
 
-    public labelDays: Record<number, string> = this.createLabelDays(this.translate);
+    public labelDays: Record<number, string> = this.createLabelDays(this.translateSrv);
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["locale"]) {
-            this.labelDays = this.createLabelDays(this.translate);
+            this.labelDays = this.createLabelDays(this.translateSrv);
         }
     }
 
     // ** Private API **
 
-    private createLabelDays(translate: TranslateService): Record<number, string> {
+    private createLabelDays(translateSrv: TranslateService): Record<number, string> {
         const result: Record<number, string> = {};
         for (let idx = -1; idx <= 20; idx++) {
             const key = `panel-stream-params.time-tracking.${idx}`;
-            if (translate.instant(key) != key) {
+            if (translateSrv.instant(key) != key) {
                 result[idx] = key;
             }
         }

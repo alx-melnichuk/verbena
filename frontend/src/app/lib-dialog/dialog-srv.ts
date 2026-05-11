@@ -10,7 +10,7 @@ import { ConfirmationData, Confirmation } from "./confirmation/confirmation";
 })
 export class DialogSrv {
     private dialog: MatDialog = inject(MatDialog);
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     // ** Public API **
 
@@ -48,16 +48,16 @@ export class DialogSrv {
         if (dataParams != null) {
             const prm: ConfirmationData = dataParams as ConfirmationData;
             if (!!prm.title) {
-                prm.title = this.translate.instant(prm.title);
+                prm.title = this.translateSrv.instant(prm.title);
             }
             if (!!prm.message) {
-                prm.message = this.translate.instant(prm.message);
+                prm.message = this.translateSrv.instant(prm.message);
             }
             if (!!prm.btnNameCancel) {
-                prm.btnNameCancel = this.translate.instant(prm.btnNameCancel);
+                prm.btnNameCancel = this.translateSrv.instant(prm.btnNameCancel);
             }
             if (!!prm.btnNameAccept) {
-                prm.btnNameAccept = this.translate.instant(prm.btnNameAccept);
+                prm.btnNameAccept = this.translateSrv.instant(prm.btnNameAccept);
             }
             dialogCfg.data = { ...(dialogCfg.data || {}), ...dataParams };
         }

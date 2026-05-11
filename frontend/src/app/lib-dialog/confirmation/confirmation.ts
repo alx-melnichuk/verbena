@@ -26,7 +26,7 @@ export class Confirmation implements OnInit {
     readonly dialogRef: MatDialogRef<Confirmation> = inject(MatDialogRef<Confirmation>);
     readonly data: ConfirmationData = inject<ConfirmationData>(MAT_DIALOG_DATA);
 
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     public title = "dialog.confirmation";
     public message: string | null = null;
@@ -53,6 +53,6 @@ export class Confirmation implements OnInit {
     }
 
     private getTranslate(name: string | null): string {
-        return !!name ? this.translate.instant(name) : (name || "");
+        return !!name ? this.translateSrv.instant(name) : (name || "");
     }
 }

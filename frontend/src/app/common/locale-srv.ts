@@ -20,16 +20,16 @@ export const LOCALE_DEFAULT = LOCALE_EN;
 export class LocaleSrv {
 
     private dateAdapter: DateAdapter<Date> = inject(DateAdapter<Date>);
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
     private currLocale: string = LOCALE_DEFAULT;
 
     public get onTranslationChange(): Observable<TranslationChangeEvent> {
-        return this.translate.onTranslationChange.asObservable();
+        return this.translateSrv.onTranslationChange.asObservable();
     }
     public set onTranslationChange(_val: Observable<TranslationChangeEvent>) { }
 
     public get onLangChange(): Observable<LangChangeEvent> {
-        return this.translate.onLangChange.asObservable();
+        return this.translateSrv.onLangChange.asObservable();
     }
     public set onLangChange(_val: Observable<LangChangeEvent>) { }
 
@@ -59,7 +59,7 @@ export class LocaleSrv {
             Promise.resolve(false);
         }
         return new Promise<boolean>((resolve: (value: boolean) => void, reject: (reason: unknown) => void) => {
-            this.translate.use(locale).pipe(first())
+            this.translateSrv.use(locale).pipe(first())
                 .subscribe({
                     next: () => {
                         this.setIntoLocalStorage(this.currLocale = locale);
@@ -96,7 +96,7 @@ export class LocaleSrv {
 
     /** Get translation object by language. */
     public translationsByLang(lang: string): InterpolatableTranslationObject | undefined {
-        return this.translate.translations[lang];
+        return this.translateSrv.translations[lang];
     }
 
     // ** Private Api **

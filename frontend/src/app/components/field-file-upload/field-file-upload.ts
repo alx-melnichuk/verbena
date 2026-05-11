@@ -43,7 +43,7 @@ export class FieldFileUpload implements OnChanges {
     @Output()
     readonly readFile: EventEmitter<string[]> = new EventEmitter();
 
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     @HostBinding("class.is-disabled")
     public get classIsDisabledVal(): boolean {
@@ -91,10 +91,10 @@ export class FieldFileUpload implements OnChanges {
             let msg = "";
             if (!msg && !ValidFileTypesUtil.checkFileByAccept(file.name, file.type, acceptsSort)) {
                 const validTypes = ValidFileTypesUtil.text(acceptsSort).join(", ").toUpperCase();
-                msg = this.translate.instant("field-file-upload.err_upload_images_use_valid_types", { "validTypes": validTypes });
+                msg = this.translateSrv.instant("field-file-upload.err_upload_images_use_valid_types", { "validTypes": validTypes });
             }
             if (!msg && maxFileSize > 0 && file.size > maxFileSize) {
-                msg = this.translate.instant("field-file-upload.err_file_size_must_not_exceed_max", { maxFileSize, maxFileSizeShort });
+                msg = this.translateSrv.instant("field-file-upload.err_file_size_must_not_exceed_max", { maxFileSize, maxFileSizeShort });
             }
             if (!!msg) {
                 alert(msg);

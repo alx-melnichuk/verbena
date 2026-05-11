@@ -19,7 +19,7 @@ export const pgBrowseStreamResolver: ResolveFn<BrowseStream | HttpErrorResponse 
     = (route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
         const chatMessageSrv: ChatMessageSrv = inject(ChatMessageSrv);
         const sessionSrv = inject(SessionSrv);
-        const streamService: StreamSrv = inject(StreamSrv);
+        const streamSrv: StreamSrv = inject(StreamSrv);
         const userSrv: UserSrv = inject(UserSrv);
 
         const currUser = sessionSrv.getUser();
@@ -32,7 +32,7 @@ export const pgBrowseStreamResolver: ResolveFn<BrowseStream | HttpErrorResponse 
         const streamId = parseInt(streamIdStr || "-1", 10);
 
         if (E_BROWSE_VIEW === url.path && streamId > -1) {
-            return streamService.getStream(streamId)
+            return streamSrv.getStream(streamId)
                 .then((response: StreamDto | HttpErrorResponse | undefined) => {
                     const streamDto: StreamDto = (response as StreamDto);
                     const blockedNames: string[] = [];

@@ -66,7 +66,7 @@ export class PanelProfile implements OnInit, OnChanges {
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     private dialogSrv: DialogSrv = inject(DialogSrv);
     private userSrv: UserSrv = inject(UserSrv);
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     @HostBinding("class.global-scroll")
     public get classGlobalScrollVal(): boolean {
@@ -262,10 +262,10 @@ export class PanelProfile implements OnInit, OnChanges {
     // ** Section "Delete Account" **
 
     public removeAccount(): void {
-        const title = this.translate.instant("panel-profile.dialog_title_question_account");
+        const title = this.translateSrv.instant("panel-profile.dialog_title_question_account");
         const nickname = this.profileDto?.nickname || "";
-        const appName = this.translate.instant("app.name");
-        const message = this.translate.instant("panel-profile.dialog_message_question_account", { nickname, appName: appName });
+        const appName = this.translateSrv.instant("app.name");
+        const message = this.translateSrv.instant("panel-profile.dialog_message_question_account", { nickname, appName: appName });
         const params = { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" };
         this.dialogSrv.openConfirmation(message, title, params, { maxWidth: "40vw" })
             .then((respose) => {

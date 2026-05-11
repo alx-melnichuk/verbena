@@ -6,6 +6,6 @@ import { ProfileConfigSrv } from "../profile-config-srv";
 
 export const pgProfileConfigResolver: ResolveFn<ProfileConfigDto | HttpErrorResponse | undefined>
     = (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
-        const profileConfigService: ProfileConfigSrv = inject(ProfileConfigSrv);
-        return profileConfigService.getConfig();
+        const profileConfigSrv: ProfileConfigSrv = inject(ProfileConfigSrv);
+        return profileConfigSrv.getConfig();
     };

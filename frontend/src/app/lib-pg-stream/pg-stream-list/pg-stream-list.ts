@@ -31,12 +31,12 @@ const EVNT_LIMIT_DEF = 12;
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PgStreamList implements OnInit {
-    private translate: TranslateService = inject(TranslateService);
     private alertSrv: AlertSrv = inject(AlertSrv);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     public localeSrv: LocaleSrv = inject(LocaleSrv);
     private sessionSrv: SessionSrv = inject(SessionSrv);
     private streamSrv: StreamSrv = inject(StreamSrv);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     // ** "Calendar" **
     public clndIsLoading = false;
@@ -287,8 +287,8 @@ export class PgStreamList implements OnInit {
             })
             .catch((err: HttpErrorResponse) => {
                 const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                const message = this.translate.instant(errMsg);
-                const title = this.translate.instant("pg-stream-list.error_delete_stream");
+                const message = this.translateSrv.instant(errMsg);
+                const title = this.translateSrv.instant("pg-stream-list.error_delete_stream");
                 this.alertSrv.showError(message, title);
                 throw err;
             })

@@ -37,7 +37,7 @@ export class PgLogin {
     private router: Router = inject(Router);
     private sessionSrv: SessionSrv = inject(SessionSrv);
     private userSrv: UserSrv = inject(UserSrv);
-    private translate: TranslateService = inject(TranslateService);
+    private translateSrv: TranslateService = inject(TranslateService);
 
     public errMsgObjs: ErrMsgObj[] = [];
     public isLogin = true;
@@ -49,15 +49,15 @@ export class PgLogin {
     private langChange$ = this.localeSrv.onLangChange.pipe(takeUntilDestroyed())
         .subscribe((event: LangChangeEvent) => {
             const title = `PgLogin().onLangChange(${event.lang})`;
-            if (!this.loadedLangs[event.lang] && !!this.translate.translations) {
+            if (!this.loadedLangs[event.lang] && !!this.translateSrv.translations) {
                 if (environment.logLevel > 0) {
                     console.info(`${title} translate.setTranslation(${event.lang}); trans:`, { ...event.translations });
                 }
                 this.loadedLangs[event.lang] = true;
                 // Add translations from the main module to this module.
-                this.translate.setTranslation(event.lang, event.translations, true);
+                this.translateSrv.setTranslation(event.lang, event.translations, true);
             }
-            this.translate.use(event.lang);
+            this.translateSrv.use(event.lang);
             // #.pipe(first())
             // #.subscribe({ next: () => environment.logLevel > 0 ? console.info(`${title} translate.use(${event.lang})...Ok`) : "" });
         });
