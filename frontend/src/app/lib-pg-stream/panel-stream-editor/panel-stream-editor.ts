@@ -111,7 +111,7 @@ export class PanelStreamEditor implements OnChanges {
     };
     public formGroup: FormGroup = new FormGroup(this.controls);
     public isCreate = true;
-    public linkForVisitors = "";
+    public linkToStream = "";
     public minTimeNow: string | null = null;
 
     private isChange: boolean = false;
@@ -254,7 +254,7 @@ export class PanelStreamEditor implements OnChanges {
         // const startHours = ("00" + startDate.getHours()).slice(-2);
         // const startMinutes = ("00" + startDate.getMinutes()).slice(-2);
         // const startTimeStr = startHours + ":" + startMinutes;
-        const link = !this.isCreate ? this.streamSrv.getLinkForVisitors(streamDto.id, true) : "";
+        const link = !this.isCreate ? this.streamSrv.getLinkToStream(streamDto.id, true) : "";
         // Marks all descendants of `FormGroup` as `pristine` and `untouched` and sets the initial values.
         this.formGroup.reset({
             title: streamDto.title,
@@ -267,7 +267,7 @@ export class PanelStreamEditor implements OnChanges {
             startTime: startDate,
             link: link,
         });
-        this.linkForVisitors = link;
+        this.linkToStream = link;
         this.changeIsStartTime(isStartTime);
         this.updateMinTimeNow(startDate);
         this.logoFile = undefined;
