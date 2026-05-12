@@ -529,11 +529,11 @@ pub mod tests {
         }
     }
 
-    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, status: u16, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.status, status);
             assert_eq!(app_err.message, msg.to_string());
         }
     }

@@ -8,10 +8,7 @@ mod tests {
         test,
     };
     use serde_json;
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        err,
-    };
+    use vrb_common::{api_error::ApiError, err};
     use vrb_tools::{token_coding, token_data};
 
     use crate::{
@@ -99,7 +96,7 @@ mod tests {
         assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(a)
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert_eq!(api_err.message, err::MSG_MISSING_TOKEN);
     }
     #[actix_web::test]
@@ -119,7 +116,7 @@ mod tests {
         assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401b
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert!(api_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[actix_web::test]
@@ -144,7 +141,7 @@ mod tests {
         assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(b)
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert_eq!(api_err.message, format!("{}: ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[actix_web::test]
@@ -165,7 +162,7 @@ mod tests {
         assert_eq!(actual_status, StatusCode::NOT_ACCEPTABLE); // 406
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(api_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(api_err.status, StatusCode::NOT_ACCEPTABLE.as_u16());
         assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user2_id));
     }
     #[actix_web::test]
@@ -187,7 +184,7 @@ mod tests {
         assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(d)
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user2_id));
     }
     #[actix_web::test]
@@ -209,7 +206,7 @@ mod tests {
         assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(c)
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user2_id));
     }
     #[actix_web::test]
@@ -230,7 +227,7 @@ mod tests {
         assert_eq!(actual_status, StatusCode::FORBIDDEN); // 403
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(api_err.code, code_to_str(StatusCode::FORBIDDEN));
+        assert_eq!(api_err.status, StatusCode::FORBIDDEN.as_u16());
         assert_eq!(api_err.message, err::MSG_ACCESS_DENIED);
     }
 }
