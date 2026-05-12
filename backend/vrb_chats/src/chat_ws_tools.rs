@@ -1,35 +1,35 @@
 use actix_web::http::StatusCode;
-use vrb_common::{api_error::code_to_str, err};
+use vrb_common::err;
 
 use crate::chat_event_ws::ErrEWS;
 
 #[rustfmt::skip]
 pub fn get_err400(message: &str) -> ErrEWS {
-    ErrEWS { status: 400, code: code_to_str(StatusCode::BAD_REQUEST), message: message.to_owned() }
+    ErrEWS { status: StatusCode::BAD_REQUEST.as_u16(), message: message.to_owned() } // 400
 }
 #[rustfmt::skip]
 pub fn get_err401(message: &str) -> ErrEWS {
-    ErrEWS { status: 401, code: code_to_str(StatusCode::UNAUTHORIZED), message: message.to_owned() }
+    ErrEWS { status: StatusCode::UNAUTHORIZED.as_u16(), message: message.to_owned() } // 401
 }
 #[rustfmt::skip]
 pub fn get_err403(message: &str) -> ErrEWS {
-    ErrEWS { status: 403, code: code_to_str(StatusCode::FORBIDDEN), message: message.to_owned() }
+    ErrEWS { status: StatusCode::FORBIDDEN.as_u16(), message: message.to_owned() } // 403
 }
 #[rustfmt::skip]
 pub fn get_err404(message: &str) -> ErrEWS {
-    ErrEWS { status: 404, code: code_to_str(StatusCode::NOT_FOUND), message: message.to_owned() }
+    ErrEWS { status: StatusCode::NOT_FOUND.as_u16(), message: message.to_owned() } // 404
 }
 #[rustfmt::skip]
 pub fn get_err406(message: &str) -> ErrEWS {
-    ErrEWS { status: 406, code: code_to_str(StatusCode::NOT_ACCEPTABLE), message: message.to_owned() }
+    ErrEWS { status: StatusCode::NOT_ACCEPTABLE.as_u16(), message: message.to_owned() } // 406
 }
 #[rustfmt::skip]
 pub fn get_err409(message: &str) -> ErrEWS {
-    ErrEWS { status: 409, code: code_to_str(StatusCode::CONFLICT), message: message.to_owned() }
+    ErrEWS { status: StatusCode::CONFLICT.as_u16(), message: message.to_owned() } // 409
 }
 #[rustfmt::skip]
 pub fn get_err500(message: &str) -> ErrEWS {
-    ErrEWS { status: 500, code: code_to_str(StatusCode::INTERNAL_SERVER_ERROR), message: message.to_owned() }
+    ErrEWS { status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), message: message.to_owned() } // 500
 }
 
 // Check if this field is required

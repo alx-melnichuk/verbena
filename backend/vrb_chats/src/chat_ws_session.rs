@@ -4,7 +4,7 @@ use actix_web::http::StatusCode;
 use actix_web_actors::ws::{self, CloseReason};
 use log::{Level::Debug, debug, log_enabled};
 use serde_json::to_string;
-use vrb_common::{api_error::code_to_str, err};
+use vrb_common::err;
 
 use crate::{
     chat_event_ws::{CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, NameEWS},
@@ -248,7 +248,7 @@ impl ChatWsSession {
                 // Check the correctness of the numeric token and get the user data.
                 let result = assistant.check_num_token_and_get_user(user_id, num_token).await;
                 if let Err(err) = result {
-                    return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+                    return addr.do_send(AsyncResultError(err.status, err.message.to_string()));
                 }
                 user_name = result.unwrap().nickname.clone();
             }
@@ -256,20 +256,20 @@ impl ChatWsSession {
             // Get chat access information.
             let result = assistant.get_chat_access(room_id, opt_user_id).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+                return addr.do_send(AsyncResultError(err.status, err.message.to_string()));
             }
 
             let opt_chat_access = result.unwrap();
             // If the stream with id = room_id is not found, then an error occurs.
             if opt_chat_access.is_none() {
                 let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, room_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
+                return addr.do_send(AsyncResultError(StatusCode::NOT_FOUND.as_u16(), message.to_string())); // 404
             }
             let chat_access = opt_chat_access.unwrap();
             // Check stream activity. ("state" IN ('waiting', 'preparing', 'started', 'paused') != 'stopped')
             // if chat_access.stream_state == "stopped" {
             //     let message = err::MSG_STREAM_NOT_ACTIVE.to_string();
-            //     return addr.do_send(AsyncResultError(409, code_to_str(StatusCode::CONFLICT), message));
+            //     return addr.do_send(AsyncResultError(StatusCode::CONFLICT.as_u16(), message)); // 409
             // }
             // Determine if a user is the owner of a chat.
             #[rustfmt::skip]
@@ -369,9 +369,9 @@ impl Handler<AsyncResultError> for ChatWsSession {
     type Result = ();
 
     fn handle(&mut self, msg: AsyncResultError, ctx: &mut Self::Context) {
-        debug!("handle<AsyncResultError>() err: {}, code: {}, message: {}", msg.0, &msg.1, &msg.2);
+        debug!("handle<AsyncResultError>() err: {}, message: {}", msg.0, &msg.1);
         #[rustfmt::skip]
-        ctx.text(to_string(&ErrEWS { status: msg.0, code: msg.1, message: msg.2 }).unwrap());
+        ctx.text(to_string(&ErrEWS { status: msg.0, message: msg.1 }).unwrap());
     }
 }
 

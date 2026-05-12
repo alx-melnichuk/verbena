@@ -14,14 +14,16 @@ mod tests {
         config_jwt,
         user_orm::tests::{USER, USER1_ID, USER4_ID, UserOrmTest},
     };
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        validators,
-    };
+    use vrb_common::{api_error::ApiError, validators};
 
     use crate::{
-        chat_message_controller::{delete_blocked_user, get_blocked_users, get_blocked_users_names, post_blocked_user, tests as ChatMessageCtrlTest},
-        chat_message_models::{self, BlockedUser, BlockedUserDto, BlockedUserMiniDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto},
+        chat_message_controller::{
+            delete_blocked_user, get_blocked_users, get_blocked_users_names, post_blocked_user, tests as ChMsgCtrlTest,
+        },
+        chat_message_models::{
+            self, BlockedUser, BlockedUserDto, BlockedUserMiniDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto,
+            MSG_BLOCKED_NICKNAME_MAX_LENGTH, MSG_BLOCKED_NICKNAME_MIN_LENGTH, MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT,
+        },
         chat_message_orm::tests::{BlockedData, ChatMessageOrmTest},
     };
 
@@ -50,7 +52,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users/nicknames")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -82,7 +84,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users/nicknames")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -114,7 +116,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -155,7 +157,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -172,7 +174,7 @@ mod tests {
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        
+
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
@@ -191,7 +193,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token4)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -210,7 +212,7 @@ mod tests {
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        
+
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
@@ -230,7 +232,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri("/api/blocked_users?sortColumn=nickname")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token4)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -249,7 +251,7 @@ mod tests {
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        
+
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
@@ -269,7 +271,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri("/api/blocked_users?sortColumn=nickname&sortDesc=true")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token4)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -288,7 +290,7 @@ mod tests {
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        
+
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
@@ -308,7 +310,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri("/api/blocked_users?sortColumn=email&sortDesc=false")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token4)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -327,7 +329,7 @@ mod tests {
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        
+
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
@@ -347,7 +349,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri("/api/blocked_users?sortColumn=email&sortDesc=true")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token4)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -366,7 +368,7 @@ mod tests {
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        
+
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
@@ -386,7 +388,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri("/api/blocked_users?sortColumn=block_date&sortDesc=false")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token4)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -405,7 +407,7 @@ mod tests {
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
         let data_cm = ChatMessageOrmTest::chat_messages(1);
-        
+
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user4_id).map(|v| v.clone()).collect();
@@ -425,7 +427,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri("/api/blocked_users?sortColumn=block_date&sortDesc=true")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token4)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token4)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -453,7 +455,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
@@ -477,7 +479,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -487,9 +489,8 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
-        let status_code417 = code_to_str(StatusCode::EXPECTATION_FAILED);
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &status_code417, &[chat_message_models::MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "optionalFields": "blocked_id, blocked_nickname" });
         #[rustfmt::skip]
@@ -512,7 +513,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -523,7 +524,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MIN });
         assert_eq!(*app_err.params.get("minlength").unwrap(), json);
@@ -545,7 +546,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -556,7 +557,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MAX });
         assert_eq!(*app_err.params.get("maxlength").unwrap(), json);
@@ -576,7 +577,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: Some(user_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -597,7 +598,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname: Some(nickname) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -620,7 +621,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: Some(blocked_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -655,7 +656,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname: Some(blocked_nickname.clone()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -691,7 +692,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: Some(blocked_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -727,7 +728,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname: Some(blocked_nickname.clone()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -762,7 +763,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1)).to_request();
+            .insert_header(ChMsgCtrlTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
@@ -785,7 +786,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -796,7 +797,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "optionalFields": "blocked_id, blocked_nickname" });
         #[rustfmt::skip]
@@ -819,7 +820,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -830,7 +831,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MIN });
         assert_eq!(*app_err.params.get("minlength").unwrap(), json);
@@ -852,7 +853,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -863,7 +864,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MAX });
         assert_eq!(*app_err.params.get("maxlength").unwrap(), json);
@@ -883,7 +884,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: Some(user_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -904,7 +905,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(nickname) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -925,7 +926,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: Some(user_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -946,7 +947,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(nickname) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -971,7 +972,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: Some(blocked_user_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1007,7 +1008,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(blocked_nickname.clone()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;

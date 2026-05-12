@@ -12,14 +12,13 @@ mod tests {
         config_jwt,
         user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
     };
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        err,
-    };
+    use vrb_common::{api_error::ApiError, err};
 
     use crate::{
-        chat_message_controller::{post_chat_message, put_chat_message, tests as ChatMessageCtrlTest},
-        chat_message_models::{self, ChatMessageDto, ChatMessageMock, CreateChatMessageDto, ModifyChatMessageDto},
+        chat_message_controller::{post_chat_message, put_chat_message, tests as ChMsgCtrlTest},
+        chat_message_models::{
+            ChatMessageDto, ChatMessageMock, CreateChatMessageDto, MSG_MESSAGE_MAX_LENGTH, MSG_MESSAGE_MIN_LENGTH, ModifyChatMessageDto,
+        },
         chat_message_orm::tests::ChatMessageOrmTest,
     };
 
@@ -44,7 +43,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -69,7 +68,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -96,7 +95,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateChatMessageDto { stream_id, msg: ChatMessageMock::message_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -107,7 +106,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MIN_LENGTH]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_MESSAGE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_max() {
@@ -124,7 +123,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateChatMessageDto { stream_id, msg: ChatMessageMock::message_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -135,7 +134,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_MESSAGE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
@@ -153,7 +152,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateChatMessageDto { stream_id: stream_id_wrong, msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -163,7 +162,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(app_err.status, StatusCode::NOT_ACCEPTABLE.as_u16());
         #[rustfmt::skip]
         let message = format!("{}; stream_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, stream_id_wrong, &msg);
         assert_eq!(app_err.message, message);
@@ -189,7 +188,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(CreateChatMessageDto { stream_id, msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -228,7 +227,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -256,7 +255,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg_id_bad))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -266,7 +265,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
+        assert_eq!(app_err.status, StatusCode::RANGE_NOT_SATISFIABLE.as_u16());
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -286,7 +285,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -314,7 +313,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -325,7 +324,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        ChatMessageCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
+        ChMsgCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_MESSAGE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {
@@ -345,7 +344,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", id_wrong))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -355,7 +354,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(app_err.status, StatusCode::NOT_ACCEPTABLE.as_u16());
         #[rustfmt::skip]
         let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, id_wrong, user_id1, msg);
         assert_eq!(app_err.message, message);
@@ -380,7 +379,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg_id))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -390,7 +389,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(app_err.status, StatusCode::NOT_ACCEPTABLE.as_u16());
         #[rustfmt::skip]
         let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, ch_msg_id, user_id1, msg);
         assert_eq!(app_err.message, message);
@@ -414,7 +413,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg.id))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -457,7 +456,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}a", ch_msg.id, ch_msg.user_id))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -467,7 +466,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
+        assert_eq!(app_err.status, StatusCode::RANGE_NOT_SATISFIABLE.as_u16());
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "userId", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -490,7 +489,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}", id_wrong, user_id2))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -500,7 +499,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(app_err.status, StatusCode::NOT_ACCEPTABLE.as_u16());
         #[rustfmt::skip]
         let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, id_wrong, user_id2, msg);
         assert_eq!(app_err.message, message);
@@ -525,7 +524,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}", ch_msg.id, ch_msg.user_id))
-            .insert_header(ChatMessageCtrlTest::header_auth(&token1))
+            .insert_header(ChMsgCtrlTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;

@@ -87,35 +87,6 @@ fn remove_room_from_owner(owners_map: &mut HashMap<i32, HashSet<i32>>, owner_id:
 }
 
 impl ChatWsServer {
-    // Take up room for changes.
-    /*fn take_room(&mut self, room_id: i32) -> Option<Room> {
-        let room = self.room_map.get_mut(&room_id)?;
-        let room = std::mem::take(room);
-        Some(room)
-    }*/
-    /** Add a client to the room. ("count" - number of members, "id" - new member ID) */
-    /*fn add_client_to_room(&mut self, room_id: i32, opt_id: Option<u32>, client_info: ClientInfo) -> (usize, u32) {
-        let mut id = opt_id.unwrap_or_else(rand::random);
-        if let Some(room) = self.room_map.get_mut(&room_id) {
-            loop {
-                if room.contains_key(&id) {
-                    id = rand::random();
-                } else {
-                    break;
-                }
-            }
-            room.insert(id, client_info);
-            let count = room.len();
-            return (count, id);
-        }
-        // Create a new room for the first client
-        let mut room: Room = HashMap::new();
-        room.insert(id, client_info);
-        let count = room.len();
-        self.room_map.insert(room_id, room);
-        (count, id)
-    }*/
-
     /** Get the number of clients in the room. */
     fn count_clients_in_room(&self, room_id: i32) -> usize {
         self.rooms_map.get(&room_id).map(|room| room.map.len()).unwrap_or(0)
