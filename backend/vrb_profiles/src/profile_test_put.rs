@@ -17,10 +17,7 @@ pub mod tests {
         user_orm::tests::{USER, USER1_ID, UserOrmTest},
         user_registr_orm::tests::UserRegistrOrmTest,
     };
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        consts, err, profile, validators,
-    };
+    use vrb_common::{api_error::ApiError, consts, err, profile, validators};
     use vrb_dbase::enm_user_role::UserRole;
     use vrb_tools::{cdis::coding, hash_tools, png_files};
 
@@ -171,7 +168,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_MIN_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NICKNAME_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_max() {
@@ -200,7 +197,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_MAX_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NICKNAME_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_wrong() {
@@ -229,7 +226,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_REGEX]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NICKNAME_REGEX]);
     }
     #[actix_web::test]
     async fn test_put_profile_email_min() {
@@ -258,7 +255,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MIN_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_email_max() {
@@ -287,7 +284,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MAX_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_email_wrong() {
@@ -316,7 +313,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
     }
     #[actix_web::test]
     async fn test_put_profile_role_wrong() {
@@ -345,7 +342,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_USER_ROLE_INVALID_VALUE]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_USER_ROLE_INVALID_VALUE]);
     }
     #[actix_web::test]
     async fn test_put_profile_descript_min() {
@@ -374,7 +371,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_DESCRIPT_MIN_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[profile::MSG_DESCRIPT_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_descript_max() {
@@ -403,7 +400,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_DESCRIPT_MAX_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[profile::MSG_DESCRIPT_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_theme_min() {
@@ -432,7 +429,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_THEME_MIN_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[profile::MSG_THEME_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_theme_max() {
@@ -461,7 +458,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_THEME_MAX_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[profile::MSG_THEME_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_locale_min() {
@@ -490,7 +487,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_LOCALE_MIN_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[profile::MSG_LOCALE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_locale_max() {
@@ -519,7 +516,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile::MSG_LOCALE_MAX_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[profile::MSG_LOCALE_MAX_LENGTH]);
     }
 
     #[actix_web::test]
@@ -549,7 +546,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert_eq!(app_err.message, err::MSG_NICKNAME_ALREADY_USE);
     }
     #[actix_web::test]
@@ -579,7 +576,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert_eq!(app_err.message, err::MSG_EMAIL_ALREADY_USE);
     }
     #[actix_web::test]
@@ -610,7 +607,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert_eq!(app_err.message, err::MSG_NICKNAME_ALREADY_USE);
     }
     #[actix_web::test]
@@ -641,7 +638,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert_eq!(app_err.message, err::MSG_EMAIL_ALREADY_USE);
     }
     #[actix_web::test]
@@ -680,7 +677,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::PAYLOAD_TOO_LARGE));
+        assert_eq!(app_err.status, StatusCode::PAYLOAD_TOO_LARGE.as_u16());
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_SIZE);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualFileSize": size, "maxFileSize": prfl_avatar_max_size });
@@ -718,7 +715,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE));
+        assert_eq!(app_err.status, StatusCode::UNSUPPORTED_MEDIA_TYPE.as_u16());
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_TYPE);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualFileType": "image/bmp", "validFileType": "image/jpeg,image/png" });
@@ -1179,7 +1176,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REQUIRED]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_min() {
@@ -1208,7 +1205,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_max() {
@@ -1237,7 +1234,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED),
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(),
             &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
@@ -1267,7 +1264,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REGEX]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_empty() {
@@ -1299,7 +1296,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_REQUIRED]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_min() {
@@ -1331,7 +1328,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_MIN_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_max() {
@@ -1363,7 +1360,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_MAX_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_wrong() {
@@ -1395,7 +1392,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_REGEX]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_equal_old_value() {
@@ -1427,7 +1424,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NEW_PASSWORD_EQUAL_OLD_VALUE]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_EQUAL_OLD_VALUE]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_hash_password() {
@@ -1458,7 +1455,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert!(app_err.message.starts_with(err::MSG_INVALID_HASH));
     }
     #[actix_web::test]
@@ -1490,7 +1487,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(app_err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert_eq!(app_err.message, err::MSG_PASSWORD_INCORRECT);
     }
     #[actix_web::test]

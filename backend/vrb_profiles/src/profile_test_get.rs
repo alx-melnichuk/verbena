@@ -11,14 +11,13 @@ mod tests {
         config_jwt,
         user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
     };
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        err,
-    };
+    use vrb_common::{api_error::ApiError, err};
 
     use crate::{
         config_prfl,
-        profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, get_profile_mini_by_id, tests as ProfileCtrlTest},
+        profile_controller::{
+            get_profile_by_id, get_profile_config, get_profile_current, get_profile_mini_by_id, tests as ProfileCtrlTest,
+        },
         profile_models::{ProfileConfigDto, UserProfileDto, UserProfileMiniDto},
         profile_orm::tests::ProfileOrmTest,
     };
@@ -51,7 +50,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
+        assert_eq!(app_err.status, StatusCode::RANGE_NOT_SATISFIABLE.as_u16());
         #[rustfmt::skip]
         let msg = format!("{}; `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
         assert_eq!(app_err.message, msg);
@@ -104,7 +103,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
 
-    // ** get_profile_mini_by_id (Without authorization.) ** 
+    // ** get_profile_mini_by_id (Without authorization.) **
 
     #[actix_web::test]
     async fn test_get_profile_mini_by_id_invalid_id() {
@@ -127,7 +126,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
+        assert_eq!(app_err.status, StatusCode::RANGE_NOT_SATISFIABLE.as_u16());
         #[rustfmt::skip]
         let msg = format!("{}; `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
         assert_eq!(app_err.message, msg);
