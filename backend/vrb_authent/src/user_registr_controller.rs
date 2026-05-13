@@ -1,11 +1,11 @@
 use std::{borrow::Cow, time::Instant as tm};
 
-use actix_web::{HttpResponse, get, http::StatusCode, post, put, web};
+use actix_web::{HttpResponse, get, post, put, web};
 use chrono::{Duration, Utc};
 use log::{Level::Info, error, info, log_enabled};
 use utoipa;
 use vrb_common::{
-    api_error::{ApiError, code_to_str},
+    api_error::ApiError,
     err,
     validators::{Validator, msg_validation},
 };
@@ -116,7 +116,7 @@ pub async fn registration(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors)); // 417
+        error!("{}.{}", 417, msg_validation(&validation_errors)); // 417
         return Ok(ApiError::to_response(&ApiError::validations(validation_errors)));
     }
 
@@ -126,7 +126,7 @@ pub async fn registration(
 
     let password = registr_user_dto.password.clone();
     let password_hashed = hash_tools::encode_hash(&password).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_HASHING_PASSWORD, &e);
+        error!("{}.{}; {}", 500, err::MSG_ERROR_HASHING_PASSWORD, &e);
         ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, &e) // 500
     })?;
 
@@ -136,6 +136,7 @@ pub async fn registration(
     // Check if the nickname and email parameters are specified.
     if nickname.len() == 0 && email.len() == 0 {
         let json = serde_json::json!({ "nickname": "null", "email": "null" });
+        error!("{}.{}; {}", 406, err::MSG_PARAMS_NOT_SPECIFIED, json.to_string());
         return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json));
     }
@@ -150,7 +151,10 @@ pub async fn registration(
             // Search for "nickname" or "email" in the "users" table.
             let opt_user = user_orm2
                 .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
-                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                .map_err(|e| {
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                    ApiError::create(507, err::MSG_DATABASE, &e) // 507
+                })
                 .ok()?;
             // If such an entry exists in the "users" table, then exit.
             if let Some(user) = opt_user {
@@ -160,7 +164,10 @@ pub async fn registration(
         if res_search.is_none() {
             let opt_user_registr = user_registr_orm2
                 .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
-                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                .map_err(|e| {
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                    ApiError::create(507, err::MSG_DATABASE, &e) // 507
+                })
                 .ok()?;
             // If such an entry exists in the "user_registrs" table, then exit.
             if let Some(user_registr) = opt_user_registr {
@@ -171,7 +178,7 @@ pub async fn registration(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -179,7 +186,7 @@ pub async fn registration(
     if let Some((is_nickname, _)) = opt_search {
         #[rustfmt::skip]
         let message = if is_nickname { err::MSG_NICKNAME_ALREADY_USE } else { err::MSG_EMAIL_ALREADY_USE };
-        error!("{}-{}", code_to_str(StatusCode::CONFLICT), &message);
+        error!("{}.{}", 409, &message);
         return Err(ApiError::new(409, &message)); // 409
     }
 
@@ -200,14 +207,14 @@ pub async fn registration(
         #[rustfmt::skip]
         let user_registr = user_registr_orm.create_user_registr(create_user_registr)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         user_registr
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
@@ -219,7 +226,7 @@ pub async fn registration(
     #[rustfmt::skip]
     let registr_token = token_coding::encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        error!("{}.{}; {}", 422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
@@ -238,7 +245,7 @@ pub async fn registration(
 
     if result.is_err() {
         let e = result.unwrap_err();
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_SENDING_EMAIL, &e);
+        error!("{}.{}; {}", 510, err::MSG_ERROR_SENDING_EMAIL, &e);
         return Err(ApiError::create(510, err::MSG_ERROR_SENDING_EMAIL, &e)); // 510
     }
 
@@ -297,7 +304,7 @@ pub async fn confirm_registration(
 
     // Check the signature and expiration date on the received “registr_token".
     let dual_token = token_coding::decode_token(&registr_token, jwt_secret).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+        error!("{}.{}; {}", 401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
         ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
     })?;
 
@@ -308,14 +315,14 @@ pub async fn confirm_registration(
     // Find a record with the specified ID in the “user_registr" table.
     let opt_user_registr = web::block(move || {
         let user_registr = user_registr_orm2.find_user_registr_by_id(user_registr_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         user_registr
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
@@ -326,7 +333,7 @@ pub async fn confirm_registration(
     // If no such entry exists, then exit with code 404.
     let user_registr = opt_user_registr.ok_or_else(|| {
         let msg = format!("user_registr_id: {}", user_registr_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_FOUND), MSG_REGISTR_NOT_FOUND, &msg);
+        error!("{}.{}; {}", 404, MSG_REGISTR_NOT_FOUND, &msg);
         ApiError::create(404, MSG_REGISTR_NOT_FOUND, &msg) // 404
     })?;
 
@@ -336,7 +343,7 @@ pub async fn confirm_registration(
     let user = web::block(move || {
         // Create a new entity (user, profile).
         let res_profile = user_orm.create_user(create_user).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
         });
 
@@ -344,7 +351,7 @@ pub async fn confirm_registration(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
     })??;
 
@@ -354,7 +361,7 @@ pub async fn confirm_registration(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         // An error during this operation has no effect.
     });
 
@@ -411,12 +418,12 @@ pub async fn registration_clear_for_expired(
     let count_inactive_registr_res = 
         web::block(move || user_registr_orm.delete_inactive_final_date(None)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
         ).await
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
             ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
 

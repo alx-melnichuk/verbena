@@ -1,15 +1,12 @@
 use std::{rc::Rc, time::Instant as tm};
 
-use actix_web::{FromRequest, HttpMessage, dev, error, http::StatusCode, web};
+use actix_web::{FromRequest, HttpMessage, dev, error, web};
 use futures_util::{
     FutureExt,
     future::{LocalBoxFuture, Ready, ready},
 };
 use log::{Level::Info, error, info, log_enabled};
-use vrb_common::{
-    api_error::{ApiError, code_to_str},
-    err,
-};
+use vrb_common::{api_error::ApiError, err};
 use vrb_dbase::enm_user_role::UserRole;
 use vrb_tools::{token_coding, token_data};
 
@@ -36,7 +33,7 @@ impl FromRequest for Authenticated {
         let value = req.extensions().get::<User>().cloned();
         let result = match value {
             Some(user) => Ok(Authenticated(user)),
-            None => Err(error::ErrorInternalServerError(ApiError::new(500, MSG_USER_NOT_RECEIVED_FROM_REQUEST))),
+            None => Err(error::ErrorInternalServerError(ApiError::new(500, MSG_USER_NOT_RECEIVED_FROM_REQUEST))), // 500
         };
         ready(result)
     }
@@ -125,7 +122,7 @@ where
 
         // If the token is missing, then an error (code: "Unauthorized", message: "token_missing").
         if token.is_none() {
-            error!("{}: {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_MISSING_TOKEN);
+            error!("{}.{}", 401, err::MSG_MISSING_TOKEN);
             let json_error = ApiError::new(401, err::MSG_MISSING_TOKEN);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401(a)
         }
@@ -138,7 +135,7 @@ where
 
         if let Err(e) = token_res {
             let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
-            error!("{}: {}", code_to_str(StatusCode::UNAUTHORIZED), &message);
+            error!("{}.{}", 401, &message);
             let json_error = ApiError::new(401, &message);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401(b)
         }
@@ -155,7 +152,7 @@ where
             // Token verification:
             // 1. Search for a session by "id" from the token;
             let opt_session = user_orm.get_session_by_id(user_id).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 return ApiError::create(507, err::MSG_DATABASE, &e); // 507
             })?;
             // If the session does not exist, return error 406("NotAcceptable", "session_not_found; user_id: {}").
@@ -166,7 +163,7 @@ where
             let _ = is_unacceptable_token_num(&session, num_token, user_id)?;
             // 3. If everything is correct, then search for the user by "user_id" from the token;
             let opt_user = user_orm.get_user_by_id(user_id, false).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             })?;
             // If the user is not present, return error401(d)("Unauthorized", "unacceptable_token_id; user_id: {}").
@@ -184,7 +181,7 @@ where
                 let res = srv.call(req).await?;
                 Ok(res)
             } else {
-                error!("{}: {}", code_to_str(StatusCode::FORBIDDEN), err::MSG_ACCESS_DENIED);
+                error!("{}.{}", 403, err::MSG_ACCESS_DENIED);
                 let err_msg = ApiError::new(403, err::MSG_ACCESS_DENIED);
                 Err(error::ErrorForbidden(err_msg)) // 403
             }
@@ -198,7 +195,7 @@ pub fn is_session_not_found(opt_session: Option<Session>, user_id: i32) -> Resul
     let session = opt_session.ok_or_else(|| {
         // There is no session for this user.
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg);
+        error!("{}.{}; {}", 406, err::MSG_SESSION_NOT_FOUND, &msg);
         ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg) // 406
     })?;
     Ok(session)
@@ -209,7 +206,7 @@ pub fn is_unacceptable_token_num(session: &Session, num_token: i32, user_id: i32
     if session.num_token.is_none() || session.num_token.unwrap() != num_token {
         // If they do not match, then this is an error.
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401(c)
+        error!("{}.{}; {}", 401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401(c)
         return Err(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg));
     }
     Ok(())
@@ -218,7 +215,7 @@ pub fn is_unacceptable_token_num(session: &Session, num_token: i32, user_id: i32
 pub fn is_unacceptable_token_id(opt_user: Option<User>, user_id: i32) -> Result<User, ApiError> {
     let user = opt_user.ok_or_else(|| {
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_ID, &msg);
+        error!("{}.{}; {}", 401, err::MSG_UNACCEPTABLE_TOKEN_ID, &msg);
         ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_ID, &msg) // 401(d)
     })?;
     Ok(user)
