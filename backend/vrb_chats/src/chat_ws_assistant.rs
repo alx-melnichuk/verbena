@@ -1,4 +1,3 @@
-use actix_web::http::StatusCode;
 use log::error;
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_authent::user_orm::impls::UserOrmApp;
@@ -10,10 +9,7 @@ use vrb_authent::{
     user_models::User,
     user_orm::UserOrm,
 };
-use vrb_common::{
-    api_error::{ApiError, code_to_str},
-    err,
-};
+use vrb_common::{api_error::ApiError, err};
 use vrb_tools::token_coding;
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -22,7 +18,7 @@ use crate::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::{
     chat_message_models::{
-        BlockedUserMini, ChatAccess, ChatMessage, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage
+        BlockedUserMini, ChatAccess, ChatMessage, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage,
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -90,7 +86,7 @@ impl ChatWsAssistant {
         // Token verification:
         // 1. Search for a session by "id" from the token;
         let opt_session = user_orm.get_session_by_id(user_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             return ApiError::create(507, err::MSG_DATABASE, &e); // 507
         })?;
         // If the session does not exist, return error 406("NotAcceptable", "session_not_found; user_id: {}").
@@ -101,7 +97,7 @@ impl ChatWsAssistant {
         let _ = is_unacceptable_token_num(&session, num_token, user_id)?;
         // 3. If everything is correct, then search for the user by "user_id" from the token;
         let opt_user = user_orm.get_user_by_id(user_id, false).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })?;
         // If the user is not present, return error401(d)("Unauthorized", "unacceptable_token_id; user_id: {}").
@@ -113,7 +109,7 @@ impl ChatWsAssistant {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
 
         chat_message_orm.get_chat_access(stream_id, opt_user_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
     }
@@ -136,7 +132,7 @@ impl AssistantBlockUser for ChatWsAssistant {
             chat_message_orm
                 .create_blocked_user(CreateBlockedUser::new(user_id, blocked_id, blocked_nickname))
                 .map_err(|e| {
-                    error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                     ApiError::create(507, err::MSG_DATABASE, &e) // 507
                 })
         } else {
@@ -144,7 +140,7 @@ impl AssistantBlockUser for ChatWsAssistant {
             chat_message_orm
                 .delete_blocked_user(DeleteBlockedUser::new(user_id, blocked_id, blocked_nickname))
                 .map_err(|e| {
-                    error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                     ApiError::create(507, err::MSG_DATABASE, &e) // 507
                 })
         }
@@ -160,7 +156,7 @@ impl AssistantChatMsg for ChatWsAssistant {
         let create_chat_message = CreateChatMessage::new(stream_id, user_id, msg);
         // Add a new entity (stream).
         chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
     }
@@ -171,7 +167,7 @@ impl AssistantChatMsg for ChatWsAssistant {
         let modify_chat_message = ModifyChatMessage::new(new_msg.to_owned());
         // Modify an entity (chat_message).
         chat_message_orm.modify_chat_message(id, user_id, modify_chat_message).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
     }
@@ -181,7 +177,7 @@ impl AssistantChatMsg for ChatWsAssistant {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
         // Add a new entity (stream).
         chat_message_orm.delete_chat_message(id, user_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
     }
