@@ -15,10 +15,7 @@ mod tests {
         config_jwt,
         user_orm::tests::{USER, USER1, USER1_ID, UserOrmTest},
     };
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        consts, err,
-    };
+    use vrb_common::{api_error::ApiError, consts, err};
     use vrb_tools::{cdis::coding, png_files};
 
     use crate::{
@@ -121,7 +118,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TITLE_REQUIRED]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_TITLE_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_title_min() {
@@ -152,7 +149,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TITLE_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_TITLE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_title_max() {
@@ -183,7 +180,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TITLE_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_TITLE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_descript_min() {
@@ -215,7 +212,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_DESCRIPT_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_DESCRIPT_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_descript_max() {
@@ -247,7 +244,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_DESCRIPT_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_DESCRIPT_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_starttime_min() {
@@ -280,7 +277,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_MIN_VALID_STARTTIME]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_MIN_VALID_STARTTIME]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_source_min() {
@@ -311,7 +308,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_SOURCE_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_SOURCE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_source_max() {
@@ -343,7 +340,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_SOURCE_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_SOURCE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_tags_min_amount() {
@@ -375,7 +372,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
         let msg = if tags_len == 0 { MSG_TAG_REQUIRED } else { MSG_TAG_MIN_AMOUNT };
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[msg]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[msg]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_tags_max_amount() {
@@ -406,7 +403,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TAG_MAX_AMOUNT]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_TAG_MAX_AMOUNT]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_tag_name_min() {
@@ -438,7 +435,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TAG_MIN_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_TAG_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_tag_name_max() {
@@ -470,7 +467,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_TAG_MAX_LENGTH]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_TAG_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_invalid_tag() {
@@ -499,7 +496,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(app_err.status, StatusCode::NOT_ACCEPTABLE.as_u16());
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}; {}", MSG_INVALID_FIELD_TAG, "expected value at line 1 column 1"));
     }
@@ -540,7 +537,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::PAYLOAD_TOO_LARGE));
+        assert_eq!(app_err.status, StatusCode::PAYLOAD_TOO_LARGE.as_u16());
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_SIZE);
         let json = serde_json::json!({ "actualFileSize": size, "maxFileSize": strm_logo_max_size });
         assert_eq!(*app_err.params.get("invalidFileSize").unwrap(), json);
@@ -579,7 +576,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE));
+        assert_eq!(app_err.status, StatusCode::UNSUPPORTED_MEDIA_TYPE.as_u16());
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_TYPE);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualFileType": "image/bmp", "validFileType": "image/jpeg,image/png" });
@@ -857,7 +854,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
+        assert_eq!(app_err.status, StatusCode::RANGE_NOT_SATISFIABLE.as_u16());
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));

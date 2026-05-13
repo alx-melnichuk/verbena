@@ -13,10 +13,7 @@ mod tests {
         config_jwt,
         user_orm::tests::{USER, USER1, USER1_ID, USER2, USER3, UserOrmTest},
     };
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        err,
-    };
+    use vrb_common::{api_error::ApiError, err};
     use vrb_dbase::enm_user_role::UserRole;
 
     use crate::{
@@ -103,7 +100,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
+        assert_eq!(app_err.status, StatusCode::FORBIDDEN.as_u16());
         let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
         #[rustfmt::skip]
         let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
@@ -137,7 +134,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(app_err.status, StatusCode::NOT_ACCEPTABLE.as_u16());
         assert_eq!(app_err.message, MSG_FINISH_LESS_START);
         let json = serde_json::json!({ "streamPeriodStart": start_s, "streamPeriodFinish": finish_s });
         assert_eq!(*app_err.params.get("invalidPeriod").unwrap(), json);
@@ -173,7 +170,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::PAYLOAD_TOO_LARGE));
+        assert_eq!(app_err.status, StatusCode::PAYLOAD_TOO_LARGE.as_u16());
         assert_eq!(app_err.message, MSG_FINISH_EXCEEDS_LIMIT);
         let json = serde_json::json!({ "actualPeriodFinish": finish_s
             , "maxPeriodFinish": max_finish_s, "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });

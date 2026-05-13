@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fs, ops::Deref, path};
 
 use actix_multipart::form::{MultipartForm, tempfile::TempFile, text::Text};
-use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
+use actix_web::{HttpResponse, delete, get, post, put, web};
 use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
 use log::error;
 use mime::IMAGE;
@@ -10,7 +10,7 @@ use utoipa;
 use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     alias_path::alias_path_stream,
-    api_error::{ApiError, code_to_str},
+    api_error::ApiError,
     err, parser,
     validators::{self, ValidationChecks, Validator, msg_validation},
 };
@@ -129,23 +129,21 @@ pub async fn get_stream_and_tags_by_id(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}-{}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        error!("{}.{}", 416, &message);
         ApiError::new(416, &message) // 416
     })?;
 
     let res_data = web::block(move || {
         // Get 'stream' by id.
         let res_data = stream_orm.get_stream_and_tags(id).map_err(|e| {
-            #[rustfmt::skip]
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_data
     })
     .await
     .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -346,7 +344,7 @@ pub async fn get_stream_and_tags(
     // Checking the validity of the data model.
     let validation_res = search_stream_dto.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        error!("{}.{}", 417, msg_validation(&validation_errors));
         return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
 
@@ -359,18 +357,16 @@ pub async fn get_stream_and_tags(
         let finish = opt_finishtime.unwrap();
         if start > finish {
             let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
-            , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_FINISH_LESS_START, json.to_string());
-        return Err(ApiError::new(406, MSG_FINISH_LESS_START) // 406
-            .add_param(Cow::Borrowed("invalidPeriod"), &json));
+                , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
+            error!("{}.{}; {}", 406, MSG_FINISH_LESS_START, json.to_string());
+            return Err(ApiError::new(406, MSG_FINISH_LESS_START) // 406
+                .add_param(Cow::Borrowed("invalidPeriod"), &json));
         }
         let max_finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
         if max_finish <= finish {
             let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
                 , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
-            #[rustfmt::skip]
-            error!("{}-{}: {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
+            error!("{}.{}; {}", 413, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
             return Err(ApiError::new(413, MSG_FINISH_EXCEEDS_LIMIT) // 413
                 .add_param(Cow::Borrowed("periodTooLong"), &json));
         } 
@@ -389,17 +385,16 @@ pub async fn get_stream_and_tags(
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_data =
             stream_orm.filter_stream_and_tags_by_pages(search_stream).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e)
             });
         res_data
-        })
-        .await
-        .map_err(|e| {
-            #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })?;
+    })
+    .await
+    .map_err(|e| {
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
         
     let (count, stream_and_tags) = res_data?;
 
@@ -553,14 +548,13 @@ pub async fn get_streams_calendar(
     if user_id != curr_user_id && user.role != UserRole::Admin {
         let text = format!("curr_user_id: {}, user_id: {}", curr_user_id, user_id);
         let message = format!("{}; {}", MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
-        error!("{}-{}", code_to_str(StatusCode::FORBIDDEN), &message);
+        error!("{}.{}", 403, &message);
         return Err(ApiError::create(403, err::MSG_ACCESS_DENIED, &message)); // 403
     }
     if finish < start {
         let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
             , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_FINISH_LESS_START, json.to_string());
+        error!("{}.{}; {}", 406, MSG_FINISH_LESS_START, json.to_string());
         return Err(ApiError::new(406, MSG_FINISH_LESS_START) // 406
             .add_param(Cow::Borrowed("invalidPeriod"), &json));
     }
@@ -568,8 +562,7 @@ pub async fn get_streams_calendar(
     if max_finish <= finish {
         let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
             , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
-        #[rustfmt::skip]
-        error!("{}-{}: {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
+        error!("{}.{}; {}", 413, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
         return Err(ApiError::new(413, MSG_FINISH_EXCEEDS_LIMIT) // 413
             .add_param(Cow::Borrowed("periodTooLong"), &json));
     }
@@ -580,18 +573,18 @@ pub async fn get_streams_calendar(
     let res_data = web::block(move || {
         // Find for an entity (stream period) by SearchStreamEvent.
         let res_data =
-        stream_orm.filter_stream_dates(search_stream_date).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)    
-            });
-        res_data
-        })
-        .await
+        stream_orm.filter_stream_dates(search_stream_date)
         .map_err(|e| {
-            #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })?;
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)    
+        });
+        res_data
+    })
+    .await
+    .map_err(|e| {
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
 
     let list: Vec<String> = match res_data {
         Ok(v) => v.iter().map(|d| d.to_rfc3339_opts(Millis, true)).collect(),
@@ -680,17 +673,16 @@ pub async fn get_stream_popural_tags(
         // Find for an entity (stream period) by SearchStreamEvent.
         let res_data =
         stream_orm.get_stream_tags(search_stream_tag).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e)    
             });
         res_data
-        })
-        .await
-        .map_err(|e| {
-            #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })?;
+    })
+    .await
+    .map_err(|e| {
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
 
     let (limit, page, stream_tags) = res_data?;
 
@@ -888,14 +880,14 @@ pub async fn post_stream_and_tags(
     // Get data from MultipartForm.
     let (create_stream_and_tags_dto, logo_file) = CreateStreamForm::convert(create_stream_form)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_FIELD_TAG, &e);
+            error!("{}.{}; {}", 406, MSG_INVALID_FIELD_TAG, &e);
             ApiError::create(406, MSG_INVALID_FIELD_TAG, &e) // 406
         })?;
 
     // Checking the validity of the data model.
     let validation_res = create_stream_and_tags_dto.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        error!("{}.{}", 417, msg_validation(&validation_errors));
         return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
 
@@ -911,7 +903,7 @@ pub async fn post_stream_and_tags(
         let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
         if logo_max_size > 0 && temp_file.size > logo_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
-            error!("{}-{}; {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), err::MSG_INVALID_FILE_SIZE, json.to_string());
+            error!("{}.{}; {}", 413, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(ApiError::new(413, err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
@@ -921,7 +913,7 @@ pub async fn post_stream_and_tags(
         let valid_file_mime_types = config_strm.strm_logo_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            error!("{}-{}; {}", code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE), err::MSG_INVALID_FILE_TYPE, json.to_string());
+            error!("{}.{}; {}", 415, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(ApiError::new(415, err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
@@ -936,7 +928,7 @@ pub async fn post_stream_and_tags(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let msg = format!("{} - {}", &full_path_file, err.to_string());
-            error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_UPLOAD_FILE, &msg);
+            error!("{}.{}; {}", 500, err::MSG_ERROR_UPLOAD_FILE, &msg);
             return Err(ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, &msg)) // 500
         }
         path_new_logo_file = full_path_file;
@@ -944,7 +936,7 @@ pub async fn post_stream_and_tags(
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream_and_tags()")
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_CONVERT_FILE, &e);
+                error!("{}.{}; {}", 510, err::MSG_ERROR_CONVERT_FILE, &e);
                 ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, &e) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
@@ -969,23 +961,20 @@ pub async fn post_stream_and_tags(
     let res_data = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.create_stream_and_tags(create_stream_and_tags).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
         });
         res_data
     })
     .await
     .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    if res_data.is_err() {
-        if path_new_logo_file.len() > 0 {
-            if let Err(err) = fs::remove_file(&path_new_logo_file) {
-                error!("{} remove_file({}): error: {:?}", "post_stream_and_tags()", &path_new_logo_file, err);
-            }
+    if res_data.is_err() && path_new_logo_file.len() > 0 {
+        if let Err(err) = fs::remove_file(&path_new_logo_file) {
+            error!("{} remove_file({}): error: {:?}", "post_stream_and_tags()", &path_new_logo_file, err);
         }
     }
     let opt_stream_and_tags = res_data?;
@@ -1146,14 +1135,14 @@ pub async fn put_stream_and_tags(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}-{}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        error!("{}.{}", 416, &message);
         ApiError::new(416, &message) // 416
     })?;
 
     // Get data from MultipartForm.
     let (modify_stream_and_tags_dto, logo_file) = ModifyStreamForm::convert(modify_stream_form)
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_FIELD_TAG, &e);
+        error!("{}.{}; {}", 406, MSG_INVALID_FIELD_TAG, &e);
         ApiError::create(406, MSG_INVALID_FIELD_TAG, &e) // 406
     })?;
 
@@ -1173,7 +1162,7 @@ pub async fn put_stream_and_tags(
             }
         }).collect();
         if !is_no_fields_to_update || logo_file.is_none() {
-            error!("{}: {}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&errors));
+            error!("{}.{}", 417, msg_validation(&errors));
             return Ok(ApiError::to_response(&ApiError::validations(errors))); // 417
         }
     }
@@ -1192,7 +1181,7 @@ pub async fn put_stream_and_tags(
         // Check file size for maximum value.
         if logo_max_size > 0 && temp_file.size > logo_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
-            error!("{}-{}; {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), err::MSG_INVALID_FILE_SIZE, json.to_string());
+            error!("{}.{}; {}", 413, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(ApiError::new(413, err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
@@ -1203,7 +1192,7 @@ pub async fn put_stream_and_tags(
         let valid_file_mime_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            error!("{}-{}; {}", code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE), err::MSG_INVALID_FILE_TYPE, json.to_string());
+            error!("{}.{}; {}", 415, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(ApiError::new(415, err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
@@ -1219,7 +1208,7 @@ pub async fn put_stream_and_tags(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            error!("{}-{}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), &message);
+            error!("{}.{}", 500, &message);
             return Err(ApiError::new(500, &message)); // 500
         }
         path_new_logo_file = full_path_file;
@@ -1227,7 +1216,7 @@ pub async fn put_stream_and_tags(
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream_and_tags()")
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_CONVERT_FILE, &e);
+                error!("{}.{}; {}", 510, err::MSG_ERROR_CONVERT_FILE, &e);
                 ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, &e) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
@@ -1252,7 +1241,7 @@ pub async fn put_stream_and_tags(
         // Modify an entity (stream).
         let res_data = stream_orm.modify_stream_and_tags(id, curr_user_id, modify_stream_and_tags)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
         });
         res_data
@@ -1260,7 +1249,7 @@ pub async fn put_stream_and_tags(
     .await
     .map_err(|e| {
         #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
     // modify_stream_and_stream_tag() time: 7.46ms
@@ -1385,7 +1374,7 @@ pub async fn put_toggle_state(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        error!("{}.{}", 416, &message);
         ApiError::new(416, &message) // 416
     })?;
 
@@ -1395,7 +1384,7 @@ pub async fn put_toggle_state(
         // Find a stream by ID.
         let res_data = stream_orm3.get_stream_and_tags(id)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e)
             });
             res_data
@@ -1403,7 +1392,7 @@ pub async fn put_toggle_state(
     .await
     .map_err(|e| {
         #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -1417,8 +1406,7 @@ pub async fn put_toggle_state(
 
     if stream_and_tags.state == new_state {
         let json = json!({ "oldState": &stream_and_tags.state, "newState": &new_state });
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_STREAM_STATE, json.to_string());
+        error!("{}.{}; {}", 406, MSG_INVALID_STREAM_STATE, json.to_string());
         return Err(ApiError::new(406, MSG_INVALID_STREAM_STATE) // 406
             .add_param(Cow::Borrowed("invalidState"), &json));
     }
@@ -1432,7 +1420,7 @@ pub async fn put_toggle_state(
     };
     if is_not_acceptable {
         let json = json!({ "oldState": &stream_and_tags.state.to_string(), "newState": &new_state });
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_STREAM_STATE, json.to_string());
+        error!("{}.{}; {}", 406, MSG_INVALID_STREAM_STATE, json.to_string());
         return Err(ApiError::new(406, MSG_INVALID_STREAM_STATE) // 406
             .add_param(Cow::Borrowed("invalidState"), &json));
     }
@@ -1444,15 +1432,14 @@ pub async fn put_toggle_state(
             let res_data2 = stream_orm3
                 .get_stream_and_tags_in_live(curr_user_id, id)
                 .map_err(|e| {
-                    error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                     ApiError::create(507, err::MSG_DATABASE, &e)
                 });
             res_data2
         })
         .await
         .map_err(|e| {
-            #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
             ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
         
@@ -1460,7 +1447,7 @@ pub async fn put_toggle_state(
 
         if let Some(stream2_and_tags) = opt_stream2_and_tags {
             let json = json!({ "id": stream2_and_tags.id, "title": &stream2_and_tags.title });
-            error!("{}-{}; {}", code_to_str(StatusCode::CONFLICT), MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
+            error!("{}.{}; {}", 409, MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
             return Err(ApiError::new(409, MSG_EXIST_IS_ACTIVE_STREAM) // 409
                 .add_param(Cow::Borrowed("activeStream"), &json));
         }
@@ -1483,7 +1470,7 @@ pub async fn put_toggle_state(
         // Modify an entity (stream).
         let res_data3 = stream_orm.modify_stream_and_tags(id, curr_user_id, modify_stream_and_tags)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
         });
         res_data3
@@ -1491,7 +1478,7 @@ pub async fn put_toggle_state(
     .await
     .map_err(|e| {
         #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -1551,22 +1538,21 @@ pub async fn delete_stream_and_tags(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let msg = format!("`{}` - {}", "id", &e);
-        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        error!("{}.{}; {}", 416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
     let res_data = web::block(move || {
         // Delete an entity (stream, tags).
         let res_data = stream_orm.delete_stream_and_tags(id, curr_user_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_data
     })
     .await
     .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -1607,11 +1593,11 @@ pub mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, status: u16, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.status, status);
             assert_eq!(app_err.message, msg.to_string());
         }
     }

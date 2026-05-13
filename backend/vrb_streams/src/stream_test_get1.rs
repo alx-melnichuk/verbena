@@ -13,10 +13,7 @@ mod tests {
         config_jwt,
         user_orm::tests::{ADMIN, USER, USER1, USER1_ID, USER2, UserOrmTest},
     };
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        err,
-    };
+    use vrb_common::{api_error::ApiError, err};
     use vrb_dbase::enm_stream_state::StreamState;
 
     use crate::{
@@ -61,7 +58,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
+        assert_eq!(app_err.status, StatusCode::RANGE_NOT_SATISFIABLE.as_u16());
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {} ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE, stream_id_bad);
         assert_eq!(app_err.message, msg);
@@ -447,7 +444,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_STARTTIME_REQUIRED]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_STARTTIME_REQUIRED]);
         #[rustfmt::skip]
         assert_eq!(*app_err.params.get("required").unwrap(), true);
     }
@@ -579,7 +576,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_STARTTIME_REQUIRED]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_STARTTIME_REQUIRED]);
         #[rustfmt::skip]
         assert_eq!(*app_err.params.get("required").unwrap(), true);
     }
@@ -713,7 +710,7 @@ mod tests {
         let app_err2 = app_err_vec.get(1).unwrap().clone();
         let msgs = [MSG_STARTTIME_REQUIRED, MSG_FINISHTIME_REQUIRED];
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &msgs);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &msgs);
         #[rustfmt::skip]
         assert_eq!(*app_err1.params.get("required").unwrap(), true);
         #[rustfmt::skip]
@@ -746,7 +743,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err1 = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        StreamCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[MSG_FINISHTIME_REQUIRED]);
+        StreamCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[MSG_FINISHTIME_REQUIRED]);
         #[rustfmt::skip]
         assert_eq!(*app_err1.params.get("required").unwrap(), true);
     }
@@ -778,7 +775,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        assert_eq!(app_err.status, StatusCode::NOT_ACCEPTABLE.as_u16());
         assert_eq!(app_err.message, MSG_FINISH_LESS_START);
         let json = serde_json::json!({ "streamPeriodStart": starttime, "streamPeriodFinish": finishtime });
         assert_eq!(*app_err.params.get("invalidPeriod").unwrap(), json);
@@ -814,7 +811,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::PAYLOAD_TOO_LARGE));
+        assert_eq!(app_err.status, StatusCode::PAYLOAD_TOO_LARGE.as_u16());
         assert_eq!(app_err.message, MSG_FINISH_EXCEEDS_LIMIT);
         let json = serde_json::json!({ "actualPeriodFinish": finish_s
             , "maxPeriodFinish": max_finish_s, "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
