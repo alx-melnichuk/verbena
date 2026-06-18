@@ -1,4 +1,4 @@
-<mat-form-field [formGroup]="formGroup" [ngClass]="(isReadOnly ? `fl-readonly` : ``)"
+<mat-form-field [formGroup]="formGroup" [class.fl-readonly]="isReadOnly"
   [subscriptSizing]="(formControl.touched && !!formControl.errors) || !!hint ? 'dynamic' : 'fixed'">
 
   @if (!!label) {
@@ -11,11 +11,11 @@
     panelClass="fl-select"
     (openedChange)="doOpenedChange($event)"
     (selectionChange)="doSelectionChange($event.value)">
-    <mat-select-trigger [ngClass]="(!formControl.value ? `fl-fn-it` : ``)">
+    <mat-select-trigger [class.fl-fn-it]="!formControl.value">
       {{ ("locale." + formControl.value) | translate }}
     </mat-select-trigger>
     @for (localeItem of localeList; track localeItem) {
-      <mat-option [ngClass]="(localeItem == `` ? `fl-opt-fn-it` : ``)" [value]="localeItem">
+      <mat-option [class.fl-opt-fn-it]="localeItem == ``" [value]="localeItem">
         {{ ("locale." + localeItem) | translate }}
       </mat-option>
     }

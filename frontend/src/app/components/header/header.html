@@ -39,7 +39,7 @@
 <mat-menu #mainMenu="matMenu" class="h-menu-panel" xPosition="before">
   @for (panelMenuItem of panelMenuItems; track panelMenuItem.name) {
     <button mat-menu-item class="pn-menu-item" routerLink="{{ panelMenuItem.link }}">
-      <span [ngClass]="['mm-icon', ('mm-' + panelMenuItem.name) ]"></span>
+      <span class="mm-icon" [ngClass]="[('mm-' + panelMenuItem.name) ]"></span>
       <span mm-ml-2>{{ ('main_menu.' + panelMenuItem.name) | translate }}</span>
     </button>
   }
@@ -66,21 +66,23 @@
 <mat-menu #themes="matMenu" class="h-menu-panel">
   @for (schemeItem of colorSchemeList; track schemeItem) {
     <button mat-menu-item [value]="schemeItem"
-      [ngClass]="['pn-item-menu', 'mm-menu-btn', (currentScheme == schemeItem ? 'mm-curr' : '')]"
+      class="pn-item-menu mm-menu-btn"
+      [class.mm-curr]="currentScheme == schemeItem"
       (click)="doSetColorScheme(schemeItem)">
       <span>{{ ('theme.' + schemeItem) | translate }}</span>
-      <span [ngClass]="['mm-menu-item-min', (currentScheme == schemeItem ? 'mm-check' : '')]"></span>
+      <span class="mm-menu-item-min" [class.mm-check]="currentScheme == schemeItem"></span>
     </button>
   }
 </mat-menu>
   
 <mat-menu #locales="matMenu" class="h-menu-panel">
   @for (localeItem of localeList; track localeItem) {
-    <button mat-menu-item [ngClass]="['pn-item-menu', 'mm-menu-btn', (locale == localeItem ? 'mm-curr' : '')]"
+    <button mat-menu-item class="pn-item-menu mm-menu-btn"
+      [class.mm-curr]="locale == localeItem"
       [value]="localeItem"
       (click)="doSetLocale(localeItem)">
       <span>{{ ('locale.' + localeItem) | translate }}</span>
-      <span [ngClass]="['mm-menu-item-min', (locale == localeItem ? 'mm-check' : '')]"></span>
+      <span class="mm-menu-item-min" [class.mm-check]="locale == localeItem"></span>
     </button>
   }
 </mat-menu>

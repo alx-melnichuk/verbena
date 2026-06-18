@@ -8,7 +8,7 @@
 
   <mat-chip-grid #chipGrid [formControl]="formControl">
     @for (chip of formControl.value; track chip) {
-      <mat-chip-row [ngClass]="{`fcg-error`: checkChipMinLen(chip, minLen) || checkChipMaxLen(chip, maxLen)}"
+      <mat-chip-row [class.fcg-error]="checkChipMinLen(chip, minLen) || checkChipMaxLen(chip, maxLen)"
       [removable]="!!isRemovable"
       (removed)="chipRemove(chip, formControl.value)">
         {{ chip }}

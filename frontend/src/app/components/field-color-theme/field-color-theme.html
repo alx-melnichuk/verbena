@@ -1,4 +1,4 @@
-<mat-form-field [formGroup]="formGroup" [ngClass]="(isReadOnly ? `fct-readonly` : ``)"
+<mat-form-field [formGroup]="formGroup" [class.fct-readonly]="isReadOnly"
   [subscriptSizing]="(formControl.touched && !!formControl.errors) || !!hint ? 'dynamic' : 'fixed'">
 
   @if (!!label) {
@@ -11,11 +11,11 @@
     panelClass="fct-select"
     (openedChange)="doOpenedChange($event)"
     (selectionChange)="doSelectionChange($event.value)">
-    <mat-select-trigger [ngClass]="(!formControl.value ? `fct-fn-it` : ``)">
+    <mat-select-trigger [class.fct-fn-it]="!formControl.value">
       {{ ("theme." + formControl.value) | translate }}
     </mat-select-trigger>
     @for (themeItem of themeList; track themeItem) {
-      <mat-option [ngClass]="(themeItem == `` ? `fct-opt-fn-it` : ``)" [value]="themeItem">
+      <mat-option [class.fct-opt-fn-it]="themeItem == ``" [value]="themeItem">
         {{ ("theme." + themeItem) | translate }}
       </mat-option>
     }
