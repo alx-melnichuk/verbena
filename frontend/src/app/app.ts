@@ -1,6 +1,7 @@
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgTemplateOutlet } from "@angular/common";
 import {
-    Component, ViewEncapsulation, ChangeDetectionStrategy, ChangeDetectorRef, inject, Renderer2, signal, HostListener
+    Component, ViewEncapsulation, ChangeDetectionStrategy, ChangeDetectorRef, inject, Renderer2, signal, HostListener,
+    TemplateRef, ViewChild, ViewContainerRef,
 } from "@angular/core";
 import { RouterOutlet, Router } from "@angular/router";
 import { environment } from "../environments/environment";
@@ -15,7 +16,7 @@ import { UserSrv } from "./lib-user/user-srv";
 @Component({
     selector: "app-root",
     standalone: true,
-    imports: [CommonModule, RouterOutlet, Header, Footer],
+    imports: [CommonModule, NgTemplateOutlet, RouterOutlet, Header, Footer],
     templateUrl: "./app.html",
     styleUrl: "./app.scss",
     encapsulation: ViewEncapsulation.None,
@@ -29,6 +30,11 @@ export class App {
     private router: Router = inject(Router);
     public sessionSrv: SessionSrv = inject(SessionSrv);
     private userSrv: UserSrv = inject(UserSrv);
+
+    @ViewChild("outlet", { read: ViewContainerRef })
+    public outletRef!: ViewContainerRef;
+    @ViewChild("content", { read: TemplateRef })
+    public contentRef!: TemplateRef<unknown>;
 
     protected readonly title = signal("verbena");
 
@@ -95,6 +101,11 @@ export class App {
                         .finally(() => this.changeDetector.markForCheck());
                 });
             });
+    }
+
+    private rerender() {
+        this.outletRef.clear();
+        this.outletRef.createEmbeddedView(this.contentRef);
     }
 
     private setHtmlLangAttribute(lang: string): void {

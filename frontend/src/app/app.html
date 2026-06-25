@@ -6,6 +6,11 @@
   (command)="doCommand($event)">
 </app-header>
 <main>
-  <router-outlet></router-outlet>
+  <ng-container #outlet [ngTemplateOutlet]="content">
+  </ng-container>
 </main>
 <app-footer [isAuthorized]="!!sessionSrv.getUser()"></app-footer>
+
+<ng-template #content>
+  <router-outlet></router-outlet>
+</ng-template>
