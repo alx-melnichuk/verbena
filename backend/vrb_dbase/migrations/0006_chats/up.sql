@@ -76,8 +76,11 @@ BEGIN
       FROM chat_messages cm, users u
       WHERE cm.stream_id = _stream_id
         AND u.id = cm.user_id
+        -- Allows you to use an index.
         AND _min_date_created < cm.date_created
-        AND cm.date_created < _max_date_created
+        -- date_trunc() Time remains only thousands of seconds.
+        AND _min_date_created < date_trunc('milliseconds', cm.date_created)
+        AND date_trunc('milliseconds', cm.date_created) < _max_date_created
       ORDER BY cm.date_created DESC
       LIMIT _rec_limit;
   ELSE
@@ -87,8 +90,11 @@ BEGIN
       FROM chat_messages cm, users u
       WHERE cm.stream_id = _stream_id
         AND u.id = cm.user_id
+        -- Allows you to use an index.
         AND _min_date_created < cm.date_created
-        AND cm.date_created < _max_date_created
+        -- date_trunc() Time remains only thousands of seconds.
+        AND _min_date_created < date_trunc('milliseconds', cm.date_created)
+        AND date_trunc('milliseconds', cm.date_created) < _max_date_created
       ORDER BY cm.date_created ASC
       LIMIT _rec_limit;
   END IF;
