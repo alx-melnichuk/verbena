@@ -63,12 +63,15 @@
     "err_upload_images_use_valid_types": "Завантажте зображення у правильному форматі: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "Розмір файлу не має перевищувати максимальний {{maxFileSize}} B ({{maxFileSizeShort}})."
   },
-  "image": {
-    "not_found": "не знайдено",
-    "missing": "відсутнє"
-  },
   "field-image": {
     "label": "Файл зображення",
     "remove_image": "Видаліть це зображення"
+  },
+  "field-message": {
+    "editing_msg": "Редагування повідомлення"
+  },
+  "image": {
+    "not_found": "не знайдено",
+    "missing": "відсутнє"
   }
 }
