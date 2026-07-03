@@ -4,7 +4,7 @@ import { ResolveFn, ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular
 import { P_BROWSE_ID, E_BROWSE_VIEW } from "../../common/routes";
 import { SessionSrv } from "../../common/session-srv";
 import { ChatMessageDto } from "../../lib-chat/chat-message";
-import { ChatMessageSrv } from "../../lib-chat/chat-message-srv";
+import { CHAT_MSG_LIMIT, ChatMessageSrv } from "../../lib-chat/chat-message-srv";
 
 export const pgChatMessagesResolver: ResolveFn<ChatMessageDto[] | HttpErrorResponse | undefined>
     = (route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
@@ -20,7 +20,7 @@ export const pgChatMessagesResolver: ResolveFn<ChatMessageDto[] | HttpErrorRespo
         const streamId = parseInt(streamIdStr || "-1", 10);
 
         if (E_BROWSE_VIEW === url.path && streamId > -1) {
-            return chatMessageSrv.getChatMessages(streamId, true)
+            return chatMessageSrv.getChatMessages(streamId, true, undefined, undefined, CHAT_MSG_LIMIT)
                 .catch(() => []);
         } else {
             return [];

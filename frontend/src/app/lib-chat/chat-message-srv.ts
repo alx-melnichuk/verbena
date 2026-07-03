@@ -8,6 +8,7 @@ import {
     ChatMessageDto, SearchChatMessageDto, BlockedUserDto, SortingBlockedUsersDto, BlockedUserDtoUtil, BlockedUserMiniDto, BlockedUserMiniDtoUtil
 } from "./chat-message";
 
+export const CHAT_MSG_LIMIT = 30;
 
 @Injectable({
     providedIn: "root",
@@ -16,8 +17,9 @@ export class ChatMessageSrv {
     private http: HttpClient = inject(HttpClient);
 
     public getChatMessages(
-        streamId: number, isSortDes?: boolean, minDate?: StringDateTime, maxDate?: StringDateTime, limit?: number
+        streamId: number, isSortDes?: boolean, minDate?: StringDateTime, maxDate?: StringDateTime, limit1?: number
     ): Promise<ChatMessageDto[] | HttpErrorResponse | undefined> {
+        const limit = limit1 == null || limit1 < 0 ? CHAT_MSG_LIMIT : limit1;
         const searchChatMsgDto: SearchChatMessageDto = { streamId, isSortDes, minDate, maxDate, limit };
         const params: HttpParams = HttpParamsUtil.create(searchChatMsgDto);
         const url = Uri.appUri("appApi://chat_messages");
