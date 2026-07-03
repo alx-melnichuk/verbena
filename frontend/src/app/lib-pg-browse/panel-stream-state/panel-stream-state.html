@@ -1,16 +1,14 @@
-<div>
-  @if (strmStStarted !== streamState) {
-    <svg class="pss-svg-sz">
-      @if (strmStWaiting === streamState) {
-        <use href="./lib-pg-browse/panel-stream-state/has-not-started-bin.svg#has-not-started-bin"></use>
-      }
-      @if (strmStPreparing === streamState || strmStStopped === streamState) {
-        <use href="./lib-pg-browse/panel-stream-state/has-ended-bin.svg#has-ended-bin"></use>
-      }
-      @if (strmStPaused === streamState) {
-        <use href="./lib-pg-browse/panel-stream-state/has-paused-bin.svg#has-paused-bin"></use>
-      }
-    </svg>
-  }
-</div>
+@if (strmStStarted !== streamState) {
+  <svg class="pss-svg-sz">
+    @if (strmStWaiting === streamState) {
+      <use href="./lib-pg-browse/panel-stream-state/has-not-started-bin.svg#has-not-started-bin"></use>
+    }
+    @if (strmStPreparing === streamState || strmStStopped === streamState) {
+      <use href="./lib-pg-browse/panel-stream-state/has-ended-bin.svg#has-ended-bin"></use>
+    }
+    @if (strmStPaused === streamState) {
+      <use href="./lib-pg-browse/panel-stream-state/has-paused-bin.svg#has-paused-bin"></use>
+    }
+  </svg>
+}
 <div class="pss-text">{{ (valueText || '') | translate  }}</div>

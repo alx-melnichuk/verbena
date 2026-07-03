@@ -1,12 +1,9 @@
 import { CommonModule } from "@angular/common";
 import {
-    ChangeDetectionStrategy, Component, ElementRef, inject, Input, OnChanges, Renderer2, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, Component, HostBinding, Input, OnChanges, SimpleChanges, ViewEncapsulation
 } from "@angular/core";
 import { TranslatePipe } from "@ngx-translate/core";
 import { StreamState } from "../../lib-stream/stream-dto";
-import { HtmlElemUtil } from "../../utils/html-elem.util";
-
-const ATTR_STATE = "state";
 
 @Component({
     selector: "app-panel-stream-state",
@@ -22,33 +19,25 @@ export class PanelStreamState implements OnChanges {
     @Input()
     public streamState: StreamState | null | undefined = null;
 
-    private hostRef: ElementRef<HTMLElement> = inject<ElementRef<HTMLElement>>(ElementRef);
-    private renderer: Renderer2 = inject(Renderer2);
+    @HostBinding("attr.state")
+    public get state() { return this.streamState?.toString(); }
 
     public strmStWaiting: StreamState = StreamState.waiting;
     public strmStPreparing: StreamState = StreamState.preparing;
     public strmStStarted: StreamState = StreamState.started;
     public strmStPaused: StreamState = StreamState.paused;
     public strmStStopped: StreamState = StreamState.stopped;
-
     public valueText: string | null = null;
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["streamState"]) {
             this.streamState = this.streamState || StreamState.waiting;
-            HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_STATE, this.streamState);
             this.valueText = this.getValueText(this.streamState);
         }
     }
 
-    ngOnInit(): void {
-    }
-
     // ** Private API **
 
-    private isActive(streamStatus: StreamState): boolean {
-        return [StreamState.preparing, StreamState.started, StreamState.paused].includes(streamStatus);
-    }
     private getValueText(streamState: StreamState): string {
         let res = "";
         switch (streamState) {
