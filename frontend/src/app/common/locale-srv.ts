@@ -56,7 +56,7 @@ export class LocaleSrv {
             return Promise.reject();
         }
         if (this.currLocale == locale) {
-            Promise.resolve(false);
+            return Promise.resolve(true);
         }
         return new Promise<boolean>((resolve: (value: boolean) => void, reject: (reason: unknown) => void) => {
             this.translateSrv.use(locale).pipe(first())
