@@ -5,7 +5,7 @@ import { TranslateService } from "@ngx-translate/core";
 import { LocaleSrv } from "../../common/locale-srv";
 import { SessionSrv } from "../../common/session-srv";
 import { StringDateTime } from "../../common/string-date-time";
-import { ItemView, ItemViewPage } from "../../components/view-list-by-pages/view-list-by-pages";
+import { ItemViewPage } from "../../components/view-item-list/view-item-list-by-page";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { StreamsPeriodDto, PageStreamAndTagsDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
 import { StreamSrv } from "../../lib-stream/stream-srv";
@@ -48,23 +48,26 @@ export class PgStreamList implements OnInit {
     // ** "Streams" **
     // "Parameters for streams"
     public strmMaxSizeRows: number = STRM_LIMIT_DEF * 3;
+    public strmRowsOnPage: number = STRM_LIMIT_DEF;
     // "Future Streams"
-    public strmFtrDeletedId: number | null | undefined;
+    public strmFtrDeleteIds: number[] = [];
     public strmFtrIsLoading: boolean = false;
     public strmFtrIsReset: boolean = false;
     public strmFtrItemPage: ItemViewPage | null | undefined;
     // "Past Streams"
-    public strmPstDeletedId: number | null | undefined;
+    public strmPstDeleteIds: number[] = [];
     public strmPstIsLoading: boolean = false;
     public strmPstIsReset: boolean = false;
     public strmPstItemPage: ItemViewPage | null | undefined;
+
     // "Event Streams by Date"
-    public evntMaxSizeRows: number = EVNT_LIMIT_DEF * 3;
-    public evntDeletedId: number | null | undefined;
+    public evntDate: Date;
+    public evntDeleteIds: number[] = [];
     public evntIsLoading: boolean = false;
     public evntIsReset: boolean = false;
-    public evntItemPage: ItemViewPage = { list: [], page: 0, limit: 0 };
-    public evntDate: Date;
+    public evntItemPage: ItemViewPage = { list: [], page: 0 };
+    public evntMaxSizeRows: number = EVNT_LIMIT_DEF * 3;
+    public evntRowsOnPage: number = EVNT_LIMIT_DEF;
 
     public userId: number = this.sessionSrv.getUser()?.id || -1;
 
@@ -110,7 +113,7 @@ export class PgStreamList implements OnInit {
             arrayOfPromises.push(this.doLoadEventDatePage(this.evntDate, 0, -1, userId));
         } else {
             this.evntIsReset = true;
-            this.evntItemPage = { list: [], page: 1, limit: EVNT_LIMIT_DEF };
+            this.evntItemPage = { list: [], page: 1 };
         }
 
         return Promise.all(arrayOfPromises)
@@ -122,22 +125,27 @@ export class PgStreamList implements OnInit {
             })
             .finally(() => this.changeDetector.markForCheck());
     }
+
     // ** "Streams Event" panel-stream-event **
+
     public doLoadEventDatePage(date: Date | null, page1: number, limit1: number, userId: number): Promise<void> {
         if (limit1 > 1 && page1 > 0 && this.evntPages > 0 && page1 > this.evntPages) {
             return Promise.resolve();
         }
         const dateStart: Date = new Date(date || this.evntDate);
         dateStart.setHours(0, 0, 0, 0);
-        this.evntIsReset = page1 < 1;
+        this.evntIsReset = page1 <= 0;
         const page = page1 > 0 ? page1 : 1;
         const limit = limit1 > 0 ? limit1 : EVNT_LIMIT_DEF;
+        if (this.evntDeleteIds.length > 0) {
+            this.evntDeleteIds = [];
+        }
         this.evntIsLoading = true;
         return this.streamSrv.getStreamsByDate(userId, dateStart, page, limit)
             .then((response: PageStreamAndTagsDto | HttpErrorResponse | undefined) => {
                 this.evntDate = dateStart;
                 const streams = (response as PageStreamAndTagsDto);
-                this.evntItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, limit };
+                this.evntItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page };
                 if (limit1 > 1) {
                     this.evntPages = streams.pages;
                 }
@@ -153,22 +161,25 @@ export class PgStreamList implements OnInit {
             });
 
     }
+
     // ** "Future Stream" and "Past Stream" panel-stream-info **
+
     public doLoadFuturePage(page1: number, limit1: number): Promise<void> {
         if (limit1 > 1 && page1 > 0 && this.strmFtrPages > 0 && page1 > this.strmFtrPages) {
             return Promise.resolve();
         }
-        this.strmFtrIsReset = page1 < 1;
+        this.strmFtrIsReset = page1 <= 0;
         const page = page1 > 0 ? page1 : 1;
         const limit = limit1 > 0 ? limit1 : STRM_LIMIT_DEF;
+        if (this.strmFtrDeleteIds.length > 0) {
+            this.strmFtrDeleteIds = [];
+        }
         this.strmFtrIsLoading = true;
         return this.streamSrv.getFutureStreamsByPage(this.userId, this.strmSearchDate, page, limit)
             .then((response: PageStreamAndTagsDto | HttpErrorResponse | undefined) => {
                 const streams = (response as PageStreamAndTagsDto);
-                this.strmFtrItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, limit };
-                if (limit1 > 1) {
-                    this.strmFtrPages = streams.pages;
-                }
+                this.strmFtrItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page };
+                this.strmFtrPages = streams.pages;
             })
             .catch((err: HttpErrorResponse) => {
                 const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
@@ -185,17 +196,18 @@ export class PgStreamList implements OnInit {
         if (limit1 > 1 && page1 > 0 && this.strmPstPages > 0 && page1 > this.strmPstPages) {
             return Promise.resolve();
         }
-        this.strmPstIsReset = page1 < 1;
+        this.strmPstIsReset = page1 <= 0;
         const page = page1 > 0 ? page1 : 1;
         const limit = limit1 > 0 ? limit1 : STRM_LIMIT_DEF;
+        if (this.strmPstDeleteIds.length > 0) {
+            this.strmPstDeleteIds = [];
+        }
         this.strmPstIsLoading = true;
         return this.streamSrv.getPastStreamsByPage(this.userId, this.strmSearchDate, page, limit)
             .then((response: PageStreamAndTagsDto | HttpErrorResponse | undefined) => {
                 const streams = (response as PageStreamAndTagsDto);
-                this.strmPstItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, limit };
-                if (limit1 > 1) {
-                    this.strmPstPages = streams.pages;
-                }
+                this.strmPstItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page };
+                this.strmPstPages = streams.pages;
             })
             .catch((err: HttpErrorResponse) => {
                 const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
@@ -222,28 +234,27 @@ export class PgStreamList implements OnInit {
         this.streamSrv.redirectToStreamEditingPage(streamId);
     }
 
-    public doActionDelete(info: { isFuture: boolean, id: number }): void {
-        if (info.isFuture) {
+    public doActionDelete(isFuture: boolean, id: number): void {
+        if (isFuture) {
             this.strmFtrIsLoading = true;
         } else {
             this.strmPstIsLoading = true;
         }
-        const index = this.getItemById(this.evntItemPage?.list, info.id);
+        const index = this.evntItemPage.list.findIndex((val) => val.id == id);
         this.evntIsLoading = index > -1;
-        this.deleteDataStream(info.id)
+        this.deleteDataStream(id)
             .then(() => {
-                if (info.isFuture) {
-                    this.strmFtrDeletedId = info.id;
+                if (isFuture) {
+                    this.strmFtrDeleteIds = [id];
                 } else {
-                    this.strmPstDeletedId = info.id;
+                    this.strmPstDeleteIds = [id];
                 }
-
                 if (index > -1) {
-                    this.evntDeletedId = info.id;
+                    this.evntDeleteIds = [id];
                 }
             })
             .finally(() => {
-                if (info.isFuture) {
+                if (isFuture) {
                     this.strmFtrIsLoading = false;
                 } else {
                     this.strmPstIsLoading = false;
@@ -344,14 +355,5 @@ export class PgStreamList implements OnInit {
             .finally(() => {
                 this.clndIsLoading = false;
             });
-    }
-    private getItemById(list: ItemView[], deletedId: number): number {
-        let index = -1;
-        for (let n = 0; n < list.length && index == -1; n++) {
-            if (deletedId == list[n].id) {
-                index = n;
-            }
-        }
-        return index;
     }
 }

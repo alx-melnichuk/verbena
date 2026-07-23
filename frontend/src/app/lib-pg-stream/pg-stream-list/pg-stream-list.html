@@ -5,22 +5,27 @@
   [clndMaxDate]="clndMaxDate"
   [clndMinDate]="clndMinDate"
 
-  [strmMaxSizeRows]="strmMaxSizeRows"
-  [strmFtrDeletedId]="strmFtrDeletedId"
+  [strmFtrDeleteIds]="strmFtrDeleteIds"
   [strmFtrIsLoading]="strmFtrIsLoading"
   [strmFtrIsReset]="strmFtrIsReset"
   [strmFtrItemPage]="strmFtrItemPage"
-  [strmPstDeletedId]="strmPstDeletedId"
+  [strmFtrMaxSizeRows]="strmMaxSizeRows"
+  [strmFtrRowsOnPage]="strmRowsOnPage"
+
+  [strmPstDeleteIds]="strmPstDeleteIds"
   [strmPstIsLoading]="strmPstIsLoading"
   [strmPstIsReset]="strmPstIsReset"
   [strmPstItemPage]="strmPstItemPage"
+  [strmPstMaxSizeRows]="strmMaxSizeRows"
+  [strmPstRowsOnPage]="strmRowsOnPage"
 
-  [evntMaxSizeRows]="evntMaxSizeRows"
-  [evntDeletedId]="evntDeletedId"
+  [evntDeleteIds]="evntDeleteIds"
   [evntIsLoading]="evntIsLoading"
   [evntIsReset]="evntIsReset"
   [evntItemPage]="evntItemPage"
-
+  [evntMaxSizeRows]="evntMaxSizeRows"
+  [evntRowsOnPage]="evntRowsOnPage"
+  
   [locale]="localeSrv.getLocale()"
 
   (calendarForPeriod)="doCalendarForPeriod($event, userId)"
@@ -31,5 +36,5 @@
   (resetInfo)="doResetInfo()"
   (actionDuplicate)="doActionDuplicate($event)"
   (actionEdit)="doActionEdit($event)"
-  (actionDelete)="doActionDelete($event)">
+  (actionDelete)="doActionDelete($event.isFuture, $event.id)">
 </app-panel-stream-list>
