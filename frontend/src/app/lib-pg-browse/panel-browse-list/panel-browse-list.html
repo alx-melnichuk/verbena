@@ -23,7 +23,7 @@
       <button type="button" matButton="elevated" pbl-m-2
         class="pbl-srch-btn stl-btn-brd"
         [disabled]="!controls.isLive"
-        (click)="doLoadStrmCrdPage(controls.isLive.value, controls.tag.value, 0, 0)">
+        (click)="doLoadStrmCrdPage(controls.isLive.value, controls.tag.value, 1, true)">
         <span>{{ "panel-browse-list.search_for_streams" | translate }}</span>
       </button>
 
@@ -32,7 +32,8 @@
     <div class="pbl-pop-tag-wrap">
       <div class="pbl-pop-tags global-scroll">
         @for (item of popTagList; track $index) {
-          <button [ngClass]="[`pbl-pop-tag`, (item.name == tag ? `pbl-active-tag` : ``)]"
+          <button class="pbl-pop-tag" 
+            [class.pbl-active-tag]="item.name == tag"
             (click)="doSetTag(item.name)">
             #{{ item.name }}&nbsp;({{ item.countLinks }})  
           </button>
@@ -41,19 +42,21 @@
     </div>
   </div>
 
-  <app-view-list-by-pages hg100 class="pbl-card-list" vlbp-row vlbp-flx-wrp
+  <app-view-item-list hg100 class="pbl-card-list" vil-row vil-flx-wrp
     containerClass="global-scroll"
     [isReset]="strmCrdIsReset"
     [itemPage]="strmCrdItemPage"
     [maxSizeRows]="strmCrdMaxSizeRows"
-    (loadPage)="doLoadStrmCrdPage(controls.isLive.value, controls.tag.value, $event.page, $event.limit)">
+    [rowsOnPage]="strmCrdRowsOnPage"
+    [deleteIds]="deleteIds"
+    (loadPage)="doLoadStrmCrdPage(controls.isLive.value, controls.tag.value, $event.page, false)">
     <ng-template let-streamDto="item">
-      <app-panel-stream-card pbl-mb-3
+      <app-panel-stream-card
         [activeTag]="tag"
         [locale]="locale"
         [stream]="streamDto"
         (actionView)="doActionView($event)">
       </app-panel-stream-card>
     </ng-template>
-  </app-view-list-by-pages>
+  </app-view-item-list>
 </div>

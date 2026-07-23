@@ -10,7 +10,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { TranslatePipe } from "@ngx-translate/core";
 import { CN_TAG } from "../../common/fields-consts";
 import { Spinner } from "../../components/spinner/spinner";
-import { ItemViewPage, ViewListByPages } from "../../components/view-list-by-pages/view-list-by-pages";
+import { ViewItemList } from "../../components/view-item-list/view-item-list";
+import { ItemViewPage, ViewItemListByPage } from "../../components/view-item-list/view-item-list-by-page";
 import { StreamTagDto } from "../../lib-stream/stream-dto";
 import { PanelStreamCard } from "../panel-stream-card/panel-stream-card";
 
@@ -20,8 +21,8 @@ const CN_DEFAULT_LIMIT = 10;
     selector: "app-panel-browse-list",
     exportAs: "appPanelBrowseList",
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatSlideToggleModule,
-        Spinner, PanelStreamCard, ViewListByPages, TranslatePipe],
+    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatSlideToggleModule, TranslatePipe,
+        Spinner, PanelStreamCard, ViewItemList, ViewItemListByPage],
     templateUrl: "./panel-browse-list.html",
     styleUrl: "./panel-browse-list.scss",
     encapsulation: ViewEncapsulation.None,
@@ -45,10 +46,15 @@ export class PanelBrowseList implements OnChanges {
     @Input()
     public strmCrdMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
     @Input()
+    public strmCrdRowsOnPage: number = CN_DEFAULT_LIMIT;
+    @Input()
     public tag: string | null | undefined;
 
+    @Input()
+    public deleteIds: unknown[] | null | undefined;
+
     @Output()
-    readonly loadStrmCrdPage: EventEmitter<{ isLive: boolean, tag: string, page: number, limit: number }> = new EventEmitter();
+    readonly loadStrmCrdPage: EventEmitter<{ isLive: boolean, tag: string, page: number, isReset: boolean }> = new EventEmitter();
     @Output()
     readonly actionView: EventEmitter<number> = new EventEmitter();
 
@@ -77,7 +83,7 @@ export class PanelBrowseList implements OnChanges {
         this.actionView.emit(streamId);
     }
 
-    public doLoadStrmCrdPage(isLive: boolean | null, tag: string | null, page: number, limit: number): void {
-        this.loadStrmCrdPage.emit({ isLive: !!isLive, tag: (tag || ""), page, limit });
+    public doLoadStrmCrdPage(isLive: boolean | null, tag: string | null, page: number, isReset: boolean): void {
+        this.loadStrmCrdPage.emit({ isLive: !!isLive, tag: (tag || ""), page, isReset });
     }
 }
