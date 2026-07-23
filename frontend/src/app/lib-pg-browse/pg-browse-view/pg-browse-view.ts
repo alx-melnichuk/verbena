@@ -6,8 +6,9 @@ import { TranslateService } from "@ngx-translate/core";
 import { environment } from "../../../environments/environment";
 import { User } from "../../common/session-srv";
 import { StringDateTime } from "../../common/string-date-time";
-import { ChatMessageDto, ParamQueryPastMsg, ChatMessageDtoUtil, BlockedUserDto } from "../../lib-chat/chat-message";
-import { ChatMessageSrv } from "../../lib-chat/chat-message-srv";
+import { ItemView } from "../../components/view-item-list/view-item-list";
+import { ChatMessageDto, ChatMessageDtoUtil, BlockedUserDto } from "../../lib-chat/chat-message";
+import { CHAT_MSG_LIMIT, ChatMessageSrv } from "../../lib-chat/chat-message-srv";
 import { ChatSocketSrv } from "../../lib-chat/chat-socket-srv";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { ConfirmationData } from "../../lib-dialog/confirmation/confirmation";
@@ -21,10 +22,19 @@ import { PanelBrowseView } from "../panel-browse-view/panel-browse-view";
 
 const WS_CHAT_PATHNAME: string = environment.wsChatPathname || "ws";
 const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
-const MESSAGE_MAX_LENGTH = 255;
-const MESSAGE_MIN_LENGTH = 0;
-const MESSAGE_MAX_ROWS = 4;
-const MESSAGE_MIN_ROWS = 1;
+
+export const CN_MESSAGE = {
+    "minLength": 0,
+    "maxLength": 255,
+    "minRows": 1,
+    "maxRows": 4,
+};
+
+export interface ItemViewSetMsg {
+    list: ItemView[];
+    isAddTop: boolean; // true/false - add to the top/bottom of the list;
+    isMoreTopRows: boolean | null; // true - The following rows are there. (Only isAddTop: true); null - Socket data;
+}
 
 @Component({
     selector: "app-pg-browse-view",
@@ -38,36 +48,32 @@ const MESSAGE_MIN_ROWS = 1;
     providers: [ChatSocketSrv],
 })
 export class PgBrowseView implements OnDestroy {
-
-    private alertService: AlertSrv = inject(AlertSrv);
+    private alertSrv: AlertSrv = inject(AlertSrv);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
-    private chatMessageService: ChatMessageSrv = inject(ChatMessageSrv);
-    private dialogService: DialogSrv = inject(DialogSrv);
+    private chatMessageSrv: ChatMessageSrv = inject(ChatMessageSrv);
+    private dialogSrv: DialogSrv = inject(DialogSrv);
     private route: ActivatedRoute = inject(ActivatedRoute);
-    private streamService: StreamSrv = inject(StreamSrv);
-    private translate: TranslateService = inject(TranslateService);
-
-    public chatSocketService: ChatSocketSrv = inject(ChatSocketSrv);
+    private streamSrv: StreamSrv = inject(StreamSrv);
+    private translateSrv: TranslateService = inject(TranslateService);
+    public chatSocketSrv: ChatSocketSrv = inject(ChatSocketSrv);
 
     // List of new blocked users.
     public chatBlockedUsers: string[] = this.route.snapshot.data["browseStream"]?.blockedNames || [];
-    // List of past chat messages.
-    public chatPastMsgs: ChatMessageDto[] = this.route.snapshot.data["chatMsgList"] || [];
-    // List of new chat messages.
-    public chatNewMsgs: ChatMessageDto[] = [];
-    // List of IDs of permanently deleted chat messages.
-    public chatRmvIds: number[] = [];
     // Indicates that the user can send messages to the chat.
     public chatIsEditable: boolean | null = null;
+    // A list of message IDs that have been removed from the chat. 
+    public chatDeleteIds: number[] = [];
     // Indicates that data is being loaded.
-    public chatIsLoading: boolean | null = null;
-    public chatMaxLen: number | null | undefined = MESSAGE_MAX_LENGTH;
-    public chatMinLen: number | null | undefined = MESSAGE_MIN_LENGTH;
-    public chatMaxRows: number | null | undefined = MESSAGE_MAX_ROWS;
-    public chatMinRows: number | null | undefined = MESSAGE_MIN_ROWS;
+    public chatIsLoading: boolean | null | undefined;
+    public chatIsReset: boolean | null | undefined;
+    public chatItemSetMsg: ItemViewSetMsg | null | undefined;
+    public chatCnMsg = CN_MESSAGE;
+    private chatSizeRows: number = 3;
+    // The maximum size of rows in the buffer.
+    public chatMaxSizeRows: number | null | undefined = CHAT_MSG_LIMIT * this.chatSizeRows;
 
     // List of blocked users.
-    public blockedNamesIsLoading: boolean | null = null;
+    public blockedNamesIsLoading: boolean | null | undefined;
 
     public isLoadStream: boolean = false;
     // An indication that the stream is in a chat-available status.
@@ -87,26 +93,30 @@ export class PgBrowseView implements OnDestroy {
         const streamDto = this.route.snapshot.data["browseStream"]?.streamDto || null;
         this.setStreamDto(streamDto || null, this.user?.id || 0);
 
-        this.chatSocketService.handlOnError = (err: string) => {
+        this.chatSocketSrv.handlOnError = (err: string) => {
             console.error(`SocketErr:`, err);
             this.changeDetector.markForCheck();
         };
-        this.chatSocketService.handlReceive = (val: string) => {
+        this.chatSocketSrv.handlReceive = (val: string) => {
             this.handlReceiveChat(val, this.isStreamOwner, this.streamDto, this.user);
             this.changeDetector.markForCheck();
         };
-        this.chatSocketService.handlOnOpen = () => {
+        this.chatSocketSrv.handlOnOpen = () => {
             this.changeDetector.markForCheck();
         };
 
         const streamId: number = streamDto?.id || -1;
-        this.chatSocketService.config({ nickname, room: streamId, access: this.accessToken });
+        this.chatSocketSrv.config({ nickname, room: streamId, access: this.accessToken });
         // If the stream status allows it, establish a connection to the socket. Otherwise, terminate it.
         this.updateSocketConnect(this.streamDto?.state);
+
+        const chatMsgs: ChatMessageDto[] = this.route.snapshot.data["chatMsgList"] || [];
+        this.chatItemSetMsg = { list: chatMsgs.slice(), isAddTop: true, isMoreTopRows: false };
+        this.chatIsReset = true;
     }
 
     ngOnDestroy(): void {
-        this.chatSocketService.disconnect(); // Disconnect to the server web socket chat.
+        this.chatSocketSrv.disconnect(); // Disconnect to the server web socket chat.
     }
 
     // ** Public API **
@@ -123,16 +133,16 @@ export class PgBrowseView implements OnDestroy {
 
     public doModifyBlockUser(isStreamOwner: boolean, isPost: boolean, user_name: string): void {
         if (!!isStreamOwner && !!user_name) {
-            if (this.chatSocketService.hasConnect()) {
+            if (this.chatSocketSrv.hasConnect()) {
                 const blockUnblockEWS = isPost ? EWSTypeUtil.getBlockEWS(user_name) : EWSTypeUtil.getUnblockEWS(user_name);
-                this.chatSocketService.sendData(blockUnblockEWS);
+                this.chatSocketSrv.sendData(blockUnblockEWS);
             } else {
                 this.modifyBlockedUser(user_name, isPost)
                     .then(() =>
                         this.chatBlockedUsers = this.updateBlockedNames(this.chatBlockedUsers, isPost, user_name))
                     .catch((err: HttpErrorResponse) => {
                         const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                        this.alertService.showError(errMsg, `pg-browse-view.error_${isPost ? "" : "un"}blocked`);
+                        this.alertSrv.showError(errMsg, `pg-browse-view.error_${isPost ? "" : "un"}blocked`);
                     });
             }
         }
@@ -140,30 +150,24 @@ export class PgBrowseView implements OnDestroy {
     public doSendMessage(newMessage: string | null): void {
         const msgVal = (newMessage || "").trim();
         if (!!msgVal) {
-            this.chatSocketService.sendData(EWSTypeUtil.getMsgEWS(msgVal));
+            this.chatSocketSrv.sendData(EWSTypeUtil.getMsgEWS(msgVal));
         }
     }
-    public doEditMessage(keyValue: KeyValue<number, string> | null): void {
+    public doEditMessage0(keyValue: KeyValue<number, string> | null): void {
         const id = keyValue?.key;
         const msgPut = (keyValue?.value || "").trim();
         if (!!id && id > 0 && !!msgPut) {
-            this.chatSocketService.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, id));
+            this.chatSocketSrv.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, id));
         }
     }
     public doCutMessage(id: number | null): void {
         if (!!id) {
-            this.chatSocketService.sendData(EWSTypeUtil.getMsgCutEWS("", id));
+            this.chatSocketSrv.sendData(EWSTypeUtil.getMsgCutEWS("", id));
         }
     }
     public doRmvMessage(id: number | null): void {
         if (!!id) {
-            this.chatSocketService.sendData(EWSTypeUtil.getMsgRmvEWS(id));
-        }
-    }
-    public doQueryPastMsgs(info: ParamQueryPastMsg) {
-        const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
-        if (streamId > 0 && !!info && info.isSortDes != null && info.maxDate != null) {
-            this.getPastChatMsgs(streamId, info.isSortDes, info.maxDate);
+            this.chatSocketSrv.sendData(EWSTypeUtil.getMsgRmvEWS(id));
         }
     }
 
@@ -176,13 +180,13 @@ export class PgBrowseView implements OnDestroy {
             return;
         }
         this.isLoadStream = true;
-        this.streamService.toggleStreamState(streamId, streamState)
+        this.streamSrv.toggleStreamState(streamId, streamState)
             .then((response: StreamDto | HttpErrorResponse) => {
                 if (!!response) {
                     const streamDto: StreamDto = (response as StreamDto);
                     this.setStreamDto(streamDto, this.user?.id || 0);
                     Promise.resolve().then(() => {
-                        this.chatSocketService.sendData(EWSTypeUtil.getPrmStrEWS("streamDto", JSON.stringify(streamDto)));
+                        this.chatSocketSrv.sendData(EWSTypeUtil.getPrmStrEWS("streamDto", JSON.stringify(streamDto)));
                     });
                 }
             })
@@ -192,16 +196,16 @@ export class PgBrowseView implements OnDestroy {
 
                 if (err.status == 409 && appError["code"] == "Conflict" && appError["message"] == "exist_is_active_stream") {
                     const errParams = appError["params"] || {};
-                    const link = this.streamService.getLinkForVisitors(errParams["activeStream"]["id"] || -1, false);
+                    const link = this.streamSrv.getLinkToStream(errParams["activeStream"]["id"] || -1, false);
                     const name = errParams["activeStream"]["title"] || "";
                     const confirmData: ConfirmationData = {
-                        messageHtml: this.translate.instant("pg-browse-view.exist_is_active_stream", { link, name }),
+                        messageHtml: this.translateSrv.instant("pg-browse-view.exist_is_active_stream", { link, name }),
                     };
-                    this.dialogService.openConfirmation(
+                    this.dialogSrv.openConfirmation(
                         "", title, { btnNameCancel: null, btnNameAccept: "buttons.ok" }, { data: confirmData });
                 } else {
                     const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                    this.alertService.showError(errMsg, title);
+                    this.alertSrv.showError(errMsg, title);
                 }
             })
             .finally(() => {
@@ -223,13 +227,21 @@ export class PgBrowseView implements OnDestroy {
             const status = eventWS.getInt("status") || 500;
             const errHttp = new HttpErrorResponse({ error: { status, message: eventWS.getStr("message") } });
             const errMsg = HttpErrorUtil.mapErrMsgObjs(status, errHttp.error)?.[0].msg || "error.server_api_call";
-            this.alertService.showError(errMsg, "pg-browse-view.error_socket");
+            this.alertSrv.showError(errMsg, "pg-browse-view.error_socket");
         } else if (eventWS.et == EWSType.Echo) {
             console.info(`echo: ${eventWS.getStr("echo") || ""}`);
         } else if (eventWS.et == EWSType.Msg) {
-            this.addChatMsg(val);
+            const obj = JSON.parse(val);
+            const chatMsg = ChatMessageDtoUtil.create(obj);
+            if (chatMsg.id > 0 && !!chatMsg.member && !!chatMsg.date && chatMsg.date.length == 24) {
+                this.chatItemSetMsg = { list: [chatMsg], isAddTop: true, isMoreTopRows: null };  // List of new chat messages.
+                this.chatIsReset = false;
+            }
         } else if (eventWS.et == EWSType.MsgRmv) {
-            this.removedChatMsg(eventWS.getInt("msgRmv") || -1);
+            const id = eventWS.getInt("msgRmv") || -1;
+            if (id > 0) { // List of IDs of permanently deleted chat messages.
+                this.chatDeleteIds = [id];
+            }
         } else if (eventWS.et == EWSType.Block || eventWS.et == EWSType.Unblock) {
             const isBlock = eventWS.et == EWSType.Block;
             const username = isBlock ? eventWS.getStr("block") : eventWS.getStr("unblock");
@@ -238,8 +250,8 @@ export class PgBrowseView implements OnDestroy {
             }
             const nickname = user?.nickname || "";
             if (!!username && (isStreamOwner || nickname == username)) {
-                const msg = this.translate.instant(`pg-browse-view.user_${(!isBlock ? "un" : "")}blocked`, { username });
-                this.alertService.showWarning(msg, "pg-browse-view.chat_commands");
+                const msg = this.translateSrv.instant(`pg-browse-view.user_${(!isBlock ? "un" : "")}blocked`, { username });
+                this.alertSrv.showWarning(msg, "pg-browse-view.chat_commands");
             }
         } else if (eventWS.et == EWSType.PrmStr) {
             const prmStr = eventWS.getStr("prmStr") || "";
@@ -255,18 +267,6 @@ export class PgBrowseView implements OnDestroy {
             }
         }
     };
-    private addChatMsg(val: string): void {
-        const obj = JSON.parse(val);
-        const chatMsg = ChatMessageDtoUtil.create(obj);
-        if (chatMsg.id > 0 && !!chatMsg.member && !!chatMsg.date) {
-            this.chatNewMsgs = [chatMsg]; // List of new chat messages.
-        }
-    }
-    private removedChatMsg(id: number): void {
-        if (id > 0) { // List of IDs of permanently deleted chat messages.
-            this.chatRmvIds = [id];
-        }
-    }
     private updateBlockedNames(blockedNames: string[], isBlock: boolean, blockName: string): string[] {
         const userSet: Set<string> = new Set(blockedNames);
         if (isBlock) {
@@ -276,22 +276,50 @@ export class PgBrowseView implements OnDestroy {
         }
         return Array.from(userSet);
     }
-    private getPastChatMsgs(streamId: number | null, isSortDes?: boolean, maxDate?: StringDateTime, limit?: number): void {
-        if (!streamId || streamId < 0) {
-            return;
+
+    public doLoadSet(isAddTop: boolean, date: StringDateTime | undefined, count: number): Promise<void> {
+        const streamId = this.streamDto?.id;
+        if (!streamId || streamId <= 0) {
+            return Promise.resolve();
+        }
+        const isSortDes = !isAddTop;
+        const minDate = (!isAddTop ? undefined : date);
+        const maxDate = (!isAddTop ? date : undefined);
+        const limit = count > 0 ? count : (CHAT_MSG_LIMIT + (isAddTop ? 1 : 0));
+        this.chatIsReset = false;
+        if (this.chatDeleteIds.length > 0) {
+            this.chatDeleteIds = [];
         }
         this.chatIsLoading = true;
-        this.chatMessageService.getChatMessages(streamId, isSortDes, undefined, maxDate, limit)
+        return this.chatMessageSrv.getChatMessages(streamId, isSortDes, minDate, maxDate, limit)
             .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
-                this.chatPastMsgs = (response as ChatMessageDto[]); // List of past chat messages.
+                const chatMsgs = (response as ChatMessageDto[]);
+                const isMoreTopRows = chatMsgs.length == (CHAT_MSG_LIMIT + 1);
+                if (isMoreTopRows) {
+                    chatMsgs.pop();
+                }
+                // When requesting previous data, a reverse is required.
+                const list = isSortDes ? chatMsgs : chatMsgs.slice().reverse();
+                this.chatItemSetMsg = { list, isAddTop, isMoreTopRows };
+                this.chatIsReset = date == undefined;
             })
-            .catch((error: HttpErrorResponse) => {
-                console.error(`ChatMessageError:`, error);
+            .catch((err: HttpErrorResponse) => {
+                console.error(`ChatMessageError:`, err);
+                const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
+                this.alertSrv.showError(errMsg, "pg-browse-list?.error_get_streams_by_tag");
+                throw err;
             })
             .finally(() => {
                 this.chatIsLoading = false;
                 this.changeDetector.markForCheck();
             });
+    }
+    public doEditMessage(keyValue: KeyValue<number, string> | null): void {
+        const id = keyValue?.key;
+        const msgPut = (keyValue?.value || "").trim();
+        if (!!id && id > 0 && !!msgPut) {
+            this.chatSocketSrv.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, id));
+        }
     }
 
     // Section: "panel blocked users"
@@ -300,8 +328,8 @@ export class PgBrowseView implements OnDestroy {
         this.blockedNamesIsLoading = true;
         const buffPromise: Promise<unknown>[] = [];
         buffPromise.push(isPost
-            ? this.chatMessageService.postBlockedUser(blockedNickname)
-            : this.chatMessageService.deleteBlockedUser(blockedNickname)
+            ? this.chatMessageSrv.postBlockedUser(blockedNickname)
+            : this.chatMessageSrv.deleteBlockedUser(blockedNickname)
         );
         return Promise.all(buffPromise)
             .then((responses) => responses[0] as BlockedUserDto)
@@ -331,10 +359,10 @@ export class PgBrowseView implements OnDestroy {
             return;
         }
         const isConnectionAvailable = streamState != "stopped";
-        if (isConnectionAvailable && !this.chatSocketService.hasConnect()) {
-            this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST); // Connect to the server web socket chat.
-        } else if (!isConnectionAvailable && this.chatSocketService.hasConnect()) {
-            this.chatSocketService.disconnect(); // Disconnect to the server web socket chat.
+        if (isConnectionAvailable && !this.chatSocketSrv.hasConnect()) {
+            this.chatSocketSrv.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST); // Connect to the server web socket chat.
+        } else if (!isConnectionAvailable && this.chatSocketSrv.hasConnect()) {
+            this.chatSocketSrv.disconnect(); // Disconnect to the server web socket chat.
         }
     }
 
