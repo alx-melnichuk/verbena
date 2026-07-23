@@ -1,13 +1,14 @@
 import { CommonModule } from "@angular/common";
 import {
-    ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
+    ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
 } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe, TranslateService } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
 import { Spinner } from "../../components/spinner/spinner";
-import { ViewListByPages, ItemViewPage } from "../../components/view-list-by-pages/view-list-by-pages";
+import { ViewItemList } from "../../components/view-item-list/view-item-list";
+import { ItemViewPage, ViewItemListByPage } from "../../components/view-item-list/view-item-list-by-page";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { StreamsPeriodDto } from "../../lib-stream/stream-dto";
 import { DateUtil } from "../../utils/date.utils";
@@ -22,7 +23,7 @@ const CN_DEFAULT_LIMIT = 10;
     exportAs: "appPanelStreamList",
     standalone: true,
     imports: [CommonModule, TranslatePipe, MatButtonModule, MatTooltipModule, Spinner, DateTimeFormatPipe,
-        PanelStreamCalendar, PanelStreamEvent, PanelStreamInfo, ViewListByPages,
+        PanelStreamCalendar, PanelStreamEvent, PanelStreamInfo, ViewItemList, ViewItemListByPage,
     ],
     templateUrl: "./panel-stream-list.html",
     styleUrl: "./panel-stream-list.scss",
@@ -45,9 +46,7 @@ export class PanelStreamList implements OnChanges {
     public clndMinDate: Date | null | undefined;
 
     @Input()
-    public strmMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
-    @Input()
-    public strmFtrDeletedId: number | null | undefined;
+    public strmFtrDeleteIds: number[] = []; // A list of item IDs that have been removed from the list.
     @Input()
     public strmFtrIsLoading: boolean | null | undefined;
     @Input()
@@ -55,24 +54,35 @@ export class PanelStreamList implements OnChanges {
     @Input()
     public strmFtrItemPage: ItemViewPage | null | undefined;
     @Input()
-    public strmPstDeletedId: number | null | undefined;
+    public strmFtrMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
+    @Input()
+    public strmFtrRowsOnPage: number = CN_DEFAULT_LIMIT;
+
+    @Input()
+    public strmPstDeleteIds: number[] = []; // A list of item IDs that have been removed from the list.
     @Input()
     public strmPstIsLoading: boolean | null | undefined;
     @Input()
     public strmPstIsReset: boolean | null | undefined;
     @Input()
     public strmPstItemPage: ItemViewPage | null | undefined;
+    @Input()
+    public strmPstMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
+    @Input()
+    public strmPstRowsOnPage: number = CN_DEFAULT_LIMIT;
 
     @Input()
-    public evntMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
-    @Input()
-    public evntDeletedId: number | null | undefined;
+    public evntDeleteIds: number[] = []; // A list of item IDs that have been removed from the list.
     @Input()
     public evntIsLoading: boolean | null | undefined;
     @Input()
     public evntIsReset: boolean | null | undefined;
     @Input()
     public evntItemPage: ItemViewPage | null | undefined;
+    @Input()
+    public evntMaxSizeRows: number = CN_DEFAULT_LIMIT * 3;
+    @Input()
+    public evntRowsOnPage: number = CN_DEFAULT_LIMIT
 
     @Input()
     public locale: string | null | undefined;
@@ -123,18 +133,18 @@ export class PanelStreamList implements OnChanges {
         return !!clndDaySelected ? DateUtil.compareYearMonth(clndDaySelected, calendarMonth) == 0 : false;
     }
 
-    public doLoadEventDatePage(selectedDate: Date | null, data: { page: number, limit: number } | null): void {
-        this.loadEventDatePage.emit({ date: selectedDate, page: (data?.page || 0), limit: (data?.limit || -1) });
+    public doLoadEventDatePage(selectedDate: Date | null, page: number, limit: number): void {
+        this.loadEventDatePage.emit({ date: selectedDate, page, limit });
     }
 
     // ** "Future Stream" and "Past Stream" panel-stream-info **
 
-    public doLoadFuturePage(data: { page: number, limit: number }): void {
-        this.loadFuturePage.emit(data);
+    public doLoadFuturePage(page: number, limit: number): void {
+        this.loadFuturePage.emit({ page, limit });
     }
 
-    public doLoadPastPage(data: { page: number, limit: number }): void {
-        this.loadPastPage.emit(data);
+    public doLoadPastPage(page: number, limit: number): void {
+        this.loadPastPage.emit({ page, limit });
     }
 
     // ** **
