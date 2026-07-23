@@ -6,7 +6,10 @@
   [strmCrdIsLoading]="strmCrdIsLoading"
   [strmCrdIsReset]="strmCrdIsReset"
   [strmCrdItemPage]="strmCrdItemPage"
+  [strmCrdMaxSizeRows]="strmCrdMaxSizeRows"
+  [strmCrdRowsOnPage]="strmCrdRowsOnPage"
   [tag]="tag"
-  (loadStrmCrdPage)="doLoadStrmCrdPage($event.isLive, $event.tag, $event.page, $event.limit)"
+  [deleteIds]="strmDeleteIds"
+  (loadStrmCrdPage)="doLoadStrmCrdPage($event.isLive, $event.tag, $event.page, $event.isReset)"
   (actionView)="doActionView($event)">
 </app-panel-browse-list>

@@ -2,19 +2,18 @@ import { CommonModule } from "@angular/common";
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestroy, OnInit, ViewEncapsulation } from "@angular/core";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ActivatedRoute, Params, Router } from "@angular/router";
+import { Subscription } from "rxjs";
 import { LocaleSrv } from "../../common/locale-srv";
 import { G_BROWSE_LIVE, G_BROWSE_PAGE, G_BROWSE_TAG, ROUTE_BROWSE_LIST } from "../../common/routes";
-import { SessionSrv } from "../../common/session-srv";
-import { ItemViewPage } from "../../components/view-list-by-pages/view-list-by-pages";
+import { ItemViewPage } from "../../components/view-item-list/view-item-list-by-page";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { StreamTagDto, PageStreamAndTagsDto, StreamDtoUtil, PageStreamTagDto } from "../../lib-stream/stream-dto";
 import { StreamSrv } from "../../lib-stream/stream-srv";
 import { HttpErrorUtil } from "../../utils/http-error.util";
 import { PanelBrowseList } from "../panel-browse-list/panel-browse-list";
-import { Subscription } from "rxjs";
 
 const POP_TAGS_LIMIT_DEF = 20;
-const STRM_LIMIT_DEF = 10;
+const STRM_LIMIT_DEF = 16;
 
 @Component({
     selector: "app-pg-browse-list",
@@ -32,24 +31,21 @@ export class PgBrowseList implements OnInit, OnDestroy {
     private router: Router = inject(Router);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     public localeSrv: LocaleSrv = inject(LocaleSrv);
-    private sessionSrv: SessionSrv = inject(SessionSrv);
     private streamSrv: StreamSrv = inject(StreamSrv);
 
-    public isLive: boolean | null | undefined = null;
-    public tag: string | null | undefined = null;
-    public page: number = 0;
-
+    public isLive: boolean | null | undefined;
+    private pages: number = 0;
     public popTagIsLoading: boolean | null | undefined;
     public popTagList: StreamTagDto[] = [];
-
+    private queryParamsSub: Subscription | undefined;
     public strmCrdIsLoading: boolean | null | undefined;
     public strmCrdIsReset: boolean | null | undefined;
     public strmCrdItemPage: ItemViewPage | null | undefined;
+    public strmCrdMaxSizeRows: number = STRM_LIMIT_DEF * 3;
+    public strmCrdRowsOnPage: number = STRM_LIMIT_DEF;
+    public tag: string | null | undefined;
 
-    public userId: number = this.sessionSrv.getUser()?.id || -1;
-
-    private queryParamsSub: Subscription | undefined;
-    private pages: number = 0;
+    strmDeleteIds: number[] = [];
 
     ngOnInit(): void {
         // Get a list of popular tags.
@@ -59,7 +55,7 @@ export class PgBrowseList implements OnInit, OnDestroy {
             const isLive = params[G_BROWSE_LIVE] == "true";
             const tag = params[G_BROWSE_TAG];
             const page = parseInt(params[G_BROWSE_PAGE] || "0", 10);
-            this.loadStreamPage(isLive, tag, page, 0);
+            this.loadStreamPage(isLive, tag, page);
         });
     }
 
@@ -87,7 +83,7 @@ export class PgBrowseList implements OnInit, OnDestroy {
 
     }
 
-    public doLoadStrmCrdPage(isLive: boolean | null, tag: string | null, page: number, limit: number): void {
+    public doLoadStrmCrdPage(isLive: boolean | null, tag: string | null, page: number, isReset: boolean): void {
         const queryParams: Params = {};
         if (!!isLive) {
             queryParams[G_BROWSE_LIVE] = true;
@@ -95,8 +91,12 @@ export class PgBrowseList implements OnInit, OnDestroy {
         if (!!tag) {
             queryParams[G_BROWSE_TAG] = tag;
         }
-        if (!!page && page > 0) {
+        if (!!page && page > 1) {
             queryParams[G_BROWSE_PAGE] = page;
+        }
+        this.strmCrdIsReset = isReset;
+        if (isReset) {
+            this.pages = 0;
         }
         this.router.navigate([ROUTE_BROWSE_LIST], { queryParams });
     }
@@ -109,22 +109,21 @@ export class PgBrowseList implements OnInit, OnDestroy {
 
     // ** Private API **
 
-    public loadStreamPage(isLive: boolean | null, tag: string | null, page1: number, limit1: number): Promise<void> {
-        if (page1 > 0 && this.pages > 0 && page1 > this.pages) {
+    public loadStreamPage(isLive: boolean | null, tag: string | null, page1: number): Promise<void> {
+        if (this.pages > 0 && (page1 < 0 || page1 > this.pages)) {
             return Promise.resolve();
         }
         const live = isLive ? true : undefined;
-        const page = page1 > 0 ? page1 : 1;
-        const limit = limit1 > 0 ? limit1 : STRM_LIMIT_DEF;
-        this.strmCrdIsReset = page1 < 1;
+        const page = page1 > 1 ? page1 : 1;
+        const limit = STRM_LIMIT_DEF;
         this.strmCrdIsLoading = true;
         return this.streamSrv.getStreamsWithTagByPage(tag, live, page, limit)
             .then((response: PageStreamAndTagsDto | HttpErrorResponse | undefined) => {
                 const streams = (response as PageStreamAndTagsDto);
-                this.strmCrdItemPage = { list: StreamDtoUtil.createList(streams.list), page: streams.page, limit };
+                const list = StreamDtoUtil.createList(streams.list);
+                this.strmCrdItemPage = { list, page: streams.page };
                 this.isLive = isLive;
                 this.tag = tag;
-                this.page = page;
                 this.pages = streams.pages;
             })
             .catch((err: HttpErrorResponse) => {
