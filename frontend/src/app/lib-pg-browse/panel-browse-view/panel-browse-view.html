@@ -4,7 +4,8 @@
 
 <div class="pbv-center app-pn-bg">
   
-  <div [ngClass]="[(isStreamVideo ? 'pbv-cnt-video pbv-border' : '')]">
+  <div [class.pbv-cnt-video]="isStreamVideo"
+    [class.pbv-border]="isStreamVideo">
     <div pbv-hg100></div>
     <app-panel-stream-state class="pbv-stream-state"
       [streamState]="streamDto?.state || null">
@@ -59,7 +60,7 @@
       <div class="pbv-cnt-prm">
         <app-panel-stream-params
           [countOfViewer]="countOfViewer"
-          [locale]="localeService.getLocale()"
+          [locale]="localeSrv.getLocale()"
           [streamStarttime]="streamDto?.starttime"
           [streamStarted]="streamDto?.started"
           [streamPaused]="streamDto?.paused"
@@ -89,7 +90,9 @@
 
   <div sidebar-layer>
     <button class="pbv-sdb-btn pbv-btn-arrow pbv-btn-rg" (click)="clearEvent($event); isSidebarRgOpen=!isSidebarRgOpen;">
-      <svg [ngClass]="['pbv-arrow pbv-rotate', (isSidebarRgOpen ? 'pbv-0deg' : 'pbv-180deg')]">
+      <svg class="pbv-arrow pbv-rotate"
+        [class.pbv-0deg]="isSidebarRgOpen"
+        [class.pbv-180deg]="!isSidebarRgOpen">
         <use href="./lib-pg-browse/panel-browse-view/angle-right-bin.svg#angle-right-bin"></use>
       </svg>
     </button>
@@ -98,18 +101,19 @@
   <div pbv-hg100 pbv-brd-bx pbv-pl-2>
     <app-panel-chat class="pbv-sd-chat pbv-sdb-brd pbv-brd-lf"
       [blockedUsers]="chatBlockedUsers"
-      [chatPastMsgs]="chatPastMsgs"
-      [chatNewMsgs]="chatNewMsgs"
-      [chatRmvIds]="chatRmvIds"
+      [deleteIds]="chatDeleteIds"
       [isBlocked]="chatIsBlocked"
       [isEditable]="chatIsEditable"
       [isLoading]="chatIsLoading"
       [isOwner]="chatIsOwner"  
-      [locale]="localeService.getLocale()"
+      [isReset]="chatIsReset"
+      [itemSetMsg]="chatItemSetMsg"
+      [locale]="localeSrv.getLocale()"
       [maxLen]="chatMaxLen"
       [minLen]="chatMinLen"
       [maxRows]="chatMaxRows"
       [minRows]="chatMinRows"
+      [maxSizeRows]="chatMaxSizeRows"
       [nickname]="chatNickname || ''"
       [title]="'panel-browse-view.chat_title'"
       (blockUser)="doBlockUser($event)"
@@ -118,8 +122,8 @@
       (editMsg)="doEditMessage($event)"
       (cutMsg)="doCutMessage($event)"
       (rmvMsg)="doRmvMessage($event)"
-      (queryPastMsgs)="doQueryPastMsgs($event)">
+      (loadSet)="doLoadSet($event.isAddTop, $event.date, $event.count)">
     </app-panel-chat>
-  </div>
 
+  </div>
 </app-sidebar>

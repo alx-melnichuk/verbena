@@ -8,15 +8,15 @@ import { LocaleSrv } from "../../common/locale-srv";
 import { StringDateTime } from "../../common/string-date-time";
 import { Sidebar } from "../../components/sidebar/sidebar";
 import { Spinner } from "../../components/spinner/spinner";
-import { ChatMessageDto, ParamQueryPastMsg } from "../../lib-chat/chat-message";
+import { ChatMessageDto } from "../../lib-chat/chat-message";
 import { PanelChat } from "../../lib-chat/panel-chat/panel-chat";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { StreamDto, StreamState } from "../../lib-stream/stream-dto";
-import { StringDateTimeUtil } from "../../utils/string-date-time.util";
 import { StringUtil } from "../../utils/string.util";
 import { PanelStreamActions } from "../panel-stream-actions/panel-stream-actions";
 import { PanelStreamParams } from "../panel-stream-params/panel-stream-params";
 import { PanelStreamState } from "../panel-stream-state/panel-stream-state";
+import { ItemViewSetMsg } from "../pg-browse-view/pg-browse-view";
 
 @Component({
     selector: "app-panel-browse-view",
@@ -30,22 +30,27 @@ import { PanelStreamState } from "../panel-stream-state/panel-stream-state";
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelBrowseView implements AfterContentInit, OnChanges {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private dialogSrv: DialogSrv = inject(DialogSrv);
+    public localeSrv: LocaleSrv = inject(LocaleSrv);
+    private translateSrv: TranslateService = inject(TranslateService);
+
     @Input()
     public chatBlockedUsers: string[] = []; // List of new blocked users.
     @Input()
-    public chatPastMsgs: ChatMessageDto[] = []; // List of past chat messages.
+    public chatDeleteIds: number[] = []; // A list of message IDs that have been deleted from the chat.
     @Input()
-    public chatNewMsgs: ChatMessageDto[] = []; // List of new chat messages.
+    public chatIsBlocked: boolean | null | undefined; // Indication that the user is blocked.
     @Input()
-    public chatRmvIds: number[] = []; // List of IDs of permanently deleted chat messages.
+    public chatIsEditable: boolean | null | undefined; // Indicates that the user can send messages to the chat.
     @Input()
-    public chatIsBlocked: boolean | null = null; // Indication that the user is blocked.
-    @Input()
-    public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
-    @Input()
-    public chatIsLoading: boolean | null = null; // Indicates that data is being loaded.
+    public chatIsLoading: boolean | null | undefined; // Indicates that data is being loaded.
     @Input()
     public chatIsOwner: boolean | null | undefined; // Indicates that the user is the owner of the chat.
+    @Input()
+    public chatIsReset: boolean | null | undefined; // Checked only together with "itemPage".
+    @Input()
+    public chatItemSetMsg: ItemViewSetMsg | null | undefined;
     @Input()
     public chatMaxLen: number | null | undefined;
     @Input()
@@ -55,7 +60,11 @@ export class PanelBrowseView implements AfterContentInit, OnChanges {
     @Input()
     public chatMinRows: number | null | undefined;
     @Input()
-    public chatNickname: string | null = null;
+    public chatMaxSizeRows: number | null | undefined; // The maximum number of rows in the buffer.
+    @Input()
+    public chatNewMsg: ChatMessageDto | null | undefined;
+    @Input()
+    public chatNickname: string | null | undefined;
 
     @Input()
     public countOfViewer: number | null | undefined;
@@ -65,7 +74,7 @@ export class PanelBrowseView implements AfterContentInit, OnChanges {
     @Input()
     public isStreamOwner: boolean = false;
     @Input()
-    public nickname: string | null = null;
+    public nickname: string | null | undefined;
 
     @Input()
     public ownerAvatar: string | null | undefined;
@@ -99,12 +108,9 @@ export class PanelBrowseView implements AfterContentInit, OnChanges {
     @Output()
     readonly rmvMessage: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly queryPastMsgs: EventEmitter<ParamQueryPastMsg> = new EventEmitter();
-
-    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
-    private dialogService: DialogSrv = inject(DialogSrv);
-    public localeService: LocaleSrv = inject(LocaleSrv);
-    private translateService: TranslateService = inject(TranslateService);
+    readonly loadPage: EventEmitter<{ page: number, limit: number, mode: number, isNext: boolean, date: string }> = new EventEmitter();
+    @Output()
+    readonly loadSet: EventEmitter<{ isAddTop: boolean, date: StringDateTime | undefined, count: number }> = new EventEmitter();
 
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = false;
@@ -124,8 +130,8 @@ export class PanelBrowseView implements AfterContentInit, OnChanges {
         this.changeDetector.markForCheck();
     }
 
-
     // ** Public API **
+
     // ** Side Left and Right **
 
     public clearEvent(event: Event): void {
@@ -134,10 +140,6 @@ export class PanelBrowseView implements AfterContentInit, OnChanges {
     }
 
     // Section: "panel stream admin"
-
-    public getDate(starttime: StringDateTime | null | undefined): Date | null {
-        return StringDateTimeUtil.toDate(starttime);
-    }
 
     public doChangeState(newState: StreamState | undefined): void {
         this.changeState.emit(newState);
@@ -170,8 +172,8 @@ export class PanelBrowseView implements AfterContentInit, OnChanges {
             return;
         }
         const msg = keyValue.value.slice(0, 45) + (keyValue.value.length > 45 ? "..." : "");
-        const message = this.translateService.instant("panel-browse-view.sure_you_want_delete_message", { message: msg });
-        this.dialogService.openConfirmation(message, "", { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" })
+        const message = this.translateSrv.instant("panel-browse-view.sure_you_want_delete_message", { message: msg });
+        this.dialogSrv.openConfirmation(message, "", { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" })
             .then((res) => {
                 if (!!res) {
                     this.cutMessage.emit(keyValue.key);
@@ -183,16 +185,16 @@ export class PanelBrowseView implements AfterContentInit, OnChanges {
         if (!chMsgId || chMsgId < 0) {
             return;
         }
-        const message = this.translateService.instant("panel-browse-view.sure_you_want_permanently_delete_message");
-        this.dialogService.openConfirmation(message, "", { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" })
+        const message = this.translateSrv.instant("panel-browse-view.sure_you_want_permanently_delete_message");
+        this.dialogSrv.openConfirmation(message, "", { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" })
             .then((res) => {
                 if (!!res) {
                     this.rmvMessage.emit(chMsgId);
                 }
             });
     }
-    public doQueryPastMsgs(info: ParamQueryPastMsg) {
-        this.queryPastMsgs.emit(info);
+    public doLoadSet(isAddTop: boolean, date: StringDateTime | undefined, count: number): void {
+        this.loadSet.emit({ isAddTop, date, count });
     }
 
     // ** Private API **
