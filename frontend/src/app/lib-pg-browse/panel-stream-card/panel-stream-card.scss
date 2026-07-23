@@ -13,11 +13,12 @@ app-panel-stream-card {
     box-shadow: var(--psc-pn-sh, 0px 1px 4px 1px rgba(0, 0, 0, 0.25));
     box-sizing: border-box;
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
     height: var(--psc-hg, min-content);
-    min-width: 17rem;
-    max-width: 19.4rem;
-    flex: 1 1 auto;
+    min-width: var(--psc-mn-wd); // 17rem;
+    max-width: var(--psc-mx-wd); // 19.4rem;
+    width: var(--psc-wd, 17rem);
 
     .psc-header {
         padding: var(---psc-pd) var(---psc-pd) 0 var(---psc-pd);

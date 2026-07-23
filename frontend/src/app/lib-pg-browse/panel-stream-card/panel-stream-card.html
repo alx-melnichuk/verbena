@@ -1,6 +1,6 @@
 @if (!!stream) {
   <header class="psc-header">
-    {{ stream.title }}
+    {{ stream.id}} {{ stream.title }}
   </header>
 
   <a href="javascript:void(0);"  class="psc-logo-wrap" (click)="doActionView(stream.id)">
@@ -14,7 +14,7 @@
     
     <div class="psc-tags">
       @for (tag of stream.tags; track tag) {
-        <span [ngClass]="{`psc-active`: tag == activeTag}">#{{ tag }}</span>&nbsp;
+        <span [class.psc-active]="tag == activeTag">#{{ tag }}</span>&nbsp;
       }
     </div>
     <div class="psc-starttime">
