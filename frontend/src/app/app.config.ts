@@ -1,11 +1,11 @@
 import { HTTP_INTERCEPTORS, HttpClient, HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
 import {
-    ApplicationConfig, importProvidersFrom, inject, provideAppInitializer,
+    ApplicationConfig, importProvidersFrom, inject, InjectionToken, provideAppInitializer,
     provideBrowserGlobalErrorListeners, provideZonelessChangeDetection
 } from "@angular/core";
 import { MAT_DATE_LOCALE, DateAdapter, MAT_DATE_FORMATS } from "@angular/material/core";
 import { MatDialogModule, MatDialog } from "@angular/material/dialog";
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from "@angular/material/form-field";
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldDefaultOptions } from "@angular/material/form-field";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
 import { provideRouter, Router } from "@angular/router";
 import { provideTranslateService, TranslateLoader, TranslateService } from "@ngx-translate/core";
@@ -29,6 +29,19 @@ import { UserDto } from "./lib-user/user-dto";
 export function translateAppHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
     if (environment.logLevel > 0) { console.info(`translateAppHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./i18n/", ".json");
+};
+
+// Define configuration MatFormFieldDefaultOptions.
+export const appFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
+    // Default form field appearance style.
+    appearance: "outline", // "fill"
+    color: "primary",
+    // Whether the required marker should be hidden by default.
+    // hideRequiredMarker?: boolean,
+    // Whether the label for form fields should by default float "always", "never", or "auto" (only when necessary).
+    // floatLabel?: FloatLabelType, 
+    // Whether the form field should reserve space for one line by default.
+    subscriptSizing: "fixed", // "fixed" | "dynamic"
 };
 
 export const appConfig: ApplicationConfig = {
@@ -130,17 +143,7 @@ export const appConfig: ApplicationConfig = {
         // Represents the default options for form fields.
         {
             provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
-            useValue: {
-                // Default form field appearance style.
-                appearance: "outline",
-                color: "primary",
-                // Whether the required marker should be hidden by default.
-                // hideRequiredMarker?: boolean,
-                // Whether the label for form fields should by default float "always", "never", or "auto" (only when necessary).
-                // floatLabel?: FloatLabelType, 
-                // Whether the form field should reserve space for one line by default.
-                subscriptSizing: "fixed", // "fixed" | "dynamic"
-            }
+            useValue: appFormFieldDefaultOptions
         },
         importProvidersFrom(MatDialogModule, MatSnackBarModule),
         {
