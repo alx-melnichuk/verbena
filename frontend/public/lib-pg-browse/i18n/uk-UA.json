@@ -14,8 +14,9 @@
     },
     "you_not_allowed_chat": "Вам не дозволено користуватися публічним чатом.",
     "you_been_blocked": "Вас заблокували.",
-    "message_edited": "змінено",
-    "message_deleted": "Це повідомлення видалено.",
+    "message_edited": "Змінено:",
+    "message_removed": "Видалено:",
+    "message_was_deleted": "Це повідомлення видалено.",
     "msg_discard_draft": "Відхилити чернетку ? (Ви не зможете її відновити.)"
   },
   "pg-browse-view": {

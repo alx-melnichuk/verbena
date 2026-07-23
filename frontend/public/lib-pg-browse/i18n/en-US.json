@@ -14,8 +14,9 @@
     },
     "you_not_allowed_chat": "You are not allowed to use the public chat.",
     "you_been_blocked": "You have been blocked.",
-    "message_edited": "changed",
-    "message_deleted": "This message has been removed.",
+    "message_edited": "Changed:",
+    "message_removed": "Removed:",
+    "message_was_deleted": "This message has been removed.",
     "msg_discard_draft": "Discard draft? (You won't be able to restore it.)"
   },
   "pg-browse-view": {

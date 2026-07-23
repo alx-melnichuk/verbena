@@ -8,7 +8,6 @@ app-panel-chat {
     ---pc-itm-self-sh: var(--pc-itm-self-sh, var(--mat-sys-primary-fixed-dim));
     ---pc-itm-mrk-sh: var(--pc-itm-mrk-sh, var(--mat-sys-tertiary));
 
-
     background-color: var(--pc-bg, inherit);
     display: flex;
     flex-direction: column;
@@ -37,13 +36,10 @@ app-panel-chat {
     // ** Middle **
 
     .pc-middle {
-        box-sizing: border-box;
         flex-grow: 1;
         font-size: var(--pc-mdl-fn-sz, 1rem);
         height: 100%;
-        overflow-y: auto;
-        padding-left: var(--pc-pd-lf, 2px);
-        padding-right: var(--pc-pd-rg, 2px);
+        overflow: hidden;
         width: 100%;
     }
 
@@ -51,8 +47,9 @@ app-panel-chat {
         height: 30px;
     }
 
-    .pc-item-wrap {
-        margin: var(--pc-itm-mr, 0.5rem 0px);
+    .pc-item-msg-list {
+        --vil-pd: 0.25rem 1px 0.25rem 3px;
+        --vil-gap: 0.375rem 0;
     }
 
     .pc-item {
@@ -93,8 +90,6 @@ app-panel-chat {
         display: inline-block;
         font-size: var(--pc-name-fn-sz, inherit);
         font-weight: 500;
-        // flex: 0 1 53%;
-        // min-width: 5rem;
         overflow-wrap: anywhere;
     }
 
@@ -102,9 +97,9 @@ app-panel-chat {
         color: var(--pc-date-cl, var(--mat-sys-secondary));
         column-gap: 0.25rem;
         display: flex;
-        // flex: 0 1 47%;
         flex-wrap: wrap;
         font-size: var(--pc-date-fn-sz, inherit);
+        justify-content: flex-end;
         min-width: var(--pc-date-mn-wd, 6rem);
         word-wrap: break-word;
     }
@@ -129,13 +124,13 @@ app-panel-chat {
         word-wrap: break-word;
     }
 
-    // ** Not viewed ** 
+    // ** Move To end **
 
-    .pc-notviewed-box {
+    .pc-move-to-end-box {
         position: relative;
     }
 
-    .pc-notviewed {
+    .pc-move-to-end {
         bottom: 0.5rem;
         display: flex;
         justify-content: center;
@@ -144,7 +139,7 @@ app-panel-chat {
         z-index: 1;
     }
 
-    .pc-notviewed-count {
+    .pc-move-to-end-count {
         ---pc-wd: calc(2.2rem * 0.55);
         align-items: center;
         background-color: var(--mat-sys-primary);
@@ -155,22 +150,13 @@ app-panel-chat {
         font-size: calc(1rem - 1px);
         height: var(---pc-wd, 2rem);
         justify-content: center;
-        padding: 0 var(---pc-ntvw-count10-pd);
+        padding: 0 0.35rem;
         position: absolute;
         top: calc(var(---pc-wd) * -0.5);
-        min-width: var(---pc-wd, 2rem);
         z-index: 2;
-
-        &.pc-nvcnt-pd1 {
-            ---pc-ntvw-count10-pd: 3px;
-        }
-
-        &.pc-nvcnt-pd2 {
-            ---pc-ntvw-count10-pd: 5px;
-        }
     }
 
-    .pc-btn-notviewed {
+    .pc-btn-move-to-end {
         border-radius: 50%;
         border-width: 0;
         box-shadow: 0 0 3px 1px var(--mat-sys-outline-variant);
@@ -186,6 +172,8 @@ app-panel-chat {
         height: 2.2rem;
         width: 2.2rem;
     }
+
+    // ** Not viewed ** 
 
     // ** Footer **
 

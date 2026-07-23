@@ -1,22 +1,25 @@
 import { CommonModule, KeyValue } from "@angular/common";
 import {
-    Component, ViewEncapsulation, ChangeDetectionStrategy, OnChanges, AfterViewInit, Input, Output, EventEmitter, ViewChild, ElementRef,
-    ChangeDetectorRef, inject, HostListener, SimpleChanges
+    Component, ViewEncapsulation, ChangeDetectionStrategy, OnChanges, Input, Output, EventEmitter, ViewChild, inject, SimpleChanges,
+    ChangeDetectorRef
 } from "@angular/core";
 import { ReactiveFormsModule, FormControl, FormGroup } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatMenuModule } from "@angular/material/menu";
+import { MatTooltipModule } from "@angular/material/tooltip";
 import { TranslatePipe } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
-import { debounceFn } from "../../common/debounce";
 import { StringDateTime } from "../../common/string-date-time";
 import { Spinner } from "../../components/spinner/spinner";
+import { ItemView, ViewItemList } from "../../components/view-item-list/view-item-list";
+import { ViewItemListBySet } from "../../components/view-item-list/view-item-list-by-set";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
+import { ItemViewSetMsg } from "../../lib-pg-browse/pg-browse-view/pg-browse-view";
 import { DateUtil } from "../../utils/date.utils";
 import { StringDateTimeUtil } from "../../utils/string-date-time.util";
-import { ChatMessageDto, ParamQueryPastMsg } from "../chat-message";
+import { ChatMessageDto } from "../chat-message";
 import { FieldMessage } from "../field-message/field-message";
 
 interface MenuEdit {
@@ -36,12 +39,7 @@ interface MenuItem {
     isUnblock?: boolean | undefined;
 }
 
-export const TITLE = "message";
-export const DEBOUNCE_DELAY = 50;
-export const MIN_SCR_TOP_FOR_QUERYING_PAST_MSGS = 15;
-export const MIN_SCR_BOT_FOR_RESET_COUNTNOTVIEWED = 30;
-
-type ChatMsgMap = Map<number, number>;
+const CN_DEFAULT_LIMIT = 10;
 
 // <mat-form-field subscriptSizing="dynamic"
 // it"ll remove the space until an error or hint actually needs to get displayed and only then expands.
@@ -50,30 +48,33 @@ type ChatMsgMap = Map<number, number>;
     selector: "app-panel-chat",
     exportAs: "appPanelChat",
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
-        DateTimeFormatPipe, FieldMessage, Spinner, TranslatePipe],
+    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule, MatTooltipModule,
+        DateTimeFormatPipe, FieldMessage, Spinner, TranslatePipe, ViewItemList, ViewItemListBySet],
     templateUrl: "./panel-chat.html",
     styleUrl: "./panel-chat.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelChat implements OnChanges, AfterViewInit {
+export class PanelChat implements OnChanges {
+    private dialogSrv: DialogSrv = inject(DialogSrv);
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+
     @Input() // List of new blocked users.
     public blockedUsers: string[] = [];
-    @Input() // List of past chat messages.
-    public chatPastMsgs: ChatMessageDto[] = [];
-    @Input() // List of new chat messages.
-    public chatNewMsgs: ChatMessageDto[] = [];
-    @Input() // List of IDs of permanently deleted chat messages.
-    public chatRmvIds: number[] = [];
+    @Input()
+    public deleteIds: number[] = []; // A list of message IDs that have been deleted from the chat.
     @Input() // Indication that the user is blocked.
-    public isBlocked: boolean | null = null;
+    public isBlocked: boolean | null | undefined;
     @Input() // Indicates that the user can send messages to the chat.
-    public isEditable: boolean | null = null;
+    public isEditable: boolean | null | undefined;
     @Input() // Indicates that data is being loaded.
-    public isLoading: boolean | null = null;
+    public isLoading: boolean | null | undefined;
     @Input() // Indicates that the user is the owner of the chat.
     public isOwner: boolean | null | undefined;
+    @Input()
+    public isReset: boolean | null | undefined; // Checked only together with "itemSetMsg".
+    @Input()
+    public itemSetMsg: ItemViewSetMsg | null | undefined;
     @Input()
     public locale: string | null | undefined;
     @Input()
@@ -85,9 +86,11 @@ export class PanelChat implements OnChanges, AfterViewInit {
     @Input()
     public minRows: number | null | undefined;
     @Input()
-    public nickname: string | null = null;
+    public maxSizeRows: number | null | undefined = CN_DEFAULT_LIMIT * 3; // The maximum number of rows in the buffer.
     @Input()
-    public title: string | null = null;
+    public nickname: string | null | undefined;
+    @Input()
+    public title: string | null | undefined;
 
     @Output()
     readonly blockUser: EventEmitter<string> = new EventEmitter();
@@ -102,46 +105,36 @@ export class PanelChat implements OnChanges, AfterViewInit {
     @Output()
     readonly rmvMsg: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly queryPastMsgs: EventEmitter<ParamQueryPastMsg> = new EventEmitter();
+    readonly loadSet: EventEmitter<{ isAddTop: boolean, date: StringDateTime | undefined, count: number }> = new EventEmitter();
 
-    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
-    private dialogSrv: DialogSrv = inject(DialogSrv);
-
-    @ViewChild("scrollItem")
-    private scrollItem: ElementRef<HTMLElement> | undefined;
     @ViewChild(FieldMessage)
     public fieldMessageComp!: FieldMessage;
 
-    public chatMsgList: ChatMessageDto[] = [];
-    public countNotViewed: number = 0;
+    @ViewChild(ViewItemList)
+    public viewItemList!: ViewItemList;
+
+    private chatDateMax: Date | null = null;
+    public editSet: ItemView[] = [];
     public frmCtrlNewMsg = new FormControl<string | null>({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.frmCtrlNewMsg });
-    public initValue: string | null = null;
     public isFocusMsg: boolean = false;
+    public isMoveToEnd: boolean = false;
+    private isMoveToEndLoad: boolean = false;
     public msgMarked: ChatMessageDto | null = null;
     public msgEditing: ChatMessageDto | null = null;
+    public unreadCount: number = 0; // Number of unread messages.
+    private unreadRest: number = 0; // There are unread messages on the next page.
+    private unreadDateMin: Date | null = null; // Minimum date of unread message.
 
     readonly blockedUserSet: Set<string> = new Set();
-    readonly chatMsgMap: ChatMsgMap = new Map();
-    readonly dbncScrollItem = debounceFn(() => { this.checkScrollBottom(); this.checkScrollTop(); }, DEBOUNCE_DELAY);
-    readonly dbncCheckExistScroll = debounceFn(() => { this.checkExistScroll(); }, DEBOUNCE_DELAY);
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: "medium" };
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: "short" };
-
-    private isPastMsgsHasEnded: boolean = false; // Flag, previous data has ended.
-    private isIgnoreScroll: boolean = false; // Flag to ignore scroll event
-    private lastScrollTop: number = 0;
-    private smallestDate: StringDateTime | undefined;
-
-    @HostListener("window:resize", [])
-    handlerResize() {
-        this.dbncCheckExistScroll();
-    }
+    readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short" };
 
     ngOnChanges(changes: SimpleChanges): void {
+        const selfName = this.nickname || "";
         if (!!changes["blockedUsers"] || !!changes["isOwner"]) {
             this.blockedUserSet.clear();
-            const selfName = this.nickname || ""
             const blockedUsers = !!this.isOwner ? this.blockedUsers : [];
             for (let idx = 0; idx < blockedUsers.length; idx++) {
                 if (selfName != blockedUsers[idx]) {
@@ -149,65 +142,100 @@ export class PanelChat implements OnChanges, AfterViewInit {
                 }
             }
         }
-        if (!!changes["chatPastMsgs"]) {
-            // List of past chat messages.
-            if (this.chatPastMsgs.length > 0) {
-                this.chatMsgList = this.loadPastChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatPastMsgs);
-                this.smallestDate = this.chatMsgList[0].date;
-                this.isIgnoreScroll = true;
-                // If the scroll disappears after deleting messages, the "PastMsgs" request is executed.
-                // If there is no scroll, then after adding new data, the scroll will appear.
-                // In this case, the display of data will not be correct (scrolltop = 0).
-                // To correct, scrollBottom = 0.
-                if (!this.scrollItem || this.scrollItem.nativeElement.scrollHeight == this.scrollItem.nativeElement.clientHeight) {
-                    Promise.resolve().then(() => {
-                        this.setScrollBottom(0);
-                    });
-                }
-            } else {
-                this.isPastMsgsHasEnded = true;
-            }
-        }
-        if (!!changes["chatNewMsgs"] && this.chatNewMsgs.length > 0) {
-            // List of new and edited chat messages.
-            const newCnt = this.loadNewEdtChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatNewMsgs).count;
-            if (newCnt > 0) {
-                if (!this.msgMarked && this.checkScrollingAllowed()) {
-                    Promise.resolve().then(() => this.setScrollBottom(0));
-                } else {
-                    this.countNotViewed = newCnt;
-                }
-            }
-        }
-        if (!!changes["chatRmvIds"] && this.chatRmvIds.length > 0) {
-            // List of IDs of permanently deleted chat messages.
-            this.loadRmvChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatRmvIds);
-            const msgMarkedIndex = !!this.msgMarked?.id ? this.chatRmvIds.indexOf(this.msgMarked.id) : -1;
-            if (msgMarkedIndex > -1) {
-                this.msgMarked = null;
-            }
-            const msgEditingIndex = !!this.msgEditing?.id ? this.chatRmvIds.indexOf(this.msgEditing.id) : -1;
-            if (msgEditingIndex > -1) {
-                this.cleanNewMsg();
-            }
-            Promise.resolve().then(() => this.checkExistScroll());
-        }
-        if (!!changes["isEditable"] && !changes["isEditable"].firstChange) {
-            Promise.resolve().then(() => this.setScrollBottom(0));
-        }
-    }
-    ngAfterViewInit(): void {
-        this.checkExistScroll();
-    }
 
+        if (!!changes["itemSetMsg"] && this.isReset && !!this.itemSetMsg) {
+            this.isMoveToEnd = false;
+            this.isMoveToEndLoad = false;
+            this.unreadCount = 0;
+            this.unreadRest = 0;
+            this.unreadDateMin = null;
+        }
+
+        if (!!changes["itemSetMsg"] && !this.isReset && !!this.itemSetMsg && this.itemSetMsg.list.length > 0) {
+            if (this.editSet.length > 0) {
+                this.editSet = [];
+            }
+            const itemList = this.itemSetMsg.list;
+            const isAddTop = this.itemSetMsg.isAddTop;
+
+            if (!isAddTop && !this.isMoveToEndLoad && !!this.viewItemList) {
+                const maxSizeRows = this.getMinValue(this.maxSizeRows, 0); // Maximum number of records in a buffer.
+                const totalRows = this.viewItemList.dataList.length + itemList.length; // Total records in the buffer.
+                // If the data packet is from the previous period (itemSetMsg.isAddTop: false)
+                // and if the total number of records in the buffer exceeds the maximum,
+                // then there will be deletion of records in the buffer.
+                if (maxSizeRows > 0 && totalRows > maxSizeRows) {
+                    this.isMoveToEndLoad = true; // A sign that the buffer does not have the most recent entries.
+                    this.isMoveToEnd = true;
+                    this.chatDateMax = StringDateTimeUtil.toDate((this.viewItemList.dataList[0] as ChatMessageDto).date);
+                }
+            }
+
+            const isMoreTopRows = this.itemSetMsg.isMoreTopRows;
+
+            if (isAddTop && isMoreTopRows === null) {
+                const chatMsg = itemList[0] as ChatMessageDto;
+                if (this.isMoveToEndLoad || !this.isMoveToEndLoad && this.isMoveToEnd && chatMsg.member != selfName) {
+                    const cnt = (itemList as ChatMessageDto[]).filter((val) => !val.dateEdt && !val.dateRmv).length;
+                    this.unreadCount += cnt;
+                }
+            }
+            if (isAddTop && !this.isMoveToEndLoad && isMoreTopRows === null && !!this.viewItemList) {
+                const chatMsg = itemList[0] as ChatMessageDto;
+                if (!this.isMoveToEnd || chatMsg.member == selfName) {
+                    // Add a new command to scroll down after loading.
+                    this.viewItemList.addNextMode(this.viewItemList.createModeStabilizeScroll(true));
+                }
+                const { itemsNew, itemsModify } = this.getBothItems(itemList);
+                if (itemsModify.length > 0) {
+                    this.itemSetMsg.list = itemsNew;
+                    this.editSet = itemsModify;
+                }
+            }
+
+            if (isAddTop && !this.isMoveToEndLoad && isMoreTopRows !== null && this.unreadDateMin !== null) {
+                this.unreadDateMin = null;
+            }
+
+            const msgDateFrs = StringDateTimeUtil.toDate((itemList[0] as ChatMessageDto)?.date);
+
+            if (isAddTop && this.isMoveToEndLoad && isMoreTopRows !== null && !!msgDateFrs && !!this.chatDateMax) {
+                if (this.chatDateMax <= msgDateFrs) {
+                    this.isMoveToEndLoad = false;
+                    this.chatDateMax = null;
+                    this.unreadRest = (this.unreadCount > itemList.length ? this.unreadCount - itemList.length : 0);
+                }
+            }
+            if (isAddTop && this.isMoveToEndLoad && isMoreTopRows === null) {
+                this.itemSetMsg.list = [];
+                if (this.unreadDateMin == null) {
+                    this.unreadDateMin = msgDateFrs;
+                }
+            }
+
+        }
+    }
+    private getBothItems(itemList: ItemView[]): { itemsNew: ItemView[], itemsModify: ItemView[] } {
+        const itemsNew: ItemView[] = [];
+        const itemsModify: ItemView[] = [];
+        for (let idx = 0; idx < itemList.length; idx++) {
+            const item: ChatMessageDto = itemList[idx] as ChatMessageDto;
+            if (!item.dateEdt && !item.dateRmv) {
+                itemsNew.push(item);
+            } else {
+                itemsModify.push(item);
+            }
+        }
+        return { itemsNew, itemsModify };
+    }
     // ** Public API **
 
-    public getMenuBlock(nickname: string, isOwner: boolean, selfName: string | null): MenuBlock | null {
+    public getMenuBlock(nickname: string, isOwner: boolean, selfName: string | null | undefined): MenuBlock | null {
         const isBlocked = !isOwner ? null : (nickname == selfName ? null : this.blockedUserSet.has(nickname));
         const result = isBlocked != null ? { isBlock: !isBlocked, isUnblock: isBlocked } : null;
         return result;
     }
-    public getMenuItem(chatMsg: ChatMessageDto, isOwner: boolean, selfName: string | null): MenuItem | null {
+    public getMenuItem(chatMsg: ChatMessageDto, isOwner: boolean, selfName: string | null | undefined): MenuItem | null {
         const menuEdit = this.isEditable ? this.createMenuEdit(selfName || "", chatMsg) : null;
         const menuBlock = this.getMenuBlock(chatMsg.member, isOwner, selfName);
         const result = !!menuEdit || !!menuBlock ? { ...menuEdit, ...menuBlock } : null;
@@ -300,66 +328,49 @@ export class PanelChat implements OnChanges, AfterViewInit {
             event.stopPropagation();
         }
     }
-    public checkScrollBottom(elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
-        const height = !!elem ? elem.scrollHeight - elem.clientHeight : 0;
-        if (this.countNotViewed > 0 && !!elem && height > 0 && (height - elem.scrollTop) < MIN_SCR_BOT_FOR_RESET_COUNTNOTVIEWED) {
-            this.countNotViewed = 0;
-            this.changeDetector.markForCheck();
-        }
+    public doLoadSetChatMsg(isAddTop: boolean, item: ItemView | undefined, count: number): void {
+        const date: string | undefined = !!item ? (item as ChatMessageDto).date : undefined;
+        this.loadSet.emit({ isAddTop, date, count });
     }
-    public checkScrollTop(elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
-        if (!!elem) {
-            const isMoveUp = this.lastScrollTop > elem.scrollTop;
-            this.lastScrollTop = elem.scrollTop;
+    public doAfterScroll(isModifiedList: boolean, ratioY: number): void {
+        if (!isModifiedList && this.isMoveToEnd && !this.isMoveToEndLoad && 0 <= ratioY
+            && 0 < this.unreadCount && this.unreadDateMin == null) {
+            const idx = Math.round(ratioY * this.viewItemList.dataList.length);
+            const unreadIdx = this.unreadCount - this.unreadRest;
+            if (idx < unreadIdx) {
+                this.unreadCount = idx + this.unreadRest;
+                this.changeDetector.markForCheck();
+            }
+        }
 
-            if (this.isIgnoreScroll) {
-                this.isIgnoreScroll = false;
-            } else {
-                const height = elem.scrollHeight - elem.clientHeight;
-                if (isMoveUp && !this.isPastMsgsHasEnded && height > 0) {
-                    const value1 = 0.1405325 * elem.scrollHeight - 78.356;
-                    const value2 = Math.round(Math.round(value1 * 100) / 100);
-                    let minScrollTop = 50;
-                    minScrollTop = value2 > minScrollTop ? value2 : minScrollTop;
-                    if (elem.scrollTop < minScrollTop) {
-                        if (elem.scrollTop == 0) {
-                            this.setScrollTop(2);
-                        }
-                        this.runQueryPastMsgs();
-                    }
-                }
+        if (!isModifiedList && !this.isMoveToEnd) {
+            if (0.1 <= ratioY && ratioY < 1) {
+                this.isMoveToEnd = true;
+                this.changeDetector.markForCheck();
+            }
+        } else if (!isModifiedList && this.isMoveToEnd) {
+            if (0 <= ratioY && ratioY < 0.1 && !this.isMoveToEndLoad && 0 == this.unreadCount) {
+                this.isMoveToEnd = false;
+                this.changeDetector.markForCheck();
             }
         }
     }
-    public checkExistScroll(elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
-        // If the scroll disappears after deleting messages, the "PastMsgs" request is executed.
-        if (!!elem && elem.scrollHeight == elem.clientHeight && !this.isPastMsgsHasEnded) {
-            this.runQueryPastMsgs();
-        }
-    }
-    public setScrollTop(top: number, elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
-        if (!!elem) {
-            let scrollTop = !!elem && top != null && top >= 0 ? top : -1;
-            if (scrollTop > -1) {
-                this.isIgnoreScroll = true;
-                elem.scrollTop = scrollTop;
-            }
-        }
-    }
-    public setScrollBottom(bottom: number, elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
-        if (!!elem) {
-            let scrollTop = !!elem && bottom != null && bottom >= 0 ? elem.scrollHeight - elem.clientHeight - bottom : -1;
-            if (scrollTop > -1) {
-                this.isIgnoreScroll = true;
-                elem.scrollTop = scrollTop;
-            }
+    public doMoveToEndOfList(): void {
+        this.isMoveToEnd = false;
+        this.unreadCount = 0;
+        this.unreadRest = 0;
+        this.changeDetector.markForCheck();
+        if (!this.isMoveToEndLoad) {
+            this.viewItemList.setScrollBottom(0);
+        } else {
+            this.isMoveToEndLoad = false;
+            Promise.resolve().then(() => this.doLoadSetChatMsg(false, undefined, 0));
         }
     }
 
     // ** Private API **
 
     private setTextareaValue(value: string | null): void {
-        this.initValue = value;
         this.frmCtrlNewMsg.setValue(value);
     }
     private createMenuEdit(selfName: string, chatMsg: ChatMessageDto): MenuEdit | null {
@@ -370,78 +381,16 @@ export class PanelChat implements OnChanges, AfterViewInit {
 
         return isSelfNameEqMember ? { isEdit, isCut, isRemove } : null;
     }
-    private checkScrollingAllowed(elem: HTMLElement | undefined = this.scrollItem?.nativeElement): boolean {
-        let result = true;
-        if (!!elem) {
-            const scrollBottom = elem.scrollHeight - elem.clientHeight - elem.scrollTop;
-            result = scrollBottom < elem.clientHeight;
-        }
-        return result;
-    }
-    private loadPastChatMsgs(chatMsgMap: ChatMsgMap, chatMsgList: ChatMessageDto[], chatPastMsgs: ChatMessageDto[]): ChatMessageDto[] {
-        chatMsgMap.clear();
-        const list = chatPastMsgs.reverse().concat(chatMsgList);
-        const result: ChatMessageDto[] = [];
-        for (let idx = 0; idx < list.length; idx++) {
-            const chatMsg = list[idx];
-            const index = result.push(chatMsg) - 1;
-            chatMsgMap.set(chatMsg.id, index);
-        }
-        return result;
-    }
-    private loadNewEdtChatMsgs(
-        chatMsgMap: ChatMsgMap, chatMsgList: ChatMessageDto[], chatNewEdtMsgs: ChatMessageDto[]
-    ): { count: number, list: ChatMessageDto[] } {
-        let count: number = 0;
-        for (let idx = 0; idx < chatNewEdtMsgs.length; idx++) {
-            const chatMsg = chatNewEdtMsgs[idx];
-            if (!chatMsg.dateEdt && !chatMsg.dateRmv) {
-                const index = chatMsgList.push(chatMsg) - 1;
-                chatMsgMap.set(chatMsg.id, index);
-                count++;
-            } else {
-                const index = chatMsgMap.get(chatMsg.id);
-                const chatMsgOld = !!index ? chatMsgList[index] : null;
-                if (!!index && chatMsgOld?.id == chatMsg.id) {
-                    chatMsgList[index] = chatMsg;
-                } else {
-                    console.error(`Error processing update - id: ${chatMsg.id}`);
-                }
-            }
-        }
-        return { count, list: chatMsgList };
-    }
-    private loadRmvChatMsgs(chatMsgMap: ChatMsgMap, chatMsgList: ChatMessageDto[], rmvIds: number[]): ChatMessageDto[] {
-        let idx0 = 0;
-        const len = chatMsgList.length;
-        for (let idx1 = 0; idx1 < len; idx1++) {
-            const chatMsgId = chatMsgList[idx1].id;
-            const index = rmvIds.length > 0 ? rmvIds.indexOf(chatMsgId) : -1;
-            if (index > -1) {
-                rmvIds.splice(index, 1);
-                chatMsgMap.delete(chatMsgId);
-            } else {
-                if (idx0 < idx1) {
-                    chatMsgList[idx0] = chatMsgList[idx1];
-                }
-                idx0++;
-            }
-        }
-        if (idx0 < len) {
-            chatMsgList.splice(idx0, len - idx0);
-        }
-        return chatMsgList;
-    }
-    private runQueryPastMsgs(dateLimit: StringDateTime | undefined = this.smallestDate): void {
-        this.queryPastMsgs.emit({ isSortDes: true, maxDate: dateLimit });
-    }
     private checkForEdit(newMsg: string | null): Promise<boolean> {
         const newMsgVal = (newMsg || "").trim();
         if (this.isEditable && newMsgVal.length > 0) {
             return this.dialogSrv.openConfirmation("panel-chat.msg_discard_draft", "dialog.confirmation",
                 { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" }).then((res) => !!res);
         } else {
-            return Promise.reject();
+            return Promise.resolve(true);
         }
+    }
+    private getMinValue(value: number | null | undefined, minValue: number): number {
+        return !!value && value > minValue ? value : minValue;
     }
 }

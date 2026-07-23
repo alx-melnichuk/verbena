@@ -1,64 +1,76 @@
-<div [ngClass]="['pc-header', (!!title ? 'pc-hdr-pd' : '')]">
+<div class="pc-header" [class.pc-hdr-pd]="!!title">
   <div class="pc-label" >{{ !!title ? (title | translate) : '' }}</div>
 </div>
 
 <div class="pc-sepr"></div>
 
-<div class="pc-middle global-scroll" #scrollItem (scroll)="dbncScrollItem()">
+<div class="pc-middle">
   @if (isLoading) {
     <div class="pc-item-load">
       <app-spinner [diameter]="30"></app-spinner>
     </div>
   }
-  @for (chatMsg of chatMsgList; track chatMsg.id) {
-    <div class="pc-item-wrap"
-      [matMenuTriggerFor]="!!getMenuItem(chatMsg, !!isOwner, nickname) ? menuItem : null"
-      [matMenuTriggerData]="getMenuItem(chatMsg, !!isOwner, nickname)"
-      menuOpened_="msgMarked=chatMsg;cleanNewMsg();"
-      (menuOpened)="msgMarked=chatMsg;"
-      (menuClosed)="msgMarked=null;">
-      <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
-        , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
-        attr.ch-msg-id="{{chatMsg.id}}"
-        (click)="doClickCheckSelection($event)">
-        <div class="pc-item-name-date">
-          <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
-            {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
+
+  <app-view-item-list hg100 vil-col-rev #viewItemList
+    containerClass="global-scroll pc-item-msg-list"
+    [editSet]="editSet"
+    [deleteIds]="deleteIds"
+    [isReset]="isReset"
+    [itemSet]="itemSetMsg"
+    [maxSizeRows]="maxSizeRows"
+    (afterScroll)="doAfterScroll($event.isModifiedList, $event.ratioY)"
+    (loadSet)="doLoadSetChatMsg($event.isAddTop, $event.item, $event.count)">
+    <ng-template let-chatMsg="item" let-idx="index">
+      <div 
+        [matMenuTriggerFor]="!!getMenuItem(chatMsg, !!isOwner, nickname) ? menuItem : null"
+        [matMenuTriggerData]="getMenuItem(chatMsg, !!isOwner, nickname)"
+        (menuOpened)="msgMarked=chatMsg;"
+        (menuClosed)="msgMarked=null;">
+        <div class="pc-item" attr.ch-msg-id="{{chatMsg.id}}" (click)="doClickCheckSelection($event)"
+          [class.pc-self]="isSelf(chatMsg.member)"
+          [class.pc-marked]="msgMarked==chatMsg || msgEditing==chatMsg">
+
+          <div class="pc-item-name-date">
+            <div class="pc-item-name" [class.pc-myself]="isSelf(chatMsg.member)">
+              {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
+            </div>
+            <div class="pc-item-date" [class.pc-item-modify]="!!chatMsg.dateEdt || !!chatMsg.dateRmv"
+              [matTooltip]="!!chatMsg.dateRmv
+                ? ('panel-chat.message_removed' | translate) + ' ' + (chatMsg.dateRmv | dateTimeFormat:locale:formatDateTime)
+                : (!!chatMsg.dateEdt
+                    ? ('panel-chat.message_edited' | translate) + ' ' + (chatMsg.dateEdt | dateTimeFormat:locale:formatDateTime)
+                    :'')">
+              @if (!isToday(chatMsg.date)) {
+                <span>{{ chatMsg.date | dateTimeFormat:locale:formatDate }}</span>
+              }
+              <span>{{ chatMsg.date | dateTimeFormat:locale:formatTime }}</span>
+            </div>
           </div>
-          <div [ngClass]="['pc-item-date', (!!chatMsg.dateEdt || !!chatMsg.dateRmv ? 'pc-item-modify' : '')]">
-            @if (!isToday(chatMsg.date)) {
-              <span>{{ chatMsg.date | dateTimeFormat:locale:formatDate }}</span>
-            }
-            <span>{{ chatMsg.date | dateTimeFormat:locale:formatTime }}</span>
-            @if (!!chatMsg.dateEdt && !chatMsg.dateRmv) {
-              <div>{{ 'panel-chat.message_edited' | translate }}</div>
-            }
-          </div>
+
+          @if (!chatMsg.dateRmv) {
+            <div class="pc-item-msg" [class.pc-myself]="isSelf(chatMsg.member)">
+              {{ chatMsg.msg }}
+            </div>
+          } @else {
+            <div class="pc-item-msg-rmv">
+              <i>{{ 'panel-chat.message_was_deleted' | translate }}</i>
+            </div>
+          }
         </div>
-        @if (!chatMsg.dateRmv) {
-          <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
-            {{ chatMsg.msg }}
-          </div>
-        } @else {
-          <div class="pc-item-msg-rmv">
-            <i>{{ 'panel-chat.message_deleted' | translate }}</i>
-          </div>
-        }
       </div>
-    </div>
-  }
+    </ng-template>
+  </app-view-item-list>
+
 </div>
-@if (countNotViewed > 0) {
-  <div class="pc-notviewed-box">
-    <div class="pc-notviewed">
-      <div [ngClass]="['pc-notviewed-count', (countNotViewed>99?'pc-nvcnt-pd2':(countNotViewed>9?'pc-nvcnt-pd1':''))]"
-        (click)="setScrollBottom(0)">
-        {{ countNotViewed }}
-      </div>
-      <button class="pc-btn-notviewed" (click)="setScrollBottom(0)">
-        <svg class="pc-angle">
-          <use href="./lib-chat/panel-chat/angle-down-3-bin.svg#angle-down-3-bin"></use>
-        </svg>
+
+@if (isMoveToEnd) {
+  <div class="pc-move-to-end-box">
+    <div class="pc-move-to-end">
+      @if (unreadCount > 0) {
+        <label class="pc-move-to-end-count" for="btn-move-to-end_id">{{ unreadCount }}</label>  
+      }
+      <button class="pc-btn-move-to-end" id="btn-move-to-end_id" (click)="doMoveToEndOfList()">
+        <svg class="pc-angle"><use href="./lib-chat/panel-chat/angle-down-3-bin.svg#angle-down-3-bin"></use></svg>
       </button>
     </div>
   </div>
@@ -68,6 +80,7 @@
 
 @if (isEditable && !isBlocked) {
   <form novalidate class="pc-msg-frm" [formGroup]="formGroup">
+
     <div class="pc-msg-edt">
       @if (!!msgEditing) {
         <div class="pc-nmsg-label" [attr.is-focuse-msg]="isFocusMsg ? '': null">
@@ -75,9 +88,9 @@
           <span>{{ 'field-message.editing_msg' | translate }}</span>
         </div>
       }
-    
       <app-field-message wd100 scroll-thin fm-no-pd-hint-error
-        [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
+        class="pc-new-msg"
+        [class.pc-editing]="!!msgEditing"
         formControlName="newMsg"
         kind="message"
         [maxLen]="maxLen"
@@ -102,11 +115,12 @@
         <div class="pc-msg-btns-sepr"></div>
       }
       <button matSuffix mat-icon-button class="pc-msg-icon"
-        [disabled]="(!checkValueForNotEmptyAndChanges(frmCtrlNewMsg.value?.trim(), initValue) || formGroup.invalid) ? '' : null"
+        [disabled]="(!frmCtrlNewMsg.value?.trim() || formGroup.invalid) ? '' : null"
         (click)="doSendMessage(frmCtrlNewMsg.value)">
         <svg><use href="./lib-chat/panel-chat/send-bin.svg#send-bin"></use></svg>
       </button>
     </div>
+
   </form>
 }
 
