@@ -1,7 +1,8 @@
 <div class="vil-container" [class]="containerClass" #container (scroll)="scrollDbncFn(mode)">
   @if (!!templateRef) {
-    @for (itemVal of dataList; track itemVal.id) {
-      <ng-container *ngTemplateOutlet="templateRef; context: { item: itemVal, paramObj: paramObj }">
+    @for (itemVal of dataList; track itemVal.id; let idx = $index) {
+      <ng-container
+        *ngTemplateOutlet="templateRef; context: { item: itemVal, paramObj: paramObj, index: idx, count: dataList.length }">
       </ng-container>
     }
   }

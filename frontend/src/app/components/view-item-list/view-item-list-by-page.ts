@@ -15,6 +15,8 @@ export class ViewItemListByPage implements OnChanges {
     private viewItemList: ViewItemList = inject(ViewItemList);
 
     @Input()
+    public editSet: ItemView[] | null | undefined;
+    @Input()
     public deleteIds: unknown[] | null | undefined;
     @Input()
     public isReset: boolean | null | undefined; // Checked only together with "itemPage".
@@ -45,6 +47,15 @@ export class ViewItemListByPage implements OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes["editSet"] && !!this.editSet && this.editSet.length > 0) {
+            for (let idx = 0; idx < this.editSet.length; idx++) {
+                const item = this.editSet[idx];
+                const index = this.viewItemList.dataList.findIndex((val) => val.id == item.id);
+                if (index > -1) {
+                    this.viewItemList.dataList[index] = item;
+                }
+            }
+        }
         if (!!changes["deleteIds"] && !!this.deleteIds && this.deleteIds.length > 0) {
             const deleteIds = this.deleteIds;
             const isExist = this.viewItemList.dataList.some((val) => deleteIds.indexOf(val.id) > -1);

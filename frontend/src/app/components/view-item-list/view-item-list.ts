@@ -77,7 +77,7 @@ export class ViewItemList {
     public thresholdDown: number | null | undefined = THRESHOLD_DOWN_DEFAULT; // Takes values ​​from 0 to 1.
 
     @Output()
-    readonly afterScroll: EventEmitter<{ ratioX: number, ratioY: number }> = new EventEmitter();
+    readonly afterScroll: EventEmitter<{ isModifiedList: boolean, ratioX: number, ratioY: number }> = new EventEmitter();
 
     @ViewChild("container")
     public container: ElementRef<HTMLElement> | undefined;
@@ -86,6 +86,7 @@ export class ViewItemList {
 
     public dataList: ItemView[] = [];
     private followingModes: ModeType[] = [];
+    public isModifiedList: boolean = false;
     public loadItemFn = (isAddTop: boolean, item: ItemView, count: number) => { };
     public mode: ModeType = this.createModeCheckRate();
     private ratioX: number = -1; // The coefficient of the scroll value by X.
@@ -122,6 +123,7 @@ export class ViewItemList {
     }
     public setDataList(dataList: ItemView[]): void {
         this.dataList = dataList;
+        this.isModifiedList = true;
     }
     /** Stabilizes the scrolling position after shifting or adding/removing items from the list. */
     public stabilizeScroll(isSetScrollMin: boolean): void {
@@ -147,20 +149,40 @@ export class ViewItemList {
             return;
         }
         const elem: HTMLElement | undefined = this.container?.nativeElement;
+        let isAfterScrollEvent: boolean = false;
 
         if (mode.type == MODE_CHECK_RATE) {
             const { isRateUp, isRateDw } = this.scrollEvntCheckRate(elem);
             if (isRateUp || isRateDw) {
                 this.followingModes.unshift(this.createModeLoadItem(isRateUp, 0));
             }
+            isAfterScrollEvent = true;
         } else if (mode.type == MODE_STABILIZE_SCROLL) {
             // Correction of the scroll position after bounce.
             const isChange = this.scrollEvntCorrection(elem, mode.isSetScrollMin);
             if (isChange) {
                 this.followingModes.unshift(this.mode);
+            } else {
+                // Update the values of this.ratioX, this.ratioY.
+                this.scrollEvntCheckRate(elem);
+                if (this.isModifiedList) {
+                    isAfterScrollEvent = true;
+                } else {
+                    this.followingModes.unshift(this.createModeCheckRate());
+                }
             }
         } else if (mode.type == MODE_LOAD_ITEM) {
             this.scrollEvntLoadItem(mode.isAddTop, mode.count);
+        }
+
+        const nextValMode: ModeType | undefined = this.followingModes[0];
+
+        if (isAfterScrollEvent && nextValMode?.type != mode.type) {
+            Promise.resolve().then(() => {
+                const isModifiedList = this.isModifiedList;
+                this.isModifiedList = false;
+                this.afterScroll.emit({ isModifiedList, ratioX: this.ratioX, ratioY: this.ratioY });
+            });
         }
 
         const nextMode: ModeType | undefined = this.followingModes.shift();
