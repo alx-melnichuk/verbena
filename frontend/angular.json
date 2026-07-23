@@ -46,6 +46,10 @@
           },
           "configurations": {
             "production": {
+              "outputPath":{
+                "base": "../backend/static/",
+                "browser": ""
+              },
               "budgets": [
                 {
                   "type": "initial",
