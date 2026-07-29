@@ -13,6 +13,8 @@ pub const CERTIFICATE: &str = "ssl.crt.pem";
 pub const PRIVATE_KEY: &str = "ssl.key.pem";
 pub const ALLOWED_ORIGIN: &str = "http://localhost:4250,http://127.0.0.1:4250";
 pub const DIR_TMP: &str = "./tmp";
+pub const DIR_IMGS: &str = "./imgs";
+pub const DIR_STATIC: &str = "./static";
 
 #[derive(Debug, Clone)]
 pub struct ConfigApp {
@@ -29,6 +31,8 @@ pub struct ConfigApp {
     pub app_allowed_origin: String,
     pub app_dir_tmp: String,
     pub app_num_workers: Option<usize>,
+    pub app_dir_imgs: String,
+    pub app_dir_static: String,
 }
 
 impl ConfigApp {
@@ -63,7 +67,7 @@ impl ConfigApp {
         let allowed_origin = if app_host == HOST.to_string() { ALLOWED_ORIGIN } else { "" };
         // Cors permissions "allowed_origin" (array of values, comma delimited)
         let app_allowed_origin = env::var("APP_ALLOWED_ORIGIN").unwrap_or(allowed_origin.to_string());
-        // Directory for temporary files when uploading user files.
+        // Directory for temporary files when uploading user files. Default: ./tmp
         let app_dir_tmp = env::var("APP_DIR_TMP").unwrap_or(DIR_TMP.to_string());
 
         // Number of worker services (this is the number of available physical CPU cores for parallel computing).
@@ -71,6 +75,12 @@ impl ConfigApp {
         let num_workers = env::var("APP_NUM_WORKERS").unwrap_or("".to_string());
         #[rustfmt::skip]
         let app_num_workers = if num_workers.len() > 0 { Some(num_workers.parse::<usize>().unwrap()) } else { None };
+
+        // Directory for all image files (avatars, logos, static images). Default: ./imgs
+        let app_dir_imgs = env::var("APP_DIR_IMGS").unwrap_or(DIR_IMGS.to_string());
+
+        // Directory for all "FrontEnd" files in the assembly. Default: ./static
+        let app_dir_static = env::var("APP_DIR_STATIC").unwrap_or(DIR_STATIC.to_string());
 
         ConfigApp {
             app_host,
@@ -86,6 +96,8 @@ impl ConfigApp {
             app_allowed_origin,
             app_dir_tmp,
             app_num_workers,
+            app_dir_imgs,
+            app_dir_static,
         }
     }
     fn get_domain(protocol: &str, host: &str, port: &str) -> String {
@@ -113,5 +125,7 @@ pub fn get_test_config() -> ConfigApp {
         app_allowed_origin: "".to_string(),
         app_dir_tmp: "./".to_string(),
         app_num_workers: None,
+        app_dir_imgs: DIR_IMGS.to_string(),
+        app_dir_static: DIR_STATIC.to_string(),
     }
 }
