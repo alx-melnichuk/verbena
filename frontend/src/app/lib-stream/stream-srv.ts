@@ -270,26 +270,3 @@ export class StreamSrv {
     }
 
 }
-
-
-/*function mockStreamDto(): StreamDto {
-    return StreamDtoUtil.create({
-        id: 254,
-        userId: 18,  // Owner id
-        title: "trip 2024 to spain 1 - E.Allen", // Custom title (min: 2, max: 255)
-        // Custom description (default: "") (min: 2, max: 2048)
-        descript: "Description of a beautiful trip 2024 to spain 1 - E.Allen",
-        logo: "/assets/images/trip_spain01.jpg", // Link to stream logo, optional (min: 2, max: 255)
-        starttime: new Date("2024-01-01T08:00:00.000Z"), // The stream start time. Required on create
-        live: false, // Stream live status, false means inactive
-        // Stream live state - waiting, preparing, start, paused, stop (waiting by default)
-        state: StreamState.waiting, // ["waiting", "preparing", "started", "paused", "stopped"]
-        started: null, // The time the stream began.
-        paused: null, // The time the stream began pausing.
-        stopped: null, // The time the stream stopped.
-        source: "obs",
-        tags: ["tourism", "spain"],
-        createdAt: new Date("2024-03-08T14:55:44.770Z"),
-        updatedAt: new Date("2024-03-08T14:55:44.770Z"),
-    });
-}*/
