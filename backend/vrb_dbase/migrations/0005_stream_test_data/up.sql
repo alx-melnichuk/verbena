@@ -36,7 +36,7 @@ BEGIN
   idx_logo := 1;
   idx := 1;
   WHILE idx <= _count LOOP
-    logo := CONCAT('/assets/images/trip_', _trip, '0', idx_logo, '.jpg');
+    logo := CONCAT('/picture/trip_', _trip, '0', idx_logo, '.jpg');
     idx_logo := idx_logo + 1;
     IF idx_logo = 8 THEN
       idx_logo := 1;
