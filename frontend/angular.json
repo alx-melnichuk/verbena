@@ -38,6 +38,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "*.html",
+                "input": "src/",
+                "output": "/"
               }
             ],
             "styles": [
