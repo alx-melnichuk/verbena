@@ -78,7 +78,7 @@
 
       .hd-panel { padding: 0 1rem; }
       .hd-logo-mini {
-        background-image: url("assets/images/logo-bin.svg");
+        background-image: url("logo-bin.svg");
         background-position: center;
         background-repeat: no-repeat;
         background-size: cover;
@@ -341,7 +341,7 @@
       // ** Start of the program **
       let translate = {};
 
-      httpClient("GET", "./assets/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
+      httpClient("GET", "/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
 
       function load_extra_i18n_successful(responseText) {
         translate = JSON.parse(responseText);
@@ -482,11 +482,14 @@
         const elementPasswd = document.getElementById("field_passwd_id");
         if (elementPasswd.validity.valid && !!password) {
           const urlParams = new URLSearchParams(window.location.search);
-          const recovery_token = urlParams.get("param")
-          const url = window.location.origin + "/api/recovery/" + recovery_token;
-
-          formDisabled(true);
-          httpClient("PUT", url, recoverySuccessful, recoveryFailed, { password });
+          const recovery_token = urlParams.get("param");
+          if (!recovery_token) {
+            console.error("No registration parameter is specified.");
+          } else {
+            const url = window.location.origin + "/api/recovery/" + recovery_token;
+            formDisabled(true);
+            httpClient("PUT", url, recoverySuccessful, recoveryFailed, { password });
+          }
         }
       }
     </script>
