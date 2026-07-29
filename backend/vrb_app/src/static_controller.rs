@@ -1,28 +1,36 @@
-use std::{env, io::Error, path};
+use std::{fs, io::Error, path};
 
 use actix_files::Files;
 use actix_web::{HttpRequest, HttpResponse, get, http, web};
-use vrb_common::{consts, file_path};
-use vrb_profiles::config_prfl;
 use vrb_tools::config_app;
 
-const NAME_LOGO: &str = "name_logo";
-const NAME_AVATAR: &str = "name_avatar";
+pub fn configure(config_app: config_app::ConfigApp) -> impl FnOnce(&mut web::ServiceConfig) {
+    move |config: &mut web::ServiceConfig| {
+        let list = [config_app.app_dir_imgs.clone(), config_app.app_dir_static.clone()];
+        for item in list {
+            let path_item = path::PathBuf::from(item);
+            let res = path_item.strip_prefix("./");
+            let path_item = if res.is_ok() { res.unwrap().to_path_buf() } else { path_item };
+            let path_item2 = path_item.clone();
+            let base_prefix = path_item2.to_str().unwrap();
 
-pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
-    |config: &mut web::ServiceConfig| {
-        #[rustfmt::skip]
-        let alias_avatar = format!("{}/{{{}:.*}}", consts::ALIAS_AVATAR_FILES_DIR,  NAME_AVATAR);
-        #[rustfmt::skip]
-        let alias_logo = format!("{}/{{{}:.*}}", consts::ALIAS_LOGO_FILES_DIR, NAME_LOGO);
+            // Add visibility of files from all internal directories.
+            for res in fs::read_dir(path_item).unwrap() {
+                let path_buf = res.unwrap().path();
+                if !path_buf.is_dir() {
+                    continue;
+                }
+                let path_buf2: path::PathBuf = path_buf.clone();
+                let mount_path = path_buf2.strip_prefix(base_prefix).unwrap().to_str().unwrap();
+                let serve_from = path_buf.to_str().unwrap();
 
+                config.service(Files::new(mount_path, serve_from).show_files_listing());
+            }
+        }
+
+        let path_static_files = "/{name:.(.+).js|(.+).css|(.+).ico|(.+).png|(.+).svg|(.+).html}";
         config
-            .service(Files::new("/static", "static").show_files_listing())
-            .service(Files::new("/assets", "static/assets").show_files_listing())
-            .service(web::resource(&alias_avatar).route(web::get().to(load_files_avatar)))
-            .service(web::resource(&alias_logo).route(web::get().to(load_files_logo)))
-            .service(web::resource("/{name1:.(.+).js|(.+).css}").route(web::get().to(load_files_js_css)))
-            .service(web::resource("/{name2:.(.+).ico|(.+).png|(.+).svg}").route(web::get().to(load_files_images)))
+            .service(web::resource(path_static_files).route(web::get().to(load_static_files)))
             // Route returns index.html - FE app
             // .service(web::resource("/ind/{path_url:.*}").route(web::get().to(index_root)));
             .service(index_root);
@@ -91,26 +99,8 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         .body(body_str))
 }
 
-pub async fn load_files_logo(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let logo_files_dir = env::var(consts::STRM_LOGO_FILES_DIR).unwrap_or(consts::LOGO_FILES_DIR.to_string());
-    let strm_logo_files_dir = file_path::path_directory(logo_files_dir);
-    let file_name = get_param(request, NAME_LOGO);
-    load_file_from_dir(&strm_logo_files_dir, &file_name).await
-}
-
-pub async fn load_files_avatar(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let config_prfl = config_prfl::ConfigPrfl::init_by_env();
-    let file_name = get_param(request, NAME_AVATAR);
-    load_file_from_dir(&config_prfl.prfl_avatar_files_dir, &file_name).await
-}
-
-pub async fn load_files_js_css(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let file_name = get_param(request, "name1");
-    load_file_from_dir("static", &file_name).await
-}
-
-pub async fn load_files_images(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let file_name = get_param(request, "name2");
+pub async fn load_static_files(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+    let file_name = get_param(request, "name");
     load_file_from_dir("static", &file_name).await
 }
 

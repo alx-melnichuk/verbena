@@ -5,7 +5,6 @@ use actix_multipart::form::tempfile::TempFileConfig;
 use actix_web::{App, HttpServer, http, middleware, web};
 use dotenv;
 use env_logger;
-use log::{Level::Info, info, log_enabled};
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
@@ -61,14 +60,14 @@ pub async fn server_run() -> std::io::Result<()> {
     std::fs::create_dir_all(&config_prfl.prfl_avatar_files_dir)?;
 
     let app_domain = config_app.app_domain.clone();
-    app_log(&format!("Starting server {}", &app_domain));
+    eprintln!("Starting server {}", &app_domain);
 
     let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
     let pool_max_size = env::var("DATABASE_POOL_MAX_SIZE").unwrap_or("0".to_owned()).trim().parse().unwrap();
 
-    app_log("Configuring database.");
+    eprintln!("Configuring database.");
     let pool: dbase::DbPool = dbase::init_db_pool(&db_url, pool_max_size);
-    app_log(&format!("db_pool.max_size: {}", pool.max_size()));
+    eprintln!("db_pool.max_size: {}", pool.max_size());
     // Execute all unapplied migrations for a given migration source
     dbase::run_migration(&mut pool.get().unwrap());
 
@@ -107,6 +106,7 @@ pub fn configure_server(pool: dbase::DbPool) -> impl FnOnce(&mut web::ServiceCon
         // Adding various configs.
         let config_app0 = config_app::ConfigApp::init_by_env();
         let temp_file_config0 = TempFileConfig::default().clone().directory(config_app0.app_dir_tmp.clone());
+        let config_app1 = config_app0.clone();
 
         // used: user_recovery_controller, user_registr_controller, static_controller
         let config_app = web::Data::new(config_app0);
@@ -167,7 +167,7 @@ pub fn configure_server(pool: dbase::DbPool) -> impl FnOnce(&mut web::ServiceCon
             .configure(user_authent_controller::configure())
             .configure(stream_controller::configure())
             .configure(profile_controller::configure())
-            .configure(static_controller::configure())
+            .configure(static_controller::configure(config_app1))
             .configure(chat_message_controller::configure())
             .configure(chat_ws_controller::configure());
     }
@@ -202,12 +202,4 @@ pub fn create_cors(config_app: config_app::ConfigApp) -> Cors {
         }
     }
     cors
-}
-
-fn app_log(text: &str) {
-    if log_enabled!(Info) {
-        info!("{}", text);
-    } else {
-        eprintln!("{}", text);
-    }
 }
