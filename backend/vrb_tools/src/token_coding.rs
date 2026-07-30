@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{self as jwt, errors};
 use log::error;
-use rand::Rng;
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
 use vrb_common::{crypto, parser};
@@ -40,19 +40,21 @@ pub fn encode_token(
         return Err(err);
     }
 
+    let header = jwt::Header::new(jwt::Algorithm::HS256);
+
     let now = Utc::now();
-    let iat = now.timestamp() as usize;
     let exp = (now + Duration::seconds(expires)).timestamp() as usize;
+    let iat = now.timestamp() as usize;
     let iss = num_token.to_string();
     let sub = user_id.to_string();
 
     let claims = TokenClaims { exp, iat, iss, sub };
+
+    let key = jwt::EncodingKey::from_secret(secret);
+
     // Encode the header and claims given and sign the payload using the algorithm from the header and the key.
     #[rustfmt::skip]
-    let encoded = jwt::encode(
-        &jwt::Header::new(jwt::Algorithm::HS256),
-        &claims, &jwt::EncodingKey::from_secret(secret)
-    ).map_err(|e| {
+    let encoded = jwt::encode(&header, &claims, &key).map_err(|e| {
         let err = e.to_string();
         error!("{:?}", err);
         err
@@ -87,12 +89,12 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i3
         error!("{:?}", err.to_string());
         err.to_string()
     })?;
+
+    let key = jwt::DecodingKey::from_secret(secret);
+    let validation = jwt::Validation::new(jwt::Algorithm::HS256);
+
     #[rustfmt::skip]
-    let token_data = jwt::decode::<TokenClaims>(
-        token_str,
-        &jwt::DecodingKey::from_secret(secret),
-        &jwt::Validation::new(jwt::Algorithm::HS256)
-    )
+    let token_data = jwt::decode::<TokenClaims>(token_str, &key, &validation)
     .map_err(|err| {
         error!("{:?}", err.to_string());
         err.to_string()
