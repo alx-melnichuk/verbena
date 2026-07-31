@@ -50,14 +50,13 @@ pub fn encode_token(
 
     let claims = TokenClaims { exp, iat, iss, sub };
 
-    let key = jwt::EncodingKey::from_secret(secret);
+    let key = jwt::EncodingKey::from_secret(secret.as_ref());
 
     // Encode the header and claims given and sign the payload using the algorithm from the header and the key.
     #[rustfmt::skip]
-    let encoded = jwt::encode(&header, &claims, &key).map_err(|e| {
-        let err = e.to_string();
-        error!("{:?}", err);
-        err
+    let encoded = jwt::encode(&header, &claims, &key).map_err(|err| {
+        error!("{:?}", err.to_string());
+        err.to_string()
     })?;
     // Encrypt the data using a secret string.
     let encrypted = crypto::encrypt_aes(secret, encoded.as_bytes())?;
