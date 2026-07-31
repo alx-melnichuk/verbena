@@ -35,7 +35,6 @@ mod tests {
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
-    const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
     const MSG_CONTENT_TYPE_NOT_FOUND: &str = "Could not find Content-Type header";
 
     // ** put_stream_and_tags **
@@ -85,12 +84,19 @@ mod tests {
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let body_str = String::from_utf8_lossy(&body);
-        assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.message, err::MSG_NO_FIELDS_TO_UPDATE);
+        let key = Cow::Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
+        #[rustfmt::skip]
+        let names1 = app_err.params.get(&key).unwrap().get("validNames").unwrap().as_str().unwrap();
+        let names2 = [ModifyStreamAndTagsDto::valid_names(), vec!["logofile"]].concat().join(",");
+        assert_eq!(names1, &names2);
     }
     #[actix_web::test]
     async fn test_put_stream_and_tags_invalid_name() {
