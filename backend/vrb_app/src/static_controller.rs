@@ -70,7 +70,7 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         "getrandom = \"0.4.3\"",
         "handlebars = \"6.4.3\"",
         "image = \"0.25.10\"",
-        "jsonwebtoken = \"11.0.0\"",
+        "jsonwebtoken = { version = \"11.0.0\", features = [\"aws_lc_rs\"] }",
         "lettre = { version = \"0.11.22\", features = [\"tokio1\", \"tokio1-native-tls\"] }",
         "log = \"0.4.28\"",
         "mime = \"0.3.17\"",
