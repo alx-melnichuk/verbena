@@ -31,7 +31,7 @@ mod tests {
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
-    const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
+    const MSG_REQUIRED_FIELD_MISSING_TITLE: &str = "Required field is missing: title";
     const MSG_CONTENT_TYPE_NOT_FOUND: &str = "Could not find Content-Type header";
 
     // ** post_stream_and_tags **
@@ -87,7 +87,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
-        assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
+        assert!(body_str.eq(MSG_REQUIRED_FIELD_MISSING_TITLE));
     }
     #[actix_web::test]
     async fn test_post_stream_and_tags_title_empty() {
