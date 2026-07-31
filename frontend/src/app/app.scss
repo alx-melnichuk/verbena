@@ -42,7 +42,10 @@ app-root {
         --app-is-color-mix: 0;
 
         .app-pn-bg {
-            --app-pn-bg-img: linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, var(--app-pn-bg-l, 10%))), linear-gradient(var(--mat-sys-surface));
+            --app-pn-bg-img:
+                linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, var(--app-pn-bg-l, 10%)),
+                    hsla(var(--app-pn-bg-h), 50%, 50%, var(--app-pn-bg-l, 10%))),
+                linear-gradient(var(--mat-sys-surface), var(--mat-sys-surface));
             --app-pn-brd: hsla(var(--app-pn-bg-h), 50%, 50%, var(--app-pn-brd-l, 22%))
         }
     }

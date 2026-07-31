@@ -13,8 +13,12 @@ app-panel-stream-calendar {
 
     @supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
         .psc-pn2-bg {
-            --psc-pn-sel-bg-img: linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, 13%)), linear-gradient(var(--mat-sys-inverse-primary));
-            --psc-pn-emblem-bg-img: linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, 10%)), linear-gradient(var(--mat-sys-tertiary-container));
+            --psc-pn-sel-bg-img:
+                linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, 13%), hsla(var(--app-pn-bg-h), 50%, 50%, 13%)),
+                linear-gradient(var(--mat-sys-inverse-primary), var(--mat-sys-inverse-primary));
+            --psc-pn-emblem-bg-img:
+                linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, 10%), hsla(var(--app-pn-bg-h), 50%, 50%, 10%)),
+                linear-gradient(var(--mat-sys-tertiary-container), var(--mat-sys-tertiary-container));
         }
     }
 
