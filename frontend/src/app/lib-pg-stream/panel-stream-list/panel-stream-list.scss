@@ -1,0 +1,181 @@
+/*# sourceURL=panel-stream-list.scss */
+
+app-panel-stream-list {
+    --app-pn-bg-h: 220; // hsl(220, 50%, 50%);
+    --app-pn-brd-l: 40%;
+    ---psl-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
+    ---psl-brd-pd: 2px;
+    ---psl-clnd-mn-wd: calc(17 * var(--mat-datepicker-calendar-text-size) + 2 * var(---psl-brd-pd));
+
+    container: cnt-stream-list / inline-size;
+    display: block;
+    height: 100%;
+
+    [psl-mb-1] {
+        margin-bottom: 0.25rem;
+    }
+
+    @container cnt-stream-list (width < 37.5rem) {
+
+        // width < 600px
+        .psl-container {
+            ---psl-cont-fl-dr: column;
+            ---psl-my-clndr-wd: 100%;
+            ---psl-my-strms-wd: 100%;
+            ---psl-evnt-ls-hg: 22rem;
+        }
+    }
+
+    @container cnt-stream-list (37.5rem <=width < 56rem) {
+
+        // width < 896px
+        .psl-container {
+            ---psl-cont-fl-dr: column;
+            ---psl-my-clndr-wd: 100%;
+            ---psl-my-strms-wd: 100%;
+            ---psl-my-clndr-fl-dr: row;
+        }
+
+        .psl-my-calendar {
+            max-height: 27rem;
+        }
+    }
+
+    @container cnt-stream-list (56rem <=width) {
+
+        // 896px <= width
+        .psl-container {
+            ---psl-my-clndr-wd: calc(0.3333 * min(100vw, 1280px) - 67.965px); // 1050px: 283.50px; 1080px: 291.59px;
+            ---psl-my-strms-wd: calc(100vw - max(var(---psl-my-clndr-wd), var(---psl-clnd-mn-wd)) - 3 * var(---psl-pd));
+        }
+
+        .psl-my-calendar {
+            height: 100%;
+        }
+    }
+
+    .psl-container {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: var(---psl-cont-fl-dr, row);
+        height: 100%;
+        justify-content: center;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 80rem;
+        padding: var(---psl-pd) 0;
+    }
+
+    // ** "indent" **
+    .psl-indent {
+        flex-shrink: 0;
+        height: var(---psl-pd);
+        width: var(---psl-pd);
+    }
+
+    // ** border **
+    .psl-border {
+        border: 2px solid var(--app-pn-brd);
+        border-radius: 1rem;
+        box-sizing: border-box;
+        box-shadow: var(--psl-pn-sh, 0px 1px 2px 1px rgba(0, 0, 0, 0.25));
+    }
+
+    // ** title **
+    .psl-title {
+        font-weight: 500;
+        font-size: calc(1rem + 1px);
+        line-height: 3rem;
+        margin-left: 1.25rem;
+    }
+
+    // ** "My Calendar" **
+    .psl-my-calendar {
+        display: flex;
+        flex-shrink: 0;
+        flex-direction: var(---psl-my-clndr-fl-dr, column);
+        min-width: var(---psl-clnd-mn-wd);
+        width: var(---psl-my-clndr-wd);
+    }
+
+    .psl-calendar-box {
+        display: flex;
+        flex-direction: column; // option!
+        padding: var(---psl-brd-pd);
+    }
+
+    // ** event list **  
+    .psl-events-box {
+        display: flex;
+        flex-grow: 1;
+        flex-direction: column;
+        padding: var(---psl-brd-pd);
+        overflow-y: hidden;
+    }
+
+    .psl-event-label {
+        font-size: 1rem;
+        height: 3rem;
+        line-height: 3rem;
+        text-align: center;
+        font-weight: var(--sl-fn-wg, lighter);
+
+        &.psl-heavier {
+            --sl-fn-wg: 500;
+        }
+    }
+
+    .psl-event-list {
+        height: var(---psl-evnt-ls-hg, calc(100% - 3rem));
+    }
+
+    // ** "My Streams" **
+    .psl-my-streams {
+        box-sizing: border-box;
+        display: flex;
+        flex-grow: 1;
+        width: var(---psl-my-strms-wd);
+        max-width: 43rem;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .psl-stream-box {
+        display: flex;
+        flex-direction: column;
+        flex: 0 0 auto;
+        height: max(calc((100% - var(---psl-pd)) / 2), 17rem);
+        padding: var(---psl-brd-pd);
+    }
+
+    .psl-logo {
+        --psi-logo-wd: calc(var(---psl-pd) * 4);
+        --psi-logo-hg: calc(var(---psl-pd) * 3);
+    }
+
+    .psl-lbl-future {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .psl-reset-data {
+        align-items: center;
+        display: flex;
+        width: 40%;
+    }
+
+    .psl-reset-btn {
+        --mat-button-protected-label-text-color: var(--mat-sys-on-background);
+        --mat-button-protected-container-color: var(--mat-sys-surface-container);
+    }
+
+    .psl-stream-future {
+        --vhl-brd-rd: 0 0 0.5rem 1rem;
+        height: calc(100% - 3rem);
+    }
+
+    .psl-stream-past {
+        --vhl-brd-rd: 0 0 0.5rem 1rem;
+        height: calc(100% - 3rem);
+    }
+}

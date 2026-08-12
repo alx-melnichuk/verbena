@@ -8,9 +8,7 @@ mod tests {
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json::json;
-    use vrb_common::{
-        api_error::{code_to_str, ApiError}, consts, env_var, err
-    };
+    use vrb_common::{api_error::ApiError, consts, env_var, err};
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
     use crate::{
@@ -107,7 +105,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_REQUIRED]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NICKNAME_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_min() {
@@ -138,7 +136,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_MIN_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NICKNAME_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_max() {
@@ -169,7 +167,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_MAX_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NICKNAME_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_wrong() {
@@ -200,7 +198,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_NICKNAME_REGEX]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NICKNAME_REGEX]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_empty() {
@@ -231,7 +229,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_REQUIRED]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_min() {
@@ -262,7 +260,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MIN_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_max() {
@@ -293,7 +291,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MAX_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_wrong() {
@@ -324,7 +322,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_empty() {
@@ -355,7 +353,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REQUIRED]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_min() {
@@ -386,7 +384,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_max() {
@@ -417,7 +415,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MAX_LENGTH]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_wrong() {
@@ -448,7 +446,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRegistrCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REGEX]);
+        UserRegistrCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
@@ -478,7 +476,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert_eq!(app_err.message, err::MSG_NICKNAME_ALREADY_USE);
     }
     #[actix_web::test]
@@ -509,7 +507,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert_eq!(app_err.message, err::MSG_EMAIL_ALREADY_USE);
     }
     #[actix_web::test]
@@ -541,7 +539,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert_eq!(app_err.message, err::MSG_NICKNAME_ALREADY_USE);
     }
     #[actix_web::test]
@@ -573,7 +571,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
+        assert_eq!(app_err.status, StatusCode::CONFLICT.as_u16());
         assert_eq!(app_err.message, err::MSG_EMAIL_ALREADY_USE);
     }
     #[actix_web::test]
@@ -605,7 +603,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNPROCESSABLE_ENTITY));
+        assert_eq!(app_err.status, StatusCode::UNPROCESSABLE_ENTITY.as_u16());
         assert!(app_err.message.starts_with(&format!("{};", err::MSG_JSON_WEB_TOKEN_ENCODE)));
     }
     #[actix_web::test]
@@ -670,7 +668,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(app_err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[actix_web::test]
@@ -705,7 +703,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(app_err.status, StatusCode::UNAUTHORIZED.as_u16());
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "ExpiredSignature"));
     }
@@ -742,7 +740,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_FOUND));
+        assert_eq!(app_err.status, StatusCode::NOT_FOUND.as_u16());
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}; user_registr_id: {}", MSG_REGISTR_NOT_FOUND, user_reg_id));
     }

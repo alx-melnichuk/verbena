@@ -30,12 +30,12 @@
       [hg-100] { height: 100%; }
       [js-cn-cen] { justify-content: center; }
       [js-cn-bet] { justify-content: space-between; }
-      [mr-bt-05] { margin-bottom: 0.5em; }
-      [mr-lf-05] { margin-left: 0.5em; }
-      [mr-rg-05] { margin-right: 0.5em; }
-      [mr-tp-05] { margin-top: 0.5em; }
-      [pd-lf-05] { padding-left: 0.5em; }
-      [pd-rg-05] { padding-right: 0.5em; }
+      [mr-bt-05] { margin-bottom: 0.5rem; }
+      [mr-lf-05] { margin-left: 0.5rem; }
+      [mr-rg-05] { margin-right: 0.5rem; }
+      [mr-tp-05] { margin-top: 0.5rem; }
+      [pd-lf-05] { padding-left: 0.5rem; }
+      [pd-rg-05] { padding-right: 0.5rem; }
       [ps-rel] { position: relative; }
       [ps-abs] { position: absolute; }
       [tx-al-cen] { text-align: center; }
@@ -48,42 +48,42 @@
     <style>
       @media (width <= 480px) {
         .s-desktop { --a-hd-hg: min(18vh, 80px); }
-        .s-content { --pd: 0.5em; --wd: 100%; }
+        .s-content { --pd: 0.5rem; --wd: 100%; }
       }
       @media (480px < width <= 768px) {
         .s-desktop { --a-hd-hg: 74px; }
-        .s-content { --pd: 1.5em; --wd: 30em; }
+        .s-content { --pd: 1.5rem; --wd: 30rem; }
       }
       @media (768px < width <= 1024px) {
         .s-desktop { --a-hd-hg: 68px; }
-        .s-content { --pd: 2em; --wd: 32em; }
+        .s-content { --pd: 2rem; --wd: 32rem; }
       }
       @media (1024px < width <= 1280px) {
         .s-desktop { --a-hd-hg: 64px; }
-        .s-content { --pd: 2.5em; --wd: 34em; }
+        .s-content { --pd: 2.5rem; --wd: 34rem; }
       }
       @media (1280px < width) {
         .s-desktop { --a-hd-hg: 62px; }
-        .s-content { --pd: 3em; --wd: 36em; }
+        .s-content { --pd: 3rem; --wd: 36rem; }
       }
       .s-desktop {
         --a-site-unauth: hsl(55, 80%, 88%);
         --a-hd-bg: var(--a-site-unauth);
-        --a-ft-hg: 1.75em;
+        --a-ft-hg: 1.75rem;
         --a-ft-bg: var(--a-site-unauth);
       }
       header { background-color: var(--a-hd-bg); border-bottom: 1px solid lightgrey; flex: 0 0 var(--a-hd-hg); }
       footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
       main { flex: 1 1 auto; height: fit-content; }
 
-      .hd-panel { padding: 0 1em; }
+      .hd-panel { padding: 0 1rem; }
       .hd-logo-mini {
-        background-image: url("assets/images/logo-bin.svg");
+        background-image: url("logo-bin.svg");
         background-position: center;
         background-repeat: no-repeat;
         background-size: cover;
-        height: 3.5em;
-        width: 3.5em;
+        height: 3.5rem;
+        width: 3.5rem;
       }
 
       .s-logo-text { font-size: 1.125rem; font-weight: bold; }
@@ -109,7 +109,7 @@
         text-align: center;
       }
 
-      .s-field-wrap { --wd-icon: 1.68em; margin-bottom: 0.05em; }
+      .s-field-wrap { --wd-icon: 1.68rem; margin-bottom: 0.05rem; }
       .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
       .s-field:disabled { color: rgba(0,0,0,0.38); caret-color: transparent; }
 
@@ -120,12 +120,12 @@
 
       .s-field {
         border-color: var(--br-cl-err, var(--br-cl-foc, var(--br-cl-hov, var(--br-cl,unset))));
-        border-radius: 0.5em;
+        border-radius: 0.5rem;
         border-style: solid;
-        height: 3.5em;
+        height: 3.5rem;
         outline: none;
-        padding-left: calc(1em + var(--delta, 0px));
-        padding-right: calc(1em + var(--delta, 0px));
+        padding-left: calc(1rem + var(--delta, 0px));
+        padding-right: calc(1rem + var(--delta, 0px));
       }
       .s-btn-eye { 
         background-color: transparent;
@@ -134,16 +134,16 @@
         display: flex;
         padding: 0px;
         outline: none;
-        right: 0.9em;
+        right: 0.9rem;
         top: calc(50% - var(--wd-icon) / 2);
         z-index: 1;
       }
       .s-icon {  width: var(--wd-icon); height: var(--wd-icon); }
       .s-btn {
         border: none;
-        border-radius: 0.25em;
+        border-radius: 0.25rem;
         box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
-        height: 2.25em;
+        height: 2.25rem;
         outline: none;
         transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
       }
@@ -162,17 +162,17 @@
         box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.2), 0px 0px 0px 0px rgba(0,0,0,0.14), 0px 0px 0px 0px rgba(0,0,0,0.12);
       }
 
-      .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
+      .s-hint-wrap { margin-left: 1rem; min-height: 2.111rem; }
       .s-hint { line-height: 1.2; font-size: calc(0.75rem + 1px); }
       .s-hint:not(.s-err) { color: hsl(210, 8%, 35%); }
       .s-err { color: rgb(224,32,32); }
 
-      .s-submit { background-color: #3f51b5; border-radius: 4rem / 8rem; color: #fff; height: 2.5em; }
+      .s-submit { background-color: #3f51b5; border-radius: 4rem / 8rem; color: #fff; height: 2.5rem; }
 
       .s-footer {
         height: 100%;
         line-height: 1;
-        padding-left: 0.8em;
+        padding-left: 0.8rem;
       }
     </style>
 
@@ -341,7 +341,7 @@
       // ** Start of the program **
       let translate = {};
 
-      httpClient("GET", "./assets/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
+      httpClient("GET", "/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
 
       function load_extra_i18n_successful(responseText) {
         translate = JSON.parse(responseText);
@@ -482,11 +482,14 @@
         const elementPasswd = document.getElementById("field_passwd_id");
         if (elementPasswd.validity.valid && !!password) {
           const urlParams = new URLSearchParams(window.location.search);
-          const recovery_token = urlParams.get("param")
-          const url = window.location.origin + "/api/recovery/" + recovery_token;
-
-          formDisabled(true);
-          httpClient("PUT", url, recoverySuccessful, recoveryFailed, { password });
+          const recovery_token = urlParams.get("param");
+          if (!recovery_token) {
+            console.error("No registration parameter is specified.");
+          } else {
+            const url = window.location.origin + "/api/recovery/" + recovery_token;
+            formDisabled(true);
+            httpClient("PUT", url, recoverySuccessful, recoveryFailed, { password });
+          }
         }
       }
     </script>

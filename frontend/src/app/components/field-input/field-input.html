@@ -1,0 +1,31 @@
+<mat-form-field [formGroup]="formGroup"
+  [subscriptSizing]="(formControl.touched && !!formControl.errors) || !!hint ? 'dynamic' : 'fixed'">
+  
+  @if (!!label) {
+    <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
+  }
+  <ng-content select="[fi-prefix]"></ng-content>
+  
+  <input matInput class="fi-input"
+    type="{{type}}"
+    formControlName="input"
+    autocomplete="new-password"
+    autocapitalize="off"
+    [email]="type == `email` ? true : false"
+    [required]="!!isRequired"
+    [attr.maxlength]="maxLen != null && maxLen > 0 ? maxLen + 1 : undefined"
+    [attr.spellcheck] ="!!isSpellcheck"
+    (input)="onChange(formControl.value)"
+    (blur)="onTouched()"
+  />
+  
+  <ng-content select="[fi-suffix]"></ng-content>
+  @if (!!hint) {
+    <mat-hint>{{ hint | translate }}</mat-hint>
+  }
+  <mat-error>
+    {{ (errorMsg || getErrorMsg(formControl.errors))
+      | translate: getErrorObj(formControl.errors, (!!label ? (label | translate) : "")) }}
+  </mat-error>
+
+</mat-form-field>

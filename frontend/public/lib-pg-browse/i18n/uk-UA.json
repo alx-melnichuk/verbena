@@ -1,0 +1,89 @@
+{
+  "panel-stream-card": {
+    "not_found": "не знайдено",
+    "missing": "відсутнє"
+  },
+  "panel-chat": {
+    "you": "ви",
+    "menu": {
+      "edit": "Редагувати",
+      "cut": "Видалити",
+      "remove": "Видалити остаточно",
+      "block_user": "Блокувати",
+      "unblock_user": "Розблокувати"
+    },
+    "you_not_allowed_chat": "Вам не дозволено користуватися публічним чатом.",
+    "you_been_blocked": "Вас заблокували.",
+    "message_edited": "Змінено:",
+    "message_removed": "Видалено:",
+    "message_was_deleted": "Це повідомлення видалено.",
+    "msg_discard_draft": "Відхилити чернетку ? (Ви не зможете її відновити.)"
+  },
+  "pg-browse-view": {
+    "error_update_stream": "Помилка оновлення стану потоку",
+    "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Команди чату",
+    "user_blocked": "Користувач \"{{ username }}\" заблокований.",
+    "user_unblocked": "Користувач \"{{ username }}\" розблокований.",
+    "error_socket": "Помилка сокета",
+    "error_blocked": "Помилка блокування користувача",
+    "error_unblocked": "Помилка розблокування користувача"
+  },
+  "panel-browse-list": {
+     "tag_value": "Значення тегу",
+     "live_streams_only": "Тільки прямі трансляції",
+     "search_for_streams": "Пошук потоків"
+  },
+  "panel-browse-view": {
+    "title": "Назва:",
+    "not_found": "не знайдено",
+    "descript": "Опис:",
+    "tags": "Теги:",
+    "state": "Стан:",
+    "waiting": "очікування",
+    "preparing": "підготовка",
+    "started": "розпочато",
+    "paused": "призупинено",
+    "stopped": "зупинено",
+    "chat_title": "Чат трансляції",
+    "sure_you_want_delete_message": "Ви впевнені, що хочете видалити повідомлення: \"{{message}}\" ?",
+    "sure_you_want_permanently_delete_message": "Ви впевнені, що хочете остаточно видалити повідомлення ?"
+  },
+  "panel-stream-state": {
+    "has_not_started": "Трансляція ще не розпочалася.",
+    "has_paused": "Трансляцію призупинено.",
+    "has_ended": "Трансляція вже закінчилася.",
+    "error_preparing_broadcast"     : "Помилка підготовки потоку",
+    "error_when_starting_the_stream": "Помилка запуску потоку",
+    "error_when_stopping_the_stream": "Помилка зупинки трансляції",
+    "error_while_pause_stream"      : "Помилка призупинення трансляції"
+  },
+  "panel-stream-params": {
+    "tags": "Теги:",
+    "start": "Початок:",
+    "started": "Розпочато:",
+    "paused": "Призупинено",
+    "stopped": "Зупинено:",
+    "time-tracking": {
+      "-1": "днів",
+      "1": "день",
+      "2": "дні",
+      "3": "дні",
+      "4": "дні",
+      "11": "днів",
+      "12": "днів",
+      "13": "днів",
+      "14": "днів"
+    }
+  },
+  "panel-stream-actions": {
+    "sure_you_want_stop_stream": "Ви впевнені, що хочете зупинити потік \"{{title}}\"?",
+    "prepare_stream": "Підготовка",
+    "go_live_stream": "Транслювати",
+    "pause_stream": "Пауза",
+    "stop_stream": "Зупинити"
+  },
+  "417.field-message:required": "Поле \"Повідомлення\" обов'язкове.",
+  "417.field-message:minlength": "Поле \"Повідомлення\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.field-message:maxlength": "Поле \"Повідомлення\" не може містити більше {{maxlength.requiredLength}} символів."
+}

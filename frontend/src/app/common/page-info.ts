@@ -3,8 +3,8 @@ export class PageInfo {
     public limit = -1;
     public page = -1;
     public pages = -1;
-    public orderColumn = '';
-    public orderDirection = '';
+    public orderColumn = "";
+    public orderDirection = "";
 }
 
 export class PageInfoUtil {

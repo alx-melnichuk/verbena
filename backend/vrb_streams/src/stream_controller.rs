@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fs, ops::Deref, path};
 
 use actix_multipart::form::{MultipartForm, tempfile::TempFile, text::Text};
-use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
+use actix_web::{HttpResponse, delete, get, post, put, web};
 use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
 use log::error;
 use mime::IMAGE;
@@ -10,7 +10,7 @@ use utoipa;
 use vrb_authent::authentication::{Authenticated, RequireAuth};
 use vrb_common::{
     alias_path::alias_path_stream,
-    api_error::{ApiError, code_to_str},
+    api_error::ApiError,
     err, parser,
     validators::{self, ValidationChecks, Validator, msg_validation},
 };
@@ -21,11 +21,15 @@ use vrb_tools::{cdis::coding, loading::dynamic_image};
 use crate::stream_orm::impls::StreamOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::stream_orm::tests::StreamOrmApp;
+
 use crate::{
     config_strm::{self, ConfigStrm},
     stream_models::{
-        self, CreateStreamInfoDto, ModifyStream, ModifyStreamInfoDto, SearchStreamEventDto, SearchStreamInfoDto, SearchStreamPeriodDto,
-        StreamConfigDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto, ToggleStreamStateDto,
+        CreateStreamAndTags, CreateStreamAndTagsDto, FilterStream, ModifyStreamAndTags, ModifyStreamAndTagsDto, PageStreamAndTagsDto,
+        PageStreamTagDto, SEARCH_STREAM_AND_TAGS_LIMIT, SEARCH_STREAM_AND_TAGS_LIMIT_MAX, SEARCH_STREAM_AND_TAGS_LIMIT_MIN,
+        SEARCH_STREAM_AND_TAGS_PAGE, SEARCH_STREAM_TAGS_LIMIT, SEARCH_STREAM_TAGS_LIMIT_MAX, SEARCH_STREAM_TAGS_LIMIT_MIN,
+        SEARCH_STREAM_TAGS_PAGE, SearchStreamAndTags, SearchStreamAndTagsDto, SearchStreamDate, SearchStreamDateDto, SearchStreamTag,
+        SearchStreamTagDto, StreamAndTagsDto, StreamConfigDto, StreamTagDto, ToggleStreamStateDto,
     },
     stream_orm::StreamOrm,
 };
@@ -46,7 +50,7 @@ pub const MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD: &str = "get_period_other_users
 
 // ** Section: Stream Post **
 // ** Section: Stream Put **
-// 406 Not acceptable - Error deserializing field tag. // Use: post_stream, put_stream
+// 406 Not acceptable - Error deserializing field tag. // Use: post_stream_and_tags, put_stream_and_tags
 pub const MSG_INVALID_FIELD_TAG: &str = "invalid_field_tag";
 
 // ** Section: Stream Put state **
@@ -63,23 +67,23 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         //     GET /api/streams/{id}
         config
-            .service(get_stream_by_id)
+            .service(get_stream_and_tags_by_id)
             // GET /api/streams
-            .service(get_streams)
+            .service(get_stream_and_tags)
             // GET /api/streams_config
             .service(get_stream_config)
-            // GET /api/streams_events
-            .service(get_streams_events)
-            // GET /api/streams_period
-            .service(get_streams_period)
+            // GET /api/streams_calendar
+            .service(get_streams_calendar)
+            // GET /api/streams_popural_tags
+            .service(get_stream_popural_tags)
             // POST /api/streams
-            .service(post_stream)
+            .service(post_stream_and_tags)
             // PUT /api/streams/toggle/{id}
             .service(put_toggle_state)
             // PUT /api/streams/{id}
-            .service(put_stream)
+            .service(put_stream_and_tags)
             // DELETE /api/streams/{id}
-            .service(delete_stream);
+            .service(delete_stream_and_tags);
     }
 }
 
@@ -89,7 +93,7 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
 
 // ** Section: Stream Get **
 
-/// get_stream_by_id
+/// get_stream_and_tags_by_id
 ///
 /// Search for a stream by his ID.
 ///
@@ -98,11 +102,11 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
 /// curl -i -X GET http://localhost:8080/api/streams/1
 /// ```
 ///
-/// Return the found specified stream (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
-/// 
+/// Return the found specified stream (`StreamAndTagsDto`) with status 200 or 204 (no content) if the stream is not found.
+///
 #[utoipa::path(
     responses(
-        (status = 200, description = "A stream with the specified ID was found.", body = StreamInfoDto),
+        (status = 200, description = "A stream with the specified ID was found.", body = StreamAndTagsDto),
         (status = 204, description = "The stream with the specified ID was not found."),
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/streams/2a`", 
             body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
@@ -115,58 +119,44 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
     params(("id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
 )]
-// Used to get information about a stream in chat without authorization. 
+// Used to get information about a stream in chat without authorization.
 #[get("/api/streams/{id}")]
-pub async fn get_stream_by_id(
+pub async fn get_stream_and_tags_by_id(
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
-
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}-{}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        error!("{}.{}", 416, &message);
         ApiError::new(416, &message) // 416
     })?;
 
     let res_data = web::block(move || {
         // Get 'stream' by id.
-        let res_data = stream_orm
-            .find_stream_by_params(Some(id), None, None, true, &[])
-            .map_err(|e| {
-                #[rustfmt::skip]
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
+        let res_data = stream_orm.get_stream_and_tags(id).map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        });
         res_data
     })
     .await
     .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    let opt_data = match res_data { Ok(v) => v, Err(e) => return Err(e) };
-
-    let opt_stream_tag_dto = if let Some((stream, stream_tags)) = opt_data {
-        let streams: Vec<stream_models::Stream> = vec![stream];
-        // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
-        list.into_iter().nth(0)
-    } else {
-        None
-    };
-
-    if let Some(stream_tag_dto) = opt_stream_tag_dto {
-        Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
+    let opt_stream_and_tags = res_data?;
+    if let Some(stream_and_tags) = opt_stream_and_tags {
+        let stream_and_tags_dto = StreamAndTagsDto::from(stream_and_tags);
+        Ok(HttpResponse::Ok().json(stream_and_tags_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
-/// get_streams
+/// get_stream_and_tags
 ///
 /// Get a list of your streams (page by page).
 ///
@@ -175,53 +165,91 @@ pub async fn get_stream_by_id(
 /// {
 ///   userId?: number,                      // optional
 ///   live?: boolean,                       // optional
-///   futureStarttime?: DateTime<Utc>,      // optional
-///   pastStarttime?: DateTime<Utc>,        // optional
-///   orderColumn?: ["starttime", "title"], // optional
-///   orderDirection?: ["asc", "desc"],     // optional
+///   filter?: "future" | "past" | "period" // optional 
+///   starttime?: DateTime<Utc>,            // optional
+///   finishtime?: DateTime<Utc>,           // optional
+///   sortDesc?: boolean,                   // optional
+///   tag?: String,                         // optional
 ///   page?: number,                        // optional
 ///   limit?: number,                       // optional
 /// }
 /// Where:
-/// "userId" - user identifier (current default user);
+/// "userId" - user identifier;
 /// "live" - sign of a "live" stream ("state" = ["preparing", "started", "paused"]);
-/// "futureStarttime" - get future streams with a "starttime" greater than or equal to the specified one (in Utc-format);
-/// "pastStarttime" - get past streams with a "starttime" greater than or equal to the specified one (in Utc-format);
-/// "orderColumn" - sorting column ["starttime" - (default), "title"];
-/// "orderDirection" - sort order ["asc" - ascending (default), "desc" - descending];
-/// "page" - page number, stratified from 1 (1 by default);
+/// "filter" - defines data filtering:
+///   "future" - Get future streams with a "starttime" greater than or equal 
+///              to the one specified in the "starttime" field (in UTC format).
+///   "past"   - Get past streams with a "starttime" less than the one 
+///              specified in the "starttime" field (in UTC format).
+///              To sort in descending order, use sortDesc=true.
+///   "period" - Get streams with a "starttime" greater than or equal to 
+///              the one specified in the "starttime" field.
+///              And less than or equal to the one specified in the "finishtime"
+///              field. The "starttime" and "finishtime" values ​​are specified in
+///              UTC format.
+/// "starttime"  - Date value (in UTC format). Used in conjunction with the "filter"
+///                field. If not specified, the current date and time are used.
+/// "finishtime" - Date value (in UTC format). Used in conjunction with the "filter" field.
+/// 
+/// "sortDesc"   - Descending sorting flag.
+///                Takes the following values:
+///   true              - Sort by the "starttime" field in descending order;
+///   false (undefined) - Sort by the "starttime" field in ascending order;
+/// 
+/// "tag"   - Get streams that have the specified tag.
+/// "page"  - page number, stratified from 1 (1 by default);
 /// "limit" - number of records on the page (5 by default);
 /// ```
 /// It is recommended to enter the date and time in ISO8601 format.
 /// ```text
 /// var d1 = new Date();
-/// { futureStarttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// { starttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
 /// ```
 /// It is allowed to specify the date and time with a time zone value.
 /// ```text
-/// { "futureStarttime": "2020-01-20T22:10:57+02:00" }
+/// { "starttime": "2020-01-20T22:10:57+02:00" }
 /// ```
 /// 
 /// One could call with following curl.
+/// Get streams with "live" true.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/streams?orderColumn=starttime&orderDirection=asc&page=1&limit=5
+/// curl -i -X GET 'http://localhost:8080/api/streams?userId=1&live=true' -H 'Content-Type: application/json'
 /// ```
-/// Could be called with all fields with the next curl.
-/// Request future streams that start on or after a specified date (specify current date and time in Utc).
+/// Get future streams (from current date and time).
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/streams?userId=1&futureStarttime=2020-02-02T08:00:00.000Z&page=1&limit=5
+/// curl -i -X GET 'http://localhost:8080/api/streams?userId=1&filter=future' -H 'Content-Type: application/json'
+/// ```
+/// Get past streams (from current date and time).
+/// ```text
+/// curl -i -X GET 'http://localhost:8080/api/streams?userId=1&filter=past' -H 'Content-Type: application/json'
+/// ```
+/// Get past streams (from the specified date and time).
+/// ```text
+/// curl -i -X GET 'http://localhost:8080/api/streams?userId=1&filter=past&starttime=2020-02-02T20:10:00.000Z' \
+///  -H 'Content-Type: application/json'
+/// ```
+/// Get streams for the specified period.
+/// ```text
+/// curl -i -X GET 'http://localhost:8080/api/streams?userId=1&filter=period&starttime=2020-02-02T20:10:00.000Z \
+/// &finishtime=2020-02-12T20:10:00.000Z' -H 'Content-Type: application/json'
+/// ```
+/// Get streams that have the tag "tag02".
+/// ```text
+/// curl -i -X GET 'http://localhost:8080/api/streams?tag=tag02' -H 'Content-Type: application/json'
+/// ```
+/// Get the first page of streams.
+/// ```text
+/// curl -i -X GET 'http://localhost:8080/api/streams?userId=1&page=1&limit=5' -H 'Content-Type: application/json'
+/// ```
+/// Get the second page of streams.
+/// ```text
+/// curl -i -X GET 'http://localhost:8080/api/streams?userId=1&page=2&limit=5' -H 'Content-Type: application/json'
 /// ```
 /// 
-/// Could be called with all fields with the next curl.
-/// Request past streams that started before the specified date (specify the current date and time in Utc).
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/streams?userId=1&pastStarttime=2020-02-02T08:00:00.000Z&page=1&limit=5
-/// ```
-/// 
-/// Response structure:
+/// Response structure PageStreamAndTagsDto:
 /// ```text
 /// {
-///   list: [StreamInfoDto],
+///   list: [StreamAndTagsDto],
 ///   limit: number,
 ///   count: number,
 ///   page: number,
@@ -234,17 +262,69 @@ pub async fn get_stream_by_id(
 /// "page"  - current page number (stratified from 1);
 /// "pages" - total pages with a given number of records on the page;
 /// ```
+/// StreamAndTagsDto structure:
+/// ```text
+/// {
+///   id: number,
+///   userId: number,
+///   title: string,
+///   descript: string,
+///   logo?: string,
+///   starttime: DateTime<Utc>,
+///   live: boolean,
+///   state: "" | "",
+///   started?: DateTime<Utc>,
+///   paused?: DateTime<Utc>,
+///   stopped?: DateTime<Utc>,
+///   source: string,
+///   createdAt: DateTime<Utc>,
+///   updatedAt: DateTime<Utc>,
+///   tags: [string],
+/// }
+/// Where:
+/// "id"        - record ID;
+/// "userId"    - user identifier;
+/// "title"     - stream title;
+/// "descript"  - stream descript;
+/// "logo"      - stream logo;
+/// "starttime" - stream start date;
+/// "live"      - a sign that the stream is "live";
+///  // "state": "preparing" | "started" | "paused"
+/// "state": "waiting" | "preparing" | "started" | "paused" | "topped";
+/// "started"   - the date the stream started;
+/// "paused"    - the date the stream was paused;
+/// "stopped"   - the date the stream was stopped;
+/// "source"    - stream source;
+/// "createdAt" - date of stream creation;
+/// "updatedAt" - date of stream modification; 
+/// "tags"      - list of stream tags;
+/// ```
 /// 
-/// Return found data on streams (`StreamInfoPageDto`) with status 200.
+/// Return found data on streams (`PageStreamAndTagsDto`) with status 200.
 /// 
 #[utoipa::path(
     responses(
-        (status = 200, description = "Result of the stream request.", body = StreamInfoPageDto),
+        (status = 200, description = "Result of the stream request.", body = PageStreamAndTagsDto),
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
-            example = json!(ApiError::create(403, err::MSG_ACCESS_DENIED, 
-                &format!("{}; curr_user_id: 1, user_id: 2", MSG_GET_LIST_OTHER_USER_STREAMS)) )),
+        (status = 406, body = ApiError,
+            description = "The finish date is less than the start date. \
+            Validation error. `curl -X GET 'http://localhost:8080/api/streams?filter=period \
+            &starttime=2030-03-02T08:00:00.000Z&finishtime=2030-03-01T08:00:00.000Z`",
+            example = json!(ApiError::new(406, MSG_FINISH_LESS_START).add_param(Cow::Borrowed("invalidPeriod"), &serde_json::json!(
+                { "streamPeriodStart": "2030-03-02T08:00:00.000Z", "streamPeriodFinish": "2030-03-01T08:00:00.000Z" })) )),
+        (status = 413, body = ApiError,
+            description = "The finish date of the search period exceeds the limit. \
+            Validation error. `curl -X GET 'http://localhost:8080/api/streams?filter=period \
+            &starttime=2030-01-01T08:00:00.000Z&finishtime=2030-04-01T08:00:00.000Z`",
+            example = json!(ApiError::new(413, MSG_FINISH_EXCEEDS_LIMIT).add_param(Cow::Borrowed("periodTooLong"), 
+            &serde_json::json!({ "actualPeriodFinish": "2030-04-01T08:00:00.000Z", "maxPeriodFinish": "2030-03-07T08:00:00.000Z" 
+                , "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS })))),
+        (status = 417, body = [ApiError], 
+            description = "Validation error. `curl -X GET 'http://localhost:8080/api/streams?filter=period`",
+            example = json!(ApiError::validations(
+                (SearchStreamAndTagsDto::from(SearchStreamAndTags::new(None, Some(FilterStream::Period), None, None)))
+                    .validate().err().unwrap()) )),
         (status = 506, description = "Blocking error.", body = ApiError, 
             example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
@@ -254,52 +334,73 @@ pub async fn get_stream_by_id(
 )]
 #[rustfmt::skip]
 #[get("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_streams(
-    authenticated: Authenticated,
-    stream_orm: web::Data<StreamOrmApp>,
-    query_params: web::Query<SearchStreamInfoDto>,
+pub async fn get_stream_and_tags(
+    stream_orm: web::Data<StreamOrmApp>, 
+    query_params: web::Query<SearchStreamAndTagsDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
-    // Get current user details.
-    let user = authenticated.deref();
-
     // Get search parameters.
-    let search_stream_info_dto: SearchStreamInfoDto = query_params.into_inner();
+    let search_stream_dto: SearchStreamAndTagsDto = query_params.into_inner();
 
-    let page: u32 = search_stream_info_dto.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
-    let limit: u32 = search_stream_info_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
-    let search_stream = stream_models::SearchStream::convert(search_stream_info_dto, user.id);
-
-    if search_stream.user_id != user.id && user.role != UserRole::Admin {
-        let text = format!("curr_user_id: {}, user_id: {}", user.id, search_stream.user_id);
-        let message = format!("{}; {}", MSG_GET_LIST_OTHER_USER_STREAMS, &text);
-        error!("{}-{}", code_to_str(StatusCode::FORBIDDEN), &message);
-        return Err(ApiError::create(403, err::MSG_ACCESS_DENIED, &message)); // 403
+    // Checking the validity of the data model.
+    let validation_res = search_stream_dto.validate();
+    if let Err(validation_errors) = validation_res {
+        error!("{}.{}", 417, msg_validation(&validation_errors));
+        return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
+
+    let opt_filter = search_stream_dto.filter.clone();
+    let opt_starttime  = search_stream_dto.starttime.clone();
+    let opt_finishtime  = search_stream_dto.finishtime.clone();
+
+    if Some(FilterStream::Period) == opt_filter && opt_starttime.is_some() && opt_finishtime.is_some() {
+        let start = opt_starttime.unwrap();
+        let finish = opt_finishtime.unwrap();
+        if start > finish {
+            let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
+                , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
+            error!("{}.{}; {}", 406, MSG_FINISH_LESS_START, json.to_string());
+            return Err(ApiError::new(406, MSG_FINISH_LESS_START) // 406
+                .add_param(Cow::Borrowed("invalidPeriod"), &json));
+        }
+        let max_finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
+        if max_finish <= finish {
+            let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
+                , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
+            error!("{}.{}; {}", 413, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
+            return Err(ApiError::new(413, MSG_FINISH_EXCEEDS_LIMIT) // 413
+                .add_param(Cow::Borrowed("periodTooLong"), &json));
+        } 
+    }
+    
+    let page: u32 = search_stream_dto.page.unwrap_or(SEARCH_STREAM_AND_TAGS_PAGE);
+    let limit: u32 = search_stream_dto.limit.unwrap_or(SEARCH_STREAM_AND_TAGS_LIMIT);
+
+    let mut search_stream: SearchStreamAndTags = search_stream_dto.into();
+    search_stream.page = Some(page);
+    let limit = if limit > SEARCH_STREAM_AND_TAGS_LIMIT_MIN { limit } else { SEARCH_STREAM_AND_TAGS_LIMIT_MIN };
+    let limit = if limit <= SEARCH_STREAM_AND_TAGS_LIMIT_MAX { limit } else { SEARCH_STREAM_AND_TAGS_LIMIT_MAX };
+    search_stream.limit = Some(limit);
 
     let res_data = web::block(move || {
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_data =
-            stream_orm.find_streams_by_pages(search_stream, true).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            stream_orm.filter_stream_and_tags_by_pages(search_stream).map_err(|e| {
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e)
             });
         res_data
-        })
-        .await
-        .map_err(|e| {
-            #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })?;
+    })
+    .await
+    .map_err(|e| {
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
         
-    let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+    let (count, stream_and_tags) = res_data?;
 
-    // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
-
+    let list: Vec<StreamAndTagsDto> = stream_and_tags.into_iter().map(|v| v.into()).collect();
     let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
-
-    let result = StreamInfoPageDto { list, limit, count, page, pages };
+    let result = PageStreamAndTagsDto { list, limit, count, page, pages };
 
     Ok(HttpResponse::Ok().json(result)) // 200
 }
@@ -363,129 +464,10 @@ pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web:
     Ok(HttpResponse::Ok().json(stream_config_dto)) // 200
 }
 
-/// get_streams_events
+/// get_streams_calendar
 ///
-/// Get a list with a brief description of your streams (page by page).
-///
-/// Request structure:
-/// ```text
-/// {
-///   userId?: number,           // optional
-///   starttime?: DateTime<Utc>, // optional
-///   page?: number,             // optional
-///   limit?: number,            // optional
-/// }
-/// Where:
-/// "userId" - user identifier (current default user);
-/// "starttime" - "starttime" - date and time (in Utc-format) to search for streams for this date;
-/// "page" - page number, stratified from 1 (1 by default);
-/// "limit" - number of records on the page (10 by default);
+/// Get a list of dates for the specified period that have streams.
 /// 
-/// It is recommended to enter the date and time in ISO8601 format.
-/// ```text
-/// var d1 = new Date();
-/// { starttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
-/// ```
-/// It is allowed to specify the date and time with a time zone value.
-/// ```text
-/// { "starttime": "2020-01-20T22:10:57+02:00" }
-/// ```
-/// One could call with following curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/streams_events? \
-///     starttime=2030-02-02T08:00:00.000Z&page=1
-/// ```
-/// Could be called with all fields with the next curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/streams_events?userId=1 \
-///     &starttime=2030-02-02T08:00:00.000Z&page=1&limit=5
-/// ```
-/// Response structure:
-/// ```text
-/// {
-///   list: [StreamEventDto],
-///   limit: number,
-///   count: number,
-///   page: number,
-///   pages: number,
-/// }
-/// Where:
-/// "list"  - array of short streams;
-/// "limit" - number of records on the page;
-/// "count" - total number of records;
-/// "page"  - current page number (stratified from 1);
-/// "pages" - total pages with a given number of records on the page;
-/// 
-/// Return found data with short streams (`StreamEventPageDto`) with status 200.
-/// 
-#[utoipa::path(
-    responses(
-        (status = 200, description = "Result of the short stream request.", body = StreamEventPageDto),
-        (status = 401, description = "An authorization token is required.", body = ApiError,
-            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
-            example = json!(ApiError::create(403, err::MSG_ACCESS_DENIED, &format!("{}; {}",
-                MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, "curr_user_id: 1, user_id: 2")))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
-        (status = 507, description = "Database error.", body = ApiError, 
-            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
-    ),
-    security(("bearer_auth" = [])),
-)]
-#[rustfmt::skip]
-#[get("/api/streams_events", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_streams_events(
-    authenticated: Authenticated,
-    stream_orm: web::Data<StreamOrmApp>,
-    query_params: web::Query<SearchStreamEventDto>,
-) -> actix_web::Result<HttpResponse, ApiError> {
-    // Get current user details.
-    let user = authenticated.deref();
-
-    // Get search parameters.
-    let search_stream_event_dto: SearchStreamEventDto = query_params.into_inner();
-
-    let page: u32 = search_stream_event_dto.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
-    let limit: u32 = search_stream_event_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
-    let search_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto, user.id);
-
-    if search_event.user_id != user.id && user.role != UserRole::Admin {
-        let text = format!("curr_user_id: {}, user_id: {}", user.id, search_event.user_id);
-        let message = format!("{}; {}", MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
-        error!("{}-{}", code_to_str(StatusCode::FORBIDDEN), &message);
-        return Err(ApiError::create(403, err::MSG_ACCESS_DENIED, &message)); // 403
-    }
-    
-    let res_data = web::block(move || {
-        // Find for an entity (stream event) by SearchStreamEvent.
-        let res_data =
-            stream_orm.find_stream_events_by_pages(search_event).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)
-            });
-        res_data
-        })
-        .await
-        .map_err(|e| {
-            #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })?;
-
-    let (count, streams) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
-
-    let list = streams.into_iter().map(|v| stream_models::StreamEventDto::from(v)).collect();
-
-    let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
-
-    let result = StreamEventPageDto { list, limit, count, page, pages };
-
-    Ok(HttpResponse::Ok().json(result)) // 200
-}
-
-/// get_streams_period
-///
 /// Request structure:
 /// ```text
 /// {
@@ -511,12 +493,13 @@ pub async fn get_streams_events(
 /// 
 /// One could call with following curl.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/streams_period? \
+/// curl -i -X GET http://localhost:8080/api/streams_calendar? \
 ///     start=2030-03-01T08:00:00.000Z&finish=2030-03-31T08:00:00.000Z
 /// ```
-/// Could be called with all fields with the next curl.
+/// Could be called with all fields with the next curl. 
+/// The "userId" parameter can be specified if the user has the "Admin" role.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/streams_period?userId=1 \
+/// curl -i -X GET http://localhost:8080/api/streams_calendar?userId=1 \
 ///     &start=2030-03-01T08:00:00.000Z&finish=2030-03-31T08:00:00.000Z
 /// ```
 /// Return found dates that contain streams ([DateTime<Utc>]) with status 200.
@@ -545,33 +528,33 @@ pub async fn get_streams_events(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/streams_period", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_streams_period(
+#[get("/api/streams_calendar", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_streams_calendar(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
-    query_params: web::Query<SearchStreamPeriodDto>,
+    query_params: web::Query<SearchStreamDateDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let user = authenticated.deref();
+    let curr_user_id = user.id;
 
     // Get search parameters.
-    let search_period_dto: SearchStreamPeriodDto = query_params.into_inner();
+    let search_stream_date_dto: SearchStreamDateDto = query_params.into_inner();
 
-    let search_period = stream_models::SearchStreamPeriod::convert(search_period_dto, user.id);
-    let start = search_period.start.clone();
-    let finish = search_period.finish.clone();
+    let start = search_stream_date_dto.start.clone();
+    let finish = search_stream_date_dto.finish.clone();
+    let user_id = search_stream_date_dto.user_id.unwrap_or(curr_user_id);
 
-    if search_period.user_id != user.id && user.role != UserRole::Admin {
-        let text = format!("curr_user_id: {}, user_id: {}", user.id, search_period.user_id);
+    if user_id != curr_user_id && user.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", curr_user_id, user_id);
         let message = format!("{}; {}", MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
-        error!("{}-{}", code_to_str(StatusCode::FORBIDDEN), &message);
+        error!("{}.{}", 403, &message);
         return Err(ApiError::create(403, err::MSG_ACCESS_DENIED, &message)); // 403
     }
     if finish < start {
         let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
             , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_FINISH_LESS_START, json.to_string());
+        error!("{}.{}; {}", 406, MSG_FINISH_LESS_START, json.to_string());
         return Err(ApiError::new(406, MSG_FINISH_LESS_START) // 406
             .add_param(Cow::Borrowed("invalidPeriod"), &json));
     }
@@ -579,27 +562,29 @@ pub async fn get_streams_period(
     if max_finish <= finish {
         let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
             , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
-        #[rustfmt::skip]
-        error!("{}-{}: {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
+        error!("{}.{}; {}", 413, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
         return Err(ApiError::new(413, MSG_FINISH_EXCEEDS_LIMIT) // 413
             .add_param(Cow::Borrowed("periodTooLong"), &json));
     }
 
+    let mut search_stream_date: SearchStreamDate = search_stream_date_dto.into();
+    search_stream_date.user_id = user_id;
+
     let res_data = web::block(move || {
         // Find for an entity (stream period) by SearchStreamEvent.
         let res_data =
-            stream_orm.find_streams_period(search_period).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)    
-            });
-        res_data
-        })
-        .await
+        stream_orm.filter_stream_dates(search_stream_date)
         .map_err(|e| {
-            #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })?;
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)    
+        });
+        res_data
+    })
+    .await
+    .map_err(|e| {
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
 
     let list: Vec<String> = match res_data {
         Ok(v) => v.iter().map(|d| d.to_rfc3339_opts(Millis, true)).collect(),
@@ -607,7 +592,105 @@ pub async fn get_streams_period(
     };
 
     Ok(HttpResponse::Ok().json(list)) // 200
+}
 
+/// get_stream_popural_tags
+/// 
+/// Get a list of popular tags.
+/// 
+/// Request structure:
+/// ```text
+/// {
+///   sortColumn?: "id" | "name" | "countlinks" // optional
+///   sortDesc?: boolean,                       // optional
+///   page?: number,                            // optional
+///   limit?: number,                           // optional
+/// }
+/// Where:
+/// "sortColumn" - Name of the sorting field:
+///   "id"         - Record ID (default).
+///   "name"       - Tag value.
+///   "countlinks" - Number of links to the tag.
+/// "sortDesc"   - Descending sorting flag.
+///                Takes the following values:
+///   true              - Sort by the "starttime" field in descending order;
+///   false (undefined) - Sort by the "starttime" field in ascending order (default);
+/// "page"  - page number, stratified from 1 (1 by default);
+/// "limit" - number of records on the page (5 by default);
+/// ```
+/// One could call with following curl.
+/// Получить список тегов (сортировка по полю "" по возрастанию).
+/// ```text
+/// curl -i -X GET 'http://localhost:8080/api/streams_popural_tags' -H 'Content-Type: application/json'
+/// ```
+/// 
+/// Response structure PageStreamTagDto:
+/// ```text
+/// {
+///   list: [StreamTagDto],
+///   limit: number,
+///   page: number,
+/// }
+/// Where:
+/// "list"  - array of tag;
+/// "limit" - number of records on the page;
+/// "page"  - current page number (stratified from 1);
+/// ```
+/// StreamTagDto structure:
+/// ```text
+/// {
+///   id: number,
+///   name: string,
+///   countLinks: number,
+/// }
+/// Where:
+/// "id"   - record ID;
+/// "name" - tag value;
+/// "countLinks"  - number of links to the tag;
+/// ```
+/// 
+/// Return found data on tags (`PageStreamTagDto`) with status 200.
+/// 
+#[rustfmt::skip]
+#[get("/api/streams_popural_tags", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_stream_popural_tags(
+    stream_orm: web::Data<StreamOrmApp>,
+    query_params: web::Query<SearchStreamTagDto>,
+) -> actix_web::Result<HttpResponse, ApiError> {
+    // Get search parameters.
+    let search_stream_tag_dto: SearchStreamTagDto = query_params.into_inner();
+
+    let page: u32 = search_stream_tag_dto.page.unwrap_or(SEARCH_STREAM_TAGS_PAGE);
+    let limit: u32 = search_stream_tag_dto.limit.unwrap_or(SEARCH_STREAM_TAGS_LIMIT);
+
+    let mut search_stream_tag = SearchStreamTag::from(search_stream_tag_dto);
+    search_stream_tag.page = Some(page);
+    let limit = if limit > SEARCH_STREAM_TAGS_LIMIT_MIN { limit } else { SEARCH_STREAM_TAGS_LIMIT_MIN };
+    let limit = if limit <= SEARCH_STREAM_TAGS_LIMIT_MAX { limit } else { SEARCH_STREAM_TAGS_LIMIT_MAX };
+    search_stream_tag.limit = Some(limit);
+
+    let res_data = web::block(move || {
+        // Find for an entity (stream period) by SearchStreamEvent.
+        let res_data =
+        stream_orm.get_stream_tags(search_stream_tag).map_err(|e| {
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)    
+            });
+        res_data
+    })
+    .await
+    .map_err(|e| {
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })?;
+
+    let (limit, page, stream_tags) = res_data?;
+
+    let list: Vec<StreamTagDto> = stream_tags.into_iter().map(|v| v.into()).collect();
+
+    let result = PageStreamTagDto { list, limit, page };
+
+    Ok(HttpResponse::Ok().json(result)) // 200
 }
 
 // ** Section: Stream Post **
@@ -643,7 +726,7 @@ pub fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigS
     }
 }
 
-fn new_stream_dto(title: &str, descript: &str, starttime: &str, tag_list: &str) -> CreateStreamInfoDto {
+fn new_stream_dto(title: &str, descript: &str, starttime: &str, tag_list: &str) -> CreateStreamAndTagsDto {
     #[rustfmt::skip]
     let descript = if descript.len() > 0 { Some(descript.to_string()) } else { None };
     // let starttime1 = if starttime.len() > 0 { Some(DateTime::parse_from_rfc3339(starttime).unwrap().with_timezone(&Utc)) } else {None};
@@ -653,7 +736,7 @@ fn new_stream_dto(title: &str, descript: &str, starttime: &str, tag_list: &str) 
 
     let tags: Vec<String> = tag_list.split(',').map(|val| val.to_string()).collect();
 
-    CreateStreamInfoDto {
+    CreateStreamAndTagsDto {
         title: title.to_string(),
         descript,
         starttime,
@@ -673,7 +756,7 @@ pub struct CreateStreamForm {
 }
 
 impl CreateStreamForm {
-    pub fn convert(create_stream_form: CreateStreamForm) -> Result<(CreateStreamInfoDto, Option<TempFile>), String> {
+    pub fn convert(create_stream_form: CreateStreamForm) -> Result<(CreateStreamAndTagsDto, Option<TempFile>), String> {
         let val = create_stream_form.tags.into_inner();
         let res_tags: Result<Vec<String>, serde_json::error::Error> = serde_json::from_str(&val);
         if let Err(err) = res_tags {
@@ -682,7 +765,7 @@ impl CreateStreamForm {
         let tags: Vec<String> = res_tags.unwrap();
 
         Ok((
-            CreateStreamInfoDto {
+            CreateStreamAndTagsDto {
                 title: create_stream_form.title.to_string(),
                 descript: create_stream_form.descript.map(|v| v.to_string()),
                 starttime: create_stream_form.starttime.map(|v| v.into_inner()),
@@ -694,7 +777,7 @@ impl CreateStreamForm {
     }
 }
 
-/// post_stream
+/// post_stream_and_tags
 /// 
 /// Create a new stream.
 /// 
@@ -750,11 +833,11 @@ impl CreateStreamForm {
 /// -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']" -F "logofile=@image.jpg"
 /// ```
 ///  
-/// Return a new stream (`StreamInfoDto`) with status 201.
+/// Return a new stream (`StreamAndTagsDto`) with status 201.
 /// 
 #[utoipa::path(
     responses(
-        (status = 201, description = "Create a new stream.", body = StreamInfoDto,
+        (status = 201, description = "Create a new stream.", body = StreamAndTagsDto,
             example = json!(new_stream_dto("Stream title", "Description of the stream.", "2020-01-20T20:10:57.000Z", "tag1,tag2")) ),
         (status = 406, description = "Error deserializing field \"tags\". `curl -X POST http://localhost:8080/api/streams
             -F 'title=title' -F 'tags=[\"tag\"'`",
@@ -784,7 +867,7 @@ impl CreateStreamForm {
 )]
 #[rustfmt::skip]
 #[post("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn post_stream(
+pub async fn post_stream_and_tags(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
@@ -795,16 +878,16 @@ pub async fn post_stream(
     let curr_user_id = user.id;
 
     // Get data from MultipartForm.
-    let (create_stream_info_dto, logo_file) = CreateStreamForm::convert(create_stream_form)
+    let (create_stream_and_tags_dto, logo_file) = CreateStreamForm::convert(create_stream_form)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_FIELD_TAG, &e);
+            error!("{}.{}; {}", 406, MSG_INVALID_FIELD_TAG, &e);
             ApiError::create(406, MSG_INVALID_FIELD_TAG, &e) // 406
         })?;
 
     // Checking the validity of the data model.
-    let validation_res = create_stream_info_dto.validate();
+    let validation_res = create_stream_and_tags_dto.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        error!("{}.{}", 417, msg_validation(&validation_errors));
         return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
 
@@ -820,7 +903,7 @@ pub async fn post_stream(
         let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
         if logo_max_size > 0 && temp_file.size > logo_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
-            error!("{}-{}; {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), err::MSG_INVALID_FILE_SIZE, json.to_string());
+            error!("{}.{}; {}", 413, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(ApiError::new(413, err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
@@ -830,7 +913,7 @@ pub async fn post_stream(
         let valid_file_mime_types = config_strm.strm_logo_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            error!("{}-{}; {}", code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE), err::MSG_INVALID_FILE_TYPE, json.to_string());
+            error!("{}.{}; {}", 415, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(ApiError::new(415, err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
@@ -845,15 +928,15 @@ pub async fn post_stream(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let msg = format!("{} - {}", &full_path_file, err.to_string());
-            error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_UPLOAD_FILE, &msg);
+            error!("{}.{}; {}", 500, err::MSG_ERROR_UPLOAD_FILE, &msg);
             return Err(ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, &msg)) // 500
         }
         path_new_logo_file = full_path_file;
 
         // Convert the file to another mime type.
-        let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream()")
+        let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream_and_tags()")
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_CONVERT_FILE, &e);
+                error!("{}.{}; {}", 510, err::MSG_ERROR_CONVERT_FILE, &e);
                 ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, &e) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
@@ -862,8 +945,9 @@ pub async fn post_stream(
         
         break;
     }
-    let tags = create_stream_info_dto.tags.clone();
-    let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
+
+    let mut create_stream_and_tags: CreateStreamAndTags = create_stream_and_tags_dto.into();
+    create_stream_and_tags.user_id = curr_user_id;
     
     let alias_path_strm = alias_path_stream::AliasStrm::new(&config_strm.strm_logo_files_dir);
     let alias_strm = alias_path_strm.as_ref();
@@ -871,37 +955,35 @@ pub async fn post_stream(
     if path_new_logo_file.len() > 0 {
         // Replace file path prefix with alias.
         let alias_logo_file= alias_strm.path_to_alias(&path_new_logo_file);
-        create_stream.logo = Some(alias_logo_file);
+        create_stream_and_tags.logo = Some(alias_logo_file);
     }
 
     let res_data = web::block(move || {
         // Add a new entity (stream).
-        let res_data = stream_orm.create_stream(create_stream, &tags).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+        let res_data = stream_orm.create_stream_and_tags(create_stream_and_tags).map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
         });
         res_data
     })
     .await
     .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    if res_data.is_err() {
-        if path_new_logo_file.len() > 0 {
-            if let Err(err) = fs::remove_file(&path_new_logo_file) {
-                error!("{} remove_file({}): error: {:?}", "post_stream()", &path_new_logo_file, err);
-            }
+    if res_data.is_err() && path_new_logo_file.len() > 0 {
+        if let Err(err) = fs::remove_file(&path_new_logo_file) {
+            error!("{} remove_file({}): error: {:?}", "post_stream_and_tags()", &path_new_logo_file, err);
         }
     }
-    let (stream, stream_tags) = res_data?;
-    // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags);
-    let stream_info_dto = list[0].clone();
-
-    Ok(HttpResponse::Created().json(stream_info_dto)) // 201
+    let opt_stream_and_tags = res_data?;
+    if let Some(stream_and_tags) = opt_stream_and_tags {
+        let stream_and_tags_dto = StreamAndTagsDto::from(stream_and_tags);
+        Ok(HttpResponse::Created().json(stream_and_tags_dto)) // 201
+    } else {
+        Ok(HttpResponse::Created().finish()) // 201
+    }
 }
 
 // ** Section: Stream Put **
@@ -917,7 +999,7 @@ pub struct ModifyStreamForm {
 }
 
 impl ModifyStreamForm {
-    pub fn convert(modify_stream_form: ModifyStreamForm) -> Result<(stream_models::ModifyStreamInfoDto, Option<TempFile>), String> {
+    pub fn convert(modify_stream_form: ModifyStreamForm) -> Result<(ModifyStreamAndTagsDto, Option<TempFile>), String> {
         let tags: Option<Vec<String>> = match modify_stream_form.tags {
             Some(v) => {
                 let val = v.into_inner();
@@ -930,7 +1012,7 @@ impl ModifyStreamForm {
             None => None,
         };
         Ok((
-            stream_models::ModifyStreamInfoDto {
+            ModifyStreamAndTagsDto {
                 title: modify_stream_form.title.map(|v| v.into_inner()),
                 descript: modify_stream_form.descript.map(|v| v.into_inner()),
                 starttime: modify_stream_form.starttime.map(|v| v.into_inner()),
@@ -942,7 +1024,7 @@ impl ModifyStreamForm {
     }
 }
 
-/// put_stream
+/// put_stream_and_tags
 ///
 /// Update the stream with new data.
 ///
@@ -992,11 +1074,11 @@ impl ModifyStreamForm {
 ///   -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']" -F "logofile=@image.jpg"
 /// ```
 ///  
-/// Return the stream with updated data (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
+/// Return the stream with updated data (`StreamAndTagsDto`) with status 200 or 204 (no content) if the stream is not found.
 ///
 #[utoipa::path(
     responses(
-        (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
+        (status = 200, description = "Update the stream with new data.", body = StreamAndTagsDto),
         (status = 204, description = "The stream with the specified ID was not found."),
         (status = 406, description = "Error deserializing field \"tags\". `curl -X PUT http://localhost:8080/api/streams/1
             -F 'title=title' -F 'tags=[\"tag\"'`",
@@ -1016,7 +1098,7 @@ impl ModifyStreamForm {
         (status = 417, description = "Validation error. `curl -X PUT http://localhost:8080/api/streams/1
             -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [ApiError],
             example = json!(ApiError::validations(
-                (ModifyStreamInfoDto {
+                (ModifyStreamAndTagsDto {
                     title: Some("u".to_string()),
                     descript: Some("d".to_string()),
                     starttime: Some(DateTime::parse_from_rfc3339("2020-01-20T20:10:57.000Z").unwrap().with_timezone(&Utc)),
@@ -1038,7 +1120,7 @@ impl ModifyStreamForm {
 // PUT /api/streams/{id}
 #[rustfmt::skip]
 #[put("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn put_stream(
+pub async fn put_stream_and_tags(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
@@ -1047,58 +1129,59 @@ pub async fn put_stream(
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let user = authenticated.deref();
+    let curr_user_id = user.id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}-{}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        error!("{}.{}", 416, &message);
         ApiError::new(416, &message) // 416
     })?;
 
     // Get data from MultipartForm.
-    let (modify_stream_info_dto, logo_file) = ModifyStreamForm::convert(modify_stream_form)
+    let (modify_stream_and_tags_dto, logo_file) = ModifyStreamForm::convert(modify_stream_form)
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_FIELD_TAG, &e);
+        error!("{}.{}; {}", 406, MSG_INVALID_FIELD_TAG, &e);
         ApiError::create(406, MSG_INVALID_FIELD_TAG, &e) // 406
     })?;
 
     // If there is not a single field in the MultipartForm, it gives an error 400 "Multipart stream is incomplete".
 
     // Checking the validity of the data model.
-    let validation_res = modify_stream_info_dto.validate();
+    let validation_res = modify_stream_and_tags_dto.validate();
     if let Err(validation_errors) = validation_res {
         let mut is_no_fields_to_update = false;
         let errors = validation_errors.iter().map(|err| {
             if !is_no_fields_to_update && err.params.contains_key(validators::NM_NO_FIELDS_TO_UPDATE) {
                 is_no_fields_to_update = true;
-                let valid_names = [ModifyStreamInfoDto::valid_names(), vec!["logofile"]].concat().join(",");
+                let valid_names = [ModifyStreamAndTagsDto::valid_names(), vec!["logofile"]].concat().join(",");
                 ValidationChecks::no_fields_to_update(&[false], &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err().unwrap()
             } else {
                 err.clone()
             }
         }).collect();
         if !is_no_fields_to_update || logo_file.is_none() {
-            error!("{}: {}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&errors));
+            error!("{}.{}", 417, msg_validation(&errors));
             return Ok(ApiError::to_response(&ApiError::validations(errors))); // 417
         }
     }
 
-    let mut logo: Option<Option<String>> = None;
+    let mut logo: Option<String> = None;
     let config_strm = config_strm.get_ref().clone();
     let mut path_new_logo_file = "".to_string();
 
     while let Some(temp_file) = logo_file {
         // Delete the old version of the logo file.
         if temp_file.size == 0 {
-            logo = Some(None); // Set the "logo" field to `NULL`.
+            logo = Some("".to_string()); // Set the "logo" field to ``.
             break;
         }
         let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
         // Check file size for maximum value.
         if logo_max_size > 0 && temp_file.size > logo_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
-            error!("{}-{}; {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), err::MSG_INVALID_FILE_SIZE, json.to_string());
+            error!("{}.{}; {}", 413, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(ApiError::new(413, err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
@@ -1109,7 +1192,7 @@ pub async fn put_stream(
         let valid_file_mime_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            error!("{}-{}; {}", code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE), err::MSG_INVALID_FILE_TYPE, json.to_string());
+            error!("{}.{}; {}", 415, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(ApiError::new(415, err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
@@ -1125,15 +1208,15 @@ pub async fn put_stream(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            error!("{}-{}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), &message);
+            error!("{}.{}", 500, &message);
             return Err(ApiError::new(500, &message)); // 500
         }
         path_new_logo_file = full_path_file;
 
         // Convert the file to another mime type.
-        let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream()")
+        let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream_and_tags()")
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_CONVERT_FILE, &e);
+                error!("{}.{}; {}", 510, err::MSG_ERROR_CONVERT_FILE, &e);
                 ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, &e) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
@@ -1148,77 +1231,57 @@ pub async fn put_stream(
     if path_new_logo_file.len() > 0 {
         // Replace file path prefix with alias.
         let alias_logo_file = alias_strm.path_to_alias(&path_new_logo_file);
-        logo = Some(Some(alias_logo_file));
+        logo = Some(alias_logo_file);
     }
 
-    let tags = modify_stream_info_dto.tags.clone();
-    let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
-    modify_stream.logo = logo;
-    let opt_user_id: Option<i32> = if user.role == UserRole::Admin { None } else { Some(user.id) };
+    let mut modify_stream_and_tags: ModifyStreamAndTags = modify_stream_and_tags_dto.into();
+    modify_stream_and_tags.logo = logo.clone();
 
-    let (path_old_logo_file, res_data_stream) = web::block(move || {
-        let mut old_logo_file = "".to_string();
-        if modify_stream.logo.is_some() {
-            // Get the logo file name for an entity (stream) by ID.
-            let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id)
-            .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)
-            });
-
-            if let Ok(Some(old_logo)) = res_get_stream_logo {
-                old_logo_file = old_logo;
-            }
-        }
+    let res_stream_and_tags = web::block(move || {
         // Modify an entity (stream).
-        let res_data_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
+        let res_data = stream_orm.modify_stream_and_tags(id, curr_user_id, modify_stream_and_tags)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
         });
-
-        (old_logo_file, res_data_stream)
+        res_data
     })
     .await
     .map_err(|e| {
         #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
+    // modify_stream_and_stream_tag() time: 7.46ms
 
-    let opt_data_stream = res_data_stream
+    let opt_stream_and_tags = res_stream_and_tags
     .map_err(|err| {
         if path_new_logo_file.len() > 0 {
             if let Err(err) = fs::remove_file(&path_new_logo_file) {
-                error!("put_stream() remove_file({}): error: {:?}", &path_new_logo_file, err);
+                error!("put_stream_and_tags() remove_file({}): error: {:?}", &path_new_logo_file, err);
             }
         }
         err
     })?;
 
-    if let Some((stream, stream_tags)) = opt_data_stream {
-        // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags);
-        let stream_info_dto: StreamInfoDto = list[0].clone();
+    if let Some(stream_and_tags) = opt_stream_and_tags {
+        let path_old_logo_file: String = stream_and_tags.old_logo.clone().unwrap_or_default();
 
+        // If the name of the new logo file is defined, then delete the old logo file.
         // If the file path starts with alice, then the file corresponds to the entity type.
         // And only then can the file be deleted.
-        if alias_strm.starts_with_alias(&path_old_logo_file) {
+        if logo.is_some() && alias_strm.starts_with_alias(&path_old_logo_file) {
             // Return file path prefix instead of alias.
             let full_path_file_img = alias_strm.alias_to_path(&path_old_logo_file);
             if let Err(err) = fs::remove_file(&full_path_file_img) {
-                error!("put_stream() remove_file({}): error: {:?}", &full_path_file_img, err);
+                error!("put_stream_and_tags() remove_file({}): error: {:?}", &full_path_file_img, err);
             }
         }
 
-        Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
+        let stream_and_tags_dto: StreamAndTagsDto = stream_and_tags.into();
+        Ok(HttpResponse::Ok().json(stream_and_tags_dto)) // 200
     } else {
-        if path_new_logo_file.len() > 0 {
-            if let Err(err) = fs::remove_file(&path_new_logo_file) {
-                error!("put_stream() remove_file({}): error: {:?}", &path_new_logo_file, err);
-            }
-        }
-        Ok(HttpResponse::NoContent().finish()) // 204        
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -1266,7 +1329,7 @@ pub async fn put_stream(
 /// ```
 #[utoipa::path(
     responses(
-        (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
+        (status = 200, description = "Update the stream with new data.", body = StreamAndTagsDto),
         (status = 204, description = "The stream with the specified ID was not found."),
         (status = 406, description = "Unacceptable stream state.", body = ApiError,
             examples(
@@ -1305,96 +1368,92 @@ pub async fn put_toggle_state(
     json_body: web::Json<ToggleStreamStateDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let user = authenticated.deref();
-    let opt_user_id: Option<i32> = if user.role == UserRole::Admin { None } else { Some(user.id) };
+    let curr_user_id = user.id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        error!("{}.{}", 416, &message);
         ApiError::new(416, &message) // 416
     })?;
 
     let new_state: StreamState = json_body.into_inner().state;
-    let stream_orm2 = stream_orm.clone();
-
-    let res_stream_tags = web::block(move || {
+    let stream_orm3 = stream_orm.clone();
+    let res_data = web::block(move || {
         // Find a stream by ID.
-        let res_stream_tags = stream_orm2
-            .find_stream_by_params(Some(id), opt_user_id, None, false, &[])
+        let res_data = stream_orm3.get_stream_and_tags(id)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e)
             });
-        res_stream_tags
+            res_data
     })
     .await
     .map_err(|e| {
         #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
+    let opt_stream_and_tags = res_data?;
 
-    if opt_stream_tags.is_none() {
+    if opt_stream_and_tags.is_none() {
         // If a stream with the specified ID is not found for the current user, then return status 204.
         return Ok(HttpResponse::NoContent().finish()) // 204
     }
-    let (stream, _tags) = opt_stream_tags.unwrap();
+    let stream_and_tags = opt_stream_and_tags.unwrap();
 
-    if stream.state == new_state {
-        let json = json!({ "oldState": &stream.state, "newState": &new_state });
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_STREAM_STATE, json.to_string());
+    if stream_and_tags.state == new_state {
+        let json = json!({ "oldState": &stream_and_tags.state, "newState": &new_state });
+        error!("{}.{}; {}", 406, MSG_INVALID_STREAM_STATE, json.to_string());
         return Err(ApiError::new(406, MSG_INVALID_STREAM_STATE) // 406
             .add_param(Cow::Borrowed("invalidState"), &json));
     }
 
     let is_not_acceptable = match new_state {
-        StreamState::Preparing => vec![StreamState::Started, StreamState::Paused].contains(&stream.state),
-        StreamState::Started => vec![StreamState::Waiting, StreamState::Stopped].contains(&stream.state),
-        StreamState::Paused => vec![StreamState::Waiting, StreamState::Stopped, StreamState::Preparing].contains(&stream.state),
-        StreamState::Stopped => vec![StreamState::Waiting].contains(&stream.state),
+        StreamState::Preparing => vec![StreamState::Started, StreamState::Paused].contains(&stream_and_tags.state),
+        StreamState::Started => vec![StreamState::Waiting, StreamState::Stopped].contains(&stream_and_tags.state),
+        StreamState::Paused => vec![StreamState::Waiting, StreamState::Stopped, StreamState::Preparing].contains(&stream_and_tags.state),
+        StreamState::Stopped => vec![StreamState::Waiting].contains(&stream_and_tags.state),
         _ => false,
     };
     if is_not_acceptable {
-        let json = json!({ "oldState": &stream.state.to_string(), "newState": &new_state });
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_STREAM_STATE, json.to_string());
+        let json = json!({ "oldState": &stream_and_tags.state.to_string(), "newState": &new_state });
+        error!("{}.{}; {}", 406, MSG_INVALID_STREAM_STATE, json.to_string());
         return Err(ApiError::new(406, MSG_INVALID_STREAM_STATE) // 406
             .add_param(Cow::Borrowed("invalidState"), &json));
     }
     // If the stream goes into active state, then
     if vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state) {
-        let stream_orm2 = stream_orm.clone();
+        let stream_orm3 = stream_orm.clone();
         // find any stream in active state.
-        let res_stream2_tags = web::block(move || {
-            let res_stream2_tags = stream_orm2
-                .find_stream_by_params(None, opt_user_id, Some(true), false, &[id])
+        let res_data2 = web::block(move || {
+            let res_data2 = stream_orm3
+                .get_stream_and_tags_in_live(curr_user_id, id)
                 .map_err(|e| {
-                    error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                     ApiError::create(507, err::MSG_DATABASE, &e)
                 });
-            res_stream2_tags
+            res_data2
         })
         .await
         .map_err(|e| {
-            #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
             ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
         
-        let opt_stream2_tags = match res_stream2_tags { Ok(v) => v, Err(e) => return Err(e) };
+        let opt_stream2_and_tags = res_data2?;
 
-        if let Some((stream2, _tags)) = opt_stream2_tags {
-            let json = json!({ "id": stream2.id, "title": &stream2.title });
-            error!("{}-{}; {}", code_to_str(StatusCode::CONFLICT), MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
+        if let Some(stream2_and_tags) = opt_stream2_and_tags {
+            let json = json!({ "id": stream2_and_tags.id, "title": &stream2_and_tags.title });
+            error!("{}.{}; {}", 409, MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
             return Err(ApiError::new(409, MSG_EXIST_IS_ACTIVE_STREAM) // 409
                 .add_param(Cow::Borrowed("activeStream"), &json));
         }
     }
 
-    let modify_stream: ModifyStream = ModifyStream {
+    let modify_stream_and_tags = ModifyStreamAndTags {
         title: None,
         descript: None,
         logo: None,
@@ -1404,36 +1463,34 @@ pub async fn put_toggle_state(
         paused: None,
         stopped: None,
         source: None,
+        tags: None,
     };
 
-    let res_stream_tags = web::block(move || {
+    let res_data3 = web::block(move || {
         // Modify an entity (stream).
-        let res_stream_tags = stream_orm.modify_stream(id, opt_user_id, modify_stream, None)
+        let res_data3 = stream_orm.modify_stream_and_tags(id, curr_user_id, modify_stream_and_tags)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
         });
-        res_stream_tags
+        res_data3
     })
     .await
     .map_err(|e| {
         #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
+    let opt_stream_and_tags = res_data3?;
 
-    if opt_stream_tags.is_none() {
+    if opt_stream_and_tags.is_none() {
         // If a stream with the specified ID is not found for the current user, then return status 204.
         return Ok(HttpResponse::NoContent().finish()) // 204
     }
-    let (stream, tags) = opt_stream_tags.unwrap();
-
-    // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &tags);
-    let stream_info_dto: StreamInfoDto = list[0].clone();
-    Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
+    let stream_and_tags = opt_stream_and_tags.unwrap();
+    let stream_and_tags_dto = StreamAndTagsDto::from(stream_and_tags);
+    Ok(HttpResponse::Ok().json(stream_and_tags_dto)) // 200
 }
 
 // ** Section: Stream Delete **
@@ -1447,11 +1504,11 @@ pub async fn put_toggle_state(
 /// curl -i -X DELETE http://localhost:8080/api/streams/1
 /// ```
 ///
-/// Return the deleted stream (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
+/// Return the deleted stream (`StreamAndTagsDto`) with status 200 or 204 (no content) if the stream is not found.
 ///
 #[utoipa::path(
     responses(
-        (status = 200, description = "The specified stream was deleted successfully.", body = StreamInfoDto),
+        (status = 200, description = "The specified stream was deleted successfully.", body = StreamAndTagsDto),
         (status = 204, description = "The specified stream was not found."),
         (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/streams/2a`",
             body = ApiError, example = json!(ApiError::create(416, 
@@ -1467,7 +1524,7 @@ pub async fn put_toggle_state(
 // DELETE /api/streams/{id}
 #[rustfmt::skip]
 #[delete("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn delete_stream(
+pub async fn delete_stream_and_tags(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
@@ -1475,36 +1532,35 @@ pub async fn delete_stream(
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let user = authenticated.deref();
+    let curr_user_id = user.id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let msg = format!("`{}` - {}", "id", &e);
-        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        error!("{}.{}; {}", 416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
-    let opt_user_id: Option<i32> = if user.role == UserRole::Admin { None } else { Some(user.id) };
-    let res_stream = web::block(move || {
-        // Add a new entity (stream).
-        let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+    let res_data = web::block(move || {
+        // Delete an entity (stream, tags).
+        let res_data = stream_orm.delete_stream_and_tags(id, curr_user_id).map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_data
     })
     .await
     .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
-    let opt_stream = res_stream?;
+    let opt_stream_and_tags = res_data?;
 
-    if let Some((stream, stream_tags)) = opt_stream {
+    if let Some(stream_and_tags) = opt_stream_and_tags {
         // Get the path to the "logo" file.
-        let path_file_img: String = stream.logo.clone().unwrap_or("".to_string());
+        let path_file_img: String = stream_and_tags.logo.clone().unwrap_or_default();
 
         let config_strm = config_strm.get_ref().clone();
         let alias_path_strm = alias_path_stream::AliasStrm::new(&config_strm.strm_logo_files_dir);
@@ -1516,13 +1572,11 @@ pub async fn delete_stream(
             // Return file path prefix instead of alias.
             let full_path_file_img = alias_strm.alias_to_path(&path_file_img);
             if let Err(err) = fs::remove_file(&full_path_file_img) {
-                error!("delete_stream() remove_file({}): error: {:?}", &full_path_file_img, err);
+                error!("delete_stream_and_tags() remove_file({}): error: {:?}", &full_path_file_img, err);
             }
         }
-        // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags);
-        let stream_info_dto = list[0].clone();
-        Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
+        let stream_and_tags_dto = StreamAndTagsDto::from(stream_and_tags);
+        Ok(HttpResponse::Ok().json(stream_and_tags_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
@@ -1539,11 +1593,11 @@ pub mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, status: u16, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.status, status);
             assert_eq!(app_err.message, msg.to_string());
         }
     }

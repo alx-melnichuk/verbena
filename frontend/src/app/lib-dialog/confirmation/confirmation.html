@@ -1,0 +1,25 @@
+<button class="dc-close" (click)="cancel()">&#215;</button>
+<div class="dc-title">{{ title }}</div>
+<div mat-dialog-content class="dc-content">
+  @if (!!message) {
+    {{ message }}
+  }
+  @if (!!messageHtml) {
+    <div [innerHTML]="messageHtml"></div>
+  }
+</div>
+<div mat-dialog-actions class="dc-actions">
+  @if (!!btnNameCancel) {
+    <button matButton="elevated" class="stl-btn-brd"
+      (click)="cancel()"
+      cdkFocusInitial>
+      {{ btnNameCancel }}
+    </button>
+  }
+  @if (!!btnNameAccept) {
+    <button matButton="elevated" class="stl-btn-brd"
+      (click)="accept()">
+      {{ btnNameAccept }}
+    </button>
+  }
+</div>

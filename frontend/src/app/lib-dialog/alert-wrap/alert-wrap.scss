@@ -1,0 +1,52 @@
+/*# sourceURL=alert-wrap.component.scss */
+
+app-alert-wrap {
+    height: 100%;
+    display: flex;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+.cdk-overlay-container {
+    mat-snack-bar-container.app-alert-wrap-panel {
+
+        .mdc-snackbar__label {
+            padding: 0.75rem 0.25rem 0.75rem 0.75rem;
+        }
+
+        &.app-comment {
+            --mat-snack-bar-supporting-text-color: var(--mat-sys-on-surface);
+            --mat-snack-bar-container-color: var(--mat-sys-surface-container-lowest);
+            // --mat-sys-on-surface_: #1a1b1f;
+            // --mat-sys-surface-container-lowest_: #ffffff;
+        }
+
+        &.app-info {
+            --mat-snack-bar-supporting-text-color: var(--mat-sys-on-secondary-container);
+            --mat-snack-bar-container-color: var(--mat-sys-secondary-container);
+            // --mat-sys-on-secondary-container_: #3e4759;
+            // --mat-sys-secondary-container_: #dae2f9;
+        }
+
+        &.app-warning {
+            --mat-snack-bar-supporting-text-color: var(--mat-sys-tertiary);
+            --mat-snack-bar-container-color: var(--mat-sys-tertiary-container);
+            // --mat-sys-tertiary_: #964900;
+            // --mat-sys-tertiary-container_: #ffdcc7;
+        }
+
+        &.app-error {
+            --mat-snack-bar-supporting-text-color: var(--mat-sys-on-error-container);
+            --mat-snack-bar-container-color: var(--mat-sys-error-container);
+            // --mat-sys-on-error-container_: #93000a;
+            // --mat-sys-error-container_: #ffdad6;
+        }
+
+        &.app-success {
+            --mat-snack-bar-supporting-text-color: var(--mat-sys-on-primary-container);
+            --mat-snack-bar-container-color: var(--mat-sys-primary-container);
+            // --mat-sys-on-primary-container_: #00458f;
+            // --mat-sys-primary-container_: #d7e3ff;
+        }
+    }
+}

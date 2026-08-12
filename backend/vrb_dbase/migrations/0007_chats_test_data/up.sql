@@ -20,76 +20,71 @@ DECLARE
   usr_idx INTEGER;
   mark_id INTEGER;
   stream_id INTEGER;
-  user_id INTEGER;
+  user_id1 INTEGER;
   starttime TIMESTAMPTZ;
   msg1 VARCHAR;
   ch_msg_id INTEGER;
   ch_msg_logs_ids INTEGER[];
 BEGIN
   -- raise notice 'Start';
-  names := ARRAY['Ethan_Brown' , 'Ava_Wilson'   , 'James_Miller'   , 'Mila_Davis'  , 'evelyn_allen'];
+  names := ARRAY['Ethan_Brown' , 'Ava_Wilson'   , 'James_Miller'   , 'Mila_Davis'  , 'Evelyn_Allen'];
 
   len1 := ARRAY_LENGTH(names, 1);
   idx1 := 1;
-    WHILE idx1 <= len1 LOOP
-      nickname1 = LOWER(names[idx1]);
-      -- raise notice '_';
-      -- raise notice 'idx1: %, nickname1: %', idx1, nickname1;
+  WHILE idx1 <= len1 LOOP
+    nickname1 = LOWER(names[idx1]);
+    -- raise notice '_';
+    -- raise notice 'idx1: %, nickname1: %', idx1, nickname1;
 
-      FOR rec1 IN
-        SELECT s.id AS stream_id, s.user_id AS user_id, s.starttime AS starttime
-        FROM streams s, users u
+    FOR rec1 IN
+      SELECT s.id AS stream_id, s.user_id AS user_id, s.starttime AS starttime
+      FROM streams s, users u
         WHERE s.user_id = u.id AND s.starttime < now() AND u.nickname = nickname1
-        ORDER BY s.starttime ASC
-        LIMIT 6 -- Get 6 streams for each user.
+        ORDER BY s.id ASC
+        LIMIT 2 -- Get 6 streams for each user.
       LOOP
-        mark_id := rec1.stream_id;
         stream_ids := stream_ids || rec1.stream_id;
         IF rec1.user_id <> ALL(user_ids) THEN
           user_ids := user_ids || rec1.user_id;
         END IF;
         starttimes := starttimes || rec1.starttime;
       END LOOP;
-      mark_ids := mark_ids || mark_id;
+      
       idx1 := idx1 + 1;
     END LOOP;
 
     -- raise notice '_';
     -- raise notice 'stream_ids: %, LEN(stream_ids): %', stream_ids, ARRAY_LENGTH(stream_ids, 1);
     -- raise notice 'user_ids: %, LEN(user_ids): %', user_ids, ARRAY_LENGTH(user_ids, 1);
-    -- raise notice 'mark_ids: %, LEN(mark_ids): %', mark_ids, ARRAY_LENGTH(mark_ids, 1);
-    len1 := ARRAY_LENGTH(mark_ids, 1);
-    IF len1 >= 2 THEN
-      mark_ids := ARRAY[]::INTEGER[] || mark_ids[len1 - 1] || mark_ids[len1];
-    END IF;
     -- raise notice '_';
+
     usr_len := ARRAY_LENGTH(user_ids, 1);
     len1 := ARRAY_LENGTH(stream_ids, 1);
     idx1 := 1;
     WHILE idx1 <= len1 LOOP
       stream_id := stream_ids[idx1];
       usr_idx := 1;
-      len2 := CASE WHEN stream_id = mark_id THEN 140 ELSE 15 END;
+      len2 := CASE WHEN idx1 = len1 - 1 THEN 250 ELSE 25 END;
       idx2 := 1;
       WHILE idx2 <= len2 LOOP
-        starttime := (starttimes[idx1] + (idx2 * INTERVAL '1 hours'))::timestamp;
+        starttime := (starttimes[idx1] - (INTERVAL '1 day') + (idx2 * INTERVAL '10 minutes'))::timestamp;
         msg1 := 'Demo message ' || idx2;
-        user_id := user_ids[usr_idx];
+        user_id1 := user_ids[usr_idx];
 
         -- Add a new message for the specified user and their stream.
         INSERT INTO chat_messages(stream_id, user_id, msg, date_created)
-        SELECT stream_id, user_id, msg1, starttime
+        SELECT stream_id, user_id1, msg1, starttime
         RETURNING chat_messages.id
         INTO ch_msg_id;
-        -- raise notice 'ch_msg_id: %, stream_id: %, user_id: %, msg1: %, starttime: %', ch_msg_id, stream_id, user_id, msg1, starttime;
+        -- raise notice 'ch_msg_id: %, stream_id: %, user_id: %, msg1: %, starttime: %', ch_msg_id, stream_id, user_id1, msg1, starttime;
 
         IF MOD(ch_msg_id, 2) = 0  THEN
           -- Add message change.
-          ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, msg1 || ' ver.2'));
+          ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id1, msg1 || ' ver.2'));
         ELSE
           IF MOD(ch_msg_id, 9) = 0  THEN
             -- Delete message contents.
-            ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, ''));
+            ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id1, ''));
           END IF;
         END IF;
 

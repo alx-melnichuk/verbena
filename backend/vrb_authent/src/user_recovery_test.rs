@@ -1,25 +1,23 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        body, dev,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        App, body, dev,
         http::StatusCode,
-        test, App,
+        http::header::{CONTENT_TYPE, HeaderValue},
+        test,
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json::json;
-    use vrb_common::{
-        api_error::{code_to_str, ApiError}, consts, env_var, err
-    };
+    use vrb_common::{api_error::ApiError, consts, env_var, err};
     use vrb_tools::{config_app, send_email::config_smtp, token_coding};
 
     use crate::{
         config_jwt,
         user_models::{self, UserMock},
-        user_orm::tests::{UserOrmTest, ADMIN, USER, USER1_ID},
+        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
         user_recovery_controller::{
-            confirm_recovery, recovery, recovery_clear_for_expired, tests as UserRecoveryCtrlTest, MSG_RECOVERY_NOT_FOUND,
-            MSG_USER_NOT_FOUND,
+            MSG_RECOVERY_NOT_FOUND, MSG_USER_NOT_FOUND, confirm_recovery, recovery, recovery_clear_for_expired,
+            tests as UserRecoveryCtrlTest,
         },
         user_recovery_models::{
             ConfirmRecoveryUserResponseDto, RecoveryClearForExpiredResponseDto, RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto,
@@ -108,7 +106,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_REQUIRED]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_min() {
@@ -135,7 +133,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MIN_LENGTH]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_max() {
@@ -162,7 +160,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_MAX_LENGTH]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_wrong() {
@@ -189,7 +187,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_EMAIL_EMAIL_TYPE]);
     }
     #[actix_web::test]
     async fn test_recovery_if_user_with_email_not_exist() {
@@ -216,7 +214,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_FOUND));
+        assert_eq!(app_err.status, StatusCode::NOT_FOUND.as_u16());
         assert_eq!(app_err.message, format!("{}; email: {}", MSG_USER_NOT_FOUND, &email.to_lowercase()));
     }
     #[actix_web::test]
@@ -324,7 +322,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNPROCESSABLE_ENTITY));
+        assert_eq!(app_err.status, StatusCode::UNPROCESSABLE_ENTITY.as_u16());
         assert!(app_err.message.starts_with(&format!("{};", err::MSG_JSON_WEB_TOKEN_ENCODE)));
     }
 
@@ -352,7 +350,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REQUIRED]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_min() {
@@ -376,7 +374,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_max() {
@@ -400,7 +398,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_MAX_LENGTH]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_wrong() {
@@ -424,7 +422,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        UserRecoveryCtrlTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[user_models::MSG_PASSWORD_REGEX]);
+        UserRecoveryCtrlTest::check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_recovery_token() {
@@ -447,7 +445,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(app_err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[actix_web::test]
@@ -482,7 +480,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(app_err.status, StatusCode::UNAUTHORIZED.as_u16());
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "ExpiredSignature"));
     }
@@ -518,7 +516,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_FOUND));
+        assert_eq!(app_err.status, StatusCode::NOT_FOUND.as_u16());
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}; user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, recovery1_id));
     }
@@ -556,7 +554,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_FOUND));
+        assert_eq!(app_err.status, StatusCode::NOT_FOUND.as_u16());
         assert_eq!(app_err.message, format!("{}; user_id: {}", MSG_USER_NOT_FOUND, user1_id));
     }
     #[actix_web::test]

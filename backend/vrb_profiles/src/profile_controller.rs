@@ -1,7 +1,7 @@
 use std::{borrow::Cow, env, fs, ops::Deref, path, time::Instant as tm};
 
 use actix_multipart::form::{MultipartForm, tempfile::TempFile, text::Text};
-use actix_web::{HttpResponse, delete, get, http::StatusCode, put, web};
+use actix_web::{HttpResponse, delete, get, http::header, put, web};
 use chrono::{DateTime, Utc};
 use log::{Level::Info, error, info, log_enabled};
 use mime::IMAGE;
@@ -18,7 +18,7 @@ use vrb_authent::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegi
 use vrb_authent::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
 use vrb_common::{
     alias_path::{alias_path_profile, alias_path_stream},
-    api_error::{ApiError, code_to_str},
+    api_error::ApiError,
     consts, err, parser,
     profile::{PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
     validators::{self, ValidationChecks, Validator, msg_validation},
@@ -157,7 +157,7 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
         ),
         (status = 204, description = "The user with the specified ID was not found."),
         (status = 401, description = "An authorization token is required.", body = ApiError,
-            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`",
@@ -185,7 +185,7 @@ pub async fn get_profile_by_id(
     #[rustfmt::skip]
     let user_id = parser::parse_i32(&id_str).map_err(|e| {
         let msg = &format!("`{}` - {}", "id", &e);
-        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        error!("{}.{}; {}", 416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
@@ -193,14 +193,14 @@ pub async fn get_profile_by_id(
         // Find user by user id.
         let res_user = user_orm.get_user_by_id(user_id, true)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
 
         // Find profile by user id.
         let res_profile =
             profile_orm.get_profile_by_id(user_id).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
 
@@ -208,7 +208,7 @@ pub async fn get_profile_by_id(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -289,7 +289,7 @@ pub async fn get_profile_mini_by_id(
     #[rustfmt::skip]
     let user_id = parser::parse_i32(&id_str).map_err(|e| {
         let msg = &format!("`{}` - {}", "id", &e);
-        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        error!("{}.{}; {}", 416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
@@ -297,7 +297,7 @@ pub async fn get_profile_mini_by_id(
         // Find profile by user id.
         let res_user_profile =
             profile_orm.get_user_profile_by_id(user_id).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
 
@@ -305,7 +305,7 @@ pub async fn get_profile_mini_by_id(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -362,7 +362,7 @@ pub async fn get_profile_mini_by_id(
             )), ),
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
-            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
     ),
@@ -424,7 +424,7 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
             )))),
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
-            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
     ),
@@ -446,7 +446,7 @@ pub async fn get_profile_current(
         // Find profile by user id.
         let profile =
             profile_orm.get_profile_by_id(user_id).map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             }).ok()?;
 
@@ -454,7 +454,7 @@ pub async fn get_profile_current(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -467,7 +467,10 @@ pub async fn get_profile_current(
     if let Some(timer) = timer {
         info!("get_profile_current() time: {}", format!("{:.2?}", timer.elapsed()));
     }
-    Ok(HttpResponse::Ok().json(user_profile_dto)) // 200
+
+    let mut response = HttpResponse::Ok().json(user_profile_dto); // 200
+    response.head_mut().headers_mut().insert(header::CACHE_CONTROL, header::HeaderValue::from_static("no-store"));
+    Ok(response)
 }
 
 // ** Section: put_profiles **
@@ -620,7 +623,7 @@ pub async fn put_profile(
             }
         }).collect();
         if !is_no_fields_to_update || avatar_file.is_none() {
-            error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&errors));
+            error!("{}.{}", 417, msg_validation(&errors));
             return Ok(ApiError::to_response(&ApiError::validations(errors))); // 417
         }
     }
@@ -660,7 +663,7 @@ pub async fn put_profile(
         })
         .await
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
             ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
 
@@ -668,7 +671,7 @@ pub async fn put_profile(
         if let Some((is_nickname, _)) = opt_search {
             #[rustfmt::skip]
             let message = if is_nickname { err::MSG_NICKNAME_ALREADY_USE } else { err::MSG_EMAIL_ALREADY_USE };
-            error!("{}-{}", code_to_str(StatusCode::CONFLICT), &message);
+            error!("{}.{}", 409, &message);
             return Err(ApiError::new(409, &message)); // 409
         }
     }
@@ -689,7 +692,7 @@ pub async fn put_profile(
         if avatar_max_size > 0 && temp_file.size > avatar_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": avatar_max_size });
             #[rustfmt::skip]
-            error!("{}-{}: {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), err::MSG_INVALID_FILE_SIZE, json.to_string());
+            error!("{}.{}; {}", 413, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(ApiError::new(413, err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
@@ -701,7 +704,7 @@ pub async fn put_profile(
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
             #[rustfmt::skip]
-            error!("{}-{}; {}", code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE), err::MSG_INVALID_FILE_TYPE, json.to_string());
+            error!("{}.{}; {}", 415, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(ApiError::new(415, err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
@@ -717,7 +720,7 @@ pub async fn put_profile(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let msg = format!("{} - {}", &full_path_file, err.to_string());
-            error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_UPLOAD_FILE, &msg);
+            error!("{}.{}; {}", 500, err::MSG_ERROR_UPLOAD_FILE, &msg);
             return Err(ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, &msg)); // 500
         }
         path_new_avatar_file = full_path_file;
@@ -725,7 +728,7 @@ pub async fn put_profile(
         // Convert the file to another mime type.
         let res_convert_img_file = convert_avatar_file(&path_new_avatar_file, config_prfl.clone(), "put_profile()")
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_CONVERT_FILE, &e);
+            error!("{}.{}; {}", 510, err::MSG_ERROR_CONVERT_FILE, &e);
             ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, &e) // 510
         })?;
         if let Some(new_path_file) = res_convert_img_file {
@@ -758,16 +761,16 @@ pub async fn put_profile(
             let res_curr_profile = profile_orm2.get_profile_by_id(curr_user_id)
             //  modify_profile(curr_user_id, modify_profile)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
     
             res_curr_profile
         })
         .await
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
+            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
     
         if let Ok(Some(curr_profile)) = res_curr_profile {
@@ -779,16 +782,16 @@ pub async fn put_profile(
         // Modify an entity (profile).
         let res_data_profile = profile_orm.modify_user_profile(curr_user_id, modify_user_profile)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e)
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
 
         res_data_profile
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_user_profile = res_user_profile
@@ -898,7 +901,7 @@ pub async fn put_profile_new_password(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        error!("{}.{}", 417, msg_validation(&validation_errors));
         return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
 
@@ -907,7 +910,7 @@ pub async fn put_profile_new_password(
     // Get a hash of the new password.
     let new_password_hashed = hash_tools::encode_hash(&new_password).map_err(|e| {
         #[rustfmt::skip]
-        error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_HASHING_PASSWORD, &e.to_string());
+        error!("{}.{}; {}", 500, err::MSG_ERROR_HASHING_PASSWORD, &e.to_string());
         ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, &e.to_string()) // 500
     })?;
     
@@ -915,19 +918,19 @@ pub async fn put_profile_new_password(
         // Find user by user id.
         let opt_user = user_orm.get_user_by_id(user_id, true)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
             opt_user
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
     let user_pwd = opt_user_pwd.ok_or_else(|| {
-        error!("{}-{}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_WRONG_NICKNAME_EMAIL);
+        error!("{}.{}", 401, err::MSG_WRONG_NICKNAME_EMAIL);
         ApiError::new(401, err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
     })?;
 
@@ -937,12 +940,12 @@ pub async fn put_profile_new_password(
     let user_hashed_old_password = user_pwd.password.to_string();
     // Check whether the hash for the specified password value matches the old password hash.
     let password_matches = hash_tools::compare_hash(&old_password, &user_hashed_old_password).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::CONFLICT), err::MSG_INVALID_HASH, &e);
+        error!("{}.{}; {}", 409, err::MSG_INVALID_HASH, &e);
         ApiError::create(409, err::MSG_INVALID_HASH, &e) // 409
     })?;
     // If the hash for the specified password does not match the old password hash, then return an error.
     if !password_matches {
-        error!("{}-{}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_PASSWORD_INCORRECT);
+        error!("{}.{}", 401, err::MSG_PASSWORD_INCORRECT);
         return Err(ApiError::new(401, err::MSG_PASSWORD_INCORRECT)); // 401 (B)
     }
 
@@ -957,14 +960,14 @@ pub async fn put_profile_new_password(
     let opt_user_profile = web::block(move || {
         let opt_profile1 = profile_orm.modify_user_profile(user_id, modify_user_profile)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         opt_profile1
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
@@ -1012,7 +1015,7 @@ pub async fn put_profile_new_password(
         ),
         (status = 204, description = "The specified user profile was not found."),
         (status = 401, description = "An authorization token is required.", body = ApiError,
-            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/users/2a`",
@@ -1041,7 +1044,7 @@ pub async fn delete_profile(
     let id_str = request.match_info().query("id").to_string();
     let user_id = parser::parse_i32(&id_str).map_err(|e| {
         let msg = &format!("`{}` - {}", "id", &e);
-        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        error!("{}.{}; {}", 416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
@@ -1051,14 +1054,14 @@ pub async fn delete_profile(
         // Get the value of an entity (profile) by user ID.
         let res_profile = profile_orm2.get_profile_by_id(user_id)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
 
         // Filter for the list of stream logos by user ID.
         let res_path_stream_log_files = profile_orm2.filter_stream_logos(user_id)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
 
@@ -1066,7 +1069,7 @@ pub async fn delete_profile(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -1085,14 +1088,14 @@ pub async fn delete_profile(
         // Delete an entity (profile).
         let res_user = user_orm2.delete_user(user_id)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_user
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
@@ -1164,7 +1167,7 @@ pub async fn delete_profile(
         ),
         (status = 204, description = "The current user's profile was not found."),
         (status = 401, description = "An authorization token is required.", body = ApiError,
-            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 506, description = "Blocking error.", body = ApiError, 
             example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
@@ -1193,14 +1196,14 @@ pub async fn delete_profile_current(
         // Get the value of an entity (profile) by user ID.
         let res_profile = profile_orm2.get_profile_by_id(user_id)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
 
         // Filter for the list of stream logos by user ID.
         let res_path_stream_log_files = profile_orm2.filter_stream_logos(user_id)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
 
@@ -1208,7 +1211,7 @@ pub async fn delete_profile_current(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -1227,14 +1230,14 @@ pub async fn delete_profile_current(
         // Delete an entity (profile).
         let res_user = user_orm2.delete_user(user_id)
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_user
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) //506
     })??;
 
@@ -1294,11 +1297,11 @@ pub mod tests {
         }
     }
 
-    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, status: u16, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.status, status);
             assert_eq!(app_err.message, msg.to_string());
         }
     }

@@ -1,0 +1,26 @@
+@if(!!streamDto) {
+  <a class="pse-logo pse-img-shd" [href]="linkToStream">
+    @if (isFuture(streamDto.starttime)) {
+      <svg class="pse-logo-future">
+        <use href="./lib-pg-stream/panel-stream-event/logo-future.svg#logo-future"></use>
+      </svg>
+    } @else {
+      <app-image class="pse-logo-box" [srcImg]="streamDto.logo"></app-image>
+    }
+  </a>
+
+  <div class="pse-details-wrap">
+    <div class="pse-details">
+      <div class="pse-starttime pse-ellipsis">
+        {{ streamDto.starttime | dateTimeFormat:locale:formatDateTime  }}
+      </div>
+      @if (canEdit && isFuture(streamDto.starttime)) {
+        <button class="pse-edit-btn" (click)="doEditStream(streamDto.id)">
+          {{ 'panel-stream-event.btn-edit' | translate }}
+        </button>
+      }
+    </div>
+
+    <div class="pse-ellipsis">{{ streamDto.title }}</div>
+  </div>
+}

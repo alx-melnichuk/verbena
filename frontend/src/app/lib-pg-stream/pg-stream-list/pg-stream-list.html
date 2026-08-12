@@ -1,0 +1,40 @@
+<app-panel-stream-list
+  [clndDaySelected]="evntDate"
+  [clndIsLoading]="clndIsLoading"
+  [clndMarkedDates]="clndMarkedDates"
+  [clndMaxDate]="clndMaxDate"
+  [clndMinDate]="clndMinDate"
+
+  [strmFtrDeleteIds]="strmFtrDeleteIds"
+  [strmFtrIsLoading]="strmFtrIsLoading"
+  [strmFtrIsReset]="strmFtrIsReset"
+  [strmFtrItemPage]="strmFtrItemPage"
+  [strmFtrMaxSizeRows]="strmMaxSizeRows"
+  [strmFtrRowsOnPage]="strmRowsOnPage"
+
+  [strmPstDeleteIds]="strmPstDeleteIds"
+  [strmPstIsLoading]="strmPstIsLoading"
+  [strmPstIsReset]="strmPstIsReset"
+  [strmPstItemPage]="strmPstItemPage"
+  [strmPstMaxSizeRows]="strmMaxSizeRows"
+  [strmPstRowsOnPage]="strmRowsOnPage"
+
+  [evntDeleteIds]="evntDeleteIds"
+  [evntIsLoading]="evntIsLoading"
+  [evntIsReset]="evntIsReset"
+  [evntItemPage]="evntItemPage"
+  [evntMaxSizeRows]="evntMaxSizeRows"
+  [evntRowsOnPage]="evntRowsOnPage"
+  
+  [locale]="localeSrv.getLocale()"
+
+  (calendarForPeriod)="doCalendarForPeriod($event, userId)"
+  (loadFuturePage)="doLoadFuturePage($event.page, $event.limit)"
+  (loadPastPage)="doLoadPastPage($event.page, $event.limit)"
+  (loadEventDatePage)="doLoadEventDatePage($event.date, $event.page, $event.limit, userId)"
+  
+  (resetInfo)="doResetInfo()"
+  (actionDuplicate)="doActionDuplicate($event)"
+  (actionEdit)="doActionEdit($event)"
+  (actionDelete)="doActionDelete($event.isFuture, $event.id)">
+</app-panel-stream-list>

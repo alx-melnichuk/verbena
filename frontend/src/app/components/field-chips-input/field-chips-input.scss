@@ -1,0 +1,41 @@
+/*# sourceURL=field-chips-input.scss */
+
+app-field-chips-input {
+    display: block;
+
+    .fcg-btn-chip-remove {
+        align-items: center;
+        background-color: transparent;
+        border: none;
+        display: flex;
+        font-size: large;
+        height: 1.3vh;
+        justify-content: center;
+        padding: 0 0;
+        width: 1vw;
+    }
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    .fcg-error {
+        --mat-chip-outline-color: var(--mat-sys-error);
+        --mat-chip-label-text-color: var(--mat-sys-error);
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+
+    .mat-mdc-form-field-infix {
+        --mat-form-field-container-vertical-padding: 0.5rem;
+        align-items: center;
+        display: flex;
+    }
+}

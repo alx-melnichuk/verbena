@@ -1,28 +1,36 @@
-use std::{env, io::Error, path};
+use std::{fs, io::Error, path};
 
 use actix_files::Files;
 use actix_web::{HttpRequest, HttpResponse, get, http, web};
-use vrb_common::{consts, file_path};
-use vrb_profiles::config_prfl;
 use vrb_tools::config_app;
 
-const NAME_LOGO: &str = "name_logo";
-const NAME_AVATAR: &str = "name_avatar";
+pub fn configure(config_app: config_app::ConfigApp) -> impl FnOnce(&mut web::ServiceConfig) {
+    move |config: &mut web::ServiceConfig| {
+        let list = [config_app.app_dir_imgs.clone(), config_app.app_dir_static.clone()];
+        for item in list {
+            let path_item = path::PathBuf::from(item);
+            let res = path_item.strip_prefix("./");
+            let path_item = if res.is_ok() { res.unwrap().to_path_buf() } else { path_item };
+            let path_item2 = path_item.clone();
+            let base_prefix = path_item2.to_str().unwrap();
 
-pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
-    |config: &mut web::ServiceConfig| {
-        #[rustfmt::skip]
-        let alias_avatar = format!("{}/{{{}:.*}}", consts::ALIAS_AVATAR_FILES_DIR,  NAME_AVATAR);
-        #[rustfmt::skip]
-        let alias_logo = format!("{}/{{{}:.*}}", consts::ALIAS_LOGO_FILES_DIR, NAME_LOGO);
+            // Add visibility of files from all internal directories.
+            for res in fs::read_dir(path_item).unwrap() {
+                let path_buf = res.unwrap().path();
+                if !path_buf.is_dir() {
+                    continue;
+                }
+                let path_buf2: path::PathBuf = path_buf.clone();
+                let mount_path = path_buf2.strip_prefix(base_prefix).unwrap().to_str().unwrap();
+                let serve_from = path_buf.to_str().unwrap();
 
+                config.service(Files::new(mount_path, serve_from).show_files_listing());
+            }
+        }
+
+        let path_static_files = "/{name:.(.+).js|(.+).css|(.+).ico|(.+).png|(.+).svg|(.+).html}";
         config
-            .service(Files::new("/static", "static").show_files_listing())
-            .service(Files::new("/assets", "static/assets").show_files_listing())
-            .service(web::resource(&alias_avatar).route(web::get().to(load_files_avatar)))
-            .service(web::resource(&alias_logo).route(web::get().to(load_files_logo)))
-            .service(web::resource("/{name1:.(.+).js|(.+).css}").route(web::get().to(load_files_js_css)))
-            .service(web::resource("/{name2:.(.+).ico|(.+).png|(.+).svg}").route(web::get().to(load_files_images)))
+            .service(web::resource(path_static_files).route(web::get().to(load_static_files)))
             // Route returns index.html - FE app
             // .service(web::resource("/ind/{path_url:.*}").route(web::get().to(index_root)));
             .service(index_root);
@@ -41,38 +49,38 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
     let app_domain = format!("<script>var APP_DOMAIN='{}';</script>", &config_app.app_domain );
     let body_str = body_str.replacen("<script>var APP_DOMAIN;</script>", &app_domain, 1);
 
-    let app_backend01 = "rustc v.1.91";
+    let app_backend01 = "rustc v.1.97";
     let app_backend02: Vec<&str> = vec![
         "actix = \"0.13.5\"",
         "actix-broker = \"0.4.4\"",
         "actix-cors = \"0.7.1\"",
-        "actix-files = \"0.6.8\"",
-        "actix-multipart = \"0.7.2\"",
-        "actix-web = { version = \"4.11.0\", features = [\"openssl\"] }",
+        "actix-files = \"0.6.10\"",
+        "actix-multipart = \"0.8.0\"",
+        "actix-web = { version = \"4.14.0\", features = [\"openssl\"] }",
         "actix-web-actors = \"4.3.1\"",
         "argon2 = \"0.5.3\"",
-        "chrono = { version = \"0.4.42\", features = [\"serde\"] }",
-        "diesel = { version = \"2.3.3\", features = [\"postgres\", \"r2d2\", \"chrono\"] }",
+        "chrono = { version = \"0.4.45\", features = [\"serde\"] }",
+        "diesel = { version = \"2.3.11\", features = [\"postgres\", \"r2d2\", \"chrono\"] }",
         "diesel-derive-enum = { version = \"2.1.0\", features = [\"postgres\"] }",
-        "diesel_migrations = \"2.3.0\"",
+        "diesel_migrations = \"2.3.2\"",
         "dotenv = \"0.15.0\"",
         "email_address = \"0.2.9\"",
-        "env_logger = \"0.11.8\"",
-        "futures-util = \"0.3.31\"",
-        "getrandom = \"0.3.4\"",
-        "handlebars = \"6.3.2\"",
-        "image = \"0.25.8\"",
-        "jsonwebtoken = \"9.3.1\"",
-        "lettre = { version = \"0.11.19\", features = [\"tokio1\", \"tokio1-native-tls\"] }",
+        "env_logger = \"0.11.11\"",
+        "futures-util = \"0.3.33\"",
+        "getrandom = \"0.4.3\"",
+        "handlebars = \"6.4.3\"",
+        "image = \"0.25.10\"",
+        "jsonwebtoken = { version = \"11.0.0\", features = [\"aws_lc_rs\"] }",
+        "lettre = { version = \"0.11.22\", features = [\"tokio1\", \"tokio1-native-tls\"] }",
         "log = \"0.4.28\"",
         "mime = \"0.3.17\"",
-        "openssl = \"0.10.74\"",
+        "openssl = \"0.10.81\"",
         "r2d2 = \"0.8.10\"",
-        "rand = \"0.9.2\"",
+        "rand = \"0.10.2\"",
         "regex = \"1.12.2\"",
-        "serde = { version = \"1.0.228\", features = [\"derive\"] }",
-        "serde_json = \"1.0.145\"",
-        "utoipa = { version = \"5.4.0\", features = [\"chrono\", \"actix_extras\"] }",
+        "serde = { version = \"1.0.229\", features = [\"derive\"] }",
+        "serde_json = \"1.0.151\"",
+        "utoipa = { version = \"5.5.0\", features = [\"chrono\", \"actix_extras\"] }",
         "utoipa-swagger-ui = { version = \"9.0.2\", features = [\"actix-web\"] }",
         "utoipa-redoc = { version = \"6.0.0\", features = [\"actix-web\"] }",
         "utoipa-rapidoc = { version = \"6.0.0\", features = [\"actix-web\"] }",
@@ -91,26 +99,8 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         .body(body_str))
 }
 
-pub async fn load_files_logo(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let logo_files_dir = env::var(consts::STRM_LOGO_FILES_DIR).unwrap_or(consts::LOGO_FILES_DIR.to_string());
-    let strm_logo_files_dir = file_path::path_directory(logo_files_dir);
-    let file_name = get_param(request, NAME_LOGO);
-    load_file_from_dir(&strm_logo_files_dir, &file_name).await
-}
-
-pub async fn load_files_avatar(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let config_prfl = config_prfl::ConfigPrfl::init_by_env();
-    let file_name = get_param(request, NAME_AVATAR);
-    load_file_from_dir(&config_prfl.prfl_avatar_files_dir, &file_name).await
-}
-
-pub async fn load_files_js_css(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let file_name = get_param(request, "name1");
-    load_file_from_dir("static", &file_name).await
-}
-
-pub async fn load_files_images(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let file_name = get_param(request, "name2");
+pub async fn load_static_files(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+    let file_name = get_param(request, "name");
     load_file_from_dir("static", &file_name).await
 }
 

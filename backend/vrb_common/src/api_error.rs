@@ -14,19 +14,14 @@ use crate::validators::ValidationError;
 // 500 Internal Server Error - Internal error when accessing the server API.
 pub const MSG_INTER_SRV_ERROR: &str = "internal_error_accessing_server_api";
 
-pub fn code_to_str(status_code: StatusCode) -> String {
-    status_code.canonical_reason().map(|v| v.replace(" ", "")).unwrap_or("".to_string())
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ApiError {
-    pub code: borrow::Cow<'static, str>,
     pub message: borrow::Cow<'static, str>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty", default = "ApiError::default_params")]
     // Parameters must be sorted by key.
     pub params: BTreeMap<borrow::Cow<'static, str>, Value>,
-    #[serde(skip, default = "ApiError::default_status")]
+    #[serde(default = "ApiError::default_status")]
     pub status: u16,
 }
 
@@ -41,11 +36,10 @@ impl fmt::Display for ApiError {
 impl ApiError {
     /// Create a new instance of the ApiError structure.
     pub fn new<'a>(status: u16, message: &'a str) -> Self {
-        let status = Self::u16_to_status_code_or_default(status);
+        let status = Self::u16_to_status_or_default(status);
         #[rustfmt::skip]
         let message = if message.len() > 0 { message } else { Self::default_message() };
         ApiError {
-            code: borrow::Cow::from(code_to_str(status)),
             message: borrow::Cow::from(message.to_string()),
             params: BTreeMap::new(),
             status: status.as_u16(),
@@ -56,7 +50,7 @@ impl ApiError {
         ApiError::new(status, &format!("{}; {}", message, text))
     }
     /// Convert value from u16 to StatusCode (or default value).
-    pub fn u16_to_status_code_or_default(status: u16) -> StatusCode {
+    pub fn u16_to_status_or_default(status: u16) -> StatusCode {
         let default_value = StatusCode::INTERNAL_SERVER_ERROR;
         if status > 0 {
             StatusCode::from_u16(status).unwrap_or(default_value)
@@ -66,7 +60,7 @@ impl ApiError {
     }
     /// Default value of the "status" field.
     pub fn default_status() -> u16 {
-        Self::u16_to_status_code_or_default(0).as_u16()
+        Self::u16_to_status_or_default(0).as_u16()
     }
     /// The default value of the "params" field.
     pub fn default_params() -> BTreeMap<borrow::Cow<'static, str>, Value> {
@@ -80,7 +74,6 @@ impl ApiError {
     pub fn set_status(&mut self, status: u16) -> Self {
         if self.status != status {
             self.status = status;
-            self.code = borrow::Cow::from(code_to_str(self.status_code()));
         }
         self.to_owned()
     }
@@ -91,7 +84,7 @@ impl ApiError {
     }
     /// Convert the "status" field to "StatusCode" type.
     pub fn status_code(&self) -> StatusCode {
-        Self::u16_to_status_code_or_default(self.status)
+        Self::u16_to_status_or_default(self.status)
     }
     /// List of errors when validating parameters.
     pub fn validations(errors: Vec<ValidationError>) -> Vec<Self> {
@@ -307,7 +300,7 @@ mod tests {
     async fn test_create_error_and_convert_to_string() {
         let text = "Error text 400.";
         let err = ApiError::new(400, &text);
-        let json = json!({ "code": code_to_str(StatusCode::BAD_REQUEST), "message": text });
+        let json = json!({ "status": StatusCode::BAD_REQUEST.as_u16(), "message": text });
         assert_eq!(err.to_string(), json.to_string());
     }
     #[actix_web::test]
@@ -316,7 +309,6 @@ mod tests {
         let err = ApiError::new(400, &text);
 
         assert_eq!(err.status, StatusCode::BAD_REQUEST.as_u16());
-        assert_eq!(err.code, code_to_str(StatusCode::BAD_REQUEST));
         assert_eq!(err.message, text);
         assert!(err.params.is_empty());
     }
@@ -327,7 +319,6 @@ mod tests {
 
         assert_eq!(err.status, ApiError::default_status());
         assert_eq!(err.status, StatusCode::INTERNAL_SERVER_ERROR.as_u16());
-        assert_eq!(err.code, code_to_str(StatusCode::INTERNAL_SERVER_ERROR));
         assert_eq!(err.message, text);
         assert!(err.params.is_empty());
     }
@@ -338,29 +329,28 @@ mod tests {
 
         assert_eq!(err.status, ApiError::default_status());
         assert_eq!(err.status, StatusCode::INTERNAL_SERVER_ERROR.as_u16());
-        assert_eq!(err.code, code_to_str(StatusCode::INTERNAL_SERVER_ERROR));
         assert_eq!(err.message, ApiError::default_message());
         assert_eq!(err.message, MSG_INTER_SRV_ERROR);
         assert!(err.params.is_empty());
     }
 
-    // ** ApiError::u16_to_status_code_or_default **
+    // ** ApiError::u16_to_status_or_default **
 
     #[actix_web::test]
-    async fn test_u16_to_status_code_or_default() {
-        let status_code0 = ApiError::u16_to_status_code_or_default(99);
+    async fn test_u16_to_status_or_default() {
+        let status_code0 = ApiError::u16_to_status_or_default(99);
         assert_eq!(status_code0, StatusCode::INTERNAL_SERVER_ERROR);
-        let status_code1 = ApiError::u16_to_status_code_or_default(100);
+        let status_code1 = ApiError::u16_to_status_or_default(100);
         assert_eq!(status_code1, StatusCode::CONTINUE);
-        let status_code2 = ApiError::u16_to_status_code_or_default(200);
+        let status_code2 = ApiError::u16_to_status_or_default(200);
         assert_eq!(status_code2, StatusCode::OK);
-        let status_code3 = ApiError::u16_to_status_code_or_default(300);
+        let status_code3 = ApiError::u16_to_status_or_default(300);
         assert_eq!(status_code3, StatusCode::MULTIPLE_CHOICES);
-        let status_code4 = ApiError::u16_to_status_code_or_default(400);
+        let status_code4 = ApiError::u16_to_status_or_default(400);
         assert_eq!(status_code4, StatusCode::BAD_REQUEST);
-        let status_code5 = ApiError::u16_to_status_code_or_default(500);
+        let status_code5 = ApiError::u16_to_status_or_default(500);
         assert_eq!(status_code5, StatusCode::INTERNAL_SERVER_ERROR);
-        let status_code6 = ApiError::u16_to_status_code_or_default(1000);
+        let status_code6 = ApiError::u16_to_status_or_default(1000);
         assert_eq!(status_code6, StatusCode::INTERNAL_SERVER_ERROR);
     }
 
@@ -370,7 +360,7 @@ mod tests {
     async fn test_default_status() {
         let status1 = ApiError::default_status();
         assert_eq!(status1, StatusCode::INTERNAL_SERVER_ERROR.as_u16());
-        let status2 = ApiError::u16_to_status_code_or_default(0).as_u16();
+        let status2 = ApiError::u16_to_status_or_default(0).as_u16();
         assert_eq!(status2, StatusCode::INTERNAL_SERVER_ERROR.as_u16());
     }
 
@@ -400,14 +390,12 @@ mod tests {
 
         assert_eq!(err.status, StatusCode::UNAUTHORIZED.as_u16());
         assert_eq!(err.status_code(), StatusCode::UNAUTHORIZED);
-        assert_eq!(err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(err.message, text);
 
         err.set_status(402);
 
         assert_eq!(err.status, StatusCode::PAYMENT_REQUIRED.as_u16());
         assert_eq!(err.status_code(), StatusCode::PAYMENT_REQUIRED);
-        assert_eq!(err.code, code_to_str(StatusCode::PAYMENT_REQUIRED));
         assert_eq!(err.message, text);
     }
 
@@ -421,7 +409,6 @@ mod tests {
         let err = ApiError::new(401, &text).add_param(param1.clone(), &json);
 
         assert_eq!(err.status, StatusCode::UNAUTHORIZED.as_u16());
-        assert_eq!(err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(err.message, text);
         assert_eq!(err.params.get(&param1).unwrap(), &json);
     }
@@ -437,7 +424,6 @@ mod tests {
             .add_param(param2.clone(), &json2);
 
         assert_eq!(err.status, StatusCode::UNAUTHORIZED.as_u16());
-        assert_eq!(err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(err.message, text);
         assert_eq!(err.params.get(&param1).unwrap(), &json1);
         assert_eq!(err.params.get(&param2).unwrap(), &json2);
@@ -463,10 +449,10 @@ mod tests {
         let api_errs: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(api_errs.len(), 2);
         let api_err1 = api_errs.get(0).unwrap();
-        assert_eq!(api_err1.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err1.status, StatusCode::UNAUTHORIZED.as_u16());
         assert_eq!(api_err1.message, text1);
         let api_err2 = api_errs.get(1).unwrap();
-        assert_eq!(api_err2.code, code_to_str(StatusCode::PAYMENT_REQUIRED));
+        assert_eq!(api_err2.status, StatusCode::PAYMENT_REQUIRED.as_u16());
         assert_eq!(api_err2.message, text2);
     }
 }

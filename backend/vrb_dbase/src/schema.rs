@@ -75,9 +75,9 @@ diesel::table! {
 diesel::table! {
     stream_tags (id) {
         id -> Int4,
-        user_id -> Int4,
         #[max_length = 255]
         name -> Varchar,
+        count_links -> Int4,
     }
 }
 
@@ -152,7 +152,6 @@ diesel::joinable!(link_stream_tags_to_streams -> stream_tags (stream_tag_id));
 diesel::joinable!(link_stream_tags_to_streams -> streams (stream_id));
 diesel::joinable!(profiles -> users (user_id));
 diesel::joinable!(sessions -> users (user_id));
-diesel::joinable!(stream_tags -> users (user_id));
 diesel::joinable!(streams -> users (user_id));
 diesel::joinable!(user_recovery -> users (user_id));
 

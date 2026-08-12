@@ -14,13 +14,15 @@ export class Debounce {
 }
 
 //   const handlerChange = debounceFn((event) => handlerInput(event), 200);
-//   function handlerInput(event) { console.log(event.target.value); }
+//   function handlerInput(event) { console.info(event.target.value); }
 //   <input (input)="handlerChange($event)" />
 
-export function debounceFn(this: any, func: (...arg0: any[]) => void, timeout = 300): (...args: any[]) => void {
+export type CallbackDebounceFnType = (...arg0: any) => void;
+
+export function debounceFn(this: any, func: (...arg0: any) => void, timeout = 300): (...args: any) => void {
     const context = this;
     let timer: number | undefined;
-    return (...args: any[]) => {
+    return (...args: any) => {
         window.clearTimeout(timer);
         timer = window.setTimeout(() => {
             timer = undefined;

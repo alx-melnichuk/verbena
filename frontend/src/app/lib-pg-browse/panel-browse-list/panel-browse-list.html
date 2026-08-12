@@ -1,0 +1,62 @@
+@if (popTagIsLoading || strmCrdIsLoading) {
+    <app-spinner isFillParent></app-spinner>
+}
+<div class="pbl-container app-pn-bg">
+
+  <div class="pbl-search pbl-border">
+    <form [formGroup]="formGroup" class="pbl-srch-form" novalidate>
+      
+      <mat-slide-toggle pbl-m-2 class="pbl-is-live" labelPosition="before" formControlName="isLive">
+        {{ "panel-browse-list.live_streams_only" | translate }}&ensp;
+      </mat-slide-toggle>
+        
+      <mat-form-field pbl-m-2 class="pbl-srch-form-inpt" subscriptSizing="dynamic">
+        <mat-label>{{ "panel-browse-list.tag_value" | translate }}</mat-label>
+        <input matInput type="text"
+          formControlName="tag"
+          autocomplete="new-password"
+          autocapitalize="off"
+          [attr.maxlength]="cn_tag.maxLength"
+        />
+      </mat-form-field>
+
+      <button type="button" matButton="elevated" pbl-m-2
+        class="pbl-srch-btn stl-btn-brd"
+        [disabled]="!controls.isLive"
+        (click)="doLoadStrmCrdPage(controls.isLive.value, controls.tag.value, 1, true)">
+        <span>{{ "panel-browse-list.search_for_streams" | translate }}</span>
+      </button>
+
+    </form>
+
+    <div class="pbl-pop-tag-wrap">
+      <div class="pbl-pop-tags global-scroll">
+        @for (item of popTagList; track $index) {
+          <button class="pbl-pop-tag" 
+            [class.pbl-active-tag]="item.name == tag"
+            (click)="doSetTag(item.name)">
+            #{{ item.name }}&nbsp;({{ item.countLinks }})  
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <app-view-item-list hg100 class="pbl-card-list" vil-row vil-flx-wrp
+    containerClass="global-scroll"
+    [isReset]="strmCrdIsReset"
+    [itemPage]="strmCrdItemPage"
+    [maxSizeRows]="strmCrdMaxSizeRows"
+    [rowsOnPage]="strmCrdRowsOnPage"
+    [deleteIds]="deleteIds"
+    (loadPage)="doLoadStrmCrdPage(controls.isLive.value, controls.tag.value, $event.page, false)">
+    <ng-template let-streamDto="item">
+      <app-panel-stream-card
+        [activeTag]="tag"
+        [locale]="locale"
+        [stream]="streamDto"
+        (actionView)="doActionView($event)">
+      </app-panel-stream-card>
+    </ng-template>
+  </app-view-item-list>
+</div>

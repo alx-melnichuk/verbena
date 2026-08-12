@@ -1,7 +1,8 @@
 use vrb_dbase::dbase::DbPool;
 
 use crate::chat_message_models::{
-    BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+    BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage,
+    DeleteBlockedUser, ModifyChatMessage, SearchChatMessage,
 };
 
 pub trait ChatMessageOrm {
@@ -56,7 +57,8 @@ pub mod impls {
 
     use crate::{
         chat_message_models::{
-            BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+            BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage,
+            DeleteBlockedUser, ModifyChatMessage, SearchChatMessage,
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -193,7 +195,7 @@ pub mod impls {
             let mut conn = self.get_conn()?;
 
             let query = diesel::sql_query("select * from delete_chat_message($1,$2);")
-                .bind::<sql_types::Integer, _>(id)
+                .bind::<sql_types::Integer, _>(id) // $1
                 .bind::<sql_types::Integer, _>(user_id); // $2
 
             // Run a query using Diesel to delete the entity by ID and return it.
@@ -349,15 +351,16 @@ pub mod tests {
 
     use crate::{
         chat_message_models::{
-            BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage, SearchChatMessage
+            BlockedName, BlockedUser, BlockedUserMini, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage,
+            DeleteBlockedUser, ModifyChatMessage, SearchChatMessage,
         },
         chat_message_orm::ChatMessageOrm,
     };
 
     pub const CH_MSG_STREAM_ID: i32 = 1;
-    pub const CHAT_MESSAGE_ID: i32 = 1500;
-    pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
-    pub const BLOCKED_USER_ID: i32 = 1700;
+    pub const CHAT_MESSAGE_ID: i32 = 1600;
+    pub const CHAT_MESSAGE_LOG_ID: i32 = 1700;
+    pub const BLOCKED_USER_ID: i32 = 1800;
 
     pub const STREAM1_ID: i32 = 1; // Owner user idx 0 (live: true)  1100 oliver_taylor
     pub const STREAM2_ID: i32 = 2; // Owner user idx 1 (live: true)  1101 robert_brown
@@ -378,12 +381,18 @@ pub mod tests {
         pub nickname: String,
         pub email: String,
         pub block_date: DateTime<Utc>,
-        pub avatar: String,    
+        pub avatar: String,
     }
 
     impl BlockedData {
         pub fn new(
-            id: i32, owner_id: i32, user_id: i32, nickname: String, email: String, block_date: DateTime<Utc>, avatar: String
+            id: i32,
+            owner_id: i32,
+            user_id: i32,
+            nickname: String,
+            email: String,
+            block_date: DateTime<Utc>,
+            avatar: String,
         ) -> Self {
             BlockedData {
                 id,
@@ -409,7 +418,7 @@ pub mod tests {
             }
         }
     }
-    
+
     impl Into<BlockedUserMini> for BlockedData {
         fn into(self) -> BlockedUserMini {
             BlockedUserMini {
@@ -675,19 +684,26 @@ pub mod tests {
             let idx_stream_id = opt_idx_stream_id.unwrap();
 
             let stream_owner = ChatMessageOrmTest::user_ids().get(idx_stream_id).unwrap().clone();
-            
+
             let stream2_id = ChatMessageOrmTest::stream_ids().get(2).unwrap().clone();
-            let stream_state: String = if stream_id == stream2_id { "stopped".to_owned() } else { "preparing".to_owned() };
+            let stream_state: String = if stream_id == stream2_id {
+                "stopped".to_owned()
+            } else {
+                "preparing".to_owned()
+            };
 
             let mut is_blocked = false;
             if let Some(user_id) = opt_user_id {
                 let opt_idx_user_id = ChatMessageOrmTest::user_ids().iter().position(|v| *v == user_id);
                 if opt_idx_user_id.is_some() {
-                    is_blocked = (*self.blocked_user_vec).borrow().iter()
-                        .find(|v| v.owner_id == stream_owner && v.user_id == user_id).is_some();
+                    is_blocked = (*self.blocked_user_vec)
+                        .borrow()
+                        .iter()
+                        .find(|v| v.owner_id == stream_owner && v.user_id == user_id)
+                        .is_some();
                 }
             }
-             
+
             Ok(Some(ChatAccess::new(stream_id, stream_owner, stream_state, is_blocked)))
         }
 
@@ -701,14 +717,14 @@ pub mod tests {
                 .collect();
             Ok(result)
         }
-        
+
         /// Get a list of blocked users.
         fn get_blocked_users(&self, owner_id: i32, sort_column: String, sort_desc: bool) -> Result<Vec<BlockedUser>, String> {
             let vec = (*self.blocked_user_vec).borrow();
             #[rustfmt::skip]
             let mut result: Vec<BlockedUser> = vec.iter()
                 .filter(|v| (*v).owner_id == owner_id).map(|v| v.clone().into()).collect();
-            
+
             result.sort_by(|a, b| {
                 let mut result = if sort_column == "email" {
                     a.email.to_lowercase().cmp(&b.email.to_lowercase())
@@ -752,9 +768,7 @@ pub mod tests {
                 let opt_blocked_data = vec
                     .iter()
                     .find(|v| {
-                        (*v).owner_id == create_blocked_user.owner_id
-                            && (*v).user_id == user_mini.id
-                            && (*v).nickname.eq(&user_mini.name)
+                        (*v).owner_id == create_blocked_user.owner_id && (*v).user_id == user_mini.id && (*v).nickname.eq(&user_mini.name)
                     })
                     .map(|v| v.clone());
 
@@ -801,9 +815,7 @@ pub mod tests {
             let mut vec = (*self.blocked_user_vec).borrow_mut();
             if let Some(user_mini) = opt_user_mini {
                 let opt_index = vec.iter().position(|v| {
-                    (*v).owner_id == delete_blocked_user.owner_id
-                        && (*v).user_id == user_mini.id
-                        && (*v).nickname.eq(&user_mini.name)
+                    (*v).owner_id == delete_blocked_user.owner_id && (*v).user_id == user_mini.id && (*v).nickname.eq(&user_mini.name)
                 });
                 if let Some(index) = opt_index {
                     let blocked_user = vec.remove(index);
@@ -863,8 +875,15 @@ pub mod tests {
                 }
                 let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
                 let block_date = date - Duration::minutes(i64::try_from(idx * 10).unwrap());
-                result.push(
-                    BlockedData::new(id, *user_id, blocked_id, nickname.clone(), email.clone(), block_date, avatar.clone()) );
+                result.push(BlockedData::new(
+                    id,
+                    *user_id,
+                    blocked_id,
+                    nickname.clone(),
+                    email.clone(),
+                    block_date,
+                    avatar.clone(),
+                ));
 
                 idx += 1;
                 let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
@@ -872,8 +891,7 @@ pub mod tests {
                 let email2 = Self::get_user_email(*user_id);
                 let block_date2 = date - Duration::minutes(i64::try_from(idx * 10).unwrap());
                 let avatar2 = "".to_string();
-                result.push(
-                    BlockedData::new(id, blocked_id, *user_id, nickname2, email2, block_date2, avatar2) );
+                result.push(BlockedData::new(id, blocked_id, *user_id, nickname2, email2, block_date2, avatar2));
 
                 idx += 1;
             }

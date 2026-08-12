@@ -6,15 +6,20 @@ import { DateUtil } from "./utils/date.utils";
 export const APP_DATE_FORMATS = {
     parse: {
         dateInput: null,
+        timeInput: null,
     },
     display: {
         // Property in display section is the date format in which displays the date in input box.
-        dateInput: { year: 'numeric', month: 'numeric', day: 'numeric' },
+        dateInput: { year: "numeric", month: "numeric", day: "numeric" },
+        timeInput: { hour: "numeric", minute: "numeric" },
+        // monthLabel?: any;
         // Property in display section is the date format in which calendar displays the month-year label.
-        monthYearLabel: { year: 'numeric', month: 'long' },
+        monthYearLabel: { year: "numeric", month: "long" },
+        // monthYearLabel: { year: "numeric", month: "short" },
         // Related to Accessibility (a11y)
-        dateA11yLabel: { year: 'numeric', month: 'long', day: 'numeric' },
-        monthYearA11yLabel: { year: 'numeric', month: 'long' },
+        dateA11yLabel: { year: "numeric", month: "long", day: "numeric" },
+        monthYearA11yLabel: { year: "numeric", month: "long" },
+        timeOptionLabel: { hour: "numeric", minute: "numeric" },
     }
 };
 
@@ -23,12 +28,12 @@ export class AppDateAdapter extends NativeDateAdapter {
 
     protected formatParts: Intl.DateTimeFormatPart[] = [];
 
-    override getDayOfWeekNames(style: 'long' | 'short' | 'narrow'): string[] {
-        const style_value = (style == 'narrow' ? 'short' : style);
+    override getDayOfWeekNames(style: "long" | "short" | "narrow"): string[] {
+        const style_value = (style == "narrow" ? "short" : style);
         const list = super.getDayOfWeekNames(style_value);
         const result: string[] = [];
         for (let idx = 0; idx < list.length; idx++) {
-            result[idx] = this.capitalizeFirstLetter(list[idx], this.locale) || '';
+            result[idx] = this.capitalizeFirstLetter(list[idx], this.locale) || "";
         }
         return result;
     }
@@ -36,9 +41,9 @@ export class AppDateAdapter extends NativeDateAdapter {
     override parse(value: any, parseFormat: any): Date | null {
         let result: Date | null = null;
         const value_type = typeof value;
-        if (value_type == 'number') {
+        if (value_type == "number") {
             result = new Date(value);
-        } else if (value_type == 'string') {
+        } else if (value_type == "string") {
             result = this.parseFromStringWithLocale(value, this.formatParts);
         }
         return result;
@@ -65,10 +70,10 @@ export class AppDateAdapter extends NativeDateAdapter {
         let result: Date | null = null;
         if (valueStr?.length > 0 && formatParts?.length > 0) {
             const res: { [key: string]: any } = { year: -1, month: -1, day: -1 };
-            let key = ''; let val = valueStr; let index = -1;
+            let key = ""; let val = valueStr; let index = -1;
             for (let idx = 0; idx < formatParts.length; idx++) {
                 const { type, value } = formatParts[idx];
-                if (type == 'literal') {
+                if (type == "literal") {
                     index = val.indexOf(value);
                     if (index == -1) {
                         break;
@@ -78,11 +83,11 @@ export class AppDateAdapter extends NativeDateAdapter {
                 }
                 key = type;
             }
-            if (!!key && key != 'literal' && index != -1 && !!val) {
+            if (!!key && key != "literal" && index != -1 && !!val) {
                 res[key] = parseInt(val, 10);
             }
-            if (res['year'] != -1 && res['month'] != -1 && res['day'] != -1) {
-                result = this.createDate(res['year'], res['month'] - 1, res['day']);
+            if (res["year"] != -1 && res["month"] != -1 && res["day"] != -1) {
+                result = this.createDate(res["year"], res["month"] - 1, res["day"]);
             }
         }
         return result;

@@ -1,0 +1,41 @@
+<mat-form-field [formGroup]="formGroup" class="fcg-max-wd"
+  [subscriptSizing]="(formControl.touched && !!formControl.errors) || !!hint ? 'dynamic' : 'fixed'">
+
+  @if (!!label) {
+    <mat-label>{{ label | translate }}{{ !!isRequired ? " *" : ""}}</mat-label>
+  }
+  <ng-content select="[fcg-prefix]"></ng-content>
+
+  <mat-chip-grid #chipGrid [formControl]="formControl">
+    @for (chip of formControl.value; track chip) {
+      <mat-chip-row [class.fcg-error]="checkChipMinLen(chip, minLen) || checkChipMaxLen(chip, maxLen)"
+      [removable]="!!isRemovable"
+      (removed)="chipRemove(chip, formControl.value)">
+        {{ chip }}
+        @if (!!isRemovable) {
+          <button matChipRemove class="fcg-btn-chip-remove">&#215;</button>
+        }
+      </mat-chip-row>
+    }
+    <input #chipInput
+      autocomplete="new-password"
+      autocapitalize="off"
+      [readonly]="isReadOnly"
+      [matChipInputFor]="chipGrid"
+      [matChipInputAddOnBlur]="true"
+      [matChipInputSeparatorKeyCodes]="separatorCodes"
+      (matChipInputTokenEnd)="chipAdd($event, formControl.value)"
+      (blur)="onTouched()"
+    />
+  </mat-chip-grid>
+
+  <ng-content select="[fcg-suffix]"></ng-content>
+  @if (!!hint) {
+    <mat-hint>{{ hint | translate }}</mat-hint>
+  }
+  <mat-error>
+    {{ (errorMsg || getErrorMsg(formControl.errors))
+      | translate: getErrorObj(formControl.errors, (!!label ? (label | translate) : "")) }}
+  </mat-error>
+
+</mat-form-field>

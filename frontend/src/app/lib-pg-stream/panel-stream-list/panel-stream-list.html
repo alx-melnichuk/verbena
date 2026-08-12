@@ -1,0 +1,121 @@
+@if (clndIsLoading || evntIsLoading || strmFtrIsLoading || strmPstIsLoading) {
+  <app-spinner isFillParent></app-spinner>
+}
+<div class="psl-container app-pn-bg">
+
+  <div class="psl-my-calendar">
+    <div class="psl-calendar-box psl-border">
+      <div class="psl-title">
+        <span>{{ 'panel-stream-list.my_calendar' | translate }}</span>
+      </div>
+      <app-panel-stream-calendar
+        [locale]="locale"
+        [markedDates]="clndMarkedDates"
+        [minDate]="clndMinDate"
+        [maxDate]="clndMaxDate"
+        [selected]="clndDaySelected"
+        (changeSelected)="doLoadEventDatePage($event, 0, 0)"
+        (changeCalendar)="doCalendarForPeriod($event)">
+      </app-panel-stream-calendar>
+    </div>
+
+    <div class="psl-indent"></div>
+
+    <div class="psl-events-box psl-border">
+      <div class="psl-event-label"
+        [class.psl-heavier]="isShowEvents(clndDaySelected, calendarMonth)">
+        <span>
+          {{ clndDaySelected | dateTimeFormat:locale:formatDate }}
+        </span>
+      </div>
+      <app-view-item-list class="psl-event-list" vil-col
+        containerClass="global-scroll"
+        [deleteIds]="evntDeleteIds"
+        [isReset]="evntIsReset"
+        [itemPage]="evntItemPage"
+        [maxSizeRows]="evntMaxSizeRows"
+        [rowsOnPage]="evntRowsOnPage"
+        (loadPage)="doLoadEventDatePage(null, $event.page, $event.count)">
+        <ng-template let-streamDto="item">
+          <app-panel-stream-event psl-mb-1
+            [canEdit]="true"
+            [locale]="locale"
+            [streamDto]="streamDto"
+            (editStream)="doActionEdit($event)">
+          </app-panel-stream-event>
+        </ng-template>
+      </app-view-item-list>
+    </div>
+  </div>
+
+  <div class="psl-indent"></div>
+
+  <div class="psl-my-streams">
+
+    <div class="psl-stream-box psl-border">
+      <div class="psl-lbl-future">
+        <span class="psl-title">{{ 'panel-stream-list.my_future_streams' | translate }}</span>
+        <div class="psl-reset-data">
+          <button matButton="elevated" class="psl-reset-btn"
+            #tooltip="matTooltip"
+            [matTooltip]="'panel-stream-list.reset-data_tooltip' | translate"
+            matTooltipPosition="above"
+            (click)="doResetInfo()">
+              <span>{{ 'panel-stream-list.reset-data' | translate }}</span>
+          </button>
+        </div>
+      </div>
+      <app-view-item-list hg100 class="psl-stream-future psl-logo" vil-col-rev
+        containerClass="global-scroll"
+        [deleteIds]="strmFtrDeleteIds"
+        [isReset]="strmFtrIsReset"
+        [itemPage]="strmFtrItemPage"
+        [maxSizeRows]="strmFtrMaxSizeRows"
+        [rowsOnPage]="strmFtrRowsOnPage"
+        (loadPage)="doLoadFuturePage($event.page, $event.count)">
+        <ng-template let-streamDto="item">
+          <app-panel-stream-info psl-mb-1
+            [canDuplicate]="true"
+            [canDelete]="true"
+            [canEdit]="true"
+            [locale]="locale"
+            [streamDto]="streamDto"
+            (actionDuplicate)="doActionDuplicate($event)"
+            (actionDelete)="doActionDelete(true, $event)"
+            (actionEdit)="doActionEdit($event)">
+          </app-panel-stream-info>
+        </ng-template>
+      </app-view-item-list>
+    </div>
+
+    <div class="psl-indent"></div>
+
+    <div class="psl-stream-box psl-border">
+      <div>
+        <span class="psl-title">{{ 'panel-stream-list.my_past_streams' | translate }}</span>
+      </div>
+      <app-view-item-list hg100 class="psl-stream-past psl-logo" vil-col
+        containerClass="global-scroll"
+        [deleteIds]="strmPstDeleteIds"
+        [isReset]="strmPstIsReset"
+        [itemPage]="strmPstItemPage"
+        [maxSizeRows]="strmPstMaxSizeRows"
+        [rowsOnPage]="strmPstRowsOnPage"
+        (loadPage)="doLoadPastPage($event.page, $event.count)">
+        <ng-template let-streamDto="item">
+          <app-panel-stream-info psl-mb-1
+            [canDuplicate]="true"
+            [canDelete]="true"
+            [locale]="locale"
+            [streamDto]="streamDto"
+            (actionDuplicate)="doActionDuplicate($event)"
+            (actionDelete)="doActionDelete(false, $event)">
+          </app-panel-stream-info>
+        </ng-template>
+      </app-view-item-list>
+    </div>
+
+    <div class="psl-indent"></div>
+
+  </div>
+</div>

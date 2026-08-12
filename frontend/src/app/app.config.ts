@@ -1,54 +1,65 @@
-import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { APP_INITIALIZER, ApplicationConfig, ErrorHandler, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter } from '@angular/router';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { provideTranslateService, TranslateLoader } from '@ngx-translate/core';
-
-import { APP_DATE_FORMATS, AppDateAdapter } from './app-date-adapter';
-import { AppErrorHandler } from './app-error-handler';
-import { APP_ROUTES } from './app.routes';
-import { AuthorizationInterceptor } from './common/authorization.interceptor';
-import { ENV_IS_PROD } from './common/constants';
-import { APP_DATE_TIME_FORMAT_CONFIG } from './common/date-time-format.pipe';
-import { InitializationService } from './common/initialization.service';
-import { LocaleService } from './common/locale.service';
-import { DateUtil } from './utils/date.utils';
-import { DialogService } from './lib-dialog/dialog.service';
+import { HTTP_INTERCEPTORS, HttpClient, HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
+import {
+    ApplicationConfig, importProvidersFrom, inject, InjectionToken, provideAppInitializer,
+    provideBrowserGlobalErrorListeners, provideZonelessChangeDetection
+} from "@angular/core";
+import { MAT_DATE_LOCALE, DateAdapter, MAT_DATE_FORMATS } from "@angular/material/core";
+import { MatDialogModule, MatDialog } from "@angular/material/dialog";
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldDefaultOptions } from "@angular/material/form-field";
+import { MatSnackBarModule } from "@angular/material/snack-bar";
+import { provideRouter, Router } from "@angular/router";
+import { provideTranslateService, TranslateLoader, TranslateService } from "@ngx-translate/core";
+import { TranslateHttpLoader } from "@ngx-translate/http-loader";
+import { environment } from "../environments/environment";
+import { AppDateAdapter, APP_DATE_FORMATS } from "./app-date-adapter";
+import { APP_ROUTES } from "./app.routes";
+import { AuthorizationInterceptor } from "./common/authorization.interceptor";
+import { APP_DATE_TIME_FORMAT_CONFIG } from "./common/date-time-format-pipe";
+import { LOCALE_DEFAULT, LocaleSrv } from "./common/locale-srv";
+import { RedirectSrv } from "./common/redirect-srv";
+import { AUTHENT_REQUIRED, ROUTE_LOGIN } from "./common/routes";
+import { SessionSrv } from "./common/session-srv";
+import { DialogSrv } from "./lib-dialog/dialog-srv";
+import { UserSrv } from "./lib-user/user-srv";
+import { DateUtil } from "./utils/date.utils";
+import { NavigatorUtil } from "./utils/navigator.util";
+import { UserDto } from "./lib-user/user-dto";
 
 // AoT requires an exported function for factories
-export const TRANSLATE_LOADER_FACTORY = (httpClient: HttpClient): TranslateHttpLoader => {
-    if (!ENV_IS_PROD) { console.log(`HTTP_LOADER_FACTORY()`); }
-    return new TranslateHttpLoader(httpClient, './assets/i18n/', '.json');
+export function translateAppHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
+    if (environment.logLevel > 0) { console.info(`translateAppHttpLoaderFactory()`); }
+    return new TranslateHttpLoader(httpClient, "./i18n/", ".json");
 };
 
-export const INITIALIZE_TRANSLATE_FACTORY = (initializationService: InitializationService): any => {
-    return (): Promise<any> => initializationService.initTranslate();
+// Define configuration MatFormFieldDefaultOptions.
+export const appFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
+    // Default form field appearance style.
+    appearance: "outline", // "fill"
+    color: "primary",
+    // Whether the required marker should be hidden by default.
+    // hideRequiredMarker?: boolean,
+    // Whether the label for form fields should by default float "always", "never", or "auto" (only when necessary).
+    // floatLabel?: FloatLabelType, 
+    // Whether the form field should reserve space for one line by default.
+    subscriptSizing: "fixed", // "fixed" | "dynamic"
 };
-
-export const INITIALIZE_AUTHENTICATION_USER_FACTORY = (initializationService: InitializationService): any => {
-    return (): Promise<any> => initializationService.initSession();
-};
-
 
 export const appConfig: ApplicationConfig = {
     providers: [
+        provideBrowserGlobalErrorListeners(),
+
+        provideZonelessChangeDetection(),
+        // provideZoneChangeDetection({ eventCoalescing: true }),
         provideRouter(APP_ROUTES),
-        provideAnimationsAsync(),
-        provideZoneChangeDetection({ eventCoalescing: true }),
+
         provideHttpClient(withInterceptorsFromDi()),
         provideTranslateService({
             loader: {
                 provide: TranslateLoader,
-                useFactory: TRANSLATE_LOADER_FACTORY,
+                useFactory: translateAppHttpLoaderFactory,
                 deps: [HttpClient],
             },
         }),
-        LocaleService,
-        InitializationService,
         {
             provide: HTTP_INTERCEPTORS,
             useClass: AuthorizationInterceptor,
@@ -56,7 +67,7 @@ export const appConfig: ApplicationConfig = {
         },
         {
             provide: MAT_DATE_LOCALE,
-            useValue: 'en'
+            useValue: LOCALE_DEFAULT
         },
         {
             provide: DateAdapter,
@@ -71,26 +82,73 @@ export const appConfig: ApplicationConfig = {
             provide: APP_DATE_TIME_FORMAT_CONFIG,
             useValue: { afterFormat: DateUtil.afterFormat }
         },
+
+        LocaleSrv, // "1-Srv"
+        provideAppInitializer(() => {
+            const localeSrv = inject(LocaleSrv);
+            const translate = inject(TranslateService);
+
+            // Download translations before starting the application.
+            translate.addLangs(localeSrv.localeList);
+            translate.setDefaultLang(localeSrv.localeDefault);
+
+            const localeFromLocalStorage = localeSrv.getFromLocalStorage();
+            const value = localeSrv.findLocale(localeSrv.localeList, localeFromLocalStorage || NavigatorUtil.getBrowserLocale() || null)
+                || null;
+            if (environment.logLevel > 0) { console.info(`provideAppInitializer(localeSrv) locale.setLocale(${value});`); }
+            return localeSrv.setLocale(value);
+        }),
+        RedirectSrv,
+        SessionSrv,
+        UserSrv,
+        provideAppInitializer(() => {
+            const redirectSrv: RedirectSrv = inject(RedirectSrv);
+            const router = inject(Router);
+            const sessionSrv = inject(SessionSrv);
+            const userSrv = inject(UserSrv);
+
+            const currentRoute = window.location.pathname;
+            const isAuthentRequired = AUTHENT_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
+            const isAuthentDenied = AUTHENT_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
+            const isNotAuthentDeniedAndHasAccessToken = !isAuthentDenied && !!sessionSrv.getAccessToken();
+            if (environment.logLevel > 0) {
+                const s1 = `isNotAuthentDeniedAndHasAccessToken: ${isNotAuthentDeniedAndHasAccessToken}`;
+                console.info(`provideAppInitializer(userSrv) isAuthentRequired: ${isAuthentRequired}, ${s1}`);
+            }
+
+            if (isAuthentRequired || isNotAuthentDeniedAndHasAccessToken) {
+                if (environment.logLevel > 0) { console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...`); }
+                return userSrv.getCurrentUser()
+                    .then((response: UserDto | HttpErrorResponse | undefined) => {
+                        const user = response as UserDto;
+                        if (environment.logLevel > 0) {
+                            console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...Ok`
+                                + ` user.id: ${user.id}, user.nickname: ${user.nickname} `);
+                        }
+                        sessionSrv.setUser(user);
+                        return Promise.resolve();
+                    })
+                    .catch((err: HttpErrorResponse) => {
+                        if (isNotAuthentDeniedAndHasAccessToken) {
+                            // Save the link address to navigate to after login.
+                            redirectSrv.setUrlAfterLogin(window.location.pathname);
+                            window.setTimeout(() => router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
+                        }
+                    });
+            } else {
+                return Promise.resolve();
+            }
+
+        }),
+        // Represents the default options for form fields.
+        {
+            provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+            useValue: appFormFieldDefaultOptions
+        },
         importProvidersFrom(MatDialogModule, MatSnackBarModule),
         {
-            provide: APP_INITIALIZER,
-            deps: [InitializationService],
-            useFactory: INITIALIZE_AUTHENTICATION_USER_FACTORY,
-            multi: true,
-        },
-        {
-            provide: APP_INITIALIZER,
-            deps: [InitializationService],
-            useFactory: INITIALIZE_TRANSLATE_FACTORY,
-            multi: true,
-        },
-        { // Handling the error "Loading chunk [\d]+ failed"
-            provide: ErrorHandler,
-            useClass: AppErrorHandler
-        },
-        {
-            provide: DialogService,
-            useFactory: (dialog: MatDialog) => new DialogService(dialog),
+            provide: DialogSrv,
+            useClass: DialogSrv,
             deps: [MatDialog],
         },
     ]

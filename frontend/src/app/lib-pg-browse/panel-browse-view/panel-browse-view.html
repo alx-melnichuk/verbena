@@ -1,0 +1,129 @@
+@if (isLoadStream) {
+  <app-spinner isFillParent></app-spinner>
+}
+
+<div class="pbv-center app-pn-bg">
+  
+  <div [class.pbv-cnt-video]="isStreamVideo"
+    [class.pbv-border]="isStreamVideo">
+    <div pbv-hg100></div>
+    <app-panel-stream-state class="pbv-stream-state"
+      [streamState]="streamDto?.state || null">
+    </app-panel-stream-state>
+  </div>
+
+  <div class="pbv-cnt-sepr"></div>
+
+  <div class="pbv-cnt-footer pbv-border">
+
+    <div class="pbv-cnt-title">
+      <span pbv-mr-2>{{ 'panel-browse-view.title' | translate }}</span>
+      <span>{{ streamDto?.title }}</span>
+    </div>
+
+    <div class="pbv-cnt-brd"></div>
+
+    <div class="pbv-cnt-params">
+        
+      <div class="pbv-cnt-nickname pbv-cnt-prm">
+        @if (!!ownerAvatar) {
+          <img pbv-mr-2 class="pbv-avatar-brd pbv-avatar-img"
+           [src]="ownerAvatar" [alt]="('panel-browse-view.not_found' | translate) + '&ensp;'"
+          />
+        } @else {
+          <div pbv-mr-2 class="pbv-avatar-brd pbv-avatar-smb">{{ ownerNameSymbols }}</div>
+        }
+        <div class="pbv-cnt-name-tags">
+          <div>{{ ownerNickname }}</div>
+          <div class="pbv-cnt-email">{{ ownerEmail }}</div>
+          <div class="pbv-cnt-tags">
+            <span pbv-mr-2>{{ 'panel-browse-view.tags' | translate }}</span>
+            @for (tag of (streamDto?.tags || []); track tag) {
+              <span pbv-mr-2>{{ tag }}</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="pbv-cnt-prm pbv-cnt-actions">
+        <span>{{ 'panel-browse-view.state' | translate }}</span>
+        <span>@if (!!streamDto) {  {{ ('panel-browse-view.' + streamDto.state) | translate }}  }</span>
+        @if (isStreamOwner && streamDto?.state != 'stopped') {
+          <app-panel-stream-actions
+            [state]="streamDto?.state"
+            [title]="streamDto?.title"
+            (changeState)="doChangeState($event)">
+          </app-panel-stream-actions>
+        }
+      </div>
+
+      <div class="pbv-cnt-prm">
+        <app-panel-stream-params
+          [countOfViewer]="countOfViewer"
+          [locale]="localeSrv.getLocale()"
+          [streamStarttime]="streamDto?.starttime"
+          [streamStarted]="streamDto?.started"
+          [streamPaused]="streamDto?.paused"
+          [streamStopped]="streamDto?.stopped"
+          [timerActive]="timerActive"
+          [timerIsShow]="timerIsShow"
+          [timerValue]="timerValue">
+        </app-panel-stream-params>
+      </div>
+
+    </div>
+
+    <div class="pbv-cnt-brd"></div>
+
+    <div class="pbv-cnt-title">
+      <span pbv-mr-2>{{ 'panel-browse-view.descript' | translate }}</span>
+      <span>{{ streamDto?.descript }}</span>
+    </div>
+ 
+  </div>
+    
+</div>
+
+<app-sidebar class="pbv-sidebar" mode="right"
+  [isOpen]="isSidebarRgOpen"
+  (click)="isSidebarRgOpen=(isSidebarRgOpen==false ? true: isSidebarRgOpen)">
+
+  <div sidebar-layer>
+    <button class="pbv-sdb-btn pbv-btn-arrow pbv-btn-rg" (click)="clearEvent($event); isSidebarRgOpen=!isSidebarRgOpen;">
+      <svg class="pbv-arrow pbv-rotate"
+        [class.pbv-0deg]="isSidebarRgOpen"
+        [class.pbv-180deg]="!isSidebarRgOpen">
+        <use href="./lib-pg-browse/panel-browse-view/angle-right-bin.svg#angle-right-bin"></use>
+      </svg>
+    </button>
+  </div>
+
+  <div pbv-hg100 pbv-brd-bx pbv-pl-2>
+    <app-panel-chat class="pbv-sd-chat pbv-sdb-brd pbv-brd-lf"
+      [blockedUsers]="chatBlockedUsers"
+      [deleteIds]="chatDeleteIds"
+      [isBlocked]="chatIsBlocked"
+      [isEditable]="chatIsEditable"
+      [isLoading]="chatIsLoading"
+      [isOwner]="chatIsOwner"  
+      [isReset]="chatIsReset"
+      [itemSetMsg]="chatItemSetMsg"
+      [locale]="localeSrv.getLocale()"
+      [maxLen]="chatMaxLen"
+      [minLen]="chatMinLen"
+      [maxRows]="chatMaxRows"
+      [minRows]="chatMinRows"
+      [maxSizeRows]="chatMaxSizeRows"
+      [nickname]="chatNickname || ''"
+      [title]="'panel-browse-view.chat_title'"
+      (blockUser)="doBlockUser($event)"
+      (unblockUser)="doUnblockUser($event)"
+      (sendMsg)="doSendMessage($event)"
+      (editMsg)="doEditMessage($event)"
+      (cutMsg)="doCutMessage($event)"
+      (rmvMsg)="doRmvMessage($event)"
+      (loadSet)="doLoadSet($event.isAddTop, $event.date, $event.count)">
+    </app-panel-chat>
+
+  </div>
+</app-sidebar>

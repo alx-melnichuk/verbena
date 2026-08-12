@@ -1,4 +1,4 @@
-import { HttpParams } from '@angular/common/http';
+import { HttpParams } from "@angular/common/http";
 
 export class HttpParamsUtil {
 
@@ -21,9 +21,9 @@ export class HttpParamsUtil {
         const keys: string[] = Object.keys(innData);
         for (const key of keys) {
             const value = innData[key];
-            result.push(key + '=' + (typeof value === 'object' ? JSON.stringify(value) : value.toString()));
+            result.push(key + "=" + (typeof value === "object" ? JSON.stringify(value) : value.toString()));
         }
-        return result.join('&');
+        return result.join("&");
     }
 
 }

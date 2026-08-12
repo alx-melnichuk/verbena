@@ -1,0 +1,99 @@
+/*# sourceURL=app.scss */
+
+app-root {
+    --app-footer-hg: 1.75rem;
+    ---brd-wd: 1px;
+
+    display: block;
+    height: 100%;
+    overflow-y: hidden;
+    // If the app-spinner is expanded to full screen, then "position: relative;" should only be present on the root element.
+    position: relative;
+
+    @media screen and (width <=480px) {
+        --app-header-hg: min(18vh, 74px);
+    }
+
+    @media screen and (480px < width <=768px) {
+        --app-header-hg: 68px;
+    }
+
+    @media screen and (768px < width <=1024px) {
+        --app-header-hg: 66px;
+    }
+
+    @media screen and (1024px < width) {
+        --app-header-hg: 64px;
+    }
+
+    @supports not(color: hsl(from white h s l)) {
+        /* safe to use hsl() relative color syntax */
+        --app-is-relative-color: 0;
+    }
+
+    @supports (color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+        .app-pn-bg {
+            --app-pn-bg: color-mix(in srgb, hsl(var(--app-pn-bg-h), 50%, 50%) var(--app-pn-bg-l, 10%), var(--mat-sys-surface));
+            --app-pn-brd: color-mix(in srgb, hsl(var(--app-pn-bg-h), 50%, 50%) var(--app-pn-brd-l, 22%), var(--mat-sys-surface));
+        }
+    }
+
+    @supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+        --app-is-color-mix: 0;
+
+        .app-pn-bg {
+            --app-pn-bg-img:
+                linear-gradient(hsla(var(--app-pn-bg-h), 50%, 50%, var(--app-pn-bg-l, 10%)),
+                    hsla(var(--app-pn-bg-h), 50%, 50%, var(--app-pn-bg-l, 10%))),
+                linear-gradient(var(--mat-sys-surface), var(--mat-sys-surface));
+            --app-pn-brd: hsla(var(--app-pn-bg-h), 50%, 50%, var(--app-pn-brd-l, 22%))
+        }
+    }
+
+    // ---brd-cl: color-mix(in srgb, var(--mat-sys-outline-variant) 70%, transparent);
+    &>app-header {
+        border-bottom: var(---brd-wd) solid var(--mat-sys-surface-variant);
+    }
+
+    &>app-footer {
+        border-top: var(---brd-wd) solid var(--mat-sys-surface-variant);
+    }
+
+    &>main {
+        height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2 * var(---brd-wd));
+    }
+
+    // header                --app-pn-bg-h: 120; // hsl(120, 50%, 50%);  h-is-authorized
+    // header                --app-pn-bg-h:  40; // hsl( 40, 50%, 50%);  h-is-authorized
+    //   background-color: color-mix(in srgb, var(--mat-sys-primary) calc(15% + var(---hdr-dark-mn-sel, 0%)), rgba(0, 0, 0, 0));
+    // footer                --app-pn-bg-h: 120; // hsl(120, 50%, 50%);  f-is-authorized
+    // footer                --app-pn-bg-h:  40; // hsl( 40, 50%, 50%);  f-is-authorized
+    // panel-about           --app-pn-bg-h:  25; // hsl( 25, 50%, 50%);
+
+    // panel-forgot-password --app-pn-bg-h:  55; // hsl( 55, 50%, 50%);
+    // panel-login           --app-pn-bg-h:  40; // hsl( 40, 50%, 50%); unauthoriz
+    // panel-profile         --app-pn-bg-h: 180; // hsl(180, 50%, 50%);
+    // panel-signup          --app-pn-bg-h:  45; // hsl( 45, 50%, 50%); unauthoriz
+
+    // panel-stream-list     --app-pn-bg-h: 220; // hsl(220, 50%, 50%);
+    // panel-stream-list     --app-pn-brd-l: 40%;
+    //   --app-pn-brd: color-mix(in srgb, hsl(220, 50%, 50%) 40%, var(--mat-sys-surface));
+
+    // panel-stream-card     --app-pn-bg-h: 225; // hsl(225, 50%, 50%);
+    // panel-stream-calendar --app-pn-bg-h: 190; // hsl(190, 50%, 50%);
+    //   --psc-pn-sel-bg   : color-mix(in srgb, hsl(190, 50%, 50%) 13%, var(--mat-sys-inverse-primary));
+    //   --psc-pn-emblem-bg: color-mix(in srgb, hsl(190, 50%, 50%) 10%, var(--mat-sys-tertiary-container));
+    // panel-stream-editor   --app-pn-bg-h: 210; // hsl(210, 50%, 50%);
+    // panel-stream-event    --app-pn-bg-h: 215; // hsl(215, 50%, 50%);
+    // panel-stream-info     --app-pn-bg-h: 210; // hsl(210, 50%, 50%);
+    //   ---psi-title-cl: color-mix(in srgb, var(--mat-sys-tertiary) 40%, var(--mat-sys-on-surface));
+
+    // panel-browse-list     --app-pn-bg-h: 230; // hsl(230, 50%, 50%);
+    // panel-browse-list     --app-pn-brd-l: 40%;
+    //   --app-pn-brd: color-mix(in srgb, hsl(230, 50%, 50%) 40%, var(--mat-sys-surface));
+
+    // panel-browse-view     --app-pn-bg-h: 220; // hsl(220, 50%, 50%);
+
+}
+
+// --app-svg-icon-cl: var(--sys-outline);

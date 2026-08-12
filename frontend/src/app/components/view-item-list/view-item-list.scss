@@ -1,0 +1,73 @@
+/*# sourceURL=view-item-list.scss */
+
+app-view-item-list {
+
+    &[hg100] {
+        --vil-hg: 100%;
+    }
+
+    &[wd100] {
+        --vil-wd: 100%;
+    }
+
+    &[vil-h100] {
+        --vil-hg: 100rem;
+    }
+
+    &[vil-h200] {
+        --vil-hg: 200rem;
+    }
+
+    &[vil-w100] {
+        --vil-wd: 100rem;
+    }
+
+    &[vil-w200] {
+        --vil-wd: 200rem;
+    }
+
+    &[vil-col] {
+        --vil-flx-dir: column;
+    }
+
+    &[vil-col-rev] {
+        --vil-flx-dir: column-reverse;
+    }
+
+    &[vil-row] {
+        --vil-flx-dir: row;
+    }
+
+    &[vil-row-rev] {
+        --vil-flx-dir: row-reverse;
+    }
+
+    &[vil-row][vil-flx-wrp],
+    &[vil-row-rev][vil-flx-wrp] {
+        --vil-jst-cnt: space-evenly;
+    }
+
+    &[vil-flx-wrp] {
+        --vil-flx-wrp: wrap;
+    }
+
+    border-radius: var(--vil-brd-rd, inherit);
+    display: block;
+    height: var(--vil-hg);
+    width: var(--vil-wd);
+
+    .vil-container {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: var(--vil-flx-dir, column);
+        flex-wrap: var(--vil-flx-wrp, nowrap);
+        gap: var(--vil-gap);
+        height: 100%;
+        justify-content: var(--vil-jst-cnt, normal);
+        overflow-x: auto;
+        overflow-y: auto;
+        padding: var(--vil-pd);
+        scrollbar-gutter: stable;
+        width: 100%;
+    }
+}

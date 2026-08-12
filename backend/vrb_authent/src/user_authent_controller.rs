@@ -3,15 +3,13 @@ use std::{borrow::Cow, ops::Deref, time::Instant as tm};
 use actix_web::{
     HttpResponse,
     cookie::{Cookie, SameSite, time::Duration as ActixWebDuration},
-    get,
-    http::StatusCode,
-    post, web,
+    get, post, web,
 };
 use log::{Level::Info, error, info, log_enabled};
 use serde_json::json;
 use utoipa;
 use vrb_common::{
-    api_error::{ApiError, code_to_str},
+    api_error::ApiError,
     err,
     validators::{Validator, msg_validation},
 };
@@ -106,6 +104,7 @@ pub async fn users_uniqueness(
     // Check if the nickname and email parameters are specified.
     if nickname.len() == 0 && email.len() == 0 {
         let json = serde_json::json!({ "nickname": "null", "email": "null" });
+        error!("{}.{}; {}", 406, err::MSG_PARAMS_NOT_SPECIFIED, json.to_string());
         return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json));
     }
@@ -120,7 +119,10 @@ pub async fn users_uniqueness(
             // Search for "nickname" or "email" in the "users" table.
             let opt_user = user_orm2
                 .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
-                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                .map_err(|e| {
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                    ApiError::create(507, err::MSG_DATABASE, &e) // 507  
+                })
                 .ok()?;
             // If such an entry exists in the "users" table, then exit.
             if let Some(user) = opt_user {
@@ -130,7 +132,10 @@ pub async fn users_uniqueness(
         if res_search.is_none() {
             let opt_user_registr = user_registr_orm2
                 .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
-                .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                .map_err(|e| {
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                    ApiError::create(507, err::MSG_DATABASE, &e) // 507  
+                })
                 .ok()?;
             // If such an entry exists in the "user_registrs" table, then exit.
             if let Some(user_registr) = opt_user_registr {
@@ -141,7 +146,7 @@ pub async fn users_uniqueness(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
@@ -212,9 +217,9 @@ fn get_login_user_profile() -> LoginUserProfileDto {
         ( status = 422, description = "Token encoding error.", body = ApiError,
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::new(506, "Error while blocking process."))),
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
-            example = json!(ApiError::new(507, "Error while querying the database."))),
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
 )]
 #[post("/api/login")]
@@ -228,7 +233,7 @@ pub async fn login(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors)); // 417
+        error!("{}.{}", 417, msg_validation(&validation_errors)); // 417
         return Ok(ApiError::to_response(&ApiError::validations(validation_errors)));
     }
 
@@ -243,30 +248,30 @@ pub async fn login(
         let existing_user = user_orm2
             .find_user_by_nickname_or_email(Some(&nickname), Some(&email), true)
             .map_err(|e| {
-                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
         existing_user
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
     let user_pwd = opt_user_pwd.ok_or_else(|| {
-        error!("{}-{}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_WRONG_NICKNAME_EMAIL);
+        error!("{}.{}", 401, err::MSG_WRONG_NICKNAME_EMAIL);
         ApiError::new(401, err::MSG_WRONG_NICKNAME_EMAIL) // 401(f)
     })?;
 
     let user_password = user_pwd.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::CONFLICT), err::MSG_INVALID_HASH, &e);
+        error!("{}.{}; {}", 409, err::MSG_INVALID_HASH, &e);
         ApiError::create(409, err::MSG_INVALID_HASH, &e) // 409
     })?;
 
     if !password_matches {
-        error!("{}-{}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_PASSWORD_INCORRECT);
+        error!("{}.{}", 401, err::MSG_PASSWORD_INCORRECT);
         return Err(ApiError::new(401, err::MSG_PASSWORD_INCORRECT)); // 401(g)
     }
 
@@ -276,25 +281,25 @@ pub async fn login(
 
     // Packing two parameters (user_id, num_token) into access_token.
     let access_token = token_coding::encode_token(user_pwd.id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        error!("{}.{}; {}", 422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     // Packing two parameters (user_id, num_token) into refresh_token.
     let refresh_token = token_coding::encode_token(user_pwd.id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        error!("{}.{}; {}", 422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     let res_session_profile = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
         let res_session = user_orm.modify_session(user_pwd.id, Some(num_token)).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
 
         let res_profile = user_orm.get_profile_by_id(user_pwd.id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
 
@@ -302,21 +307,21 @@ pub async fn login(
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_session = res_session_profile.0?;
     if opt_session.is_none() {
         let msg = format!("user_id: {}", user_pwd.id);
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg);
+        error!("{}.{}; {}", 406, err::MSG_SESSION_NOT_FOUND, &msg);
         return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg)); // 406
     }
 
     let opt_profile = res_session_profile.1?;
     if opt_profile.is_none() {
         let msg = format!("user_id: {}", user_pwd.id);
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_PROFILE_NOT_FOUND, &msg);
+        error!("{}.{}; {}", 406, err::MSG_PROFILE_NOT_FOUND, &msg);
         return Err(ApiError::create(406, err::MSG_PROFILE_NOT_FOUND, &msg)); // 406
     }
     let profile = opt_profile.unwrap();
@@ -375,9 +380,9 @@ pub async fn login(
         (status = 406, description = "Error session not found.", body = ApiError,
             example = json!(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, "user_id: 1"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::new(506, "Error while blocking process."))),
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
-            example = json!(ApiError::new(507, "Error while querying the database."))),
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = []))
 )]
@@ -392,20 +397,20 @@ pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
         let res_session = user_orm.modify_session(user.id, None).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_session
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
     if opt_session.is_none() {
         let msg = format!("user_id: {}", user.id);
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg);
+        error!("{}.{}; {}", 406, err::MSG_SESSION_NOT_FOUND, &msg);
         return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg)); // 406
     }
 
@@ -459,9 +464,9 @@ pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp
         (status = 422, description = "Token encoding error.", body = ApiError,
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::new(506, "Error while blocking process."))),
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
-            example = json!(ApiError::new(507, "Error while querying the database."))),
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
 )]
 #[post("/api/token")]
@@ -479,7 +484,7 @@ pub async fn update_token(
 
     // Get user ID.
     let (user_id, num_token) = token_coding::decode_token(&token, jwt_secret).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+        error!("{}.{}; {}", 401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
         ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
     })?;
 
@@ -488,21 +493,21 @@ pub async fn update_token(
     let opt_session = web::block(move || {
         // Find a session for a given user.
         let existing_session = user_orm2.get_session_by_id(user_id).map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         existing_session
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
     let session = opt_session.ok_or_else(|| {
         // There is no session for this user.
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg);
+        error!("{}.{}; {}", 406, err::MSG_SESSION_NOT_FOUND, &msg);
         ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg) // 406
     })?;
 
@@ -512,8 +517,8 @@ pub async fn update_token(
     if session_num_token != num_token {
         // If they do not match, then this is an error.
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401
-        return Err(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg));
+        error!("{}.{}; {}", 401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg);
+        return Err(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg)); // 401
     }
 
     let num_token = token_coding::generate_num_token();
@@ -522,13 +527,13 @@ pub async fn update_token(
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = token_coding::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        error!("{}.{}; {}", 422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = token_coding::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        error!("{}.{}; {}", 422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
@@ -537,22 +542,22 @@ pub async fn update_token(
         #[rustfmt::skip]
         let existing_session = user_orm.modify_session(user_id, Some(num_token))
         .map_err(|e| {
-            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         existing_session
     })
     .await
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
     if opt_session.is_none() {
         // There is no session for this user.
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg); // 406
-        return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg));
+        error!("{}.{}; {}", 406, err::MSG_SESSION_NOT_FOUND, &msg);
+        return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg)); // 406
     }
 
     let token_user_response_dto = UserTokenResponseDto {
@@ -584,11 +589,11 @@ pub mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
 
-    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, status: u16, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.status, status);
             assert_eq!(app_err.message, msg.to_string());
         }
     }

@@ -1,0 +1,27 @@
+/*# sourceURL=field-input.scss */
+
+app-field-input {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    &[fi-no-pd-hint-error] {
+
+        .mat-mdc-form-field-hint-wrapper,
+        .mat-mdc-form-field-error-wrapper {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+}

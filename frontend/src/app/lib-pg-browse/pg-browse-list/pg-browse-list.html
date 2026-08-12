@@ -1,0 +1,15 @@
+<app-panel-browse-list
+  [isLive]="isLive"
+  [locale]="localeSrv.getLocale()"
+  [popTagIsLoading]="popTagIsLoading"
+  [popTagList]="popTagList"
+  [strmCrdIsLoading]="strmCrdIsLoading"
+  [strmCrdIsReset]="strmCrdIsReset"
+  [strmCrdItemPage]="strmCrdItemPage"
+  [strmCrdMaxSizeRows]="strmCrdMaxSizeRows"
+  [strmCrdRowsOnPage]="strmCrdRowsOnPage"
+  [tag]="tag"
+  [deleteIds]="strmDeleteIds"
+  (loadStrmCrdPage)="doLoadStrmCrdPage($event.isLive, $event.tag, $event.page, $event.isReset)"
+  (actionView)="doActionView($event)">
+</app-panel-browse-list>

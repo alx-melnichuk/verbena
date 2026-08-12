@@ -7,7 +7,7 @@ AS $$
 DECLARE
   idx INTEGER := 0;
   name_list VARCHAR[];
-  nick VARCHAR := '';
+  user_nick VARCHAR := '';
 BEGIN
   RAISE NOTICE 'Start';
   name_list := ARRAY[
@@ -18,23 +18,25 @@ BEGIN
    
   idx := ARRAY_LENGTH(name_list, 1);
   WHILE idx > 0 LOOP
-    nick = LOWER(name_list[idx]);
-    RAISE NOTICE 'name_list[idx]: %, nick: %', name_list[idx], nick;
+    user_nick = LOWER(name_list[idx]);
+    RAISE NOTICE 'name_list[idx]: %, user_nick: %', name_list[idx], user_nick;
 
-    DELETE FROM users WHERE nickname = nick;
+    DELETE FROM users WHERE nickname = user_nick;
 
     idx := idx - 1;
   END LOOP;
 
   SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 1) FROM users)) INTO idx;
   RAISE NOTICE 'users_id_seq: %', idx;
+
   SELECT setval('streams_id_seq', (SELECT COALESCE(MAX(id), 1) FROM streams)) INTO idx;
   RAISE NOTICE 'streams_id_seq: %', idx;
+
   SELECT setval('stream_tags_id_seq', (SELECT COALESCE(MAX(id), 1) FROM stream_tags)) INTO idx;
   RAISE NOTICE 'stream_tags_id_seq: %', idx;
+
   SELECT setval('link_stream_tags_to_streams_id_seq', (SELECT COALESCE(MAX(id), 1) FROM link_stream_tags_to_streams)) INTO idx;
   RAISE NOTICE 'link_stream_tags_to_streams_id_seq: %', idx;
-
 END;
 $$;
 

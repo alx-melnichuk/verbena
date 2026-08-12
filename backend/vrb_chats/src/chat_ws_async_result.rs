@@ -1,9 +1,7 @@
-
 // * * * * Handler for asynchronous response to the "error" command. * * * *
 
 pub struct AsyncResultError(
-    pub u16,    // err
-    pub String, // code
+    pub u16,    // status
     pub String, // message
 );
 

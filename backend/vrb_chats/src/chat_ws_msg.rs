@@ -4,10 +4,7 @@ use actix_web::http::StatusCode;
 use actix_web_actors::ws;
 use log::debug;
 use serde_json::to_string;
-use vrb_common::{
-    api_error::{ApiError, code_to_str},
-    err,
-};
+use vrb_common::{api_error::ApiError, err};
 
 use crate::{
     chat_event_ws::{EWSType, ErrEWS, EventWS, MsgEWS, MsgRmvEWS},
@@ -110,12 +107,12 @@ pub trait ChatWsMsg {
             // Create a new user message in the chat.
             let result = execute_create_chat_message(stream_id, user_id, &msg, fn_chat_msg).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+                return addr.do_send(AsyncResultError(err.status, err.message.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
                 let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
+                return addr.do_send(AsyncResultError(StatusCode::NOT_FOUND.as_u16(), message.to_string())); // 404
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
@@ -154,12 +151,12 @@ pub trait ChatWsMsg {
             // Change a user's message in a chat.
             let result = execute_modify_chat_message(id, user_id, &msg_cut, fn_chat_msg).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+                return addr.do_send(AsyncResultError(err.status, err.message.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
                 let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
+                return addr.do_send(AsyncResultError(StatusCode::NOT_FOUND.as_u16(), message.to_string())); // 404
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
@@ -201,12 +198,12 @@ pub trait ChatWsMsg {
             // Change a user's message in a chat.
             let result = execute_modify_chat_message(id, user_id, &msg_put, fn_chat_msg).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+                return addr.do_send(AsyncResultError(err.status, err.message.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
                 let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
+                return addr.do_send(AsyncResultError(StatusCode::NOT_FOUND.as_u16(), message.to_string())); // 404
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
@@ -244,12 +241,12 @@ pub trait ChatWsMsg {
             // Delete a user's message in a chat.
             let result = execute_delete_chat_message(msg_rmv, user_id, fn_chat_msg).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+                return addr.do_send(AsyncResultError(err.status, err.message.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
                 let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, msg_rmv, user_id);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
+                return addr.do_send(AsyncResultError(StatusCode::NOT_FOUND.as_u16(), message.to_string())); // 404
             }
             // Send the "AsyncResultSendText" command for execution.
             addr.do_send(AsyncResultSendText(room_id, to_string(&MsgRmvEWS { msg_rmv }).unwrap()));

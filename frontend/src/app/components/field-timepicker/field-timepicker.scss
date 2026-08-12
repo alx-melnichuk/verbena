@@ -1,0 +1,31 @@
+/*# sourceURL=field-timepicker.scss */
+
+app-field-timepicker {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    &[ftp-no-pd-hint-error] {
+
+        .mat-mdc-form-field-hint-wrapper,
+        .mat-mdc-form-field-error-wrapper {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+
+    .mat-mdc-form-field-infix {
+        width: 7rem;
+    }
+}

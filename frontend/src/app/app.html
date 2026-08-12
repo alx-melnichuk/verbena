@@ -1,0 +1,16 @@
+<app-header
+  [currentRoute]="currentRoute"
+  [locale]="localeSrv.getLocale()"
+  [user]="sessionSrv.getUser()"
+  [currentScheme]="colorSchemeSrv.getSchemeLightName()"
+  (command)="doCommand($event)">
+</app-header>
+<main>
+  <ng-container #outlet [ngTemplateOutlet]="content">
+  </ng-container>
+</main>
+<app-footer [isAuthorized]="!!sessionSrv.getUser()"></app-footer>
+
+<ng-template #content>
+  <router-outlet></router-outlet>
+</ng-template>

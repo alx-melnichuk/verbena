@@ -13,10 +13,7 @@ pub mod tests {
         config_jwt,
         user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
     };
-    use vrb_common::{
-        api_error::{ApiError, code_to_str},
-        consts, env_var, err,
-    };
+    use vrb_common::{api_error::ApiError, consts, env_var, err};
     use vrb_tools::png_files;
 
     use crate::{
@@ -60,7 +57,7 @@ pub mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
+        assert_eq!(app_err.status, StatusCode::RANGE_NOT_SATISFIABLE.as_u16());
         #[rustfmt::skip]
         let msg = format!("{}; `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, profile_id_bad);
         assert_eq!(app_err.message, msg);

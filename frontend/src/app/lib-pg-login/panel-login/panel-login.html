@@ -1,0 +1,47 @@
+<div class="pl-content app-pn-bg">
+  <form novalidate class="pl-form" [formGroup]="formGroup">
+  
+    <div class="pl-title">{{ 'panel-login.title' | translate }}</div>
+    
+    <app-field-input wd100 pl-mt-2
+      [type]="isEmail ? 'email' : 'text'"
+      formControlName="nickname"
+      [isRequired]="true"
+      [kind]="isEmail ? 'email' : 'nickname'"
+      label="panel-login.email_or_nickname"
+      [maxLen]="isEmail ? cn_email.maxLength : cn_nickname.maxLength"
+      [minLen]="isEmail ? cn_email.minLength : cn_nickname.minLength"
+      [pattern]="isEmail ? '' : cn_nickname.pattern"
+      (input)="changeType($event['target']);updateErrMsgObjs();"
+      (focusout)="nicknameFocusout()">
+    </app-field-input>
+  
+    <app-field-password wd100 pl-mt-4
+      formControlName="password"
+      [isRequired]="true"
+      label="panel-login.password_label"
+      [maxLen]="cn_password.maxLength"
+      [minLen]="cn_password.minLength"
+      [pattern]="cn_password.pattern"
+      (input)="updateErrMsgObjs()">
+    </app-field-password>
+    
+    <button matButton="elevated" pl-mt-4 class="mat-primary stl-btn-brd"
+      [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
+      (click)="doLogin()">
+      {{ 'panel-login.btn_login' | translate }}
+    </button>
+    
+    <div pl-mt-4 class="pl-note">
+      <a no-decor routerLink="{{linkSignup}}">{{ 'panel-login.create_an_account' | translate }}</a>
+      <a no-decor routerLink="{{linkForgotPassword}}">{{ 'panel-login.forgot_password' | translate }}</a>
+    </div>
+  </form>
+  
+  <div class="mat-mdc-form-field-subscript-wrapper">
+    @for (errMsgObj of errMsgObjs; track errMsgObj.msg) {        
+      <mat-error>{{ errMsgObj.msg | translate: errMsgObj.obj }}</mat-error>
+    }
+  </div>
+</div>
+  

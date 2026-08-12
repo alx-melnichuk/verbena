@@ -1,0 +1,39 @@
+<app-panel-browse-view
+  [chatBlockedUsers]="chatBlockedUsers"
+  [chatDeleteIds]="chatDeleteIds"
+  [chatIsBlocked]="chatSocketSrv.isBlocked()"
+  [chatIsEditable]="!!user?.id && chatIsEditable && chatSocketSrv.isJoined()"
+  [chatIsLoading]="chatIsLoading"
+  [chatIsOwner]="isStreamOwner"
+  [chatIsReset]="chatIsReset"
+  [chatItemSetMsg]="chatItemSetMsg"
+  [chatMaxLen]="chatCnMsg.maxLength"
+  [chatMinLen]="chatCnMsg.minLength"
+  [chatMaxRows]="chatCnMsg.maxRows"
+  [chatMinRows]="chatCnMsg.minRows"
+  [chatMaxSizeRows]="chatMaxSizeRows"
+  [chatNickname]="user?.nickname || null"
+
+  [countOfViewer]="chatSocketSrv.countOfMembers"
+  [isLoadStream]="isLoadStream"
+  [isStreamOwner]="isStreamOwner"
+
+  [ownerAvatar]="userShortDto?.avatar"
+  [ownerEmail]="userShortDto?.email"
+  [ownerNickname]="userShortDto?.nickname"
+
+  [streamDto]="streamDto"
+  [timerActive]="timerActive"
+  [timerIsShow]="timerIsShow"
+  [timerValue]="timerValue"
+
+  (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
+  (blockUser)="doModifyBlockUser(isStreamOwner, true, $event)"
+  (unblockUser)="doModifyBlockUser(isStreamOwner, false, $event)"
+  (sendMessage)="doSendMessage($event)"
+  (editMessage)="doEditMessage($event)"
+  (cutMessage)="doCutMessage($event)"
+  (rmvMessage)="doRmvMessage($event)"
+  (loadSet)="doLoadSet($event.isAddTop, $event.date, $event.count)"
+  >
+</app-panel-browse-view>

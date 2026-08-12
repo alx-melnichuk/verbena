@@ -1,0 +1,38 @@
+/*# sourceURL=field-textarea.scss */
+
+app-field-textarea {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    &[scroll-thin] {
+        textarea.ft-textarea {
+            scrollbar-width: thin;
+        }
+    }
+
+    &[ft-no-pd-hint-error] {
+
+        .mat-mdc-form-field-hint-wrapper,
+        .mat-mdc-form-field-error-wrapper {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+
+    /*https://github.com/angular/components/issues/26233#issuecomment-2548168388*/
+    .mat-mdc-input-element {
+        font: inherit;
+    }
+}

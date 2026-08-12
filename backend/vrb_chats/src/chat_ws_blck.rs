@@ -3,10 +3,7 @@ use actix_web::http::StatusCode;
 use actix_web_actors::ws;
 use log::debug;
 use serde_json::to_string;
-use vrb_common::{
-    api_error::{ApiError, code_to_str},
-    err,
-};
+use vrb_common::{api_error::ApiError, err};
 
 use crate::{
     chat_event_ws::{BlockEWS, EWSType, ErrEWS, EventWS, UnblockEWS},
@@ -98,12 +95,12 @@ pub trait ChatWsBlck {
             // Perform blocking/unblocking of a user.
             let result = execute_block_user(is_block, user_id, None, Some(block_name), fn_block_user).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
+                return addr.do_send(AsyncResultError(err.status, err.message.to_string()));
             }
             let opt_blocked_user = result.unwrap();
             if opt_blocked_user.is_none() {
                 let message = format!("{}; blocked_nickname: '{}'", err::MSG_USER_NOT_FOUND, &blocked_nickname);
-                return addr.do_send(AsyncResultError(404, code_to_str(StatusCode::NOT_FOUND), message.to_string()));
+                return addr.do_send(AsyncResultError(StatusCode::NOT_FOUND.as_u16(), message.to_string())); // 404
             }
             let blocked_user = opt_blocked_user.unwrap();
             let blocked_name = blocked_user.nickname.clone();

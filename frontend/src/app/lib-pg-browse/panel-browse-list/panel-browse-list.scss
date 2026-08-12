@@ -1,0 +1,122 @@
+/*# sourceURL=panel-browse-list.scss */
+
+app-panel-browse-list {
+    --app-pn-bg-h: 230; // hsl(230, 50%, 50%);
+    --app-pn-brd-l: 40%;
+
+    container: cnt-browse-list / inline-size;
+    display: block;
+    height: 100%;
+    padding: 0 0.25rem;
+
+    [pbl-m-2] {
+        margin: 0.5rem;
+    }
+
+    .pbl-container {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: center;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 80rem; // 1280px
+    }
+
+    // ** **
+
+    @container cnt-browse-list (width < 568px) {
+        .pbl-container {
+            --psc-wd: 100%; // 1 columns
+        }
+    }
+
+    @container cnt-browse-list (568px <=width) and (width < 848px) {
+        .pbl-container {
+            --psc-wd: 48.21%; // 2 columns
+        }
+    }
+
+    @container cnt-browse-list (848px <=width) and (width < 1120px) {
+        .pbl-container {
+            --psc-wd: 31.76%; // 3 columns
+        }
+    }
+
+    @container cnt-browse-list (1120px <=width) and (width < 1280px) {
+        .pbl-container {
+            --psc-wd: 23.23%; // 4 columns
+        }
+    }
+
+    // ** border **
+    .pbl-border {
+        border: 2px solid var(--app-pn-brd);
+        border-radius: 1rem;
+        box-sizing: border-box;
+        box-shadow: var(--pbl-pn-sh, 0px 1px 2px 1px rgba(0, 0, 0, 0.25));
+    }
+
+    .pbl-search {
+        margin: 0.25rem 0.15rem;
+    }
+
+    .pbl-srch-form {
+        align-items: baseline;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 0.25rem;
+    }
+
+    .pbl-is-live {
+        --mat-slide-toggle-label-text-size: 1rem;
+    }
+
+    .pbl-srch-form-inpt {
+        min-width: 12rem;
+        width: 15rem;
+    }
+
+    .pbl-srch-btn {
+        min-width: 7rem;
+    }
+
+    .pbl-pop-tag-wrap {
+        padding: 0 0 0.25rem 0;
+    }
+
+    .pbl-pop-tags {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .pbl-pop-tag {
+        align-items: center;
+        border: 1px solid var(--mat-sys-outline);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        display: flex;
+        font-size: calc(1rem - 2px);
+        flex-direction: row;
+        height: 2rem;
+        justify-content: center;
+        margin: 0.25rem 0 0.25rem 0.5rem;
+        padding: 0 0.75rem;
+        text-wrap-mode: nowrap;
+    }
+
+    .pbl-active-tag {
+        font-weight: 700;
+    }
+
+    // Section: stream cards
+    .pbl-card-list {
+        --vil-gap: 0.5rem;
+        --psc-mx-wd: calc(var(--psc-wd) + 3%);
+        overflow-y: hidden;
+    }
+}

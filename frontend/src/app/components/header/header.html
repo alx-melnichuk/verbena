@@ -1,0 +1,88 @@
+<mat-toolbar class="app-pn-bg">
+  <i class="h-icon-bg h-logo-mini"></i>
+  <span h-ml-2></span>
+  <h4 h-ml-2 class="h-logo-text">{{ 'app.name' | translate }}</h4>
+  <span h-ml-2></span>
+  
+  @for (mainMenuItem of mainMenuItems; track mainMenuItem.name) {
+    <a no-decor no-color mat-button class="h-elem-menu"
+      routerLink="{{ mainMenuItem.link }}"
+      routerLinkActive="h-selected"
+      ariaCurrentWhenActive="page">
+      {{ ('main_menu.' + mainMenuItem.name) | translate }}
+    </a>
+  }
+
+  <span class="h-spacer"></span>
+  
+  @if (!!user) {
+    <button mat-button [matMenuTriggerFor]="mainMenu" class="h-nickname-btn">
+      <span class="h-nickname">{{ nickname }}</span>
+    </button>
+    <button mat-button [matMenuTriggerFor]="mainMenu" class="h-avatar-btn">
+      <app-image i-shd class="h-avatar" [srcImg]="user.avatar">
+        <div img-is-missing class="h-img-smb">{{ userNameSymbols }}</div>
+      </app-image>
+    </button>
+  } @else {
+    <button mat-icon-button [matMenuTriggerFor]="mainMenu">
+      <svg class="h-svg-more-vert">
+        <use href="./components/header/more-vert.svg#more-vert"></use>
+      </svg>
+    </button>
+  }
+  
+</mat-toolbar>
+  
+  
+  
+<mat-menu #mainMenu="matMenu" class="h-menu-panel" xPosition="before">
+  @for (panelMenuItem of panelMenuItems; track panelMenuItem.name) {
+    <button mat-menu-item class="pn-menu-item" routerLink="{{ panelMenuItem.link }}">
+      <span class="mm-icon" [ngClass]="[('mm-' + panelMenuItem.name) ]"></span>
+      <span mm-ml-2>{{ ('main_menu.' + panelMenuItem.name) | translate }}</span>
+    </button>
+  }
+  @if (isShowTheme) {
+    <button mat-menu-item class="pn-item-menu" [matMenuTriggerFor]="themes">
+      <span class="mm-icon mm-theme"></span>
+      <span mm-ml-2>{{ 'main_menu.theme' | translate }}</span>
+    </button>
+  }
+  @if (isShowLocale) {
+    <button mat-menu-item class="pn-item-menu" [matMenuTriggerFor]="locales">
+      <span class="mm-icon mm-locale"></span>
+      <span mm-ml-2>{{ 'main_menu.locale' | translate }}</span>
+    </button>
+  }
+  @if (isShowLogout && !!user) {
+    <button mat-menu-item class="pn-item-menu" (click)="doLogout()">
+      <span class="mm-icon mm-log-out"></span>
+      <span mm-ml-2>{{ 'main_menu.log_out' | translate }}</span>
+    </button>
+  }
+</mat-menu>
+  
+<mat-menu #themes="matMenu" class="h-menu-panel">
+  @for (schemeItem of colorSchemeList; track schemeItem) {
+    <button mat-menu-item [value]="schemeItem"
+      class="pn-item-menu mm-menu-btn"
+      [class.mm-curr]="currentScheme == schemeItem"
+      (click)="doSetColorScheme(schemeItem)">
+      <span>{{ ('theme.' + schemeItem) | translate }}</span>
+      <span class="mm-menu-item-min" [class.mm-check]="currentScheme == schemeItem"></span>
+    </button>
+  }
+</mat-menu>
+  
+<mat-menu #locales="matMenu" class="h-menu-panel">
+  @for (localeItem of localeList; track localeItem) {
+    <button mat-menu-item class="pn-item-menu mm-menu-btn"
+      [class.mm-curr]="locale == localeItem"
+      [value]="localeItem"
+      (click)="doSetLocale(localeItem)">
+      <span>{{ ('locale.' + localeItem) | translate }}</span>
+      <span class="mm-menu-item-min" [class.mm-check]="locale == localeItem"></span>
+    </button>
+  }
+</mat-menu>

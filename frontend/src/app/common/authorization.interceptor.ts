@@ -1,60 +1,59 @@
-import { Injectable } from '@angular/core';
-import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { Observable, throwError, Subject } from 'rxjs';
-import { catchError, switchMap, take } from 'rxjs/operators';
+import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse } from "@angular/common/http";
+import { Injectable, inject } from "@angular/core";
+import { Router } from "@angular/router";
+import { Subject, Observable, catchError, throwError, take, switchMap } from "rxjs";
+import { environment } from "../../environments/environment";
+import { TokenUpdate, UserTokenResponseDto } from "../lib-user/user-dto";
+import { UserSrv } from "../lib-user/user-srv";
+import { LIST_PUBLIC_METHODS } from "./public-methods";
+import { ROUTE_LOGIN } from "./routes";
+import { SessionSrv } from "./session-srv";
+import { Uri } from "./uri";
 
-import { ProfileService } from '../lib-profile/profile.service';
-import { TokenUpdate } from '../lib-profile/profile-api.interface';
 
-import { ENV_IS_PROD } from './constants';
-import { LIST_PUBLIC_METHODS } from './public-methods';
-import { ROUTE_LOGIN } from './routes';
-import { Uri } from './uri';
+const CN_BEARER = "Bearer ";
 
-const CN_BEARER = 'Bearer ';
-
-// @Injectable()
 @Injectable({
-    providedIn: 'root',
+    providedIn: "root",
 })
 export class AuthorizationInterceptor implements HttpInterceptor {
+    private router: Router = inject(Router);
+    private sessionSrv: SessionSrv = inject(SessionSrv);
+    private userSrv: UserSrv = inject(UserSrv);
+
     private refreshTokenInProgress = false;
     private refreshTokenSubject: Subject<boolean> = new Subject();
     // List of public methods that do not require authorization.
     private listPublicMethods: { [key: string]: string } = LIST_PUBLIC_METHODS;
-    private tokenUpdateSrv: TokenUpdate;
+    private tokenUpdateSrv: TokenUpdate = this.userSrv;
 
-    constructor(
-        private router: Router,
-        private profileService: ProfileService,
-    ) {
-        if (!ENV_IS_PROD) { console.log(`#3-AuthorizationInterceptor();`); }
-        this.tokenUpdateSrv = this.profileService;
+    constructor() {
+        if (environment.logLevel > 0) { console.info(`AuthorizationInterceptor(); // 4 service`); }
     }
 
     intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
         request = this.addAuthenticationToken(request);
 
         return next.handle(request).pipe(
-            // tap((evt) => console .log('evt=', evt)),
+            // tap((evt) => console .log("evt=", evt)),
             catchError((error: HttpErrorResponse) => {
                 // If an error occurs when updating the token, then redirect to the login page.
-                if (this.refreshTokenInProgress && this.tokenUpdateSrv.isCheckRefreshToken(request.method, request.url)) {
+                if (this.refreshTokenInProgress && this.isCheckRefreshToken(request.method, request.url)) {
                     // Clear the authorization token value.
-                    this.profileService.setProfileDto();
-                    this.profileService.setUserTokensDto();
+                    this.sessionSrv.removeUserTokens();
+                    this.sessionSrv.removeUser();
                     // And you need to go to the "login" tab.
                     window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
                     return throwError(() => error);
                 }
+                const refreshToken = this.sessionSrv.getRefreshToken();
                 // 401 Unauthorized, 403 Forbidden
-                if (error?.status == 401 && this.tokenUpdateSrv.isExistRefreshToken()) {
+                if (error?.status == 401 && !!refreshToken) {
                     // the errors will most likely occur because we have an expired token that we need to refresh.
                     if (!this.refreshTokenInProgress) {
                         this.refreshTokenInProgress = true;
                         // Get a new token.
-                        this.refreshAccessToken()
+                        this.refreshAccessToken(refreshToken)
                             .then(() => this.refreshTokenSubject.next(true))
                             .catch((error) => this.refreshTokenSubject.error(error))
                             // When the call to refreshToken completes we reset the "refreshTokenInProgress" to false
@@ -73,20 +72,34 @@ export class AuthorizationInterceptor implements HttpInterceptor {
 
     // ** Private **
 
+    private isCheckRefreshToken(method: string, url: string): boolean {
+        return method === "POST" && url === Uri.appUri("appApi://token");
+    }
+
     private addAuthenticationToken(request: HttpRequest<any>): HttpRequest<any> {
-        const accessToken = this.tokenUpdateSrv.getAccessToken();
+        const accessToken = this.sessionSrv.getAccessToken();
         // If the call is to an external domain, then the token is not added.
-        let isNotIncludes = !request.url.includes(Uri.appUri('appApi://'));
+        let isNotIncludes = !request.url.includes(Uri.appUri("appApi://"));
         let publicMethod = this.listPublicMethods[request.url];
         if (!accessToken || isNotIncludes || publicMethod === request.method) {
             return request;
         }
-        return request.clone({ setHeaders: { 'Authorization': CN_BEARER + accessToken } });
+        return request.clone({ setHeaders: { "Authorization": CN_BEARER + accessToken } });
     }
 
-    private refreshAccessToken(): Promise<void> {
-        return this.tokenUpdateSrv.refreshToken()
-            .then(() => Promise.resolve())
-            .catch((error) => Promise.reject(error));
+    private refreshAccessToken(refreshToken: string): Promise<void> {
+        return this.tokenUpdateSrv.refreshToken(refreshToken)
+            .then((response: UserTokenResponseDto | HttpErrorResponse | undefined) => {
+                const res = response as UserTokenResponseDto;
+                this.sessionSrv.setUserTokens(res.accessToken, res.refreshToken);
+                if (environment.logLevel > 0) { console.info(`refreshAccessToken successful`); }
+                return Promise.resolve();
+            })
+            .catch((err: HttpErrorResponse) => {
+                if (environment.logLevel > 0) { console.info(`refreshAccessToken err:`, err); }
+                this.sessionSrv.removeUserTokens();
+                this.sessionSrv.removeUser();
+                return Promise.reject(err);
+            });
     }
 }

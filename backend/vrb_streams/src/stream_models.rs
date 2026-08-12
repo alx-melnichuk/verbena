@@ -1,9 +1,8 @@
-use std::{collections::HashMap, fmt};
+use std::{cmp::Ordering, fmt};
 
 use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use utoipa::ToSchema;
 use vrb_common::{
     err, serial_datetime, serial_datetime_option,
@@ -44,11 +43,9 @@ pub const MSG_TAG_MIN_LENGTH: &str = "tag:min_length";
 pub const TAG_MAX: u16 = 255;
 pub const MSG_TAG_MAX_LENGTH: &str = "tag:max_length";
 
-// ** ModifyStreamInfoDto **
+pub const MSG_STARTTIME_REQUIRED: &str = "starttime:required";
+pub const MSG_FINISHTIME_REQUIRED: &str = "finishtime:required";
 
-pub const MSG_NO_REQUIRED_FIELDS: &str = "Nothing to update! One of the required fields is missing.";
-
-//  ** CreateStreamInfoDto **
 
 // MIN=2, MAX=255
 pub fn validate_title(value: &str) -> Result<(), ValidationError> {
@@ -75,7 +72,7 @@ pub fn validate_source(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 // MIN=2, MAX=255
-pub fn validate_tag_name(value: &str) -> Result<(), ValidationError> {
+pub fn validate_tag(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, TAG_MIN.into(), MSG_TAG_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TAG_MAX.into(), MSG_TAG_MAX_LENGTH)?;
     Ok(())
@@ -87,20 +84,21 @@ pub fn validate_tag_amount(tags: &[String]) -> Result<(), ValidationError> {
     ValidationChecks::max_amount(tags.len(), max_amount.into(), MSG_TAG_MAX_AMOUNT)?;
     Ok(())
 }
-pub fn validate_tag(tags: &[String]) -> Result<(), ValidationError> {
+pub fn validate_tags(tags: &[String]) -> Result<(), ValidationError> {
     validate_tag_amount(tags)?;
-    for tag_name in tags {
-        validate_tag_name(tag_name)?;
+    for tag in tags {
+        validate_tag(tag)?;
     }
     Ok(())
 }
+// * * * * Section: models for "StreamOrm". * * * *
 
-// **  Section: table "streams" receiving data **
+// ** Model: "StreamAndTags". Used to return "stream" and "tags" data. **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName, Queryable, Selectable)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::streams)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Stream {
+pub struct StreamAndTags {
     pub id: i32,
     pub user_id: i32,
     pub title: String,                  // min_len=2 max_len=255
@@ -115,137 +113,94 @@ pub struct Stream {
     pub source: String,                 // min_len=2 max_len=255 default "obs"
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    #[diesel(sql_type = diesel::sql_types::Array<diesel::sql_types::Text>)]
+    #[diesel(column_name = "tags")]
+    pub tags: Vec<String>,
+    #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::Text>)]
+    #[diesel(column_name = "old_logo")]
+    pub old_logo: Option<String>,
 }
 
-pub const STREAM_DESCRIPT_DEF: &str = "";
-pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
-pub const STREAM_SOURCE_DEF: &str = "obs";
+pub const STREAM_AND_TAGS_SOURCE_DEF: &str = "obs";
 
-impl Stream {
-    pub fn new(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>) -> Stream {
+impl StreamAndTags {
+    pub fn new(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>, tags: &[String]) -> StreamAndTags {
         let now = Utc::now();
-        Stream {
+        StreamAndTags {
             id: id,
             user_id: user_id,
             title: title.to_owned(),
-            descript: STREAM_DESCRIPT_DEF.to_string(),
+            descript: String::default(),
             logo: None,
             starttime: starttime.clone(),
-            live: StreamState::is_live(STREAM_STATE_DEF),
-            state: STREAM_STATE_DEF,
+            live: StreamState::is_live(StreamState::default()),
+            state: StreamState::default(),
             started: None,
             paused: None,
             stopped: None,
-            source: STREAM_SOURCE_DEF.to_string(),
+            source: STREAM_AND_TAGS_SOURCE_DEF.to_string(),
             created_at: now,
             updated_at: now,
-        }
-    }
-    pub fn create(create_stream: CreateStream, id: i32) -> Stream {
-        let now = Utc::now();
-        Stream {
-            id: id,
-            user_id: create_stream.user_id,
-            title: create_stream.title.to_owned(),
-            descript: create_stream.descript.clone().unwrap_or(STREAM_DESCRIPT_DEF.to_string()),
-            logo: create_stream.logo.clone(),
-            starttime: create_stream.starttime.clone(),
-            live: StreamState::is_live(create_stream.state.unwrap_or(STREAM_STATE_DEF)),
-            state: create_stream.state.unwrap_or(STREAM_STATE_DEF),
-            started: create_stream.started.clone(),
-            paused: create_stream.paused.clone(),
-            stopped: create_stream.stopped.clone(),
-            source: create_stream.source.clone().unwrap_or(STREAM_SOURCE_DEF.to_string()),
-            created_at: now,
-            updated_at: now,
+            tags: tags.to_vec().clone(),
+            old_logo: None,
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct StreamInfoDto {
+#[rustfmt::skip]
+pub struct StreamAndTagsDto {
     pub id: i32,
     pub user_id: i32,
-    pub title: String,
-    pub descript: String,
+    pub title: String,                  // min_len=2 max_len=255
+    pub descript: String,               // min_len=2,max_len=2048 default ""
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub logo: Option<String>,
+    pub logo: Option<String>,           // min_len=2 max_len=255 Nullable
     #[serde(with = "serial_datetime")]
     pub starttime: DateTime<Utc>,
-    pub live: bool,
-    pub state: StreamState,
+    pub live: bool,                     // default false
+    pub state: StreamState,             // default Waiting
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub started: Option<DateTime<Utc>>,
+    pub started: Option<DateTime<Utc>>, // Nullable
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub paused: Option<DateTime<Utc>>,
+    pub paused: Option<DateTime<Utc>>,  // Nullable
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub stopped: Option<DateTime<Utc>>,
-    pub source: String,
-    pub tags: Vec<String>,
+    pub stopped: Option<DateTime<Utc>>, // Nullable
+    pub source: String,                 // min_len=2 max_len=255 default "obs"
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "serial_datetime")]
     pub updated_at: DateTime<Utc>,
+    pub tags: Vec<String>,
 }
 
-impl StreamInfoDto {
-    #[allow(dead_code)]
-    pub fn convert(stream: Stream, tags: &[String]) -> Self {
-        StreamInfoDto {
-            id: stream.id,
-            user_id: stream.user_id,
-            title: stream.title.to_owned(),
-            descript: stream.descript.to_owned(),
-            logo: stream.logo.clone(),
-            starttime: stream.starttime.to_owned(),
-            live: stream.live,
-            state: stream.state.to_owned(),
-            started: stream.started.clone(),
-            paused: stream.paused.clone(),
-            stopped: stream.stopped.clone(),
-            source: stream.source.to_owned(),
-            tags: tags.iter().map(|tag| tag.to_string()).collect(),
-            created_at: stream.created_at.to_owned(),
-            updated_at: stream.updated_at.to_owned(),
+impl From<StreamAndTags> for StreamAndTagsDto {
+    fn from(stream_and_tags: StreamAndTags) -> Self {
+        StreamAndTagsDto {
+            id: stream_and_tags.id,
+            user_id: stream_and_tags.user_id,
+            title: stream_and_tags.title.to_owned(),
+            descript: stream_and_tags.descript.clone(),
+            logo: stream_and_tags.logo.clone(),
+            starttime: stream_and_tags.starttime.clone(),
+            live: StreamState::is_live(stream_and_tags.state),
+            state: stream_and_tags.state.clone(),
+            started: stream_and_tags.started.clone(),
+            paused: stream_and_tags.paused.clone(),
+            stopped: stream_and_tags.stopped.clone(),
+            source: stream_and_tags.source.clone(),
+            created_at: stream_and_tags.created_at.clone(),
+            updated_at: stream_and_tags.updated_at.clone(),
+            tags: stream_and_tags.tags.to_vec().clone(),
         }
-    }
-    /// Merge a "stream" and a corresponding list of "tags".
-    pub fn merge_streams_and_tags(streams: &[Stream], stream_tags: &[StreamTagStreamId]) -> Vec<StreamInfoDto> {
-        let mut result: Vec<StreamInfoDto> = Vec::new();
-
-        let mut tags_map: HashMap<i32, Vec<String>> = HashMap::new();
-        #[rustfmt::skip]
-        let mut curr_stream_id: i32 = if stream_tags.len() > 0 { stream_tags[0].stream_id } else { -1 };
-        let mut tags: Vec<String> = vec![];
-        for stream_tag in stream_tags.iter() {
-            if curr_stream_id != stream_tag.stream_id {
-                tags_map.insert(curr_stream_id, tags.clone());
-                tags.clear();
-                curr_stream_id = stream_tag.stream_id;
-            }
-            tags.push(stream_tag.name.to_string());
-        }
-        tags_map.insert(curr_stream_id, tags.clone());
-
-        for stream in streams.iter() {
-            let stream = stream.clone();
-            let mut tags: Vec<String> = Vec::new();
-            let tags_opt = tags_map.get(&stream.id);
-            if let Some(tags_vec) = tags_opt {
-                tags.extend(tags_vec.clone());
-            }
-            let stream_info_dto = StreamInfoDto::convert(stream, &tags);
-            result.push(stream_info_dto);
-        }
-        result
     }
 }
 
-// ** Model Dto: "StreamConfigDto". Used: in "stream_get_controller::get_stream_config()". **
+// ** Model Dto: "StreamConfigDto". Used: in "stream_controller::get_stream_config()". **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -286,11 +241,12 @@ impl StreamConfigDto {
     }
 }
 
-// **  Section: table "streams" data creation **
+// ** Model: "CreateStreamAndTags". Used: StreamOrm::create_stream_and_tags() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset, Insertable)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset)]
 #[diesel(table_name = schema::streams)]
-pub struct CreateStream {
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct CreateStreamAndTags {
     pub user_id: i32,
     pub title: String,                  // min_len=2 max_len=255
     pub descript: Option<String>,       // min_len=2,max_len=2048 default ""
@@ -301,29 +257,40 @@ pub struct CreateStream {
     pub paused: Option<DateTime<Utc>>,  // Nullable
     pub stopped: Option<DateTime<Utc>>, // Nullable
     pub source: Option<String>,         // min_len=2 max_len=255 default "obs"
+    #[diesel(skip_update)]
+    pub tags: Vec<String>,
 }
 
-impl CreateStream {
-    pub fn convert(create_stream_info: CreateStreamInfoDto, user_id: i32) -> Self {
-        let min_date_time = Utc::now() + Duration::minutes(2);
-        CreateStream {
-            user_id: user_id,
-            title: create_stream_info.title.to_owned(),
-            descript: create_stream_info.descript.clone(),
-            logo: None,
-            starttime: create_stream_info.starttime.unwrap_or(min_date_time),
-            state: None,
-            started: None,
-            paused: None,
-            stopped: None,
-            source: create_stream_info.source.clone(),
+impl Into<StreamAndTags> for CreateStreamAndTags {
+    fn into(self) -> StreamAndTags {
+        let state = self.state.unwrap_or_default().clone();
+        let now = Utc::now();
+        StreamAndTags {
+            id: i32::default(),
+            user_id: self.user_id,
+            title: self.title.to_owned(),
+            descript: self.descript.unwrap_or_default().clone(),
+            logo: self.logo.clone(),
+            starttime: self.starttime.clone(),
+            live: StreamState::is_live(state.clone()),
+            state: state.clone(),
+            started: self.started.clone(),
+            paused: self.paused.clone(),
+            stopped: self.stopped.clone(),
+            source: self.source.unwrap_or_default().clone(),
+            created_at: now.clone(),
+            updated_at: now.clone(),
+            tags: self.tags.to_vec().clone(),
+            old_logo: None,
         }
     }
 }
 
+// ** Model Dto: "CreateStreamAndTagsInfoDto". Used: "stream_controller::post_stream_and_tags()" **
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateStreamInfoDto {
+pub struct CreateStreamAndTagsDto {
     pub title: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>,
@@ -334,7 +301,7 @@ pub struct CreateStreamInfoDto {
     pub tags: Vec<String>,
 }
 
-impl Validator for CreateStreamInfoDto {
+impl Validator for CreateStreamAndTagsDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
@@ -353,31 +320,52 @@ impl Validator for CreateStreamInfoDto {
         if self.tags.len() == 0 {
             errors.push(ValidationChecks::required(&self.tags.join(","), MSG_TAG_REQUIRED).err());
         } else {
-            errors.push(validate_tag(&self.tags).err());
+            errors.push(validate_tags(&self.tags).err());
         }
 
         self.filter_errors(errors)
     }
 }
 
-// **  Section: table "streams" data editing **
+impl Into<CreateStreamAndTags> for CreateStreamAndTagsDto {
+    fn into(self) -> CreateStreamAndTags {
+        let min_date_time = Utc::now() + Duration::minutes(2);
+        CreateStreamAndTags {
+            user_id: i32::default(),
+            title: self.title.clone(),
+            descript: self.descript.clone(),
+            logo: None,
+            starttime: self.starttime.unwrap_or(min_date_time),
+            state: None,
+            started: None,
+            paused: None,
+            stopped: None,
+            source: self.source.clone(),
+            tags: self.tags.to_vec().clone(),
+        }
+    }
+}
+
+// ** Model: "ModifyStreamAndTags". Used: StreamOrm::modify_stream_and_tags() **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset)]
 #[diesel(table_name = schema::streams)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct ModifyStream {
-    pub title: Option<String>,                  // min_len=2 max_len=255
-    pub descript: Option<String>,               // min_len=2,max_len=2048 default ""
-    pub logo: Option<Option<String>>,           // min_len=2 max_len=255 Nullable
-    pub starttime: Option<DateTime<Utc>>,       //
-    pub state: Option<StreamState>,             // default Waiting
-    pub started: Option<Option<DateTime<Utc>>>, // Nullable
-    pub paused: Option<Option<DateTime<Utc>>>,  // Nullable
-    pub stopped: Option<Option<DateTime<Utc>>>, // Nullable
-    pub source: Option<String>,                 // min_len=2 max_len=255 default "obs"
+pub struct ModifyStreamAndTags {
+    pub title: Option<String>,            // min_len=2 max_len=255
+    pub descript: Option<String>,         // min_len=2,max_len=2048 default ""
+    pub logo: Option<String>,             // min_len=2 max_len=255 Nullable
+    pub starttime: Option<DateTime<Utc>>, //
+    pub state: Option<StreamState>,       // default Waiting
+    pub started: Option<DateTime<Utc>>,   // Nullable
+    pub paused: Option<DateTime<Utc>>,    // Nullable
+    pub stopped: Option<DateTime<Utc>>,   // Nullable
+    pub source: Option<String>,           // min_len=2 max_len=255 default "obs"
+    #[diesel(skip_update)]
+    pub tags: Option<Vec<String>>,
 }
 
-impl ModifyStream {
+impl ModifyStreamAndTags {
     pub fn is_empty(&self) -> bool {
         let is_title = self.title.is_none();
         let is_descript = self.descript.is_none();
@@ -391,11 +379,39 @@ impl ModifyStream {
 
         is_title && is_descript && is_logo && is_starttime && is_state && is_started && is_paused && is_stopped && is_source
     }
+    pub fn merge(&self, stream: StreamAndTags) -> StreamAndTags {
+        let logo = if let Some(val) = self.logo.clone() {
+            if val.len() > 0 {  Some(val) } else { None }
+        } else {
+            stream.logo.clone()
+        };
+        let state = self.state.clone().unwrap_or(stream.state.clone());
+        StreamAndTags {
+            id: stream.id.clone(),
+            user_id: stream.user_id.clone(),
+            title: self.title.clone().unwrap_or(stream.title.clone()),
+            descript: self.descript.clone().unwrap_or(stream.descript.clone()),
+            logo: logo,
+            starttime: self.starttime.clone().unwrap_or(stream.starttime.clone()),
+            live: StreamState::is_live(state),
+            state: state,
+            started: if self.started.is_some() { self.started.clone() } else { stream.started.clone() },
+            paused: if self.paused.is_some() { self.paused.clone() } else { stream.paused.clone() },
+            stopped: if self.stopped.is_some() { self.stopped.clone() } else { stream.stopped.clone() },
+            source: self.source.clone().unwrap_or(stream.source.clone()),
+            created_at: stream.created_at.clone(),
+            updated_at: Utc::now(),
+            tags: self.tags.clone().unwrap_or(stream.tags.clone()),
+            old_logo: stream.logo.clone(),
+        }
+    }
 }
+
+// ** Model Dto: "ModifyStreamAndTagsDto". Used: "stream_controller::put_stream_and_tags()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct ModifyStreamInfoDto {
+pub struct ModifyStreamAndTagsDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -408,13 +424,13 @@ pub struct ModifyStreamInfoDto {
     pub tags: Option<Vec<String>>,
 }
 
-impl ModifyStreamInfoDto {
+impl ModifyStreamAndTagsDto {
     pub fn valid_names<'a>() -> Vec<&'a str> {
         vec!["title", "descript", "starttime", "source", "tags"]
     }
 }
 
-impl Validator for ModifyStreamInfoDto {
+impl Validator for ModifyStreamAndTagsDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
@@ -438,7 +454,7 @@ impl Validator for ModifyStreamInfoDto {
             }
         }
         if let Some(value) = &self.tags {
-            errors.push(validate_tag(value).err());
+            errors.push(validate_tags(value).err());
         }
 
         let list_is_some = vec![
@@ -448,16 +464,16 @@ impl Validator for ModifyStreamInfoDto {
             self.source.is_some(),
             self.tags.is_some(),
         ];
-        let valid_names = ModifyStreamInfoDto::valid_names().join(",");
+        let valid_names = Self::valid_names().join(",");
         errors.push(ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err());
 
         self.filter_errors(errors)
     }
 }
 
-impl Into<ModifyStream> for ModifyStreamInfoDto {
-    fn into(self) -> ModifyStream {
-        ModifyStream {
+impl Into<ModifyStreamAndTags> for ModifyStreamAndTagsDto {
+    fn into(self) -> ModifyStreamAndTags {
+        ModifyStreamAndTags {
             title: self.title.clone(),
             descript: self.descript.clone(),
             logo: None,
@@ -467,11 +483,12 @@ impl Into<ModifyStream> for ModifyStreamInfoDto {
             paused: None,
             stopped: None,
             source: self.source.clone(),
+            tags: self.tags.clone(),
         }
     }
 }
 
-// **  Section: table "streams" toggle state **
+// ** Model Dto: "ToggleStreamStateDto". Used: "stream_controller::put_toggle_state()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -479,399 +496,356 @@ pub struct ToggleStreamStateDto {
     pub state: StreamState,
 }
 
-// **  Section: table "stream_tags" receiving data **
+// ** Model: "SearchStreamAndTags". Used: StreamOrm::filter_stream_and_tags_by_pages() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, QueryableByName)]
-#[diesel(table_name = schema::stream_tags)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct StreamTag {
-    pub id: i32,
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum FilterStream {
+    Future,
+    Past,
+    Period,
+}
+
+impl fmt::Display for FilterStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
+    }
+}
+
+pub const SEARCH_STREAM_AND_TAGS_PAGE: u32 = 1;
+pub const SEARCH_STREAM_AND_TAGS_LIMIT: u32 = 5;
+pub const SEARCH_STREAM_AND_TAGS_LIMIT_MIN: u32 = 1;
+pub const SEARCH_STREAM_AND_TAGS_LIMIT_MAX: u32 = 100;
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct SearchStreamAndTags {
+    pub user_id: Option<i32>,
+    pub live: Option<bool>,
+    pub filter: Option<FilterStream>,
+    pub starttime: Option<DateTime<Utc>>,
+    pub finishtime: Option<DateTime<Utc>>,
+    pub sort_desc: Option<bool>,
+    pub tag: Option<String>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+}
+
+impl SearchStreamAndTags {
+    pub fn new(user_id: Option<i32>, filter: Option<FilterStream>, starttime: Option<DateTime<Utc>>, finishtime: Option<DateTime<Utc>>) -> Self {
+        Self {
+            user_id,
+            live: None,
+            filter,
+            starttime,
+            finishtime,
+            sort_desc: None,
+            tag: None,
+            page: None,
+            limit: None,
+        }
+    }
+}
+
+// ** Model: "CountStreamAndTags". Used: StreamOrm::filter_stream_and_tags_by_pages(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+#[diesel(table_name = schema::streams)]
+pub struct CountStreamAndTags {
+    #[diesel(sql_type = diesel::sql_types::Integer)]
+    #[diesel(column_name = "cnt")]
+    pub cnt: i32,
+}
+
+// ** Model Dto: "SearchStreamAndTagsDto". Used: in "stream_controller::get_stream_and_tags()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchStreamAndTagsDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub live: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<FilterStream>,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "serial_datetime_option")]
+    pub starttime: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "serial_datetime_option")]
+    pub finishtime: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sort_desc: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+}
+
+impl From<SearchStreamAndTagsDto> for SearchStreamAndTags {
+    fn from(item: SearchStreamAndTagsDto) -> Self {
+        SearchStreamAndTags {
+            user_id: item.user_id.clone(),
+            live: item.live.clone(),
+            filter: item.filter.clone(),
+            starttime: item.starttime.clone(),
+            finishtime: item.finishtime.clone(),
+            sort_desc: item.sort_desc.clone(),
+            tag: item.tag.clone(),
+            page: item.page.clone(),
+            limit: item.limit.clone(),
+        }
+    }
+}
+
+impl From<SearchStreamAndTags> for SearchStreamAndTagsDto {
+    fn from(item: SearchStreamAndTags) -> Self {
+        SearchStreamAndTagsDto {
+            user_id: item.user_id.clone(),
+            live: item.live.clone(),
+            filter: item.filter.clone(),
+            starttime: item.starttime.clone(),
+            finishtime: item.finishtime.clone(),
+            sort_desc: item.sort_desc.clone(),
+            tag: item.tag.clone(),
+            page: item.page.clone(),
+            limit: item.limit.clone(),
+        }
+    }
+}
+
+impl Validator for SearchStreamAndTagsDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        if let Some(FilterStream::Future) = &self.filter {
+            if self.starttime.is_none() {
+                errors.push(ValidationChecks::required("", MSG_STARTTIME_REQUIRED).err());
+            }
+        } else if let Some(FilterStream::Past) = &self.filter {
+            if self.starttime.is_none() {
+                errors.push(ValidationChecks::required("", MSG_STARTTIME_REQUIRED).err());
+            }
+        } else if let Some(FilterStream::Period) = &self.filter {
+            if self.starttime.is_none() {
+                errors.push(ValidationChecks::required("", MSG_STARTTIME_REQUIRED).err());
+            }
+            if self.finishtime.is_none() {
+                errors.push(ValidationChecks::required("", MSG_FINISHTIME_REQUIRED).err());
+            }
+        }
+        if let Some(tag) = &self.tag {
+            errors.push(validate_tag(tag).err());
+        }
+        self.filter_errors(errors)
+    }
+}
+
+// ** Model Dto: "PageStreamAndTagsDto". Used: in "stream_controller::get_stream_and_tags()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PageStreamAndTagsDto {
+    #[schema(example = json!(Self::create_stream_and_tags(1,2)))]
+    pub list: Vec<StreamAndTagsDto>,
+    #[schema(example = 5)]
+    pub limit: u32,
+    #[schema(example = 2)]
+    pub count: u32,
+    #[schema(example = 1)]
+    pub page: u32,
+    #[schema(example = 1)]
+    pub pages: u32,
+}
+
+impl PageStreamAndTagsDto {
+    pub fn create_stream_and_tags(user_id: i32, amount: i32) -> Vec<StreamAndTagsDto> {
+        let mut result: Vec<StreamAndTagsDto> = Vec::new();
+        let mut idx = 1;
+        while idx <= amount {
+            let title = &format!("title_{}", idx);
+            let tags = &format!("tag01,tag{:0>2}", idx);
+            let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
+            let mut stream = StreamAndTags::new(idx, user_id, title, Utc::now(), &tags1);
+            stream.descript = format!("descript_{}", idx);
+
+            let stream_and_tags_dto: StreamAndTagsDto = stream.into();
+            result.push(stream_and_tags_dto);
+            idx += 1;
+        }
+        result
+    }
+}
+
+// ** Model: "SearchStreamDate". Used: StreamOrm::filter_stream_dates()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct SearchStreamDate {
     pub user_id: i32,
-    pub name: String, // min_len=2 max_len=255
+    pub start: DateTime<Utc>,
+    pub finish: DateTime<Utc>,
+}
+
+// ** Model: "StartStreamAndTags". Used: StreamOrm::filter_stream_dates(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+#[diesel(table_name = schema::streams)]
+pub struct StartStreamAndTags {
+    #[diesel(sql_type = diesel::sql_types::Timestamptz)]
+    #[diesel(column_name = "start")]
+    pub start: DateTime<Utc>,
+}
+
+// ** Model Dto: "SearchStreamDateDto". Used: in "stream_controller::get_streams_period()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchStreamDateDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<i32>,
+    #[serde(with = "serial_datetime")]
+    pub start: DateTime<Utc>,
+    #[serde(with = "serial_datetime")]
+    pub finish: DateTime<Utc>,
+}
+
+impl Into<SearchStreamDate> for SearchStreamDateDto {
+    fn into(self) -> SearchStreamDate {
+        let max_finish = self.start.clone() + Duration::days(31) - Duration::milliseconds(1);
+        #[rustfmt::skip]
+        let finish = 
+        if self.start.cmp(&self.finish) == Ordering::Greater || self.finish.cmp(&max_finish) == Ordering::Greater {
+            max_finish
+        } else {
+            self.finish.clone()
+        };
+
+        SearchStreamDate {
+            user_id: self.user_id.unwrap_or_default(),
+            start: self.start.clone(),
+            finish: finish.clone(),
+        }
+    }
+}
+
+// ** Model: "SearchStreamTags". Used: StreamOrm::get_stream_tags_by_pages() **
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum StreamTagSortColumn {
+    Id,
+    Name,
+    CountLinks,
+}
+
+impl fmt::Display for StreamTagSortColumn {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
+    }
+}
+
+pub const SEARCH_STREAM_TAGS_PAGE: u32 = 1;
+pub const SEARCH_STREAM_TAGS_LIMIT: u32 = 12;
+pub const SEARCH_STREAM_TAGS_LIMIT_MIN: u32 = 1;
+pub const SEARCH_STREAM_TAGS_LIMIT_MAX: u32 = 100;
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct SearchStreamTag {
+    pub sort_column: Option<StreamTagSortColumn>,
+    pub sort_desc: Option<bool>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::stream_tags)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct StreamTagStreamId {
-    #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = "stream_id")]
-    pub stream_id: i32,
+pub struct StreamTag {
     pub id: i32,
-    pub user_id: i32,
     pub name: String,
+    pub count_links: i32,
 }
 
-// **  Section: table "link_stream_tags_to_streams" receiving data **
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
-#[diesel(table_name = schema::link_stream_tags_to_streams)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct LinkStreamTagsToStreams {
-    pub id: i32,
-    pub stream_id: i32,
-    pub stream_tag_id: i32,
-}
-
-// **  Section: Search for data "StreamInfoDto" of the "streams" table. **
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum OrderColumn {
-    Starttime, // default
-    Title,
-}
-
-impl fmt::Display for OrderColumn {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
+impl StreamTag {
+    pub fn new(id: i32, name: &str, count_links: i32) -> Self {
+        Self { id, name: name.to_owned(), count_links }
     }
 }
+// ** Model Dto: "SearchStreamTagDto". Used: in "stream_controller::get_stream_popural_tags()" **
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum OrderDirection {
-    Asc, // default
-    Desc,
-}
-
-impl fmt::Display for OrderDirection {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
-    }
-}
-
-pub const SEARCH_STREAM_PAGE: u32 = 1;
-pub const SEARCH_STREAM_LIMIT: u32 = 5;
-pub const SEARCH_STREAM_ORDER_COLUMN: OrderColumn = OrderColumn::Starttime;
-pub const SEARCH_STREAM_ORDER_DIRECTION: OrderDirection = OrderDirection::Asc;
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct SearchStream {
-    pub user_id: i32,
-    pub live: Option<bool>,
-    // Future streams with a "starttime" greater than or equal to the specified one.
-    pub future_starttime: Option<DateTime<Utc>>,
-    // Past streams with a "starttime" greater than or equal to the specified one.
-    pub past_starttime: Option<DateTime<Utc>>,
-    pub order_column: Option<OrderColumn>,
-    pub order_direction: Option<OrderDirection>,
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchStreamTagDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sort_column: Option<StreamTagSortColumn>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sort_desc: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub page: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<u32>,
 }
 
-impl SearchStream {
-    pub fn convert(search_stream_info: SearchStreamInfoDto, user_id: i32) -> Self {
-        SearchStream {
-            user_id: search_stream_info.user_id.unwrap_or(user_id),
-            live: search_stream_info.live.clone(),
-            future_starttime: search_stream_info.future_starttime.clone(),
-            past_starttime: search_stream_info.past_starttime.clone(),
-            order_column: search_stream_info.order_column.clone(),
-            order_direction: search_stream_info.order_direction.clone(),
-            page: search_stream_info.page.clone(),
-            limit: search_stream_info.limit.clone(),
+impl From<SearchStreamTagDto> for SearchStreamTag {
+    fn from(item: SearchStreamTagDto) -> Self {
+        SearchStreamTag {
+            sort_column: item.sort_column.clone(),
+            sort_desc: item.sort_desc.clone(),
+            page: item.page.clone(),
+            limit: item.limit.clone(),
         }
     }
 }
 
-// * SearchStreamInfoDto *
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct SearchStreamInfoDto {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub user_id: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub live: Option<bool>,
-    // Future streams with a "starttime" greater than or equal to the specified one.
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "serial_datetime_option")]
-    pub future_starttime: Option<DateTime<Utc>>,
-    // Past streams with a "starttime" greater than or equal to the specified one.
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "serial_datetime_option")]
-    pub past_starttime: Option<DateTime<Utc>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub order_column: Option<OrderColumn>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub order_direction: Option<OrderDirection>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub page: Option<u32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<u32>,
+#[rustfmt::skip]
+pub struct StreamTagDto {
+    pub id: i32,
+    pub name: String,
+    pub count_links: i32,
 }
 
-// * StreamInfoPageDto *
+impl From<StreamTag> for StreamTagDto {
+    fn from(stream_tag: StreamTag) -> Self {
+        StreamTagDto {
+            id: stream_tag.id.clone(),
+            name: stream_tag.name.clone(),
+            count_links: stream_tag.count_links.clone(),
+        }
+    }
+}
+
+// ** Model Dto: "PageStreamTagDto". Used: in "stream_controller::get_stream_popural_tags()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct StreamInfoPageDto {
-    #[schema(example = json!(Self::create_streams(1,2)))]
-    pub list: Vec<StreamInfoDto>,
+pub struct PageStreamTagDto {
+    #[schema(example = json!(Self::create_stream_tags(4)))]
+    pub list: Vec<StreamTagDto>,
     #[schema(example = 5)]
     pub limit: u32,
-    #[schema(example = 2)]
-    pub count: u32,
     #[schema(example = 1)]
     pub page: u32,
-    #[schema(example = 1)]
-    pub pages: u32,
 }
 
-impl StreamInfoPageDto {
-    pub fn create_streams(user_id: i32, amount: i32) -> Vec<StreamInfoDto> {
-        let mut result: Vec<StreamInfoDto> = Vec::new();
+impl PageStreamTagDto {
+    pub fn create_stream_tags(amount: i32) -> Vec<StreamTagDto> {
+        let mut result: Vec<StreamTagDto> = Vec::new();
         let mut idx = 1;
         while idx <= amount {
-            let title = &format!("title_{}", idx);
-            let mut stream = Stream::new(idx, user_id, title, Utc::now());
-            stream.descript = format!("descript_{}", idx);
-
-            let tags = &format!("tag01,tag{:0>2}", idx);
-            let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
-
-            let stream_info_dto = StreamInfoDto::convert(stream, &tags1);
-            result.push(stream_info_dto);
+            let strm_tag = StreamTagDto {
+                id: idx,
+                name: format!("tag_{}", idx),
+                count_links: idx * 3,
+            };
+            result.push(strm_tag);
             idx += 1;
         }
         result
     }
 }
 
-// **  Section: Search for data "StreamEventDto" of the "streams" table. **
-
-pub const SEARCH_STREAM_EVENT_PAGE: u32 = 1;
-pub const SEARCH_STREAM_EVENT_LIMIT: u32 = 10;
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct SearchStreamEvent {
-    pub user_id: i32,
-    pub starttime: DateTime<Utc>,
-    pub page: Option<u32>,
-    pub limit: Option<u32>,
-}
-
-impl SearchStreamEvent {
-    pub fn convert(search_stream_event: SearchStreamEventDto, user_id: i32) -> Self {
-        SearchStreamEvent {
-            user_id: search_stream_event.user_id.unwrap_or(user_id),
-            starttime: search_stream_event.starttime.clone(),
-            page: search_stream_event.page.clone(),
-            limit: search_stream_event.limit.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct SearchStreamEventDto {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub user_id: Option<i32>,
-    #[serde(with = "serial_datetime")]
-    pub starttime: DateTime<Utc>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub page: Option<u32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<u32>,
-}
-
-// * StreamEventPageDto *
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct StreamEventDto {
-    pub id: i32,
-    pub user_id: i32,
-    pub title: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub logo: Option<String>,
-    #[serde(with = "serial_datetime")]
-    pub starttime: DateTime<Utc>,
-}
-
-impl From<Stream> for StreamEventDto {
-    fn from(stream: Stream) -> Self {
-        StreamEventDto {
-            id: stream.id,
-            user_id: stream.user_id,
-            title: stream.title.to_owned(),
-            logo: stream.logo.clone(),
-            starttime: stream.starttime.to_owned(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct StreamEventPageDto {
-    #[schema(example = json!(Self::create_events(1,2)))]
-    pub list: Vec<StreamEventDto>,
-    #[schema(example = 5)]
-    pub limit: u32,
-    #[schema(example = 2)]
-    pub count: u32,
-    #[schema(example = 1)]
-    pub page: u32,
-    #[schema(example = 1)]
-    pub pages: u32,
-}
-
-impl StreamEventPageDto {
-    pub fn create_events(user_id: i32, amount: i32) -> Vec<StreamEventDto> {
-        let mut result: Vec<StreamEventDto> = Vec::new();
-        let mut idx = 1;
-        while idx <= amount {
-            let stream = Stream::new(idx, user_id, &format!("title_{}", idx), Utc::now());
-            let stream_event_dto = StreamEventDto::from(stream);
-            result.push(stream_event_dto);
-            idx += 1;
-        }
-        result
-    }
-}
-
-// **  Section: Search for data "StreamPeriodDto" of the "streams" table. **
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct SearchStreamPeriod {
-    pub user_id: i32,
-    pub start: DateTime<Utc>,
-    pub finish: DateTime<Utc>,
-}
-
-impl SearchStreamPeriod {
-    pub fn convert(search_stream_period: SearchStreamPeriodDto, user_id: i32) -> Self {
-        SearchStreamPeriod {
-            user_id: search_stream_period.user_id.unwrap_or(user_id),
-            start: search_stream_period.start.clone(),
-            finish: search_stream_period.finish.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct SearchStreamPeriodDto {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub user_id: Option<i32>,
-    #[serde(with = "serial_datetime")]
-    pub start: DateTime<Utc>,
-    #[serde(with = "serial_datetime")]
-    pub finish: DateTime<Utc>,
-}
-
-// ** **
-
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    // ** StreamInfoDto **
-
-    #[test]
-    fn test_merge_streams_and_tags_with_one_item() {
-        let user_id: i32 = 123;
-        let mut tag_id = 0;
-
-        let mut streams: Vec<Stream> = Vec::new();
-        let mut stream_tags: Vec<StreamTagStreamId> = Vec::new();
-
-        let stream = Stream::new(0, user_id, "title1", Utc::now());
-        streams.push(stream.clone());
-        let tags: Vec<String> = "tag11".split(',').map(|v| v.to_string()).collect();
-        for tag in tags.iter() {
-            #[rustfmt::skip]
-            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
-            tag_id += 1;
-        }
-        let streams_info: Vec<StreamInfoDto> = vec![StreamInfoDto::convert(stream, &tags)];
-
-        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
-
-        assert_eq!(result.len(), 1);
-        assert_eq!(result, streams_info);
-    }
-
-    #[test]
-    fn test_merge_streams_and_tags_with_two_items() {
-        let user_id: i32 = 123;
-        let mut tag_id = 0;
-
-        let mut streams: Vec<Stream> = Vec::new();
-        let mut stream_tags: Vec<StreamTagStreamId> = Vec::new();
-        let mut streams_info: Vec<StreamInfoDto> = Vec::new();
-
-        let stream = Stream::new(0, user_id, "title1", Utc::now());
-        streams.push(stream.clone());
-        let tags: Vec<String> = "tag11,tag12".split(',').map(|v| v.to_string()).collect();
-        for tag in tags.iter() {
-            #[rustfmt::skip]
-            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
-            tag_id += 1;
-        }
-        streams_info.push(StreamInfoDto::convert(stream, &tags));
-
-        let stream = Stream::new(1, user_id, "title2", Utc::now());
-        streams.push(stream.clone());
-        let tags: Vec<String> = "tag21,tag22".split(',').map(|v| v.to_string()).collect();
-        for tag in tags.iter() {
-            #[rustfmt::skip]
-            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
-            tag_id += 1;
-        }
-        streams_info.push(StreamInfoDto::convert(stream, &tags));
-
-        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
-
-        assert_eq!(result.len(), 2);
-        assert_eq!(result, streams_info);
-    }
-
-    #[test]
-    fn test_merge_streams_and_tags_with_three_items() {
-        let user_id: i32 = 123;
-        let mut tag_id = 0;
-
-        let mut streams: Vec<Stream> = Vec::new();
-        let mut stream_tags: Vec<StreamTagStreamId> = Vec::new();
-        let mut streams_info: Vec<StreamInfoDto> = Vec::new();
-
-        let stream = Stream::new(0, user_id, "title1", Utc::now());
-        streams.push(stream.clone());
-        let tags: Vec<String> = "tag11,tag12,tag13".split(',').map(|v| v.to_string()).collect();
-        for tag in tags.iter() {
-            #[rustfmt::skip]
-            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
-            tag_id += 1;
-        }
-        streams_info.push(StreamInfoDto::convert(stream, &tags));
-
-        let stream = Stream::new(1, user_id, "title2", Utc::now());
-        streams.push(stream.clone());
-        let tags: Vec<String> = "tag21,tag22,tag23".split(',').map(|v| v.to_string()).collect();
-        for tag in tags.iter() {
-            #[rustfmt::skip]
-            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
-            tag_id += 1;
-        }
-        streams_info.push(StreamInfoDto::convert(stream, &tags));
-
-        let stream = Stream::new(2, user_id, "title3", Utc::now());
-        streams.push(stream.clone());
-        let tags: Vec<String> = "tag31,tag32,tag33".split(',').map(|v| v.to_string()).collect();
-        for tag in tags.iter() {
-            #[rustfmt::skip]
-            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
-            tag_id += 1;
-        }
-        streams_info.push(StreamInfoDto::convert(stream, &tags));
-
-        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags);
-
-        assert_eq!(result.len(), 3);
-        assert_eq!(result, streams_info);
-    }
-}
+// ** - **
 
 #[cfg(all(test, feature = "mockdata"))]
 pub struct StreamMock {}

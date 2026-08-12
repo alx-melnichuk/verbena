@@ -140,11 +140,16 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select logo from filter_streams(null, $1, true, null);")
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(user_id); // $1
+            let query = diesel::sql_query(
+                "SELECT s.logo \
+                 FROM streams s \
+                 WHERE LENGTH(COALESCE(s.logo, '')) > 0 \
+                   AND s.user_id = $1 ORDER BY s.id ASC;",
+            )
+            .bind::<sql_types::Nullable<sql_types::Integer>, _>(user_id); // $1
 
             // Run a query using Diesel to find a list of users based on the given parameters.
-            let stream_logos: Vec<StreamLogo> = query.load(&mut conn).map_err(|e| format!("filter_streams: {}", e.to_string()))?;
+            let stream_logos: Vec<StreamLogo> = query.load(&mut conn).map_err(|e| format!("select_streams: {}", e.to_string()))?;
 
             let result = stream_logos.into_iter().map(|v| v.logo.clone()).collect();
 
