@@ -1,0 +1,22 @@
+[package]
+name = "vrb_db"
+edition = "2024"
+description = "Library for the entire database structure of the Verbena project."
+keywords = ["vrb_db", "database", "db_enums"]
+version.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+# actix-web = { workspace = true }
+# chrono = { workspace = true }
+log = { workspace = true }
+# serde = { workspace = true }
+# serde_json = { workspace = true }
+sqlx = { workspace = true }
+# utoipa = { workspace = true }
+# vrb_tools = { workspace = true }

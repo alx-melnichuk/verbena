@@ -4,6 +4,7 @@ members = [
     "vrb_authent",
     "vrb_chats",
     "vrb_common",
+    "vrb_db",
     "vrb_dbase",
     "vrb_profiles",
     "vrb_streams",
@@ -47,6 +48,7 @@ rand = "0.10.2"
 regex = "1.12.2"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
+sqlx = { version = "0.9.0", features = ["chrono", "macros", "postgres", "runtime-tokio"] }
 utoipa = { version = "5.5.0", features = ["chrono", "actix_extras"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
 utoipa-redoc = { version = "6.0.0", features = ["actix-web"] }
@@ -55,6 +57,7 @@ vrb_app = { version = "0.5", path="./vrb_app" }
 vrb_authent = { version = "0.5", path="./vrb_authent" }
 vrb_chats = { version = "0.5", path="./vrb_chats" }
 vrb_common = { version = "0.5", path="./vrb_common" }
+vrb_db = { version = "0.5", path="./vrb_db" }
 vrb_dbase = { version = "0.5", path="./vrb_dbase" }
 vrb_profiles = { version = "0.5", path="./vrb_profiles" }
 vrb_streams = { version = "0.5", path="./vrb_streams" }
@@ -62,3 +65,6 @@ vrb_tools = { version = "0.5", path="./vrb_tools" }
 
 [profile.dev]
 debug = 1
+
+[profile.dev.package.sqlx-macros]
+opt-level = 3
