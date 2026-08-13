@@ -1,11 +1,12 @@
 [package]
 name = "vrb_authent"
-version = "0.5.0"
 edition = "2024"
 description = "Library for authorization functions."
 keywords = ["vrb_authent", "authorization"]
-license = { workspace = true }
-rust-version = { workspace = true }
+version.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+license.workspace = true
 
 [lib]
 path = "src/lib.rs"
@@ -19,9 +20,9 @@ log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 utoipa = { workspace = true }
-vrb_common = { version = "0.5",  path = "../vrb_common" }
-vrb_dbase = { version = "0.5", path="../vrb_dbase" }
-vrb_tools = { version = "0.5", path="../vrb_tools" }
+vrb_common = { workspace = true }
+vrb_dbase = { workspace = true }
+vrb_tools = { workspace = true }
 
 [features]
 # default = ["test", "mockdata"]
