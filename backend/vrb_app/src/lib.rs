@@ -15,6 +15,7 @@ use vrb_authent::{
 };
 use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
 use vrb_common::env_var;
+use vrb_db::db;
 use vrb_dbase::dbase;
 use vrb_profiles::{config_prfl, profile_controller, profile_orm};
 use vrb_streams::{config_strm, stream_controller, stream_orm};
@@ -62,20 +63,37 @@ pub async fn server_run() -> std::io::Result<()> {
     let app_domain = config_app.app_domain.clone();
     eprintln!("Starting server {}", &app_domain);
 
+    eprintln!("Configuring database.");
+
+    let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
+    let max_conn: u32 = env::var("DB_POOL_MAX_SIZE").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let min_conn: u32 = env::var("DB_POOL_MIN_SIZE").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let max_lifetime_sec: u64 = env::var("DB_POOL_MAX_LIFETIME").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let idle_sec: u64 = env::var("DB_POOL_IDLE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
+
+    let db_pool = db::init_db_pool(&db_url, max_conn, min_conn, max_lifetime_sec, idle_sec)
+        .await
+        .expect("Failed to create pool_db");
+
+    eprintln!("pool_db.max_size: {}", max_conn);
+
+    // # temp
     let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
     let pool_max_size = env::var("DATABASE_POOL_MAX_SIZE").unwrap_or("0".to_owned()).trim().parse().unwrap();
 
-    eprintln!("Configuring database.");
     let pool: dbase::DbPool = dbase::init_db_pool(&db_url, pool_max_size);
     eprintln!("db_pool.max_size: {}", pool.max_size());
+
     // Execute all unapplied migrations for a given migration source
     dbase::run_migration(&mut pool.get().unwrap());
+    // # temp
 
     let config_app2 = config_app.clone();
     #[rustfmt::skip]
     let mut srv = HttpServer::new(move || {
         let cors = create_cors(config_app2.clone());
         App::new()
+            .app_data(db_pool.clone())
             .app_data(pool.clone())
             .configure(configure_server(pool.clone()))
             .wrap(cors)
