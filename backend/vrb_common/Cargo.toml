@@ -1,11 +1,12 @@
 [package]
 name = "vrb_common"
-version = "0.5.0"
 edition = "2024"
 description = "A library for commonly used elements."
 keywords = ["vrb_common", "ApiError", "crypto", "parser", "serial-datetime", "validators"]
-license = { workspace = true }
-rust-version = { workspace = true }
+version.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+license.workspace = true
 
 [lib]
 path = "src/lib.rs"
