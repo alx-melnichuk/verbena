@@ -1,11 +1,12 @@
 [package]
 name = "vrb_tools"
-version = "0.5.0"
 edition = "2024"
 description = "Tool library for the Verbena project."
 keywords = ["vrb_tools", "send_email", "consts", "err"]
-license = { workspace = true }
-rust-version = { workspace = true }
+version.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+license.workspace = true
 
 [lib]
 path = "src/lib.rs"
@@ -24,5 +25,5 @@ openssl = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-vrb_common = { version = "0.5", path="../vrb_common" }
+vrb_common = { workspace = true }
 
