@@ -25,20 +25,20 @@ use crate::user_orm::impls::UserOrmApp;
 use crate::user_orm::tests::UserOrmApp;
 
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::user_recovery_orm::impls::UserRecoveryOrmApp;
+use crate::user_recovery_db::impls::UserRecoveryDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::user_recovery_orm::tests::UserRecoveryOrmApp;
+use crate::user_recovery_db::tests::UserRecoveryDbApp;
 
 use crate::{
     authentication::RequireAuth,
     config_jwt,
     user_models::ModifyUser,
     user_orm::UserOrm,
+    user_recovery_db::UserRecoveryDb,
     user_recovery_models::{
         ConfirmRecoveryUserResponseDto, CreateUserRecovery, RecoveryClearForExpiredResponseDto, RecoveryDataDto, RecoveryUserDto,
         RecoveryUserResponseDto,
     },
-    user_recovery_orm::UserRecoveryOrm,
 };
 
 // 404 Not Found - Recovery record not found.
@@ -103,7 +103,7 @@ pub async fn recovery(
     mailer: web::Data<MailerApp>,
     config_smtp: web::Data<config_smtp::ConfigSmtp>,
     user_orm: web::Data<UserOrmApp>,
-    user_recovery_orm: web::Data<UserRecoveryOrmApp>,
+    user_recovery_db: web::Data<UserRecoveryDbApp>,
     json_body: web::Json<RecoveryUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -142,23 +142,14 @@ pub async fn recovery(
         }
     };
     let user_id = user.id;
-    let user_recovery_orm2 = user_recovery_orm.clone();
 
     // If there is a user with this ID, then move on to the next stage.
 
     // For this user, find an entry in the "user_recovery" table.
-    let opt_user_recovery = web::block(move || {
-        let existing_user_recovery = user_recovery_orm2.find_user_recovery_by_user_id(user_id).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        existing_user_recovery
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    let opt_user_recovery = user_recovery_db.find_user_recovery_by_user_id(user_id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     // Prepare data for writing to the "user_recovery" table.
     let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
@@ -170,40 +161,25 @@ pub async fn recovery(
         final_date: final_date_utc,
     };
     let user_recovery_id: i32;
-    let user_recovery_orm2 = user_recovery_orm.clone();
 
     // If there is an entry for this user in the "user_recovery" table, then update it with a new token.
     if let Some(user_recovery) = opt_user_recovery {
         user_recovery_id = user_recovery.id;
-        let _ = web::block(move || {
-            let user_recovery = user_recovery_orm2
-                .modify_user_recovery(user_recovery_id, create_user_recovery)
-                .map_err(|e| {
-                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                    ApiError::create(507, err::MSG_DATABASE, &e) // 507
-                });
-            user_recovery
-        })
-        .await
-        .map_err(|e| {
-            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })??;
+
+        let _user_recovery = user_recovery_db
+            .modify_user_recovery(user_recovery_id, create_user_recovery)
+            .await
+            .map_err(|e| {
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            })?;
     } else {
         // If there is no entry for this user in the "user_recovery" table, then add a new entry.
         // Create a new entity (user_recovery).
-        let user_recovery = web::block(move || {
-            let user_recovery = user_recovery_orm2.create_user_recovery(create_user_recovery).map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-            user_recovery
-        })
-        .await
-        .map_err(|e| {
-            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })??;
+        let user_recovery = user_recovery_db.create_user_recovery(create_user_recovery).await.map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
 
         user_recovery_id = user_recovery.id;
     }
@@ -297,7 +273,7 @@ pub async fn confirm_recovery(
     request: actix_web::HttpRequest,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
-    user_recovery_orm: web::Data<UserRecoveryOrmApp>,
+    user_recovery_db: web::Data<UserRecoveryDbApp>,
     json_body: web::Json<RecoveryDataDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -331,24 +307,14 @@ pub async fn confirm_recovery(
     // Get "user_recovery ID" from "recovery_token".
     let (user_recovery_id, _) = dual_token;
 
-    let user_recovery_orm2 = user_recovery_orm.clone();
     // Find a record with the specified ID in the “user_recovery" table.
-    let opt_user_recovery = web::block(move || {
-        let user_recovery = user_recovery_orm2.get_user_recovery_by_id(user_recovery_id).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        user_recovery
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    let opt_user_recovery = user_recovery_db.get_user_recovery_by_id(user_recovery_id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
-    let user_recovery_orm2 = user_recovery_orm.clone();
     // Delete entries in the "user_recovery" table, that are already expired.
-    let _ = web::block(move || user_recovery_orm2.delete_inactive_final_date(None)).await;
+    let _ = user_recovery_db.delete_inactive_final_date(None).await;
 
     // If no such entry exists, then exit with code 404.
     let user_recovery = opt_user_recovery.ok_or_else(|| {
@@ -405,14 +371,8 @@ pub async fn confirm_recovery(
     // If the user is updated successfully,
     // then delete the password recovery entry (table "user_recovery").
     if let Some(user) = opt_user {
-        let user_recovery_orm2 = user_recovery_orm.clone();
-        let _ = web::block(move || {
-            // Delete entries in the “user_recovery" table.
-            let user_recovery_res = user_recovery_orm2.delete_user_recovery(user_recovery_id);
-
-            user_recovery_res
-        })
-        .await;
+        // Delete entries in the “user_recovery" table.
+        let _ = user_recovery_db.delete_user_recovery(user_recovery_id).await;
 
         let response_dto = ConfirmRecoveryUserResponseDto {
             id: user.id,
@@ -468,24 +428,17 @@ pub async fn confirm_recovery(
 #[rustfmt::skip]
 #[get("/api/recovery/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn recovery_clear_for_expired(
-    user_recovery_orm: web::Data<UserRecoveryOrmApp>,
+    user_recovery_db: web::Data<UserRecoveryDbApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
     // Delete entries in the "user_recovery" table, that are already expired.
-    let count_inactive_recover_res = 
-        web::block(move || user_recovery_orm.delete_inactive_final_date(None)
+    let count_inactive_recover = user_recovery_db.delete_inactive_final_date(None)
+        .await
         .map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507,err::MSG_DATABASE, &e) // 507
-        })
-        ).await
-        .map_err(|e| {
-            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506,err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
-
-    let count_inactive_recover = count_inactive_recover_res.unwrap_or(0);
 
     let clear_for_expired_response_dto = RecoveryClearForExpiredResponseDto {
         count_inactive_recover,

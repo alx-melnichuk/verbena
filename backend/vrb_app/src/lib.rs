@@ -10,7 +10,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 use vrb_authent::{
-    self, config_jwt, user_authent_controller, user_orm, user_recovery_controller, user_recovery_orm, user_registr_controller,
+    self, config_jwt, user_authent_controller, user_orm, user_recovery_controller, user_recovery_db, user_registr_controller,
     user_registr_db,
 };
 use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
@@ -149,7 +149,7 @@ pub fn configure_server(db_pool: db::DbPool2, pool: dbase::DbPool) -> impl FnOnc
         // used: user_registr_controller
         let user_registr_db = web::Data::new(user_registr_db::get_user_registr_db_app(db_pool.clone()));
         // used: user_recovery_controller
-        let user_recovery_orm = web::Data::new(user_recovery_orm::get_user_recovery_orm_app(pool.clone()));
+        let user_recovery_db = web::Data::new(user_recovery_db::get_user_recovery_db_app(db_pool.clone()));
         // used: stream_controller, profile_controller
         let stream_orm = web::Data::new(stream_orm::get_stream_orm_app(pool.clone()));
         // used: profile_controller
@@ -170,7 +170,7 @@ pub fn configure_server(db_pool: db::DbPool2, pool: dbase::DbPool) -> impl FnOnc
             .app_data(web::Data::clone(&mailer))
             .app_data(web::Data::clone(&user_orm))
             .app_data(web::Data::clone(&user_registr_db))
-            .app_data(web::Data::clone(&user_recovery_orm))
+            .app_data(web::Data::clone(&user_recovery_db))
             .app_data(web::Data::clone(&stream_orm))
             .app_data(web::Data::clone(&profile_orm))
             .app_data(web::Data::clone(&chat_message_orm))

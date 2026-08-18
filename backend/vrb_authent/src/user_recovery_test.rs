@@ -19,10 +19,10 @@ mod tests {
             MSG_RECOVERY_NOT_FOUND, MSG_USER_NOT_FOUND, confirm_recovery, recovery, recovery_clear_for_expired,
             tests as UserRecoveryCtrlTest,
         },
+        user_recovery_db::tests::UserRecoveryDbTest,
         user_recovery_models::{
             ConfirmRecoveryUserResponseDto, RecoveryClearForExpiredResponseDto, RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto,
         },
-        user_recovery_orm::tests::UserRecoveryOrmTest,
     };
 
     const TEST_PATH_TEMPLATE: &str = "../templates";
@@ -41,7 +41,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -67,7 +67,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery").set_json(json!({}))
@@ -92,7 +92,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -119,7 +119,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -146,7 +146,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -173,7 +173,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -201,7 +201,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -223,7 +223,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user1_email = data_u.0.get(0).unwrap().email.clone();
-        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryDbTest::recoveries(Some(user1_id));
         let user_recovery1_id = recoveries.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -232,7 +232,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -262,7 +262,7 @@ mod tests {
         let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let user1_email = data_u.0.get(0).unwrap().email.clone();
-        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryDbTest::recoveries(Some(user1_id));
         let user_recovery1_id = recoveries.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -271,7 +271,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -309,7 +309,7 @@ mod tests {
             .configure(config_jwt::tests::cfg_config_jwt(config_jwt))
             .configure(UserRecoveryCtrlTest::cfg_mailer(config_smtp::get_test_config()))
             .configure(UserOrmTest::cfg_user_orm(data_u))
-            .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+            .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
@@ -336,7 +336,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
@@ -360,7 +360,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
@@ -384,7 +384,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
@@ -408,7 +408,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
@@ -432,7 +432,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(UserRecoveryOrmTest::recoveries(None)))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(UserRecoveryDbTest::recoveries(None)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "invalid_recovery_token"))
@@ -452,7 +452,7 @@ mod tests {
     async fn test_confirm_recovery_final_date_has_expired() {
         let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryDbTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
 
         let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
@@ -467,7 +467,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
@@ -488,7 +488,7 @@ mod tests {
     async fn test_confirm_recovery_no_exists_in_user_recovery() {
         let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryDbTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone() + 1;
 
         let num_token1 = config_jwt::tests::get_num_token(USER1_ID);
@@ -503,7 +503,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
@@ -524,7 +524,7 @@ mod tests {
     async fn test_confirm_recovery_no_exists_in_user() {
         let data_u = UserOrmTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id + 1;
-        let mut recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
+        let mut recoveries = UserRecoveryDbTest::recoveries(Some(user1_id));
         let recovery1 = recoveries.get_mut(0).unwrap();
 
         let config_app = config_app::get_test_config();
@@ -541,7 +541,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
@@ -566,7 +566,7 @@ mod tests {
         let email = user1.email.clone();
         let user1_created_at = user1.created_at.clone();
 
-        let recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
+        let recoveries = UserRecoveryDbTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
@@ -580,7 +580,7 @@ mod tests {
             App::new().service(confirm_recovery)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
@@ -614,7 +614,7 @@ mod tests {
         let config_app = config_app::get_test_config();
 
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let mut recoveries = UserRecoveryOrmTest::recoveries(Some(user1_id));
+        let mut recoveries = UserRecoveryDbTest::recoveries(Some(user1_id));
         let recovery1 = recoveries.get_mut(0).unwrap();
         recovery1.final_date = Utc::now() - Duration::seconds(recovery_duration);
         #[rustfmt::skip]
@@ -622,7 +622,7 @@ mod tests {
             App::new().service(recovery_clear_for_expired)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRecoveryOrmTest::cfg_recovery_orm(recoveries))
+                .configure(UserRecoveryDbTest::cfg_recovery_db(recoveries))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/recovery/clear_for_expired")

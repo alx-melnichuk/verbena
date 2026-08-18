@@ -1,25 +1,21 @@
 use chrono::{DateTime, Utc};
-use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use utoipa::ToSchema;
 use vrb_common::validators::{ValidationError, Validator};
-use vrb_dbase::schema;
 
 use crate::user_models;
 
 // ** Section: "UserRecovery" **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
-#[diesel(table_name = schema::user_recovery)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct UserRecovery {
     pub id: i32,
     pub user_id: i32,
     pub final_date: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::user_recovery)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct CreateUserRecovery {
     pub user_id: i32,
     pub final_date: DateTime<Utc>,
