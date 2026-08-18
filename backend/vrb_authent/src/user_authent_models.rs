@@ -6,7 +6,7 @@ use vrb_common::{
     serial_datetime,
     validators::{ValidationError, Validator},
 };
-use vrb_dbase::enm_user_role::UserRole;
+use vrb_db::enm_user_role::UserRole;
 
 use crate::user_models::{self, User};
 

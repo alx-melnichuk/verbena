@@ -20,9 +20,9 @@ use vrb_tools::{
 };
 
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::user_orm::impls::UserOrmApp;
+use crate::user_db::impls::UserDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::user_orm::tests::UserOrmApp;
+use crate::user_db::tests::UserDbApp;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::user_registr_db::impls::UserRegistrDbApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -30,8 +30,8 @@ use crate::user_registr_db::tests::UserRegistrDbApp;
 use crate::{
     authentication::RequireAuth,
     config_jwt,
+    user_db::UserDb,
     user_models::CreateUser,
-    user_orm::UserOrm,
     user_registr_db::UserRegistrDb,
     user_registr_models::{
         ConfirmRegistrUserResponseDto, CreateUserRegistr, RegistrUserDto, RegistrUserResponseDto, RegistrationClearForExpiredResponseDto,
@@ -93,8 +93,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 500, description = "Error while calculating the password hash.", body = ApiError, 
             example = json!(ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty."))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
         (status = 510, description = "Error sending email.", body = ApiError,
@@ -107,7 +105,7 @@ pub async fn registration(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     mailer: web::Data<MailerApp>,
     config_smtp: web::Data<config_smtp::ConfigSmtp>,
-    user_orm: web::Data<UserOrmApp>,
+    user_db: web::Data<UserDbApp>,
     user_registr_db: web::Data<UserRegistrDbApp>,
     json_body: web::Json<RegistrUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -141,32 +139,20 @@ pub async fn registration(
             .add_param(Cow::Borrowed("invalidParams"), &json));
     }
 
-    let user_orm2 = user_orm.get_ref().clone();
+    let mut opt_search: Option<(bool, bool)> = None;
 
-    let mut opt_search = web::block(move || {
-        let mut res_search: Option<(bool, bool)> = None;
-
-        if res_search.is_none() {
-            // Search for "nickname" or "email" in the "users" table.
-            let opt_user = user_orm2
-                .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
-                .map_err(|e| {
-                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                    ApiError::create(507, err::MSG_DATABASE, &e) // 507
-                })
-                .ok()?;
-            // If such an entry exists in the "users" table, then exit.
-            if let Some(user) = opt_user {
-                res_search = Some((nickname == user.nickname, email == user.email));
-            }
-        }
-        res_search
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+    // Search for "nickname" or "email" in the "users" table.
+    let opt_user = user_db
+        .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
+        .await
+        .map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
+    // If such an entry exists in the "users" table, then exit.
+    if let Some(user) = opt_user {
+        opt_search = Some((nickname == user.nickname, email == user.email));
+    }
 
     if opt_search.is_none() {
         let nickname = registr_user_dto.nickname.clone();
@@ -277,8 +263,6 @@ pub async fn registration(
             example = json!(ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken"))),
         (status = 404, description = "An entry for registering a new user was not found.", body = ApiError,
             example = json!(ApiError::create(404, MSG_REGISTR_NOT_FOUND, "user_registr_id: 123"))),
-        (status = 506, description = "Blocking error.", body = ApiError,
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError,
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -289,7 +273,7 @@ pub async fn confirm_registration(
     request: actix_web::HttpRequest,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_registr_db: web::Data<UserRegistrDbApp>,
-    user_orm: web::Data<UserOrmApp>,
+    user_db: web::Data<UserDbApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
@@ -329,20 +313,11 @@ pub async fn confirm_registration(
     // If such an entry exists, then add a new user.
     let create_user = CreateUser::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
 
-    let user = web::block(move || {
-        // Create a new entity (user, profile).
-        let res_profile = user_orm.create_user(create_user).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e)
-        });
-
-        res_profile
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
-    })??;
+    // Create a new entity (user, profile).
+    let user = user_db.create_user(create_user).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e)
+    })?;
 
     // Delete the processed record in the "user_registration" table.
     let _ = user_registr_db.delete_user_registr(user_registr_id).await.map_err(|e| {
@@ -385,8 +360,6 @@ pub async fn confirm_registration(
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
-        (status = 506, description = "Blocking error.", body = ApiError,
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError,
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),

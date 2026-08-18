@@ -13,7 +13,7 @@ use vrb_common::{
     err,
     validators::{Validator, msg_validation},
 };
-use vrb_dbase::enm_user_role::UserRole;
+use vrb_db::enm_user_role::UserRole;
 use vrb_tools::{hash_tools, token_coding, token_data::TOKEN_NAME};
 
 use crate::{
@@ -22,14 +22,14 @@ use crate::{
     user_authent_models::{
         LoginDto, LoginResponseDto, LoginUserProfileDto, UserTokenDto, UserTokenResponseDto, UserUniquenessDto, UserUniquenessResponseDto,
     },
+    user_db::UserDb,
     user_models::User,
-    user_orm::UserOrm,
     user_registr_db::UserRegistrDb,
 };
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::{user_orm::impls::UserOrmApp, user_registr_db::impls::UserRegistrDbApp};
+use crate::{user_db::impls::UserDbApp, user_registr_db::impls::UserRegistrDbApp};
 #[cfg(all(test, feature = "mockdata"))]
-use crate::{user_orm::tests::UserOrmApp, user_registr_db::tests::UserRegistrDbApp};
+use crate::{user_db::tests::UserDbApp, user_registr_db::tests::UserRegistrDbApp};
 
 const PASSWORD1: &str = "$argon2id$v=19$m=19456,t=2,p=1$sUU7bgDw7XH4z8SzvgXjkA$izpWfsHPJeXEhD90cRxxR/no7gyRz/DiANxe5Ckt53I";
 const TOKEN1: &str = "6lqN0k3-SB_OXGzOJYUr2GwYwAEmlJWFMpOwiYrT04_WQMRQs3PAlb7WHFExilHzFrbNSTsdGzmBzFMwFD2rVXgiQtoK4fON634zV9rjMswSd7FW7eHh3PmoVxUVtID1j6TWck_wJy0TdO2rcnLZIfu2jbMzk6myQCl_5u05Ii9YvtXOI8-a0fhMRveIcM8udUGatXT5HRnGAzjDQuhDZ-94DonA0rvn2DK3D9h-baU=";
@@ -82,15 +82,13 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         (status = 406, description = "None of the parameters are specified.", body = ApiError,
             example = json!(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED)
                 .add_param(Cow::Borrowed("invalidParams"), &json!({ "nickname": "null", "email": "null" })))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
 )]
 #[get("/api/users_uniqueness")]
 pub async fn users_uniqueness(
-    user_orm: web::Data<UserOrmApp>,
+    user_db: web::Data<UserDbApp>,
     user_registr_db: web::Data<UserRegistrDbApp>,
     query_params: web::Query<UserUniquenessDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -109,38 +107,28 @@ pub async fn users_uniqueness(
             .add_param(Cow::Borrowed("invalidParams"), &json));
     }
 
-    let user_orm2 = user_orm.get_ref().clone();
     let nickname2 = nickname.clone();
     let email2 = email.clone();
 
-    let mut opt_search = web::block(move || {
-        let mut res_search: Option<(bool, bool)> = None;
+    let mut opt_search: Option<(bool, bool)> = None;
 
-        if res_search.is_none() {
-            // Search for "nickname" or "email" in the "users" table.
-            let opt_user = user_orm2
-                .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
-                .map_err(|e| {
-                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                    ApiError::create(507, err::MSG_DATABASE, &e) // 507  
-                })
-                .ok()?;
-            // If such an entry exists in the "users" table, then exit.
-            if let Some(user) = opt_user {
-                res_search = Some((nickname == user.nickname, email == user.email));
-            }
-        }
-        res_search
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+    // Search for "nickname" or "email" in the "users" table.
+    let opt_user = user_db
+        .find_user_by_nickname_or_email(Some(&nickname2), Some(&email2), false)
+        .await
+        .map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507  
+        })?;
+
+    // If such an entry exists in the "users" table, then exit.
+    if let Some(user) = opt_user {
+        opt_search = Some((nickname2 == user.nickname, email2 == user.email));
+    }
 
     if opt_search.is_none() {
         let opt_user_registr = user_registr_db
-            .find_user_registr_by_nickname_or_email(Some(&nickname2), Some(&email2))
+            .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
             .await
             .map_err(|e| {
                 error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
@@ -148,7 +136,7 @@ pub async fn users_uniqueness(
             })?;
         // If such an entry exists in the "user_registrs" table, then exit.
         if let Some(user_registr) = opt_user_registr {
-            opt_search = Some((nickname2 == user_registr.nickname, email2 == user_registr.email));
+            opt_search = Some((nickname == user_registr.nickname, email == user_registr.email));
         }
     }
 
@@ -218,8 +206,6 @@ fn get_login_user_profile() -> LoginUserProfileDto {
             example = json!(ApiError::create(409, err::MSG_INVALID_HASH, "Parameter is empty."))),
         ( status = 422, description = "Token encoding error.", body = ApiError,
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -227,7 +213,7 @@ fn get_login_user_profile() -> LoginUserProfileDto {
 #[post("/api/login")]
 pub async fn login(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    user_orm: web::Data<UserOrmApp>,
+    user_db: web::Data<UserDbApp>,
     json_body: web::Json<LoginDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -243,23 +229,15 @@ pub async fn login(
     let nickname = login_dto.nickname.clone();
     let email = login_dto.nickname.clone();
     let password = login_dto.password.clone();
-    let user_orm2 = user_orm.get_ref().clone();
 
-    let opt_user_pwd = web::block(move || {
-        // Find a user profile by nickname or email address. Return user properties and password hash.
-        let existing_user = user_orm2
-            .find_user_by_nickname_or_email(Some(&nickname), Some(&email), true)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-        existing_user
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    // Find a user profile by nickname or email address. Return user properties and password hash.
+    let opt_user_pwd = user_db
+        .find_user_by_nickname_or_email(Some(&nickname), Some(&email), true)
+        .await
+        .map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
 
     let user_pwd = opt_user_pwd.ok_or_else(|| {
         error!("{}.{}", 401, err::MSG_WRONG_NICKNAME_EMAIL);
@@ -293,34 +271,23 @@ pub async fn login(
         ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
-    let res_session_profile = web::block(move || {
-        // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = user_orm.modify_session(user_pwd.id, Some(num_token)).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-
-        let res_profile = user_orm.get_profile_by_id(user_pwd.id).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-
-        (res_session, res_profile)
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    // Modify the entity (session) with new data. Result <Option<Session>>.
+    let opt_session = user_db.modify_session(user_pwd.id, Some(num_token)).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    let opt_session = res_session_profile.0?;
     if opt_session.is_none() {
         let msg = format!("user_id: {}", user_pwd.id);
         error!("{}.{}; {}", 406, err::MSG_SESSION_NOT_FOUND, &msg);
         return Err(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg)); // 406
     }
 
-    let opt_profile = res_session_profile.1?;
+    let opt_profile = user_db.get_profile_by_id(user_pwd.id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
+
     if opt_profile.is_none() {
         let msg = format!("user_id: {}", user_pwd.id);
         error!("{}.{}; {}", 406, err::MSG_PROFILE_NOT_FOUND, &msg);
@@ -381,34 +348,24 @@ pub async fn login(
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
         (status = 406, description = "Error session not found.", body = ApiError,
             example = json!(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, "user_id: 1"))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = []))
 )]
 #[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp>) -> actix_web::Result<HttpResponse, ApiError> {
+pub async fn logout(authenticated: Authenticated, user_db: web::Data<UserDbApp>) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
     // Get user ID.
     let user = authenticated.deref().clone();
 
     // Clear "num_token" value.
-    let opt_session = web::block(move || {
-        // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = user_orm.modify_session(user.id, None).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_session
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    // Modify the entity (session) with new data. Result <Option<Session>>.
+    let opt_session = user_db.modify_session(user.id, None).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     if opt_session.is_none() {
         let msg = format!("user_id: {}", user.id);
@@ -474,7 +431,7 @@ pub async fn logout(authenticated: Authenticated, user_orm: web::Data<UserOrmApp
 #[post("/api/token")]
 pub async fn update_token(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    user_orm: web::Data<UserOrmApp>,
+    user_db: web::Data<UserDbApp>,
     json_token_user_dto: web::Json<UserTokenDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -490,21 +447,11 @@ pub async fn update_token(
         ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
     })?;
 
-    let user_orm2 = user_orm.get_ref().clone();
-
-    let opt_session = web::block(move || {
-        // Find a session for a given user.
-        let existing_session = user_orm2.get_session_by_id(user_id).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        existing_session
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    // Find a session for a given user.
+    let opt_session = user_db.get_session_by_id(user_id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     let session = opt_session.ok_or_else(|| {
         // There is no session for this user.
@@ -539,21 +486,11 @@ pub async fn update_token(
         ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
-    let opt_session = web::block(move || {
-        // Find a session for a given user.
-        #[rustfmt::skip]
-        let existing_session = user_orm.modify_session(user_id, Some(num_token))
-        .map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        existing_session
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    // Find a session for a given user.
+    let opt_session = user_db.modify_session(user_id, Some(num_token)).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     if opt_session.is_none() {
         // There is no session for this user.

@@ -15,8 +15,8 @@ path = "src/lib.rs"
 # actix-web = { workspace = true }
 # chrono = { workspace = true }
 log = { workspace = true }
-# serde = { workspace = true }
-# serde_json = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 sqlx = { workspace = true }
-# utoipa = { workspace = true }
+utoipa = { workspace = true }
 # vrb_tools = { workspace = true }

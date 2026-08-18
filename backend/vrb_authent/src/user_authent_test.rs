@@ -19,8 +19,8 @@ mod tests {
         user_authent_models::{
             LoginDto, LoginResponseDto, LoginUserProfileDto, UserTokenDto, UserTokenResponseDto, UserUniquenessResponseDto,
         },
+        user_db::tests::{USER, USER1_ID, UserDbTest},
         user_models::{self, Session, UserMock},
-        user_orm::tests::{USER, USER1_ID, UserOrmTest},
         user_registr_db::tests::UserRegistrDbTest,
     };
 
@@ -33,12 +33,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_users_uniqueness_by_non_params() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -58,12 +58,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_nickname_empty() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -84,12 +84,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_email_empty() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -110,13 +110,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_nickname_user() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let nickname = data_u.0.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -134,13 +134,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_email_user() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let email = data_u.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -158,14 +158,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_nickname_registr() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let registr = UserRegistrDbTest::registrs(true);
         let nickname = registr.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(registr))
         ).await;
         #[rustfmt::skip]
@@ -183,14 +183,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_email_registr() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let registr = UserRegistrDbTest::registrs(true);
         let email = registr.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(registr))
         ).await;
         #[rustfmt::skip]
@@ -208,13 +208,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_new_nickname() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let nickname = format!("a{}", data_u.0.get(0).unwrap().nickname.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -232,13 +232,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_users_uniqueness_by_new_email() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let email = format!("a{}", data_u.0.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
                 .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
@@ -259,12 +259,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_login_no_data() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         let req = test::TestRequest::post().uri("/api/login").to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -278,12 +278,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_empty_json_object() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         let req = test::TestRequest::post().uri("/api/login").set_json(json!({})).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -296,12 +296,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_empty() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -318,12 +318,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_min() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -340,12 +340,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_max() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -362,12 +362,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_wrong() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -384,12 +384,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_min() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -406,12 +406,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_max() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -428,12 +428,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_wrong() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -450,12 +450,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_empty() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -472,12 +472,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_min() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -494,12 +494,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_max() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -516,12 +516,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_wrong() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -538,13 +538,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_nickname_not_exist() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let nickname = data_u.0.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -561,13 +561,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_email_not_exist() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let email = data_u.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -584,7 +584,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_password_invalid_hash() {
-        let mut data_u = UserOrmTest::users(&[USER]);
+        let mut data_u = UserDbTest::users(&[USER]);
         let user1 = data_u.0.get_mut(0).unwrap();
         let password = "hash_password_R2B2";
         user1.password = password.to_string();
@@ -593,7 +593,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -610,7 +610,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_password_incorrect() {
-        let mut data_u = UserOrmTest::users(&[USER]);
+        let mut data_u = UserDbTest::users(&[USER]);
         let user1 = data_u.0.get_mut(0).unwrap();
         let nickname = "Robert_Brown".to_string();
         let password = "passwdR2B2";
@@ -620,7 +620,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -637,7 +637,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_err_jsonwebtoken_encode() {
-        let mut data_u = UserOrmTest::users(&[USER]);
+        let mut data_u = UserDbTest::users(&[USER]);
         let nickname = "Robert_Brown".to_string();
         let password = "passwdR2B2";
         let user1 = data_u.0.get_mut(0).unwrap();
@@ -649,7 +649,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -666,7 +666,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_session_not_exist() {
-        let mut data_u = UserOrmTest::users(&[USER]);
+        let mut data_u = UserDbTest::users(&[USER]);
         let user1 = data_u.0.last_mut().unwrap();
         // Change ID, reset connection with session.
         let nickname = user1.nickname.clone();
@@ -679,7 +679,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -696,14 +696,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_valid_credentials() {
-        let mut data_u = UserOrmTest::users(&[USER]);
+        let mut data_u = UserDbTest::users(&[USER]);
         let user1 = data_u.0.get_mut(0).unwrap();
         let nickname = user1.nickname.clone();
         let password = "passwdR2B2";
         user1.password = hash_tools::encode_hash(password).unwrap(); // hashed
 
         let mut user_profile_ser = LoginUserProfileDto::from(user1.clone());
-        let profile1 = UserOrmTest::profile(user1.id);
+        let profile1 = UserDbTest::profile(user1.id);
         user_profile_ser.avatar = profile1.avatar;
         user_profile_ser.descript = profile1.descript;
         user_profile_ser.theme = profile1.theme;
@@ -714,7 +714,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(login)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
@@ -770,12 +770,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_logout_missing_token() {
-        let data_u = UserOrmTest::users(&[]);
+        let data_u = UserDbTest::users(&[]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout").to_request();
@@ -791,12 +791,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_logout_invalid_token() {
-        let data_u = UserOrmTest::users(&[]);
+        let data_u = UserDbTest::users(&[]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
@@ -814,14 +814,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_logout_valid_token_session_non_exist() {
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let user2_id = USER1_ID + 1;
         let token2 = config_jwt::tests::get_token(user2_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
@@ -838,7 +838,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_logout_valid_token_non_existent_user() {
-        let mut data_u = UserOrmTest::users(&[USER]);
+        let mut data_u = UserDbTest::users(&[USER]);
         let user2_id = USER1_ID + 1;
         data_u.1 = vec![Session::new(user2_id, Some(config_jwt::tests::get_num_token(user2_id)))];
         let token2 = config_jwt::tests::get_token(user2_id);
@@ -846,7 +846,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(logout)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
@@ -863,7 +863,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_logout_valid_token_non_existent_num() {
-        let mut data_u = UserOrmTest::users(&[USER]);
+        let mut data_u = UserDbTest::users(&[USER]);
         let user2_id = USER1_ID + 1;
         data_u.1 = vec![Session::new(user2_id, Some(config_jwt::tests::get_num_token(USER1_ID)))];
         let token2 = config_jwt::tests::get_token(user2_id);
@@ -871,7 +871,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(logout)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
@@ -889,12 +889,12 @@ mod tests {
     #[actix_web::test]
     async fn test_logout_valid_token() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(logout)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
@@ -924,12 +924,12 @@ mod tests {
     #[actix_web::test]
     async fn test_update_token_no_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -947,12 +947,12 @@ mod tests {
     #[actix_web::test]
     async fn test_update_token_empty_json_object() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -970,12 +970,12 @@ mod tests {
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_empty() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -994,12 +994,12 @@ mod tests {
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_invalid() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -1018,7 +1018,7 @@ mod tests {
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let config_jwt = config_jwt::tests::get_config();
         let jwt_secret = config_jwt.jwt_secret.as_bytes();
         let user_id_bad = data_u.0.get(0).unwrap().id + 1;
@@ -1028,7 +1028,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(update_token)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -1047,7 +1047,7 @@ mod tests {
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_num() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let config_jwt = config_jwt::tests::get_config();
         let jwt_secret = config_jwt.jwt_secret.as_bytes();
@@ -1057,7 +1057,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(update_token)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
@@ -1076,7 +1076,7 @@ mod tests {
     #[actix_web::test]
     async fn test_update_token_valid_dto_token() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let config_jwt = config_jwt::tests::get_config();
         let jwt_access = config_jwt.jwt_access;
@@ -1087,7 +1087,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(update_token)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
+                .configure(UserDbTest::cfg_user_db(data_u))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")

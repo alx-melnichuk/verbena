@@ -1,127 +1,132 @@
-use vrb_dbase::dbase::DbPool;
+use vrb_db::db::DbPool2;
 
 use crate::user_models::{CreateUser, ModifyUser, Profile, Session, User};
 
-pub trait UserOrm {
+pub trait UserDb {
     /// Get an entity (user) by ID.
-    fn get_user_by_id(&self, id: i32, is_password: bool) -> Result<Option<User>, String>;
+    fn get_user_by_id(&self, id: i32, is_password: bool) -> impl std::future::Future<Output = Result<Option<User>, String>> + Send;
 
     /// Get an entity (session) by ID.
-    fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
+    fn get_session_by_id(&self, user_id: i32) -> impl std::future::Future<Output = Result<Option<Session>, String>> + Send;
 
     /// Modify the entity (session).
-    fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
+    fn modify_session(
+        &self,
+        user_id: i32,
+        num_token: Option<i32>,
+    ) -> impl std::future::Future<Output = Result<Option<Session>, String>> + Send;
     // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
 
     /// Find for an entity (user) by nickname or email.
     #[rustfmt::skip]
     fn find_user_by_nickname_or_email(
         &self, nickname: Option<&str>, email: Option<&str>, is_password: bool,
-    ) -> Result<Option<User>, String>;
+    ) -> impl std::future::Future<Output = Result<Option<User>, String>> + Send;
 
     /// Add a new entry (user).
-    fn create_user(&self, create_user: CreateUser) -> Result<User, String>;
+    fn create_user(&self, create_user: CreateUser) -> impl std::future::Future<Output = Result<User, String>> + Send;
 
     /// Modify an entity (user).
-    fn modify_user(&self, id: i32, modify_user: ModifyUser) -> Result<Option<User>, String>;
+    fn modify_user(&self, id: i32, modify_user: ModifyUser) -> impl std::future::Future<Output = Result<Option<User>, String>> + Send;
 
     /// Delete an entity (user).
-    fn delete_user(&self, id: i32) -> Result<Option<User>, String>;
+    fn delete_user(&self, id: i32) -> impl std::future::Future<Output = Result<Option<User>, String>> + Send;
 
     /// Get an entity (profile) by USER_ID.
-    fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String>;
+    fn get_profile_by_id(&self, user_id: i32) -> impl std::future::Future<Output = Result<Option<Profile>, String>> + Send;
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_user_orm_app(pool: DbPool) -> impls::UserOrmApp {
-    impls::UserOrmApp::new(pool)
+pub fn get_user_db_app(pool: DbPool2) -> impls::UserDbApp {
+    impls::UserDbApp::new(pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
-pub fn get_user_orm_app(_: DbPool) -> tests::UserOrmApp {
-    tests::UserOrmApp::new()
+pub fn get_user_db_app(_: DbPool2) -> tests::UserDbApp {
+    tests::UserDbApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
     use std::time::Instant as tm;
 
-    use diesel::{self, prelude::*, sql_types};
     use log::{Level::Info, info, log_enabled};
-    use vrb_dbase::{dbase, schema};
+    use sqlx;
+    use vrb_db::db::DbPool2;
 
+    use crate::user_db::UserDb;
     use crate::user_models::{CreateUser, ModifyUser, Profile, Session, User};
-    use crate::user_orm::UserOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
     #[derive(Debug, Clone)]
-    pub struct UserOrmApp {
-        pub pool: dbase::DbPool,
+    pub struct UserDbApp {
+        pub db_pool: DbPool2,
     }
 
-    impl UserOrmApp {
-        pub fn new(pool: dbase::DbPool) -> Self {
-            UserOrmApp { pool }
-        }
-        pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
-            (&self.pool).get().map_err(|e| format!("{}: {}", CONN_POOL, e.to_string()))
+    impl UserDbApp {
+        pub fn new(db_pool: DbPool2) -> Self {
+            UserDbApp { db_pool }
         }
     }
 
-    impl UserOrm for UserOrmApp {
+    impl UserDb for UserDbApp {
         /// Get an entity (user) by ID.
-        fn get_user_by_id(&self, id: i32, is_password: bool) -> Result<Option<User>, String> {
+        async fn get_user_by_id(&self, id: i32, is_password: bool) -> Result<Option<User>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
 
-            #[rustfmt::skip]
-            let query =
-                diesel::sql_query("select * from find_user($1, NULL, NULL, $2);")
-                .bind::<sql_types::Integer, _>(id)
-                .bind::<sql_types::Bool, _>(is_password);
-
-            let opt_user = query
-                .get_result::<User>(&mut conn)
-                .optional()
-                .map_err(|e| format!("find_user_by_id: {}", e.to_string()))?;
+            let result: Option<User> = sqlx::query_as(
+                "SELECT id, nickname, email, \"password\", \"role\", created_at, updated_at \
+                FROM find_user($1, NULL, NULL, $2) \
+                LIMIT 1",
+            )
+            .bind(id)
+            .bind(is_password)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("find_user_by_id: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("get_user_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(opt_user)
+            Ok(result)
         }
 
         /// Get an entity (session) by ID.
-        fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
+        async fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to find user by id and return it.
-            let opt_session: Option<Session> = schema::sessions::table
-                .filter(schema::sessions::dsl::user_id.eq(user_id))
-                .first::<Session>(&mut conn)
-                .optional()
-                .map_err(|e| format!("get_session_by_id: {}", e.to_string()))?;
+
+            let result: Option<Session> = sqlx::query_as(
+                "SELECT user_id, num_token \
+                FROM sessions \
+                WHERE user_id = $1 \
+                LIMIT 1",
+            )
+            .bind(user_id)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("get_session_by_id: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("get_session_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(opt_session)
+            Ok(result)
         }
 
         /// Perform a full or partial change to a session record.
-        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
+        async fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to full or partially modify the session entry.
-            let result = diesel::update(schema::sessions::dsl::sessions.find(user_id))
-                .set(schema::sessions::dsl::num_token.eq(num_token))
-                .returning(Session::as_returning())
-                .get_result(&mut conn)
-                .optional()
-                .map_err(|e| format!("modify_session: {}", e.to_string()))?;
+
+            let result: Option<Session> = sqlx::query_as(
+                "UPDATE sessions SET \
+                num_token=$2 \
+                WHERE user_id=$1 \
+                RETURNING user_id, num_token",
+            )
+            .bind(user_id)
+            .bind(num_token)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("modify_session: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("modify_session() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -130,7 +135,7 @@ pub mod impls {
         }
 
         /// Find for an entity (user) by nickname or email.
-        fn find_user_by_nickname_or_email(
+        async fn find_user_by_nickname_or_email(
             &self,
             nickname: Option<&str>,
             email: Option<&str>,
@@ -139,62 +144,57 @@ pub mod impls {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let nickname2 = nickname.unwrap_or("").to_lowercase();
-            let nickname2_len = nickname2.len();
+            // let nickname2_len = nickname2.len();
             let email2 = email.unwrap_or("").to_lowercase();
-            let email2_len = email2.len();
-            if nickname2_len == 0 && email2_len == 0 {
+            // let email2_len = email2.len();
+            if nickname2.len() == 0 && email2.len() == 0 {
                 return Ok(None);
             }
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from find_user(NULL, $1, $2, $3);")
-                .bind::<sql_types::Text, _>(nickname2)
-                .bind::<sql_types::Text, _>(email2)
-                .bind::<sql_types::Bool, _>(is_password);
-
-            // Run query using Diesel to find user by id (and user_id) and return it.
-            let opt_user = query
-                .get_result::<User>(&mut conn)
-                .optional()
-                .map_err(|e| format!("find_user: {}", e.to_string()))?;
+            let result: Option<User> = sqlx::query_as(
+                "SELECT id, nickname, email, \"password\", \"role\", created_at, updated_at \
+                FROM find_user(NULL, $1, $2, $3) \
+                LIMIT 1",
+            )
+            .bind(nickname2)
+            .bind(email2)
+            .bind(is_password)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("find_user_by_nickname_or_email: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 #[rustfmt::skip]
                 info!("find_user_by_nickname_or_email() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(opt_user)
+            Ok(result)
         }
 
         /// Add a new entry (user, profile).
-        fn create_user(&self, create_user: CreateUser) -> Result<User, String> {
+        async fn create_user(&self, create_user: CreateUser) -> Result<User, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
-            let create_user2 = CreateUser::new(
-                &create_user.nickname.to_lowercase(),
-                &create_user.email.to_lowercase(),
-                &create_user.password,
-                create_user.role,
-            );
-
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            // Run query using Diesel to add a new user entry.
-            let user: User = diesel::insert_into(schema::users::table)
-                .values(create_user2)
-                .returning(User::as_returning())
-                .get_result(&mut conn)
-                .map_err(|e| format!("create_user: {}", e.to_string()))?;
+            let result: User = sqlx::query_as(
+                "INSERT INTO users(nickname, email, \"password\", \"role\") \
+                VALUES($1, $2, $3, $4) \
+                RETURNING id, nickname, email, \"password\", \"role\", created_at, updated_at",
+            )
+            .bind(create_user.nickname.to_lowercase())
+            .bind(create_user.email.to_lowercase())
+            .bind(create_user.password)
+            .bind(create_user.role)
+            .fetch_one(&self.db_pool)
+            .await
+            .map_err(|e| format!("create_user: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("create_user() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(user)
+            Ok(result)
         }
 
         /// Modify an entity (user).
-        fn modify_user(&self, id: i32, modify_user: ModifyUser) -> Result<Option<User>, String> {
+        async fn modify_user(&self, id: i32, modify_user: ModifyUser) -> Result<Option<User>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let modify_user2 = ModifyUser::new(
@@ -203,35 +203,45 @@ pub mod impls {
                 modify_user.password,
                 modify_user.role,
             );
-
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to full or partially modify the user entry.
-            let opt_user: Option<User> = diesel::update(schema::users::dsl::users.find(id))
-                .set(&modify_user2)
-                .returning(User::as_returning())
-                .get_result(&mut conn)
-                .optional()
-                .map_err(|e| format!("modify_user: {}", e.to_string()))?;
+            // # e AS "e!: Enm"
+            // # \"role\"=$5 'user'::user_role
+            let result: Option<User> = sqlx::query_as(
+                "UPDATE users SET \
+                nickname=$2, \
+                email=$3, \
+                \"password\"=$4, \
+                \"role\"=$5 \
+                WHERE id=$1 \
+                RETURNING id, nickname, email, \"password\", \"role\", created_at, updated_at",
+            )
+            .bind(id)
+            .bind(modify_user2.nickname)
+            .bind(modify_user2.email)
+            .bind(modify_user2.password)
+            .bind(modify_user2.role)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("modify_user: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("modify_user() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(opt_user)
+            Ok(result)
         }
 
         /// Delete an entity (user).
-        fn delete_user(&self, id: i32) -> Result<Option<User>, String> {
+        async fn delete_user(&self, id: i32) -> Result<Option<User>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to delete a entry (user).
-            let result = diesel::delete(schema::users::dsl::users.find(id))
-                .returning(User::as_returning())
-                .get_result(&mut conn)
-                .optional()
-                .map_err(|e| format!("delete_user: {}", e.to_string()))?;
+            let result: Option<User> = sqlx::query_as(
+                "DELETE FROM users \
+                WHERE id = $1 \
+                RETURNING id, nickname, email, \"password\", \"role\", created_at, updated_at",
+            )
+            .bind(id)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("delete_user: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("delete_user() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -240,21 +250,24 @@ pub mod impls {
         }
 
         /// Get an entity (profile) by USER_ID.
-        fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
+        async fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to find user by id and return it.
-            let opt_profile: Option<Profile> = schema::profiles::table
-                .filter(schema::profiles::dsl::user_id.eq(user_id))
-                .first::<Profile>(&mut conn)
-                .optional()
-                .map_err(|e| format!("get_profile_by_id: {}", e.to_string()))?;
+
+            let result: Option<Profile> = sqlx::query_as(
+                "SELECT user_id, avatar, descript, theme, locale, created_at, updated_at \
+                FROM profiles \
+                WHERE user_id = $1
+                LIMIT 1",
+            )
+            .bind(user_id)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("get_profile_by_id: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("get_profile_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(opt_profile)
+            Ok(result)
         }
     }
 }
@@ -264,12 +277,12 @@ pub mod tests {
     use actix_web::web;
     use chrono::Utc;
     use vrb_common::profile::{PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF};
-    use vrb_dbase::enm_user_role::UserRole;
+    use vrb_db::enm_user_role::UserRole;
 
     use crate::{
         config_jwt,
+        user_db::UserDb,
         user_models::{CreateUser, ModifyUser, Profile, Session, User},
-        user_orm::UserOrm,
     };
 
     pub const ADMIN: u8 = 0;
@@ -294,24 +307,24 @@ pub mod tests {
     pub const USER_NAMES: [&str; 4] = [USER1_NAME, USER2_NAME, USER3_NAME, USER4_NAME];
 
     #[derive(Debug, Clone)]
-    pub struct UserOrmApp {
+    pub struct UserDbApp {
         pub user_vec: Vec<User>,
         pub session_vec: Vec<Session>,
     }
 
-    impl UserOrmApp {
+    impl UserDbApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            UserOrmApp {
+            UserDbApp {
                 user_vec: Vec::new(),
                 session_vec: Vec::new(),
             }
         }
     }
 
-    impl UserOrm for UserOrmApp {
+    impl UserDb for UserDbApp {
         /// Get an entity (user) by ID.
-        fn get_user_by_id(&self, id: i32, is_password: bool) -> Result<Option<User>, String> {
+        async fn get_user_by_id(&self, id: i32, is_password: bool) -> Result<Option<User>, String> {
             let opt_user = self.user_vec.iter().find(|user| user.id == id).map(|user| user.clone());
 
             let result = match opt_user {
@@ -327,7 +340,7 @@ pub mod tests {
         }
 
         /// Get an entity (session) by ID.
-        fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
+        async fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
             let opt_session: Option<Session> = self
                 .session_vec
                 .iter()
@@ -338,8 +351,8 @@ pub mod tests {
         }
 
         /// Modify the entity (session).
-        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
-            let opt_session: Option<Session> = self.get_session_by_id(user_id)?;
+        async fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
+            let opt_session: Option<Session> = self.get_session_by_id(user_id).await?;
             if opt_session.is_none() {
                 return Ok(None);
             }
@@ -351,7 +364,7 @@ pub mod tests {
         }
 
         /// Find for an entity (user) by nickname or email.
-        fn find_user_by_nickname_or_email(
+        async fn find_user_by_nickname_or_email(
             &self,
             nickname: Option<&str>,
             email: Option<&str>,
@@ -386,12 +399,12 @@ pub mod tests {
         }
 
         /// Add a new entry (user, profile).
-        fn create_user(&self, create_user: CreateUser) -> Result<User, String> {
+        async fn create_user(&self, create_user: CreateUser) -> Result<User, String> {
             let nickname = create_user.nickname.to_lowercase();
             let email = create_user.email.to_lowercase();
 
             // Check the availability of the profile by nickname and email.
-            let opt_user = self.find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)?;
+            let opt_user = self.find_user_by_nickname_or_email(Some(&nickname), Some(&email), false).await?;
             if opt_user.is_some() {
                 return Err("Profile already exists".to_string());
             }
@@ -403,7 +416,7 @@ pub mod tests {
         }
 
         /// Modify an entity (user).
-        fn modify_user(&self, id: i32, modify_user: ModifyUser) -> Result<Option<User>, String> {
+        async fn modify_user(&self, id: i32, modify_user: ModifyUser) -> Result<Option<User>, String> {
             let opt_user1 = self.user_vec.iter().find(|user| (*user).id == id);
             let opt_user: Option<User> = if let Some(user1) = opt_user1 {
                 let mut user = user1.clone();
@@ -432,25 +445,25 @@ pub mod tests {
         }
 
         /// Delete an entity (user).
-        fn delete_user(&self, id: i32) -> Result<Option<User>, String> {
+        async fn delete_user(&self, id: i32) -> Result<Option<User>, String> {
             let user_opt = self.user_vec.iter().find(|user| user.id == id);
 
             Ok(user_opt.map(|u| u.clone()))
         }
 
         /// Get an entity (profile) by USER_ID.
-        fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
+        async fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let opt_user: Option<User> = self.user_vec.iter().find(|user| user.id == user_id).map(|user| user.clone());
 
-            let opt_profile = opt_user.map(|user| UserOrmTest::profile(user.id));
+            let opt_profile = opt_user.map(|user| UserDbTest::profile(user.id));
 
             Ok(opt_profile)
         }
     }
 
-    pub struct UserOrmTest {}
+    pub struct UserDbTest {}
 
-    impl UserOrmTest {
+    impl UserDbTest {
         pub fn users(roles: &[u8]) -> (Vec<User>, Vec<Session>) {
             let mut user_vec: Vec<User> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
@@ -474,14 +487,14 @@ pub mod tests {
             }
             (user_vec, session_vec)
         }
-        pub fn cfg_user_orm(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
+        pub fn cfg_user_db(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
-                let mut user_orm_app = UserOrmApp::new();
-                user_orm_app.user_vec.extend(data_p.0);
-                user_orm_app.session_vec.extend(data_p.1);
+                let mut user_db_app = UserDbApp::new();
+                user_db_app.user_vec.extend(data_p.0);
+                user_db_app.session_vec.extend(data_p.1);
 
-                let data_user_orm = web::Data::new(user_orm_app);
-                config.app_data(web::Data::clone(&data_user_orm));
+                let data_user_db = web::Data::new(user_db_app);
+                config.app_data(web::Data::clone(&data_user_db));
             }
         }
         pub fn profile(user_id: i32) -> Profile {

@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
-use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use vrb_common::validators::{ValidationChecks, ValidationError};
-use vrb_dbase::{enm_user_role::UserRole, schema};
+use vrb_db::enm_user_role::UserRole;
 
 // ** Section: "User.nickname" **
 
@@ -113,9 +113,7 @@ pub fn validate_role(value: &str) -> Result<(), ValidationError> {
 
 // ** Model: "User". **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName, Queryable, Selectable)]
-#[diesel(table_name = schema::users)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct User {
     pub id: i32,
     pub nickname: String, // max_len: 255
@@ -143,8 +141,7 @@ impl User {
 
 // ** Used: UserOrm::create_user() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset, Insertable)]
-#[diesel(table_name = schema::users)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct CreateUser {
     pub nickname: String,       // min_len=3 max_len=64
     pub email: String,          // min_len=5 max_len=254
@@ -165,8 +162,7 @@ impl CreateUser {
 
 // ** Used: UserOrm::modify_user() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset)]
-#[diesel(table_name = schema::users)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct ModifyUser {
     pub nickname: Option<String>, // min_len=3,max_len=64
     pub email: Option<String>,    // min_len=5,max_len=254,"email:email_type"
@@ -187,9 +183,7 @@ impl ModifyUser {
 
 // ** Model: "Session". **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
-#[diesel(table_name = schema::sessions)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct Session {
     pub user_id: i32,
     pub num_token: Option<i32>,
@@ -203,9 +197,7 @@ impl Session {
 
 // ** Model: "Profile". **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName, Queryable, Selectable)]
-#[diesel(table_name = schema::profiles)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct Profile {
     pub user_id: i32,
     pub avatar: Option<String>,

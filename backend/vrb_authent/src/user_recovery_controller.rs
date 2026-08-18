@@ -20,9 +20,9 @@ use vrb_tools::{
 };
 
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::user_orm::impls::UserOrmApp;
+use crate::user_db::impls::UserDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::user_orm::tests::UserOrmApp;
+use crate::user_db::tests::UserDbApp;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::user_recovery_db::impls::UserRecoveryDbApp;
@@ -32,8 +32,8 @@ use crate::user_recovery_db::tests::UserRecoveryDbApp;
 use crate::{
     authentication::RequireAuth,
     config_jwt,
+    user_db::UserDb,
     user_models::ModifyUser,
-    user_orm::UserOrm,
     user_recovery_db::UserRecoveryDb,
     user_recovery_models::{
         ConfirmRecoveryUserResponseDto, CreateUserRecovery, RecoveryClearForExpiredResponseDto, RecoveryDataDto, RecoveryUserDto,
@@ -88,8 +88,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             example = json!(ApiError::validations((RecoveryUserDto { email: "us_email".to_string() }).validate().err().unwrap()))),
         (status = 422, description = "Token encoding error.", body = ApiError,
             example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
         (status = 510, description = "Error sending email.", body = ApiError,
@@ -102,7 +100,7 @@ pub async fn recovery(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     mailer: web::Data<MailerApp>,
     config_smtp: web::Data<config_smtp::ConfigSmtp>,
-    user_orm: web::Data<UserOrmApp>,
+    user_db: web::Data<UserDbApp>,
     user_recovery_db: web::Data<UserRecoveryDbApp>,
     json_body: web::Json<RecoveryUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -119,18 +117,10 @@ pub async fn recovery(
     let email = recovery_profile_dto.email.clone();
 
     // Find in the "user" table an entry by email.
-    let opt_user = web::block(move || {
-        let existing_user = user_orm.find_user_by_nickname_or_email(None, Some(&email), false).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        existing_user
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    let opt_user = user_db.find_user_by_nickname_or_email(None, Some(&email), false).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     // If such an entry does not exist, then exit with code 404.
     let user = match opt_user {
@@ -261,8 +251,6 @@ pub async fn recovery(
             example = json!(ApiError::validations((RecoveryDataDto { password: "pas".to_string() }).validate().err().unwrap()) )),
         (status = 500, description = "Error while calculating the password hash.", body = ApiError, 
             example = json!(ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty."))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -272,7 +260,7 @@ pub async fn recovery(
 pub async fn confirm_recovery(
     request: actix_web::HttpRequest,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    user_orm: web::Data<UserOrmApp>,
+    user_db: web::Data<UserDbApp>,
     user_recovery_db: web::Data<UserRecoveryDbApp>,
     json_body: web::Json<RecoveryDataDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -324,22 +312,12 @@ pub async fn confirm_recovery(
     })?;
     let user_id = user_recovery.user_id;
 
-    let user_orm2 = user_orm.clone();
     // If there is "user_recovery" with this ID, then move on to the next step.
-    let opt_user = web::block(move || {
-        // Find profile by user id.
-        let res_user = user_orm2.get_user_by_id(user_id, false).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-
-        res_user
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) //506
-    })??;
+    // Find profile by user id.
+    let opt_user = user_db.get_user_by_id(user_id, false).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     // If no such entry exists, then exit with code 404.
     let user = opt_user.ok_or_else(|| {
@@ -355,18 +333,10 @@ pub async fn confirm_recovery(
         role: None,
     };
     // Update the password hash for the user profile.
-    let opt_user = web::block(move || {
-        let opt_user1 = user_orm.modify_user(user.id, modify_user).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        opt_user1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    let opt_user = user_db.modify_user(user.id, modify_user).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     // If the user is updated successfully,
     // then delete the password recovery entry (table "user_recovery").
@@ -418,8 +388,6 @@ pub async fn confirm_recovery(
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
