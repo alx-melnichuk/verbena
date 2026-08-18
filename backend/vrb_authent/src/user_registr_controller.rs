@@ -24,18 +24,18 @@ use crate::user_orm::impls::UserOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::user_orm::tests::UserOrmApp;
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::user_registr_orm::impls::UserRegistrOrmApp;
+use crate::user_registr_db::impls::UserRegistrDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::user_registr_orm::tests::UserRegistrOrmApp;
+use crate::user_registr_db::tests::UserRegistrDbApp;
 use crate::{
     authentication::RequireAuth,
     config_jwt,
     user_models::CreateUser,
     user_orm::UserOrm,
+    user_registr_db::UserRegistrDb,
     user_registr_models::{
         ConfirmRegistrUserResponseDto, CreateUserRegistr, RegistrUserDto, RegistrUserResponseDto, RegistrationClearForExpiredResponseDto,
     },
-    user_registr_orm::UserRegistrOrm,
 };
 
 // 404 Not Found - Registration record not found.
@@ -108,7 +108,7 @@ pub async fn registration(
     mailer: web::Data<MailerApp>,
     config_smtp: web::Data<config_smtp::ConfigSmtp>,
     user_orm: web::Data<UserOrmApp>,
-    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    user_registr_db: web::Data<UserRegistrDbApp>,
     json_body: web::Json<RegistrUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -142,9 +142,8 @@ pub async fn registration(
     }
 
     let user_orm2 = user_orm.get_ref().clone();
-    let user_registr_orm2 = user_registr_orm.get_ref().clone();
 
-    let opt_search = web::block(move || {
+    let mut opt_search = web::block(move || {
         let mut res_search: Option<(bool, bool)> = None;
 
         if res_search.is_none() {
@@ -161,19 +160,6 @@ pub async fn registration(
                 res_search = Some((nickname == user.nickname, email == user.email));
             }
         }
-        if res_search.is_none() {
-            let opt_user_registr = user_registr_orm2
-                .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
-                .map_err(|e| {
-                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                    ApiError::create(507, err::MSG_DATABASE, &e) // 507
-                })
-                .ok()?;
-            // If such an entry exists in the "user_registrs" table, then exit.
-            if let Some(user_registr) = opt_user_registr {
-                res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
-            }
-        }
         res_search
     })
     .await
@@ -181,6 +167,23 @@ pub async fn registration(
         error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
+
+    if opt_search.is_none() {
+        let nickname = registr_user_dto.nickname.clone();
+        let email = registr_user_dto.email.clone();
+
+        let opt_user_registr = user_registr_db
+            .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
+            .await
+            .map_err(|e| {
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            })?;
+        // If such an entry exists in the "user_registrs" table, then exit.
+        if let Some(user_registr) = opt_user_registr {
+            opt_search = Some((nickname == user_registr.nickname, email == user_registr.email));
+        }
+    }
 
     // Since the specified "nickname" or "email" is not unique, return an error.
     if let Some((is_nickname, _)) = opt_search {
@@ -203,20 +206,13 @@ pub async fn registration(
         final_date: final_date_utc,
     };
     // Create a new entity (user).
-    let user_registr = web::block(move || {
-        #[rustfmt::skip]
-        let user_registr = user_registr_orm.create_user_registr(create_user_registr)
+    #[rustfmt::skip]
+    let user_registr = user_registr_db.create_user_registr(create_user_registr)
+        .await
         .map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        user_registr
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+        })?;
 
     let num_token = token_coding::generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
@@ -281,9 +277,9 @@ pub async fn registration(
             example = json!(ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken"))),
         (status = 404, description = "An entry for registering a new user was not found.", body = ApiError,
             example = json!(ApiError::create(404, MSG_REGISTR_NOT_FOUND, "user_registr_id: 123"))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
+        (status = 506, description = "Blocking error.", body = ApiError,
             example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
-        (status = 507, description = "Database error.", body = ApiError, 
+        (status = 507, description = "Database error.", body = ApiError,
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     params(("registr_token", description = "Registration token.")),
@@ -292,7 +288,7 @@ pub async fn registration(
 pub async fn confirm_registration(
     request: actix_web::HttpRequest,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    user_registr_db: web::Data<UserRegistrDbApp>,
     user_orm: web::Data<UserOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -311,24 +307,17 @@ pub async fn confirm_registration(
     // Get "user_registr ID" from "registr_token".
     let (user_registr_id, _) = dual_token;
 
-    let user_registr_orm2 = user_registr_orm.clone();
     // Find a record with the specified ID in the “user_registr" table.
-    let opt_user_registr = web::block(move || {
-        let user_registr = user_registr_orm2.find_user_registr_by_id(user_registr_id).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        user_registr
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    let opt_user_registr = user_registr_db.find_user_registr_by_id(user_registr_id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
-    let user_registr_orm2 = user_registr_orm.clone();
     // Delete entries in the "user_registr" table, that are already expired.
-    let _ = web::block(move || user_registr_orm2.delete_inactive_final_date(None)).await;
+    let _ = user_registr_db.delete_inactive_final_date(None).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     // If no such entry exists, then exit with code 404.
     let user_registr = opt_user_registr.ok_or_else(|| {
@@ -355,15 +344,11 @@ pub async fn confirm_registration(
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
     })??;
 
-    let _ = web::block(move || {
-        // Delete the processed record in the "user_registration" table.
-        let _ = user_registr_orm.delete_user_registr(user_registr_id);
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        // An error during this operation has no effect.
-    });
+    // Delete the processed record in the "user_registration" table.
+    let _ = user_registr_db.delete_user_registr(user_registr_id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     let response_dto = ConfirmRegistrUserResponseDto {
         id: user.id,
@@ -389,20 +374,20 @@ pub async fn confirm_registration(
 /// Returns the number (of expired) records deleted (`RegistrationClearForExpiredResponseDto`) with status 200.
 ///
 /// The "admin" role is required.
-/// 
+///
 #[utoipa::path(
     responses(
         (status = 200, description = "The number of deleted outdated user registration records.",
-            body = RegistrationClearForExpiredResponseDto, 
+            body = RegistrationClearForExpiredResponseDto,
             example = json!(RegistrationClearForExpiredResponseDto { count_inactive_registr: 4, })
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
+        (status = 506, description = "Blocking error.", body = ApiError,
             example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
-        (status = 507, description = "Database error.", body = ApiError, 
+        (status = 507, description = "Database error.", body = ApiError,
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = [])),
@@ -410,31 +395,24 @@ pub async fn confirm_registration(
 #[rustfmt::skip]
 #[get("/api/registration/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn registration_clear_for_expired(
-    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    user_registr_db: web::Data<UserRegistrDbApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
     // Delete entries in the "user_registr" table, that are already expired.
-    let count_inactive_registr_res = 
-        web::block(move || user_registr_orm.delete_inactive_final_date(None)
+    let count_inactive_registr = user_registr_db.delete_inactive_final_date(None)
+        .await
         .map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        })
-        ).await
-        .map_err(|e| {
-            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
-
-    let count_inactive_registr = count_inactive_registr_res.unwrap_or(0);
 
     let clear_for_expired_response_dto = RegistrationClearForExpiredResponseDto {
         count_inactive_registr,
     };
     if let Some(timer) = timer {
         info!("registration_clear_for_expired() time: {}", format!("{:.2?}", timer.elapsed()));
-    }    
+    }
     Ok(HttpResponse::Ok().json(clear_for_expired_response_dto)) // 200
 }
 

@@ -21,7 +21,7 @@ mod tests {
         },
         user_models::{self, Session, UserMock},
         user_orm::tests::{USER, USER1_ID, UserOrmTest},
-        user_registr_orm::tests::UserRegistrOrmTest,
+        user_registr_db::tests::UserRegistrDbTest,
     };
 
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
@@ -39,7 +39,7 @@ mod tests {
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/users_uniqueness")
@@ -64,7 +64,7 @@ mod tests {
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/users_uniqueness?nickname=")
@@ -90,7 +90,7 @@ mod tests {
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/users_uniqueness?email=")
@@ -117,7 +117,7 @@ mod tests {
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/users_uniqueness?nickname={}", nickname))
@@ -141,7 +141,7 @@ mod tests {
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/users_uniqueness?email={}", email))
@@ -159,14 +159,14 @@ mod tests {
     #[actix_web::test]
     async fn test_users_uniqueness_by_nickname_registr() {
         let data_u = UserOrmTest::users(&[USER]);
-        let registr = UserRegistrOrmTest::registrs(true);
+        let registr = UserRegistrDbTest::registrs(true);
         let nickname = registr.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registr))
+                .configure(UserRegistrDbTest::cfg_registr_db(registr))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/users_uniqueness?nickname={}", nickname))
@@ -184,14 +184,14 @@ mod tests {
     #[actix_web::test]
     async fn test_users_uniqueness_by_email_registr() {
         let data_u = UserOrmTest::users(&[USER]);
-        let registr = UserRegistrOrmTest::registrs(true);
+        let registr = UserRegistrDbTest::registrs(true);
         let email = registr.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registr))
+                .configure(UserRegistrDbTest::cfg_registr_db(registr))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/users_uniqueness?email={}", email))
@@ -215,7 +215,7 @@ mod tests {
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/users_uniqueness?nickname={}", nickname))
@@ -239,7 +239,7 @@ mod tests {
             App::new().service(users_uniqueness)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/users_uniqueness?email={}", email))

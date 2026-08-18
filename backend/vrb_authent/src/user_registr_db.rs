@@ -1,33 +1,40 @@
-use vrb_dbase::dbase::DbPool;
+use vrb_db::db::DbPool2;
 
 use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
 
 pub const DURATION_IN_DAYS: u16 = 90;
 
-pub trait UserRegistrOrm {
+pub trait UserRegistrDb {
     /// Find for an entity (user_registration) by id.
-    fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String>;
+    fn find_user_registr_by_id(&self, id: i32) -> impl std::future::Future<Output = Result<Option<UserRegistr>, String>> + Send;
 
     /// Find for an entity (user_registration) by nickname or email.
-    fn find_user_registr_by_nickname_or_email(&self, nickname: Option<&str>, email: Option<&str>) -> Result<Option<UserRegistr>, String>;
+    fn find_user_registr_by_nickname_or_email(
+        &self,
+        nickname: Option<&str>,
+        email: Option<&str>,
+    ) -> impl std::future::Future<Output = Result<Option<UserRegistr>, String>> + Send;
 
     /// Add a new entity (user_registration).
-    fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String>;
+    fn create_user_registr(
+        &self,
+        create_user_registr_dto: CreateUserRegistr,
+    ) -> impl std::future::Future<Output = Result<UserRegistr, String>> + Send;
 
     /// Delete an entity (user_registration).
-    fn delete_user_registr(&self, id: i32) -> Result<usize, String>;
+    fn delete_user_registr(&self, id: i32) -> impl std::future::Future<Output = Result<usize, String>> + Send;
 
     /// Delete all entities (user_registration) with an inactive "final_date".
-    fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String>;
+    fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> impl std::future::Future<Output = Result<usize, String>> + Send;
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_user_registr_orm_app(pool: DbPool) -> impls::UserRegistrOrmApp {
-    impls::UserRegistrOrmApp::new(pool)
+pub fn get_user_registr_db_app(pool: DbPool2) -> impls::UserRegistrDbApp {
+    impls::UserRegistrDbApp::new(pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
-pub fn get_user_registr_orm_app(_: DbPool) -> tests::UserRegistrOrmApp {
-    tests::UserRegistrOrmApp::new()
+pub fn get_user_registr_db_app(_: DbPool2) -> tests::UserRegistrDbApp {
+    tests::UserRegistrDbApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -35,44 +42,44 @@ pub mod impls {
     use std::time::Instant as tm;
 
     use chrono::{Duration, Utc};
-    use diesel::{self, prelude::*};
     use log::{Level::Info, info, log_enabled};
-    use vrb_dbase::{
-        dbase,
-        schema::{self, user_registration::dsl},
-    };
+    use sqlx;
+    use vrb_db::db::DbPool2;
 
+    use crate::user_registr_db::{DURATION_IN_DAYS, UserRegistrDb};
     use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
-    use crate::user_registr_orm::{DURATION_IN_DAYS, UserRegistrOrm};
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
     #[derive(Debug, Clone)]
-    pub struct UserRegistrOrmApp {
-        pub pool: dbase::DbPool,
+    pub struct UserRegistrDbApp {
+        pub db_pool: DbPool2,
     }
 
-    impl UserRegistrOrmApp {
-        pub fn new(pool: dbase::DbPool) -> Self {
-            UserRegistrOrmApp { pool }
+    impl UserRegistrDbApp {
+        pub fn new(db_pool: DbPool2) -> Self {
+            UserRegistrDbApp { db_pool }
         }
-        pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
-            (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
-        }
+        // #pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
+        // #    (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
+        // #}
     }
 
-    impl UserRegistrOrm for UserRegistrOrmApp {
+    impl UserRegistrDb for UserRegistrDbApp {
         /// Find for an entity (user_registration) by id.
-        fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
+        async fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to find user by id and return it.
-            let result = schema::user_registration::table
-                .filter(dsl::id.eq(id))
-                .first::<UserRegistr>(&mut conn)
-                .optional()
-                .map_err(|e| format!("find_user_registr_by_id: {}", e.to_string()))?;
+
+            let result: Option<UserRegistr> = sqlx::query_as(
+                "SELECT id, nickname, email, \"password\", final_date \
+                FROM user_registration \
+                WHERE id = $1 \
+                LIMIT 1",
+            )
+            .bind(id)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("find_user_registr_by_id: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("find_user_registr_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -81,7 +88,7 @@ pub mod impls {
         }
 
         /// Find for an entity (user_registration) by nickname or email.
-        fn find_user_registr_by_nickname_or_email(
+        async fn find_user_registr_by_nickname_or_email(
             &self,
             nickname: Option<&str>,
             email: Option<&str>,
@@ -96,40 +103,54 @@ pub mod impls {
                 return Ok(None);
             }
 
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            let now = Utc::now();
-
-            // Run query using Diesel to find user by nickname and return it (where final_date > now).
-            let sql_query_nickname = schema::user_registration::table
-                .filter(dsl::nickname.eq(nickname2).and(dsl::final_date.gt(now)))
-                .select(schema::user_registration::all_columns)
-                .limit(1);
-            // Run query using Diesel to find user by email and return it (where final_date > now).
-            let sql_query_email = schema::user_registration::table
-                .filter(dsl::email.eq(email2).and(dsl::final_date.gt(now)))
-                .select(schema::user_registration::all_columns)
-                .limit(1);
-
             let mut result_vec: Vec<UserRegistr> = vec![];
-            let table = "find_user_registr_by_nickname_or_email";
+
             if nickname2_len > 0 && email2_len == 0 {
-                let result_nickname_vec: Vec<UserRegistr> =
-                    sql_query_nickname.load(&mut conn).map_err(|e| format!("{}: {}", table, e.to_string()))?;
+                let result_nickname_vec: Vec<UserRegistr> = sqlx::query_as(
+                    "SELECT id, nickname, email, \"password\", final_date \
+                    FROM user_registration \
+                    WHERE nickname = $1 AND final_date > NOW() \
+                    LIMIT 1",
+                )
+                .bind(nickname2)
+                .fetch_all(&self.db_pool)
+                .await
+                .map_err(|e| format!("find_user_registr_by_nickname: {}", e.to_string()))?;
+
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
-                let result_email_vec: Vec<UserRegistr> =
-                    sql_query_email.load(&mut conn).map_err(|e| format!("{}: {}", table, e.to_string()))?;
+                let result_email_vec: Vec<UserRegistr> = sqlx::query_as(
+                    "SELECT id, nickname, email, \"password\", final_date \
+                    FROM user_registration \
+                    WHERE email = $1 AND final_date > NOW() \
+                    LIMIT 1",
+                )
+                .bind(email2)
+                .fetch_all(&self.db_pool)
+                .await
+                .map_err(|e| format!("find_user_registr_by_email: {}", e.to_string()))?;
+
                 result_vec.extend(result_email_vec);
             } else {
-                // This design (union two queries) allows the use of two separate indexes.
-                let sql_query = sql_query_nickname.union_all(sql_query_email);
-                // eprintln!("#sql_query: `{}`", debug_query::<Pg, _>(&sql_query).to_string());
-                // Run query using Diesel to find user by nickname or email and return it (where final_date > now).
-                let result_nickname_email_vec: Vec<UserRegistr> =
-                    sql_query.load(&mut conn).map_err(|e| format!("{}: {}", table, e.to_string()))?;
+                let result_nickname_email_vec: Vec<UserRegistr> = sqlx::query_as(
+                    "SELECT id, nickname, email, \"password\", final_date \
+                    FROM user_registration \
+                    WHERE nickname = $1 AND final_date > NOW() \
+                    UNION ALL \
+                    SELECT id, nickname, email, \"password\", final_date \
+                    FROM user_registration \
+                    WHERE email = $2 AND final_date > NOW() \
+                    LIMIT 1",
+                )
+                .bind(nickname2)
+                .bind(email2)
+                .fetch_all(&self.db_pool)
+                .await
+                .map_err(|e| format!("find_user_registr_by_nickname_email: {}", e.to_string()))?;
+
                 result_vec.extend(result_nickname_email_vec);
             }
+
             #[rustfmt::skip]
             let result = if result_vec.len() > 0 { Some(result_vec[0].clone()) } else { None };
             if let Some(timer) = timer {
@@ -140,67 +161,81 @@ pub mod impls {
         }
 
         /// Add a new entity (user_registration).
-        fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String> {
+        async fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            let mut create_user_registr_dto2 = create_user_registr_dto.clone();
-            create_user_registr_dto2.nickname = create_user_registr_dto2.nickname.to_lowercase();
-            create_user_registr_dto2.email = create_user_registr_dto2.email.to_lowercase();
+            let mut user_registr = create_user_registr_dto.clone();
+            user_registr.nickname = user_registr.nickname.to_lowercase();
+            user_registr.email = user_registr.email.to_lowercase();
 
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to add a new user entry.
-            let user_registr: UserRegistr = diesel::insert_into(schema::user_registration::table)
-                .values(create_user_registr_dto2)
-                .returning(UserRegistr::as_returning())
-                .get_result(&mut conn)
-                .map_err(|e| format!("create_user_registr: {}", e.to_string()))?;
+            let result: UserRegistr = sqlx::query_as(
+                "INSERT INTO user_registration(nickname, email, \"password\", final_date) \
+                VALUES($1, $2, $3, $4) \
+                RETURNING id, nickname, email, \"password\", final_date",
+            )
+            .bind(user_registr.nickname)
+            .bind(user_registr.email)
+            .bind(user_registr.password)
+            .bind(user_registr.final_date)
+            .fetch_one(&self.db_pool)
+            .await
+            .map_err(|e| format!("create_user_registr: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("create_user_registr() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(user_registr)
+            Ok(result)
         }
 
         /// Delete an entity (user_registration).
-        fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
+        async fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to delete a entry (user_registration).
-            let count: usize = diesel::delete(dsl::user_registration.find(id))
-                .execute(&mut conn)
-                .map_err(|e| format!("delete_user_registr: {}", e.to_string()))?;
+
+            let count: i64 = sqlx::query_scalar(
+                "WITH deleted AS ( \
+                DELETE FROM user_registration \
+                WHERE id = $1 \
+                RETURNING 1 \
+            ) SELECT count(*) FROM deleted",
+            )
+            .bind(id)
+            .fetch_one(&self.db_pool)
+            .await
+            .map_err(|e| format!("delete_user_registr: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("delete_user_registr() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(count)
+            let result: usize = count.try_into().unwrap();
+            Ok(result)
         }
 
         /// Delete all entities (user_registration) with an inactive "final_date".
-        fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
+        async fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
             let end_day_time = now.clone();
 
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to delete a entry (user_registration).
-            #[rustfmt::skip]
-            let count: usize = diesel::delete(
-                schema::user_registration::table
-                    .filter(dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time))),
+            let count: i64 = sqlx::query_scalar(
+                "WITH deleted AS ( \
+                DELETE FROM user_registration \
+                WHERE final_date > $1 AND final_date < $2 \
+                RETURNING 1 \
+            ) SELECT count(*) FROM deleted",
             )
-            .execute(&mut conn)
+            .bind(start_day_time)
+            .bind(end_day_time)
+            .fetch_one(&self.db_pool)
+            .await
             .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 #[rustfmt::skip]
                 info!("delete_inactive_final_date() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(count)
+            let result: usize = count.try_into().unwrap();
+            Ok(result)
         }
     }
 }
@@ -210,20 +245,20 @@ pub mod tests {
     use actix_web::web;
     use chrono::{DateTime, Duration, Utc};
 
+    use crate::user_registr_db::{DURATION_IN_DAYS, UserRegistrDb};
     use crate::user_registr_models::{CreateUserRegistr, UserRegistr};
-    use crate::user_registr_orm::{DURATION_IN_DAYS, UserRegistrOrm};
 
     pub const USER_REGISTR_ID: i32 = 1200;
 
     #[derive(Debug, Clone)]
-    pub struct UserRegistrOrmApp {
+    pub struct UserRegistrDbApp {
         pub user_registr_vec: Vec<UserRegistr>,
     }
 
-    impl UserRegistrOrmApp {
+    impl UserRegistrDbApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            UserRegistrOrmApp {
+            UserRegistrDbApp {
                 user_registr_vec: Vec::new(),
             }
         }
@@ -241,7 +276,7 @@ pub mod tests {
                 ));
                 idx = idx + 1;
             }
-            UserRegistrOrmApp { user_registr_vec }
+            UserRegistrDbApp { user_registr_vec }
         }
         /// Create a new entity instance.
         pub fn new_user_registr(id: i32, nickname: &str, email: &str, password: &str, final_date: DateTime<Utc>) -> UserRegistr {
@@ -255,9 +290,9 @@ pub mod tests {
         }
     }
 
-    impl UserRegistrOrm for UserRegistrOrmApp {
+    impl UserRegistrDb for UserRegistrDbApp {
         /// Find for an entity (user_registration) by id.
-        fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
+        async fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
             let result = self
                 .user_registr_vec
                 .iter()
@@ -266,7 +301,7 @@ pub mod tests {
             Ok(result)
         }
         /// Find for an entity (user_registration) by nickname or email.
-        fn find_user_registr_by_nickname_or_email(
+        async fn find_user_registr_by_nickname_or_email(
             &self,
             nickname: Option<&str>,
             email: Option<&str>,
@@ -293,14 +328,14 @@ pub mod tests {
             Ok(result)
         }
         /// Add a new entity (user_registration).
-        fn create_user_registr(&self, create_user_registr: CreateUserRegistr) -> Result<UserRegistr, String> {
+        async fn create_user_registr(&self, create_user_registr: CreateUserRegistr) -> Result<UserRegistr, String> {
             let nickname = create_user_registr.nickname.clone();
             let email = create_user_registr.email.clone();
             let password = create_user_registr.password.clone();
             let final_date = create_user_registr.final_date.clone();
             #[rustfmt::skip]
             let opt_res_user1: Option<UserRegistr> =
-                self.find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))?;
+                self.find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email)).await?;
             if opt_res_user1.is_some() {
                 return Err("\"User Registration\" already exists.".to_string());
             }
@@ -311,12 +346,12 @@ pub mod tests {
             let email = create_user_registr.email.clone();
             #[rustfmt::skip]
             let user_registr_saved: UserRegistr =
-                UserRegistrOrmApp::new_user_registr(new_id, &nickname, &email, &password, final_date);
+                UserRegistrDbApp::new_user_registr(new_id, &nickname, &email, &password, final_date);
 
             Ok(user_registr_saved)
         }
         /// Delete an entity (user_registration).
-        fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
+        async fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
             #[rustfmt::skip]
             let opt_user_registr: Option<&UserRegistr> =
                 self.user_registr_vec.iter().find(|user_registr| user_registr.id == id);
@@ -326,7 +361,7 @@ pub mod tests {
             Ok(result)
         }
         /// Delete all entities (user_registration) with an inactive "final_date".
-        fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
+        async fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
@@ -343,9 +378,9 @@ pub mod tests {
         }
     }
 
-    pub struct UserRegistrOrmTest {}
+    pub struct UserRegistrDbTest {}
 
-    impl UserRegistrOrmTest {
+    impl UserRegistrDbTest {
         pub fn registrs(is_exist: bool) -> Vec<UserRegistr> {
             let user_registr_vec: Vec<UserRegistr> = match is_exist {
                 true => {
@@ -353,17 +388,17 @@ pub mod tests {
                     let nickname = "robert_brown";
                     let email = format!("{}@gmail.com", nickname);
                     let final_date: DateTime<Utc> = Utc::now() + Duration::minutes(20);
-                    let user_registr = UserRegistrOrmApp::new_user_registr(id, nickname, &email, "passwdR2B2", final_date);
-                    UserRegistrOrmApp::create(&[user_registr]).user_registr_vec
+                    let user_registr = UserRegistrDbApp::new_user_registr(id, nickname, &email, "passwdR2B2", final_date);
+                    UserRegistrDbApp::create(&[user_registr]).user_registr_vec
                 }
                 false => vec![],
             };
             user_registr_vec
         }
-        pub fn cfg_registr_orm(registr: Vec<UserRegistr>) -> impl FnOnce(&mut web::ServiceConfig) {
+        pub fn cfg_registr_db(registr: Vec<UserRegistr>) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
-                let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&registr));
-                config.app_data(web::Data::clone(&data_user_registr_orm));
+                let data_user_registr_db = web::Data::new(UserRegistrDbApp::create(&registr));
+                config.app_data(web::Data::clone(&data_user_registr_db));
             }
         }
     }

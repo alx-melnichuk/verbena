@@ -18,10 +18,10 @@ mod tests {
         user_registr_controller::{
             MSG_REGISTR_NOT_FOUND, confirm_registration, registration, registration_clear_for_expired, tests as UserRegistrCtrlTest,
         },
+        user_registr_db::tests::UserRegistrDbTest,
         user_registr_models::{
             ConfirmRegistrUserResponseDto, RegistrUserDto, RegistrUserResponseDto, RegistrationClearForExpiredResponseDto,
         },
-        user_registr_orm::tests::UserRegistrOrmTest,
     };
 
     const TEST_PATH_TEMPLATE: &str = "../templates";
@@ -40,7 +40,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration").to_request();
@@ -63,7 +63,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration").set_json(json!({}))
@@ -87,7 +87,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -118,7 +118,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -149,7 +149,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -180,7 +180,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -211,7 +211,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -242,7 +242,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -273,7 +273,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -304,7 +304,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -335,7 +335,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -366,7 +366,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -397,7 +397,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -428,7 +428,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -461,7 +461,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -492,7 +492,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -514,7 +514,7 @@ mod tests {
     async fn test_registration_if_nickname_exists_in_registr() {
         env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
-        let registrs = UserRegistrOrmTest::registrs(true);
+        let registrs = UserRegistrDbTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
         let email1 = registrs.get(0).unwrap().email.clone();
         #[rustfmt::skip]
@@ -524,7 +524,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserRegistrDbTest::cfg_registr_db(registrs))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -546,7 +546,7 @@ mod tests {
     async fn test_registration_if_email_exists_in_registr() {
         env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
         let data_u = UserOrmTest::users(&[USER]);
-        let registrs = UserRegistrOrmTest::registrs(true);
+        let registrs = UserRegistrDbTest::registrs(true);
         let nickname1 = registrs.get(0).unwrap().nickname.clone();
         let email1 = registrs.get(0).unwrap().email.clone();
         #[rustfmt::skip]
@@ -556,7 +556,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserRegistrDbTest::cfg_registr_db(registrs))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -588,7 +588,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -609,7 +609,7 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_new_user() {
         env_var::env_set_var(consts::SMTP_PATH_TEMPLATE, TEST_PATH_TEMPLATE);
-        let registrs = UserRegistrOrmTest::registrs(true);
+        let registrs = UserRegistrDbTest::registrs(true);
         let user_registr1 = registrs.get(0).unwrap().clone();
         let data_u = UserOrmTest::users(&[USER]);
         #[rustfmt::skip]
@@ -619,7 +619,7 @@ mod tests {
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserRegistrCtrlTest::cfg_mailer(config_smtp::get_test_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
@@ -655,7 +655,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_registration)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -674,7 +674,7 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_registration_final_date_has_expired() {
         let data_u = UserOrmTest::users(&[USER]);
-        let registrs = UserRegistrOrmTest::registrs(true);
+        let registrs = UserRegistrDbTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
@@ -690,7 +690,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_registration)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserRegistrDbTest::cfg_registr_db(registrs))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -710,7 +710,7 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_registration_no_exists_in_user_regist() {
         let data_u = UserOrmTest::users(&[USER]);
-        let registrs = UserRegistrOrmTest::registrs(true);
+        let registrs = UserRegistrDbTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
@@ -727,7 +727,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_registration)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserRegistrDbTest::cfg_registr_db(registrs))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -747,7 +747,7 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_registration_exists_in_user_regist() {
         let data_u = UserOrmTest::users(&[USER]);
-        let registrs = UserRegistrOrmTest::registrs(true);
+        let registrs = UserRegistrDbTest::registrs(true);
         let user_reg1 = registrs.get(0).unwrap().clone();
         let nickname = user_reg1.nickname.to_string();
         let email = user_reg1.email.to_string();
@@ -765,7 +765,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(confirm_registration)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserRegistrDbTest::cfg_registr_db(registrs))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
         ).await;
         #[rustfmt::skip]
@@ -796,7 +796,7 @@ mod tests {
         let config_app = config_app::get_test_config();
 
         let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
-        let mut registrs = UserRegistrOrmTest::registrs(true);
+        let mut registrs = UserRegistrDbTest::registrs(true);
         let registr1 = registrs.get_mut(0).unwrap();
         registr1.final_date = Utc::now() - Duration::seconds(registr_duration);
 
@@ -805,7 +805,7 @@ mod tests {
             App::new().service(registration_clear_for_expired)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
                 .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registrs))
+                .configure(UserRegistrDbTest::cfg_registr_db(registrs))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&"/api/registration/clear_for_expired")

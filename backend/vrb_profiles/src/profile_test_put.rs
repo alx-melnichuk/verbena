@@ -15,7 +15,7 @@ pub mod tests {
         config_jwt, user_models,
         user_models::UserMock,
         user_orm::tests::{USER, USER1_ID, UserOrmTest},
-        user_registr_orm::tests::UserRegistrOrmTest,
+        user_registr_db::tests::UserRegistrDbTest,
     };
     use vrb_common::{api_error::ApiError, consts, err, profile, validators};
     use vrb_dbase::enm_user_role::UserRole;
@@ -55,7 +55,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -83,7 +83,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -124,7 +124,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -160,7 +160,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -189,7 +189,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -218,7 +218,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -247,7 +247,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -276,7 +276,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -305,7 +305,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -334,7 +334,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -363,7 +363,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -392,7 +392,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -421,7 +421,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -450,7 +450,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -479,7 +479,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -508,7 +508,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -539,7 +539,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -569,7 +569,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(true)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(true)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -590,7 +590,7 @@ pub mod tests {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
-        let registr = UserRegistrOrmTest::registrs(true);
+        let registr = UserRegistrDbTest::registrs(true);
         let nickname1 = registr.get(0).unwrap().nickname.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", nickname1).build();
         #[rustfmt::skip]
@@ -600,7 +600,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registr))
+                .configure(UserRegistrDbTest::cfg_registr_db(registr))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -621,7 +621,7 @@ pub mod tests {
         let token1 = config_jwt::tests::get_token(USER1_ID);
         let data_u = UserOrmTest::users(&[USER]);
         let profiles = ProfileOrmTest::profiles(&data_u.0);
-        let registr = UserRegistrOrmTest::registrs(true);
+        let registr = UserRegistrDbTest::registrs(true);
         let email1 = registr.get(0).unwrap().email.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", email1).build();
         #[rustfmt::skip]
@@ -631,7 +631,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(registr))
+                .configure(UserRegistrDbTest::cfg_registr_db(registr))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -669,7 +669,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -707,7 +707,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -755,7 +755,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -805,7 +805,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -866,7 +866,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -934,7 +934,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -995,7 +995,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -1045,7 +1045,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
@@ -1084,7 +1084,7 @@ pub mod tests {
                 .configure(UserOrmTest::cfg_user_orm(data_u))
                 .configure(ProfileOrmTest::cfg_profile_orm(profiles))
                 .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
-                .configure(UserRegistrOrmTest::cfg_registr_orm(UserRegistrOrmTest::registrs(false)))
+                .configure(UserRegistrDbTest::cfg_registr_db(UserRegistrDbTest::registrs(false)))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")

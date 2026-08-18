@@ -19,8 +19,10 @@ futures-util = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sqlx = { workspace = true }
 utoipa = { workspace = true }
 vrb_common = { workspace = true }
+vrb_db = { workspace = true }
 vrb_dbase = { workspace = true }
 vrb_tools = { workspace = true }
 

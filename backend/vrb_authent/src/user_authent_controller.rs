@@ -24,12 +24,12 @@ use crate::{
     },
     user_models::User,
     user_orm::UserOrm,
-    user_registr_orm::UserRegistrOrm,
+    user_registr_db::UserRegistrDb,
 };
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegistrOrmApp};
+use crate::{user_orm::impls::UserOrmApp, user_registr_db::impls::UserRegistrDbApp};
 #[cfg(all(test, feature = "mockdata"))]
-use crate::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
+use crate::{user_orm::tests::UserOrmApp, user_registr_db::tests::UserRegistrDbApp};
 
 const PASSWORD1: &str = "$argon2id$v=19$m=19456,t=2,p=1$sUU7bgDw7XH4z8SzvgXjkA$izpWfsHPJeXEhD90cRxxR/no7gyRz/DiANxe5Ckt53I";
 const TOKEN1: &str = "6lqN0k3-SB_OXGzOJYUr2GwYwAEmlJWFMpOwiYrT04_WQMRQs3PAlb7WHFExilHzFrbNSTsdGzmBzFMwFD2rVXgiQtoK4fON634zV9rjMswSd7FW7eHh3PmoVxUVtID1j6TWck_wJy0TdO2rcnLZIfu2jbMzk6myQCl_5u05Ii9YvtXOI8-a0fhMRveIcM8udUGatXT5HRnGAzjDQuhDZ-94DonA0rvn2DK3D9h-baU=";
@@ -91,7 +91,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 #[get("/api/users_uniqueness")]
 pub async fn users_uniqueness(
     user_orm: web::Data<UserOrmApp>,
-    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    user_registr_db: web::Data<UserRegistrDbApp>,
     query_params: web::Query<UserUniquenessDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -110,9 +110,10 @@ pub async fn users_uniqueness(
     }
 
     let user_orm2 = user_orm.get_ref().clone();
-    let user_registr_orm2 = user_registr_orm.get_ref().clone();
+    let nickname2 = nickname.clone();
+    let email2 = email.clone();
 
-    let opt_search = web::block(move || {
+    let mut opt_search = web::block(move || {
         let mut res_search: Option<(bool, bool)> = None;
 
         if res_search.is_none() {
@@ -129,19 +130,6 @@ pub async fn users_uniqueness(
                 res_search = Some((nickname == user.nickname, email == user.email));
             }
         }
-        if res_search.is_none() {
-            let opt_user_registr = user_registr_orm2
-                .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
-                .map_err(|e| {
-                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                    ApiError::create(507, err::MSG_DATABASE, &e) // 507  
-                })
-                .ok()?;
-            // If such an entry exists in the "user_registrs" table, then exit.
-            if let Some(user_registr) = opt_user_registr {
-                res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
-            }
-        }
         res_search
     })
     .await
@@ -149,6 +137,20 @@ pub async fn users_uniqueness(
         error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
+
+    if opt_search.is_none() {
+        let opt_user_registr = user_registr_db
+            .find_user_registr_by_nickname_or_email(Some(&nickname2), Some(&email2))
+            .await
+            .map_err(|e| {
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507  
+            })?;
+        // If such an entry exists in the "user_registrs" table, then exit.
+        if let Some(user_registr) = opt_user_registr {
+            opt_search = Some((nickname2 == user_registr.nickname, email2 == user_registr.email));
+        }
+    }
 
     let uniqueness = opt_search.is_none();
 

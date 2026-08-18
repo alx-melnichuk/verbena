@@ -1,17 +1,14 @@
 use chrono::{DateTime, Utc};
-use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use utoipa::ToSchema;
 use vrb_common::validators::{ValidationError, Validator};
-use vrb_dbase::schema;
 
 use crate::user_models;
 
 // * * * * Section: models for "UserRegistrOrm". * * * *
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
-#[diesel(table_name = schema::user_registration)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct UserRegistr {
     pub id: i32,
     pub nickname: String,
@@ -20,8 +17,7 @@ pub struct UserRegistr {
     pub final_date: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::user_registration)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateUserRegistr {
     pub nickname: String,
     pub email: String,

@@ -11,7 +11,7 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 use vrb_authent::{
     self, config_jwt, user_authent_controller, user_orm, user_recovery_controller, user_recovery_orm, user_registr_controller,
-    user_registr_orm,
+    user_registr_db,
 };
 use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
 use vrb_common::env_var;
@@ -95,7 +95,7 @@ pub async fn server_run() -> std::io::Result<()> {
         App::new()
             .app_data(db_pool.clone())
             .app_data(pool.clone())
-            .configure(configure_server(pool.clone()))
+            .configure(configure_server(db_pool.clone(), pool.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
     });
@@ -119,7 +119,7 @@ pub async fn server_run() -> std::io::Result<()> {
     srv.run().await
 }
 
-pub fn configure_server(pool: dbase::DbPool) -> impl FnOnce(&mut web::ServiceConfig) {
+pub fn configure_server(db_pool: db::DbPool2, pool: dbase::DbPool) -> impl FnOnce(&mut web::ServiceConfig) {
     move |config: &mut web::ServiceConfig| {
         // Adding various configs.
         let config_app0 = config_app::ConfigApp::init_by_env();
@@ -147,7 +147,7 @@ pub fn configure_server(pool: dbase::DbPool) -> impl FnOnce(&mut web::ServiceCon
         // Create "UserOrmApp".
         let user_orm = web::Data::new(user_orm::get_user_orm_app(pool.clone()));
         // used: user_registr_controller
-        let user_registr_orm = web::Data::new(user_registr_orm::get_user_registr_orm_app(pool.clone()));
+        let user_registr_db = web::Data::new(user_registr_db::get_user_registr_db_app(db_pool.clone()));
         // used: user_recovery_controller
         let user_recovery_orm = web::Data::new(user_recovery_orm::get_user_recovery_orm_app(pool.clone()));
         // used: stream_controller, profile_controller
@@ -169,7 +169,7 @@ pub fn configure_server(pool: dbase::DbPool) -> impl FnOnce(&mut web::ServiceCon
             .app_data(web::Data::clone(&config_prfl))
             .app_data(web::Data::clone(&mailer))
             .app_data(web::Data::clone(&user_orm))
-            .app_data(web::Data::clone(&user_registr_orm))
+            .app_data(web::Data::clone(&user_registr_db))
             .app_data(web::Data::clone(&user_recovery_orm))
             .app_data(web::Data::clone(&stream_orm))
             .app_data(web::Data::clone(&profile_orm))

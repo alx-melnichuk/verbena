@@ -10,12 +10,12 @@ use utoipa;
 use vrb_authent::{
     authentication::{Authenticated, RequireAuth},
     user_orm::UserOrm,
-    user_registr_orm::UserRegistrOrm,
+    user_registr_db::UserRegistrDb,
 };
 #[cfg(not(all(test, feature = "mockdata")))]
-use vrb_authent::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegistrOrmApp};
+use vrb_authent::{user_orm::impls::UserOrmApp, user_registr_db::impls::UserRegistrDbApp};
 #[cfg(all(test, feature = "mockdata"))]
-use vrb_authent::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
+use vrb_authent::{user_orm::tests::UserOrmApp, user_registr_db::tests::UserRegistrDbApp};
 use vrb_common::{
     alias_path::{alias_path_profile, alias_path_stream},
     api_error::ApiError,
@@ -594,7 +594,7 @@ pub async fn put_profile(
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
     user_orm: web::Data<UserOrmApp>,
-    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    user_registr_db: web::Data<UserRegistrDbApp>,
     MultipartForm(modify_user_profile_form): MultipartForm<ModifyUserProfileForm>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -630,33 +630,27 @@ pub async fn put_profile(
 
     let nickname = modify_user_profile_dto.nickname.clone().unwrap_or("".to_owned());
     let email = modify_user_profile_dto.email.clone().unwrap_or("".to_owned());
+    let nickname2 = nickname.clone();
+    let email2 = email.clone();
 
     if nickname.len() > 0 || email.len() > 0 {
         let user_orm2 = user_orm.get_ref().clone();
-        let user_registr_orm2 = user_registr_orm.get_ref().clone();
 
-        let opt_search = web::block(move || {
+        let mut opt_search = web::block(move || {
             let mut res_search: Option<(bool, bool)> = None;
 
             if res_search.is_none() {
                 // Search for "nickname" or "email" in the "users" table.
                 let opt_user = user_orm2
                     .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
-                    .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
+                    .map_err(|e| {
+                        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                        ApiError::create(507, err::MSG_DATABASE, &e)
+                    }) // 507
                     .ok()?;
                 // If such an entry exists in the "users" table, then exit.
                 if let Some(user) = opt_user {
                     res_search = Some((nickname == user.nickname, email == user.email));
-                }
-            }
-            if res_search.is_none() {
-                let opt_user_registr = user_registr_orm2
-                    .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
-                    .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
-                    .ok()?;
-                // If such an entry exists in the "user_registrs" table, then exit.
-                if let Some(user_registr) = opt_user_registr {
-                    res_search = Some((nickname == user_registr.nickname, email == user_registr.email));
                 }
             }
             res_search
@@ -666,6 +660,20 @@ pub async fn put_profile(
             error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
             ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
+
+        if opt_search.is_none() {
+            let opt_user_registr = user_registr_db
+                .find_user_registr_by_nickname_or_email(Some(&nickname2), Some(&email2))
+                .await
+                .map_err(|e| {
+                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                    ApiError::create(507, err::MSG_DATABASE, &e) // 507
+                })?;
+            // If such an entry exists in the "user_registrs" table, then exit.
+            if let Some(user_registr) = opt_user_registr {
+                opt_search = Some((nickname2 == user_registr.nickname, email2 == user_registr.email));
+            }
+        }
 
         // Since the specified "nickname" or "email" is not unique, return an error.
         if let Some((is_nickname, _)) = opt_search {
