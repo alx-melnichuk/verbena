@@ -60,9 +60,6 @@ pub mod impls {
         pub fn new(db_pool: DbPool2) -> Self {
             UserRegistrDbApp { db_pool }
         }
-        // #pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
-        // #    (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
-        // #}
     }
 
     impl UserRegistrDb for UserRegistrDbApp {
@@ -228,11 +225,11 @@ pub mod impls {
             .bind(end_day_time)
             .fetch_one(&self.db_pool)
             .await
-            .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
+            .map_err(|e| format!("delete_user_registration_inactive_final_date: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 #[rustfmt::skip]
-                info!("delete_inactive_final_date() time: {}", format!("{:.2?}", timer.elapsed()));
+                info!("delete_user_registration_inactive_final_date() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             let result: usize = count.try_into().unwrap();
             Ok(result)
