@@ -313,7 +313,7 @@ pub async fn confirm_recovery(
     let user_id = user_recovery.user_id;
 
     // If there is "user_recovery" with this ID, then move on to the next step.
-    // Find profile by user id.
+    // Find user by id.
     let opt_user = user_db.get_user_by_id(user_id, false).await.map_err(|e| {
         error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
         ApiError::create(507, err::MSG_DATABASE, &e) // 507
