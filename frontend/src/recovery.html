@@ -316,7 +316,8 @@
       }
 
       function getTranslate(code, msg) {
-        return !!translate[code] ? (translate[code][msg] || "") : "";
+        const msg2 = msg.split(";")[0];
+        return (!!translate[code] ? translate[code][msg2] : translate[`${code}.${msg2}`]) || "";
       }
 
       function httpClient(method, apiUrl, callbackSuccess, callbackFailure, recoveryData) {
@@ -429,7 +430,7 @@
         fail_answer.innerText = getTranslate("Change_password", "change_failed");
 
         const errText = clon.querySelector("[id=err_msg_id]");
-        errText.innerText = getTranslate(err.code, err.message) || (err.code + ": " + err.message);
+        errText.innerText = getTranslate(err.status, err.message) || (err.status + ": " + err.message);
 
         const link_password_change = clon.querySelector("[id=link_password_change_id]");
         link_password_change.innerText = getTranslate("Change_password", "link_password_change");
