@@ -33,8 +33,8 @@ pub trait UserRecoveryDb {
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_user_recovery_db_app(pool: DbPool2) -> impls::UserRecoveryDbApp {
-    impls::UserRecoveryDbApp::new(pool)
+pub fn get_user_recovery_db_app(db_pool: DbPool2) -> impls::UserRecoveryDbApp {
+    impls::UserRecoveryDbApp::new(db_pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
 pub fn get_user_recovery_db_app(_: DbPool2) -> tests::UserRecoveryDbApp {

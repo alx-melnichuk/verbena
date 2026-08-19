@@ -37,8 +37,8 @@ pub trait UserDb {
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_user_db_app(pool: DbPool2) -> impls::UserDbApp {
-    impls::UserDbApp::new(pool)
+pub fn get_user_db_app(db_pool: DbPool2) -> impls::UserDbApp {
+    impls::UserDbApp::new(db_pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
 pub fn get_user_db_app(_: DbPool2) -> tests::UserDbApp {
