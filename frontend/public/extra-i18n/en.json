@@ -11,26 +11,26 @@
     "link_login":"Go to the login page.",
     "confirm_failed":"We inform you that your confirmation failed.",
     "link_signup": "Go to the registration page."
-    
-  },
-  "Unauthorized": {
-    "invalid_or_expired_token":"Invalid or expired token."
   },
   "NotFound": {
     "registration_not_found":"An record for registering a new user was not found.",
     "user_not_found":"User not found.",
     "recovery_not_found":"An record to recover the user's password was not found."
   },
-  "VariantAlsoNegotiates": {
-    "status": 506,
-    "description": "Blocking",
-    "error_waiting_for_operations":"An error occurred while waiting for the operation to complete."
-  },
-  "InsufficientStorage": {
-    "status": 507,
-    "description": "Database",
-    "database_query_error":"Error executing database query."
-  },
+  "error.server_api_call": "An error occurred while calling the server API.",
+  "401.token_missing": "Authorization token is missing.",
+  "401.invalid_or_expired_token": "Invalid or expired token.",
+  "401.unacceptable_token_num": "Unacceptable token number",
+  "401.unacceptable_token_id": "Unacceptable token id",
+  "403.access_denied": "Access is denied.",
+  "406.session_not_found": "Session not found for this user.",
+  "417.password:required":"The password field is required.",
+  "417.password:min_length":"The password must have at least 6 characters.",
+  "417.password:max_length":"The password must have no more 64 characters.",
+  "417.password:regex":"The password must contain: a lowercase letter, an uppercase letter and a number.",
+  "500.user_not_received_from_request": "Authentication - the entity \"user\" was not received from the request.",
+  "506.error_waiting_for_operations" : "An error occurred while waiting for the operation to complete.",
+  "507.database_query_error" : "Error executing database query.",
   "Change_password": {
     "title":"Change password",
     "label":"Enter a new password for your account.",
@@ -44,13 +44,5 @@
     "label":"Password ",
     "placeholder":"New password",
     "password_hint":"Use at least 6 characters, with one lowercase letter, one uppercase letter and a number."
-  },
-  "ExpectationFailed": {
-    "status": 417,
-    "description": "Validation",
-    "password:required":"The password field is required.",
-    "password:min_length":"The password must have at least 6 characters.",
-    "password:max_length":"The password must have no more 64 characters.",
-    "password:regex":"The password must contain: a lowercase letter, an uppercase letter and a number."
   }
 }
