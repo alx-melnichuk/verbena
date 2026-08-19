@@ -174,18 +174,31 @@ pub mod impls {
         async fn create_user(&self, create_user: CreateUser) -> Result<User, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
-            let result: User = sqlx::query_as(
-                "INSERT INTO users(nickname, email, \"password\", \"role\") \
-                VALUES($1, $2, $3, $4) \
-                RETURNING id, nickname, email, \"password\", \"role\", created_at, updated_at",
-            )
-            .bind(create_user.nickname.to_lowercase())
-            .bind(create_user.email.to_lowercase())
-            .bind(create_user.password)
-            .bind(create_user.role)
-            .fetch_one(&self.db_pool)
-            .await
-            .map_err(|e| format!("create_user: {}", e.to_string()))?;
+            let result: User = match create_user.role {
+                Some(user_role) => sqlx::query_as(
+                    "INSERT INTO users(nickname, email, \"password\", \"role\") \
+                    VALUES($1, $2, $3, $4) \
+                    RETURNING id, nickname, email, \"password\", \"role\", created_at, updated_at",
+                )
+                .bind(create_user.nickname.to_lowercase())
+                .bind(create_user.email.to_lowercase())
+                .bind(create_user.password)
+                .bind(user_role)
+                .fetch_one(&self.db_pool)
+                .await
+                .map_err(|e| format!("create_user: {}", e.to_string()))?,
+                None => sqlx::query_as(
+                    "INSERT INTO users(nickname, email, \"password\") \
+                    VALUES($1, $2, $3) \
+                    RETURNING id, nickname, email, \"password\", \"role\", created_at, updated_at",
+                )
+                .bind(create_user.nickname.to_lowercase())
+                .bind(create_user.email.to_lowercase())
+                .bind(create_user.password)
+                .fetch_one(&self.db_pool)
+                .await
+                .map_err(|e| format!("create_user: {}", e.to_string()))?,
+            };
 
             if let Some(timer) = timer {
                 info!("create_user() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -203,14 +216,13 @@ pub mod impls {
                 modify_user.password,
                 modify_user.role,
             );
-            // # e AS "e!: Enm"
-            // # \"role\"=$5 'user'::user_role
+
             let result: Option<User> = sqlx::query_as(
                 "UPDATE users SET \
-                nickname=$2, \
-                email=$3, \
-                \"password\"=$4, \
-                \"role\"=$5 \
+                nickname=COALESCE($2, nickname), \
+                email=COALESCE($3, email), \
+                \"password\"=COALESCE($4, \"password\"), \
+                \"role\"=COALESCE($5, \"role\") \
                 WHERE id=$1 \
                 RETURNING id, nickname, email, \"password\", \"role\", created_at, updated_at",
             )
