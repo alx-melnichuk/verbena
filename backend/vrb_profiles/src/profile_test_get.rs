@@ -9,7 +9,7 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
+        user_db::tests::{ADMIN, USER, USER1_ID, UserDbTest},
     };
     use vrb_common::{api_error::ApiError, err};
 
@@ -18,8 +18,8 @@ mod tests {
         profile_controller::{
             get_profile_by_id, get_profile_config, get_profile_current, get_profile_mini_by_id, tests as ProfileCtrlTest,
         },
+        profile_db::tests::ProfileDbTest,
         profile_models::{ProfileConfigDto, UserProfileDto, UserProfileMiniDto},
-        profile_orm::tests::ProfileOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -29,16 +29,16 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_invalid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         let user_id_bad = format!("{}a", user_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
@@ -58,16 +58,16 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_valid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN, USER]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let profile2_dto = UserProfileDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", &profile2_id))
@@ -86,15 +86,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN, USER]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let profile2_id = profiles.get(1).unwrap().user_id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", profile2_id + 1))
@@ -107,14 +107,14 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_mini_by_id_invalid_id() {
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         let user_id_bad = format!("{}a", user_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_mini_by_id)
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_mini/{}", user_id_bad))
@@ -133,14 +133,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_mini_by_id_valid_id() {
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN, USER]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let profile2_mini_dto = UserProfileMiniDto::from(profiles.get(1).unwrap().clone());
         let profile2_id = profile2_mini_dto.id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_mini_by_id)
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_mini/{}", &profile2_id))
@@ -158,13 +158,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_mini_by_id_non_existent_id() {
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN, USER]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let profile2_id = profiles.get(1).unwrap().user_id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_mini_by_id)
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_mini/{}", profile2_id + 1))
@@ -178,7 +178,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_config_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let cfg_prfl = config_prfl::get_test_config();
         #[rustfmt::skip]
         let profile_config_dto = ProfileConfigDto::new(
@@ -192,8 +192,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_profile_config)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_config")
@@ -214,15 +214,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_current_valid_token() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[USER]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1_dto = UserProfileDto::from(profiles.get(0).unwrap().clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_current)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_current")

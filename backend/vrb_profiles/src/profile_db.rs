@@ -1,101 +1,105 @@
 use vrb_authent::user_models::Profile;
-use vrb_dbase::dbase::DbPool;
+use vrb_db::db::DbPool2;
 
 use crate::profile_models::{ModifyUserProfile, UserProfile};
 
-pub trait ProfileOrm {
+pub trait ProfileDb {
     /// Get an entity (profile) by ID.
-    fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String>;
+    fn get_profile_by_id(&self, user_id: i32) -> impl std::future::Future<Output = Result<Option<Profile>, String>> + Send;
 
     /// Get an entities  (user, profile) by ID.
-    fn get_user_profile_by_id(&self, user_id: i32) -> Result<Option<UserProfile>, String>;
+    fn get_user_profile_by_id(&self, user_id: i32) -> impl std::future::Future<Output = Result<Option<UserProfile>, String>> + Send;
 
     /// Modify an entity (profile, user).
-    fn modify_user_profile(&self, user_id: i32, modify_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String>;
+    fn modify_user_profile(
+        &self,
+        user_id: i32,
+        modify_profile: ModifyUserProfile,
+    ) -> impl std::future::Future<Output = Result<Option<UserProfile>, String>> + Send;
 
     /// Filter for the list of stream logos by user ID.
-    fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String>;
+    fn filter_stream_logos(&self, user_id: i32) -> impl std::future::Future<Output = Result<Vec<String>, String>> + Send;
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_profile_orm_app(pool: DbPool) -> impls::ProfileOrmApp {
-    impls::ProfileOrmApp::new(pool)
+pub fn get_profile_db_app(db_pool: DbPool2) -> impls::ProfileDbApp {
+    impls::ProfileDbApp::new(db_pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
-pub fn get_profile_orm_app(_: DbPool) -> tests::ProfileOrmApp {
-    tests::ProfileOrmApp::new()
+pub fn get_profile_db_app(_: DbPool2) -> tests::ProfileDbApp {
+    tests::ProfileDbApp::new()
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
     use std::time::Instant as tm;
 
-    use diesel::{self, prelude::*, sql_types};
     use log::{Level::Info, info, log_enabled};
+    use sqlx;
     use vrb_authent::user_models::Profile;
-    use vrb_dbase::{dbase, schema};
+    use vrb_db::db::DbPool2;
 
     use crate::profile_models::{ModifyUserProfile, StreamLogo, UserProfile};
 
-    use super::ProfileOrm;
+    use super::ProfileDb;
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
     #[derive(Debug, Clone)]
-    pub struct ProfileOrmApp {
-        pub pool: dbase::DbPool,
+    pub struct ProfileDbApp {
+        pub db_pool: DbPool2,
     }
 
-    impl ProfileOrmApp {
-        pub fn new(pool: dbase::DbPool) -> Self {
-            ProfileOrmApp { pool }
-        }
-        pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
-            (&self.pool).get().map_err(|e| format!("{}: {}", CONN_POOL, e.to_string()))
+    impl ProfileDbApp {
+        pub fn new(db_pool: DbPool2) -> Self {
+            ProfileDbApp { db_pool }
         }
     }
 
-    impl ProfileOrm for ProfileOrmApp {
+    impl ProfileDb for ProfileDbApp {
         /// Get an entity (profile) by ID.
-        fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
+        async fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to find user by id and return it.
-            let opt_profile: Option<Profile> = schema::profiles::table
-                .filter(schema::profiles::dsl::user_id.eq(user_id))
-                .first::<Profile>(&mut conn)
-                .optional()
-                .map_err(|e| format!("get_profile_by_id: {}", e.to_string()))?;
+
+            let result: Option<Profile> = sqlx::query_as(
+                "SELECT user_id, avatar, descript, theme, locale, created_at, updated_at \
+                FROM profiles \
+                WHERE user_id = $1 \
+                LIMIT 1",
+            )
+            .bind(user_id)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("get_profile_by_id: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("get_profile_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(opt_profile)
+            Ok(result)
         }
 
         /// Get an entities (user, profile) by ID.
-        fn get_user_profile_by_id(&self, user_id: i32) -> Result<Option<UserProfile>, String> {
+        async fn get_user_profile_by_id(&self, user_id: i32) -> Result<Option<UserProfile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from get_user_profile_by_id($1);").bind::<sql_types::Integer, _>(user_id); // $1
-
-            // Run a query with Diesel to create a new user and return it.
-            let opt_user_profile = query
-                .get_result::<UserProfile>(&mut conn)
-                .optional()
-                .map_err(|e| format!("get_user_profile_by_id: {}", e.to_string()))?;
+            let result: Option<UserProfile> = sqlx::query_as(
+                "SELECT user_id, nickname, email, \"role\", avatar, descript, theme, locale, created_at, updated_at \
+                FROM get_user_profile_by_id($1) \
+                LIMIT 1",
+            )
+            .bind(user_id)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("get_user_profile_by_id: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("get_user_profile_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(opt_user_profile)
+            Ok(result)
         }
 
         /// Modify an entity (user, profile).
-        fn modify_user_profile(&self, user_id: i32, modify_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String> {
+        async fn modify_user_profile(&self, user_id: i32, modify_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let nickname = modify_profile.nickname.map(|v| v.to_lowercase());
@@ -108,50 +112,47 @@ pub mod impls {
                 None => None,
             };
 
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query("select * from modify_user_profile($1,$2,$3,$4,$5,$6,$7,$8,$9);")
-                .bind::<sql_types::Integer, _>(user_id) // $1
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(nickname) // $2
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(email) // $3
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.password) // $4
-                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(modify_profile.role) // $5
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(avatar) // $6
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.descript) // $7
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.theme) // $8
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.locale); // $9
-
-            // Run a query with Diesel to create a new user and return it.
-            let opt_user_profile = query
-                .get_result::<UserProfile>(&mut conn)
-                .optional()
-                .map_err(|e| format!("modify_profile_user: {}", e.to_string()))?;
+            let result: Option<UserProfile> = sqlx::query_as(
+                "SELECT user_id, nickname, email, \"role\", avatar, descript, theme, locale, created_at, updated_at \
+                FROM modify_user_profile($1,$2,$3,$4,$5,$6,$7,$8,$9) \
+                LIMIT 1",
+            )
+            .bind(user_id)
+            .bind(nickname)
+            .bind(email)
+            .bind(modify_profile.password)
+            .bind(modify_profile.role)
+            .bind(avatar)
+            .bind(modify_profile.descript)
+            .bind(modify_profile.theme)
+            .bind(modify_profile.locale)
+            .fetch_optional(&self.db_pool)
+            .await
+            .map_err(|e| format!("modify_user_profile: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("modify_profile() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(opt_user_profile)
+            Ok(result)
         }
 
         /// Filter for the list of stream logos by user ID.
-        fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
+        async fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query(
+            let list: Vec<StreamLogo> = sqlx::query_as(
                 "SELECT s.logo \
-                 FROM streams s \
-                 WHERE LENGTH(COALESCE(s.logo, '')) > 0 \
-                   AND s.user_id = $1 ORDER BY s.id ASC;",
+                FROM streams s \
+                WHERE LENGTH(COALESCE(s.logo, '')) > 0 \
+                  AND s.user_id = $1 ORDER BY s.id ASC \
+                LIMIT 1000",
             )
-            .bind::<sql_types::Nullable<sql_types::Integer>, _>(user_id); // $1
+            .bind(user_id)
+            .fetch_all(&self.db_pool)
+            .await
+            .map_err(|e| format!("select_streams: {}", e.to_string()))?;
 
-            // Run a query using Diesel to find a list of users based on the given parameters.
-            let stream_logos: Vec<StreamLogo> = query.load(&mut conn).map_err(|e| format!("select_streams: {}", e.to_string()))?;
-
-            let result = stream_logos.into_iter().map(|v| v.logo.clone()).collect();
+            let result = list.into_iter().map(|v| v.logo.clone()).collect();
 
             if let Some(timer) = timer {
                 info!("filter_stream_logos() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -168,27 +169,27 @@ pub mod tests {
     use chrono::Utc;
     use vrb_authent::{
         config_jwt,
+        user_db::tests::USER1_ID,
         user_models::{Profile, Session, User},
-        user_orm::tests::USER1_ID,
     };
     use vrb_common::consts;
 
     use crate::{
         config_prfl,
+        profile_db::ProfileDb,
         profile_models::{ModifyUserProfile, UserProfile},
-        profile_orm::ProfileOrm,
     };
 
     #[derive(Debug, Clone)]
-    pub struct ProfileOrmApp {
+    pub struct ProfileDbApp {
         pub user_profile_vec: Vec<UserProfile>,
         pub session_vec: Vec<Session>,
     }
 
-    impl ProfileOrmApp {
+    impl ProfileDbApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            ProfileOrmApp {
+            ProfileDbApp {
                 user_profile_vec: Vec::new(),
                 session_vec: Vec::new(),
             }
@@ -196,7 +197,7 @@ pub mod tests {
         /// Create a new instance with the specified profile list.
         /// Sessions are taken from "sessions", if it is empty, they are created automatically.
         pub fn create(user_profiles: &[UserProfile]) -> Self {
-            ProfileOrmApp {
+            ProfileDbApp {
                 user_profile_vec: user_profiles.to_vec(),
                 session_vec: Vec::new(),
             }
@@ -208,9 +209,9 @@ pub mod tests {
         }
     }
 
-    impl ProfileOrm for ProfileOrmApp {
+    impl ProfileDb for ProfileDbApp {
         /// Get an entity (profile) by ID.
-        fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
+        async fn get_profile_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let opt_user_profile = self
                 .user_profile_vec
                 .iter()
@@ -230,7 +231,7 @@ pub mod tests {
         }
 
         /// Get an entities (user, profile) by ID.
-        fn get_user_profile_by_id(&self, user_id: i32) -> Result<Option<UserProfile>, String> {
+        async fn get_user_profile_by_id(&self, user_id: i32) -> Result<Option<UserProfile>, String> {
             let opt_user_profile = self
                 .user_profile_vec
                 .iter()
@@ -241,7 +242,7 @@ pub mod tests {
         }
 
         /// Modify an entity (profile, user).
-        fn modify_user_profile(&self, user_id: i32, modify_user_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String> {
+        async fn modify_user_profile(&self, user_id: i32, modify_user_profile: ModifyUserProfile) -> Result<Option<UserProfile>, String> {
             let opt_profile = self.user_profile_vec.iter().find(|profile| (*profile).user_id == user_id);
             let opt_profile3: Option<UserProfile> = if let Some(profile) = opt_profile {
                 let profile2 = UserProfile {
@@ -264,7 +265,7 @@ pub mod tests {
         }
 
         /// Filter for the list of stream logos by user ID.
-        fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
+        async fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
             let mut result: Vec<String> = vec![];
             let opt_stream_logo = Self::stream_logo_alias(user_id);
             if opt_stream_logo.is_some() {
@@ -274,9 +275,9 @@ pub mod tests {
         }
     }
 
-    pub struct ProfileOrmTest {}
+    pub struct ProfileDbTest {}
 
-    impl ProfileOrmTest {
+    impl ProfileDbTest {
         pub fn profiles(users: &[User]) -> Vec<UserProfile> {
             let profile_vec: Vec<UserProfile> = users.iter().map(|u| UserProfile::from(u.clone())).collect();
             profile_vec
@@ -293,11 +294,11 @@ pub mod tests {
                 config.app_data(web::Data::clone(&data_config_prfl));
             }
         }
-        pub fn cfg_profile_orm(data_p: Vec<UserProfile>) -> impl FnOnce(&mut web::ServiceConfig) {
+        pub fn cfg_profile_db(data_p: Vec<UserProfile>) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
-                let data_user_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p));
+                let data_user_profile_db = web::Data::new(ProfileDbApp::create(&data_p));
 
-                config.app_data(web::Data::clone(&data_user_profile_orm));
+                config.app_data(web::Data::clone(&data_user_profile_db));
             }
         }
     }

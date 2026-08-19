@@ -9,13 +9,13 @@ use serde_json::json;
 use utoipa;
 use vrb_authent::{
     authentication::{Authenticated, RequireAuth},
-    user_orm::UserOrm,
+    user_db::UserDb,
     user_registr_db::UserRegistrDb,
 };
 #[cfg(not(all(test, feature = "mockdata")))]
-use vrb_authent::{user_orm::impls::UserOrmApp, user_registr_db::impls::UserRegistrDbApp};
+use vrb_authent::{user_db::impls::UserDbApp, user_registr_db::impls::UserRegistrDbApp};
 #[cfg(all(test, feature = "mockdata"))]
-use vrb_authent::{user_orm::tests::UserOrmApp, user_registr_db::tests::UserRegistrDbApp};
+use vrb_authent::{user_db::tests::UserDbApp, user_registr_db::tests::UserRegistrDbApp};
 use vrb_common::{
     alias_path::{alias_path_profile, alias_path_stream},
     api_error::ApiError,
@@ -23,20 +23,20 @@ use vrb_common::{
     profile::{PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
     validators::{self, ValidationChecks, Validator, msg_validation},
 };
-use vrb_dbase::enm_user_role::UserRole;
+use vrb_db::enm_user_role::UserRole;
 use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image};
 
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::profile_orm::impls::ProfileOrmApp;
+use crate::profile_db::impls::ProfileDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::profile_orm::tests::ProfileOrmApp;
+use crate::profile_db::tests::ProfileDbApp;
 use crate::{
     config_prfl::{self, ConfigPrfl},
+    profile_db::ProfileDb,
     profile_models::{
         ModifyUserProfile, ModifyUserProfileDto, NewPasswordUserProfileDto, ProfileConfigDto, UserProfile, UserProfileDto,
         UserProfileMiniDto,
     },
-    profile_orm::ProfileOrm,
 };
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
@@ -163,8 +163,6 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`",
             body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
                 , "`id` - invalid digit found in string (2a)"))),
-        (status = 506, description = "Blocking error.", body = ApiError,
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError,
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -175,8 +173,8 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
 #[rustfmt::skip]
 #[get("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_profile_by_id(
-    user_orm: web::Data<UserOrmApp>,
-    profile_orm: web::Data<ProfileOrmApp>,
+    user_db: web::Data<UserDbApp>,
+    profile_db: web::Data<ProfileDbApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -189,31 +187,17 @@ pub async fn get_profile_by_id(
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
-    let (res_user, res_profile) = web::block(move || {
-        // Find user by user id.
-        let res_user = user_orm.get_user_by_id(user_id, true)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-
-        // Find profile by user id.
-        let res_profile =
-            profile_orm.get_profile_by_id(user_id).map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-
-        (res_user, res_profile)
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    // Find user by id.
+    let opt_user = user_db.get_user_by_id(user_id, false).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    let opt_user = res_user?;
-    let opt_profile = res_profile?;
+    // Find profile by user id.
+    let opt_profile = profile_db.get_profile_by_id(user_id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     let mut opt_user_profile_dto: Option<UserProfileDto> = None;
 
@@ -269,8 +253,6 @@ pub async fn get_profile_by_id(
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`",
             body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
                 , "`id` - invalid digit found in string (2a)"))),
-        (status = 506, description = "Blocking error.", body = ApiError,
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError,
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -280,7 +262,7 @@ pub async fn get_profile_by_id(
 #[rustfmt::skip]
 #[get("/api/profiles_mini/{id}" )]
 pub async fn get_profile_mini_by_id(
-    profile_orm: web::Data<ProfileOrmApp>,
+    profile_db: web::Data<ProfileDbApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -293,23 +275,11 @@ pub async fn get_profile_mini_by_id(
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
-    let res_user_profile = web::block(move || {
-        // Find profile by user id.
-        let res_user_profile =
-            profile_orm.get_user_profile_by_id(user_id).map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-
-        res_user_profile
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    // Find profile by user id.
+    let opt_user_profile = profile_db.get_user_profile_by_id(user_id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
-
-    let opt_user_profile = res_user_profile?;
 
     if let Some(timer) = timer {
         info!("get_profile_mini_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -427,6 +397,8 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
+        (status = 507, description = "Database error.", body = ApiError,
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = []))
 )]
@@ -435,28 +407,18 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
 #[get("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_current(
     authenticated: Authenticated,
-    profile_orm: web::Data<ProfileOrmApp>,
+    profile_db: web::Data<ProfileDbApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
     let user = authenticated.deref();
     let user_id = user.id;
 
-    let opt_profile = web::block(move || {
-        // Find profile by user id.
-        let profile =
-            profile_orm.get_profile_by_id(user_id).map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            }).ok()?;
-
-        profile
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+    // Find profile by user id.
+    let opt_profile = profile_db.get_profile_by_id(user_id).await.map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
 
     let user_profile = UserProfile::from(user.clone());
     let mut user_profile_dto = UserProfileDto::from(user_profile);
@@ -577,8 +539,6 @@ impl ModifyUserProfileForm {
             ) )),
         (status = 500, description = "Error loading file.", body = ApiError, example = json!(
             ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg - File not found."))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
         (status = 510, description = "Error while converting file.", body = ApiError,
@@ -592,8 +552,8 @@ impl ModifyUserProfileForm {
 pub async fn put_profile(
     authenticated: Authenticated,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
-    profile_orm: web::Data<ProfileOrmApp>,
-    user_orm: web::Data<UserOrmApp>,
+    profile_db: web::Data<ProfileDbApp>,
+    user_db: web::Data<UserDbApp>,
     user_registr_db: web::Data<UserRegistrDbApp>,
     MultipartForm(modify_user_profile_form): MultipartForm<ModifyUserProfileForm>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -634,44 +594,33 @@ pub async fn put_profile(
     let email2 = email.clone();
 
     if nickname.len() > 0 || email.len() > 0 {
-        let user_orm2 = user_orm.get_ref().clone();
+        let mut opt_search: Option<(bool, bool)> = None;
 
-        let mut opt_search = web::block(move || {
-            let mut res_search: Option<(bool, bool)> = None;
+        // Search for "nickname" or "email" in the "users" table.
+        let opt_user = user_db
+            .find_user_by_nickname_or_email(Some(&nickname2), Some(&email2), false)
+            .await
+            .map_err(|e| {
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507  
+            })?;
 
-            if res_search.is_none() {
-                // Search for "nickname" or "email" in the "users" table.
-                let opt_user = user_orm2
-                    .find_user_by_nickname_or_email(Some(&nickname), Some(&email), false)
-                    .map_err(|e| {
-                        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                        ApiError::create(507, err::MSG_DATABASE, &e)
-                    }) // 507
-                    .ok()?;
-                // If such an entry exists in the "users" table, then exit.
-                if let Some(user) = opt_user {
-                    res_search = Some((nickname == user.nickname, email == user.email));
-                }
-            }
-            res_search
-        })
-        .await
-        .map_err(|e| {
-            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })?;
+        // If such an entry exists in the "users" table, then exit.
+        if let Some(user) = opt_user {
+            opt_search = Some((nickname2 == user.nickname, email2 == user.email));
+        }
 
         if opt_search.is_none() {
             let opt_user_registr = user_registr_db
-                .find_user_registr_by_nickname_or_email(Some(&nickname2), Some(&email2))
+                .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
                 .await
                 .map_err(|e| {
                     error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                    ApiError::create(507, err::MSG_DATABASE, &e) // 507
+                    ApiError::create(507, err::MSG_DATABASE, &e) // 507  
                 })?;
             // If such an entry exists in the "user_registrs" table, then exit.
             if let Some(user_registr) = opt_user_registr {
-                opt_search = Some((nickname2 == user_registr.nickname, email2 == user_registr.email));
+                opt_search = Some((nickname == user_registr.nickname, email == user_registr.email));
             }
         }
 
@@ -761,46 +710,25 @@ pub async fn put_profile(
     let mut path_old_avatar_file: String = "".to_owned();
 
     if modify_user_profile.avatar.is_some() {
-
-        let profile_orm2 = profile_orm.get_ref().clone();
         // Get the current value of the 'avatar' field.
-        let res_curr_profile = web::block(move || {
-            // Modify an entity (profile).
-            let res_curr_profile = profile_orm2.get_profile_by_id(curr_user_id)
-            //  modify_profile(curr_user_id, modify_profile)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-    
-            res_curr_profile
-        })
+        let opt_curr_profile = profile_db.get_profile_by_id(curr_user_id)
         .await
         .map_err(|e| {
-            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })?;
     
-        if let Ok(Some(curr_profile)) = res_curr_profile {
+        if let Some(curr_profile) = opt_curr_profile {
             path_old_avatar_file = curr_profile.avatar.unwrap_or("".to_string());
         }
     }
 
-    let res_user_profile = web::block(move || {
-        // Modify an entity (profile).
-        let res_data_profile = profile_orm.modify_user_profile(curr_user_id, modify_user_profile)
-        .map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-
-        res_data_profile
-    })
-    .await
+    // Modify an entity (profile).
+    let res_user_profile = profile_db.modify_user_profile(curr_user_id, modify_user_profile).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    });
 
     let opt_user_profile = res_user_profile
     .map_err(|err| {
@@ -885,8 +813,6 @@ pub async fn put_profile(
                 (NewPasswordUserProfileDto {password: "pas".to_string(), new_password: "word".to_string()}).validate().err().unwrap()) )),
         (status = 500, description = "Error while calculating the password hash.", body = ApiError, 
             example = json!(ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty."))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -897,8 +823,8 @@ pub async fn put_profile(
 #[put("/api/profiles_new_password", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_profile_new_password(
     authenticated: Authenticated,
-    user_orm: web::Data<UserOrmApp>,
-    profile_orm: web::Data<ProfileOrmApp>,
+    user_db: web::Data<UserDbApp>,
+    profile_db: web::Data<ProfileDbApp>,
     json_body: web::Json<NewPasswordUserProfileDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -922,20 +848,11 @@ pub async fn put_profile_new_password(
         ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, &e.to_string()) // 500
     })?;
     
-    let opt_user_pwd = web::block(move || {
-        // Find user by user id.
-        let opt_user = user_orm.get_user_by_id(user_id, true)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-            opt_user
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+    // Find user by id.
+    let opt_user_pwd = user_db.get_user_by_id(user_id, true).await.map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
 
     let user_pwd = opt_user_pwd.ok_or_else(|| {
         error!("{}.{}", 401, err::MSG_WRONG_NICKNAME_EMAIL);
@@ -965,19 +882,11 @@ pub async fn put_profile_new_password(
         locale: None,
     };
     // Update the password hash for the user profile.
-    let opt_user_profile = web::block(move || {
-        let opt_profile1 = profile_orm.modify_user_profile(user_id, modify_user_profile)
-        .map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        opt_profile1
-    })
-    .await
+    let opt_user_profile = profile_db.modify_user_profile(user_id, modify_user_profile).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     if let Some(timer) = timer {
         info!("put_profile_new_password() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -1029,8 +938,6 @@ pub async fn put_profile_new_password(
         (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/users/2a`",
             body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
                 , "`id` - invalid digit found in string (2a)"))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -1042,8 +949,8 @@ pub async fn put_profile_new_password(
 #[delete("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_profile(
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
-    user_orm: web::Data<UserOrmApp>,
-    profile_orm: web::Data<ProfileOrmApp>,
+    user_db: web::Data<UserDbApp>,
+    profile_db: web::Data<ProfileDbApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -1056,32 +963,21 @@ pub async fn delete_profile(
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
-    let profile_orm2 = profile_orm.get_ref().clone();
     // Get profile information and a list of logo file names for user streams.
-    let (res_profile, res_path_stream_log_files) = web::block(move || {
-        // Get the value of an entity (profile) by user ID.
-        let res_profile = profile_orm2.get_profile_by_id(user_id)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-
-        // Filter for the list of stream logos by user ID.
-        let res_path_stream_log_files = profile_orm2.filter_stream_logos(user_id)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-
-        (res_profile, res_path_stream_log_files)
-    })
-    .await
+    
+    // Get the value of an entity (profile) by user ID.
+    let opt_profile = profile_db.get_profile_by_id(user_id).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    let opt_profile= res_profile?;
+    // Filter for the list of stream logos by user ID.
+    let path_stream_log_files = profile_db.filter_stream_logos(user_id).await
+    .map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     // Get the path to the "avatar" file.
     let mut path_avatar_file = "".to_string();
@@ -1089,23 +985,12 @@ pub async fn delete_profile(
         path_avatar_file = profile.avatar.clone().unwrap_or("".to_string());
     }
 
-    let path_stream_log_files = res_path_stream_log_files?;
-
-    let user_orm2 = user_orm.get_ref().clone();
-    let opt_user = web::block(move || {
-        // Delete an entity (profile).
-        let res_user = user_orm2.delete_user(user_id)
-        .map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_user
-    })
-    .await
+    // Delete an entity (profile).
+    let opt_user = user_db.delete_user(user_id).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })??;
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     let mut opt_user_profile_dto: Option<UserProfileDto> = None;
 
@@ -1176,8 +1061,6 @@ pub async fn delete_profile(
         (status = 204, description = "The current user's profile was not found."),
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -1189,8 +1072,8 @@ pub async fn delete_profile(
 pub async fn delete_profile_current(
     authenticated: Authenticated,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
-    user_orm: web::Data<UserOrmApp>,
-    profile_orm: web::Data<ProfileOrmApp>,
+    user_db: web::Data<UserDbApp>,
+    profile_db: web::Data<ProfileDbApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
@@ -1198,32 +1081,21 @@ pub async fn delete_profile_current(
     let user = authenticated.deref();
     let user_id = user.id;
     
-    let profile_orm2 = profile_orm.clone();
     // Get profile information and a list of logo file names for user streams.
-    let (res_profile, res_path_stream_log_files) = web::block(move || {
-        // Get the value of an entity (profile) by user ID.
-        let res_profile = profile_orm2.get_profile_by_id(user_id)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
 
-        // Filter for the list of stream logos by user ID.
-        let res_path_stream_log_files = profile_orm2.filter_stream_logos(user_id)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-
-        (res_profile, res_path_stream_log_files)
-    })
-    .await
+    // Get the value of an entity (profile) by user ID.
+    let opt_profile = profile_db.get_profile_by_id(user_id).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    let opt_profile= res_profile?;
+    // Filter for the list of stream logos by user ID.
+    let path_stream_log_files = profile_db.filter_stream_logos(user_id).await
+    .map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     // Get the path to the "avatar" file.
     let mut path_avatar_file = "".to_string();
@@ -1231,23 +1103,12 @@ pub async fn delete_profile_current(
         path_avatar_file = profile.avatar.clone().unwrap_or("".to_string());
     }
 
-    let path_stream_log_files = res_path_stream_log_files?;
-
-    let user_orm2 = user_orm.get_ref().clone();
-    let opt_user = web::block(move || {
-        // Delete an entity (profile).
-        let res_user = user_orm2.delete_user(user_id)
-        .map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_user
-    })
-    .await
+    // Delete an entity (profile).
+    let opt_user = user_db.delete_user(user_id).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) //506
-    })??;
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
+    })?;
 
     let mut opt_user_profile_dto: Option<UserProfileDto> = None;
 

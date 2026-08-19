@@ -11,7 +11,7 @@ pub mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
+        user_db::tests::{ADMIN, USER, USER1_ID, UserDbTest},
     };
     use vrb_common::{api_error::ApiError, consts, env_var, err};
     use vrb_tools::png_files;
@@ -19,8 +19,8 @@ pub mod tests {
     use crate::{
         config_prfl,
         profile_controller::{delete_profile, delete_profile_current, tests as ProfileCtrlTest},
+        profile_db::tests::ProfileDbTest,
         profile_models::UserProfileDto,
-        profile_orm::tests::ProfileOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -36,16 +36,16 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_invalid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let profile_id_bad = format!("{}a", data_u.0.get(0).unwrap().id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id_bad))
@@ -65,16 +65,16 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", user_id + 1))
@@ -85,8 +85,8 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_id = profile1.user_id;
         let user_profile1_dto = UserProfileDto::from(profile1);
@@ -94,9 +94,9 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
@@ -123,8 +123,8 @@ pub mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let mut profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
@@ -133,9 +133,9 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
@@ -166,8 +166,8 @@ pub mod tests {
         let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let mut profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
@@ -176,9 +176,9 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
@@ -201,8 +201,8 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_with_stream_img() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let mut profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = UserProfileDto::from(profile1.clone());
@@ -218,9 +218,9 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
@@ -248,17 +248,17 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_current_without_img() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[USER]);
+        let profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1 = profiles.get(0).unwrap().clone();
         let profile1_dto = UserProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
@@ -285,8 +285,8 @@ pub mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let mut profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile_dto = UserProfileDto::from(profile1.clone());
@@ -294,9 +294,9 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile_current)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
@@ -327,8 +327,8 @@ pub mod tests {
         let path_name0_alias = format!("/1{}/{}", consts::ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let mut profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile_dto = UserProfileDto::from(profile1.clone());
@@ -336,9 +336,9 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile_current)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl::get_test_config()))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl::get_test_config()))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
@@ -361,8 +361,8 @@ pub mod tests {
     #[actix_web::test]
     async fn test_delete_profile_current_with_stream_img() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let mut profiles = ProfileOrmTest::profiles(&data_u.0);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let mut profiles = ProfileDbTest::profiles(&data_u.0);
         let profile1 = profiles.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = UserProfileDto::from(profile1.clone());
@@ -376,9 +376,9 @@ pub mod tests {
         let app = test::init_service(
             App::new().service(delete_profile_current)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ProfileOrmTest::cfg_profile_orm(profiles))
-                .configure(ProfileOrmTest::cfg_config_prfl(config_prfl))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ProfileDbTest::cfg_profile_db(profiles))
+                .configure(ProfileDbTest::cfg_config_prfl(config_prfl))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")

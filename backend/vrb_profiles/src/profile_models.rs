@@ -1,15 +1,15 @@
 use std::convert::From;
 
 use chrono::{DateTime, Utc};
-use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use utoipa::ToSchema;
 use vrb_authent::user_models::{self, Profile, User};
 use vrb_common::{
     err, profile, serial_datetime,
     validators::{ValidationChecks, ValidationError, Validator},
 };
-use vrb_dbase::{enm_user_role::UserRole, schema};
+use vrb_db::enm_user_role::UserRole;
 
 // #
 pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
@@ -25,22 +25,12 @@ pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
 
 // ** Used to return user profile data. **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::profiles)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct UserProfile {
-    #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = "user_id")]
     pub user_id: i32,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "nickname")]
     pub nickname: String,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "email")]
     pub email: String,
-    #[diesel(sql_type = schema::sql_types::UserRole)]
-    #[diesel(column_name = "role")]
     pub role: UserRole,
     pub avatar: Option<String>,
     pub descript: Option<String>,
@@ -352,10 +342,8 @@ impl Validator for NewPasswordUserProfileDto {
 
 // ** Used: in "profile_controller::delete_profile()" **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct StreamLogo {
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "logo")]
     pub logo: String,
 }
 
