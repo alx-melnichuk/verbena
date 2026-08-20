@@ -41,6 +41,7 @@ use vrb_streams::{stream_controller, stream_models};
         stream_controller::get_stream_and_tags,
         stream_controller::get_stream_config,
         stream_controller::get_streams_calendar,
+        stream_controller::get_stream_popural_tags,
         stream_controller::post_stream_and_tags,
         stream_controller::put_toggle_state,
         stream_controller::put_stream_and_tags,
@@ -88,7 +89,7 @@ use vrb_streams::{stream_controller, stream_models};
             profile_models::ProfileConfigDto,           // ::get_profile_config
             profile_models::ModifyUserProfileDto,       // ::put_profile,
             profile_models::NewPasswordUserProfileDto,  // ::put_profile_new_password,
-
+            
             // stream_controller
             enm_stream_state::StreamState,
             // ::get_stream_and_tags_by_id, ::post_stream_and_tags, ::put_stream_and_tags, ::put_toggle_state
