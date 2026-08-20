@@ -113,6 +113,7 @@ export class PanelProfile implements OnInit, OnChanges {
     constructor() {
         this.formGroupPassword.setValidators(this.validatorsForPassword());
     }
+
     ngOnInit(): void {
         this.cntlsProfile.nickname.markAsTouched();
         this.fieldNicknameComp.markAsTouched();
@@ -238,7 +239,8 @@ export class PanelProfile implements OnInit, OnChanges {
 
     public checkPassword(formGroup: FormGroup): void {
         if (formGroup.errors != null && formGroup.errors["new_password_equal_to_old_value"]) {
-            this.errMsgObjsPassword.push({ msg: "417.new_password:equal_to_old_value", obj: null });
+            const fieldName = this.translateSrv.instant("panel-profile.new_password");
+            this.errMsgObjsPassword.push({ msg: "417.field-password:equal_to_old_value", obj: { "field-password": fieldName } });
         }
     }
 
@@ -257,6 +259,10 @@ export class PanelProfile implements OnInit, OnChanges {
 
     public updateErrMsgObjsPassword(errMsgObjsPassword: ErrMsgObj[] = []): void {
         this.errMsgObjsPassword = errMsgObjsPassword;
+    }
+
+    public getErrorObj(errors: unknown | null, value: string | null | undefined): ValidationErrors {
+        return { ...(errors as ValidationErrors), ...{ [`field-password`]: value } };
     }
 
     // ** Section "Delete Account" **

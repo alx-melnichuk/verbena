@@ -141,7 +141,9 @@
 
     <div class="mat-mdc-form-field-subscript-wrapper">
       @for (errMsgObjPassword of errMsgObjsPassword; track errMsgObjPassword.msg) {        
-        <mat-error>{{ errMsgObjPassword.msg | translate: errMsgObjPassword.obj }}</mat-error>
+        <mat-error>
+            {{ errMsgObjPassword.msg | translate: getErrorObj(errMsgObjPassword.obj, ('panel-profile.new_password' | translate)) }}
+        </mat-error>
       }  
     </div>
   </div>

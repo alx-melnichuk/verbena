@@ -47,6 +47,7 @@
   "417.field-password:minlength": "Поле \"{{field-password}}\" має містити принаймні {{minlength.requiredLength}} символів.",
   "417.field-password:maxlength": "Поле \"{{field-password}}\" не може містити більше {{maxlength.requiredLength}} символів.",
   "417.field-password:pattern": "Поле \"{{field-password}}\" має містити: малу літеру, велику літеру та цифру.",
+  "417.field-password:equal_to_old_value": "Поле \"{{field-password}}\" має відрізнятися від старого значення.",
   "417.field-descript:minlength": "Поле \"{{field-descript}}\" має містити принаймні {{ minlength.requiredLength }} символів.",
   "417.field-descript:maxlength": "Поле \"{{field-descript}}\" не може містити більше {{ maxlength.requiredLength }} символів.",
   "417.field-color-theme:required": "Поле \"{{field-color-theme}}\" обов'язкове.",

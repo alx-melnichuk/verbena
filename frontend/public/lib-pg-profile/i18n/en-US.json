@@ -47,6 +47,7 @@
   "417.field-password:minlength": "The \"{{field-password}}\" field must have at least {{minlength.requiredLength}} characters.",
   "417.field-password:maxlength": "The \"{{field-password}}\" field must have no more {{maxlength.requiredLength}} characters.",
   "417.field-password:pattern": "The \"{{field-password}}\" field must contain: a lowercase letter, an uppercase letter and a number.",
+  "417.field-password:equal_to_old_value": "The \"{{field-password}}\" field must be different from the old value.",
   "417.field-descript:minlength": "The \"{{field-descript}}\" field must have at least {{ minlength.requiredLength }} characters.",
   "417.field-descript:maxlength": "The \"{{field-descript}}\" field must have no more {{ maxlength.requiredLength }} characters.",
   "417.field-color-theme:required": "The \"{{field-color-theme}}\" field is required.",
