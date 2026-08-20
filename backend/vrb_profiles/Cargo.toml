@@ -15,7 +15,6 @@ path = "src/lib.rs"
 actix-multipart = { workspace = true }
 actix-web = { workspace = true }
 chrono = { workspace = true }
-diesel = { workspace = true }
 log = { workspace = true }
 mime = { workspace = true }
 serde = { workspace = true }
@@ -28,7 +27,7 @@ vrb_db = { workspace = true }
 vrb_tools = { workspace = true }
 
 [features]
-default = ["test", "mockdata"]
+# default = ["test", "mockdata"]
 test=[]
 mockdata = []
 

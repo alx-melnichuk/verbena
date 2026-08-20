@@ -39,9 +39,8 @@ pub mod impls {
     use vrb_authent::user_models::Profile;
     use vrb_db::db::DbPool2;
 
+    use crate::profile_db::ProfileDb;
     use crate::profile_models::{ModifyUserProfile, StreamLogo, UserProfile};
-
-    use super::ProfileDb;
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
@@ -131,7 +130,7 @@ pub mod impls {
             .map_err(|e| format!("modify_user_profile: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
-                info!("modify_profile() time: {}", format!("{:.2?}", timer.elapsed()));
+                info!("modify_user_profile() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             Ok(result)
         }
@@ -174,11 +173,9 @@ pub mod tests {
     };
     use vrb_common::consts;
 
-    use crate::{
-        config_prfl,
-        profile_db::ProfileDb,
-        profile_models::{ModifyUserProfile, UserProfile},
-    };
+    use crate::config_prfl;
+    use crate::profile_db::ProfileDb;
+    use crate::profile_models::{ModifyUserProfile, UserProfile};
 
     #[derive(Debug, Clone)]
     pub struct ProfileDbApp {
@@ -196,6 +193,7 @@ pub mod tests {
         }
         /// Create a new instance with the specified profile list.
         /// Sessions are taken from "sessions", if it is empty, they are created automatically.
+        #[cfg(test)]
         pub fn create(user_profiles: &[UserProfile]) -> Self {
             ProfileDbApp {
                 user_profile_vec: user_profiles.to_vec(),
