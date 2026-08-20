@@ -1,7 +1,7 @@
 pub mod config_strm;
 pub mod stream_controller;
+pub mod stream_db;
 pub mod stream_models;
-pub mod stream_orm;
 pub mod stream_test_get1;
 pub mod stream_test_get2;
 pub mod stream_test_post_delete;

@@ -14,16 +14,17 @@ use vrb_common::{
     err, parser,
     validators::{self, ValidationChecks, Validator, msg_validation},
 };
-use vrb_dbase::{enm_stream_state::StreamState, enm_user_role::UserRole};
+use vrb_db::{enm_stream_state::StreamState, enm_user_role::UserRole};
 use vrb_tools::{cdis::coding, loading::dynamic_image};
 
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::stream_orm::impls::StreamOrmApp;
+use crate::stream_db::impls::StreamDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::stream_orm::tests::StreamOrmApp;
+use crate::stream_db::tests::StreamDbApp;
 
 use crate::{
     config_strm::{self, ConfigStrm},
+    stream_db::StreamDb,
     stream_models::{
         CreateStreamAndTags, CreateStreamAndTagsDto, FilterStream, ModifyStreamAndTags, ModifyStreamAndTagsDto, PageStreamAndTagsDto,
         PageStreamTagDto, SEARCH_STREAM_AND_TAGS_LIMIT, SEARCH_STREAM_AND_TAGS_LIMIT_MAX, SEARCH_STREAM_AND_TAGS_LIMIT_MIN,
@@ -31,7 +32,6 @@ use crate::{
         SEARCH_STREAM_TAGS_PAGE, SearchStreamAndTags, SearchStreamAndTagsDto, SearchStreamDate, SearchStreamDateDto, SearchStreamTag,
         SearchStreamTagDto, StreamAndTagsDto, StreamConfigDto, StreamTagDto, ToggleStreamStateDto,
     },
-    stream_orm::StreamOrm,
 };
 
 // ** Section: Stream Get **
@@ -111,8 +111,6 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/streams/2a`", 
             body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
                 , "`id` - invalid digit found in string (2a)"))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -122,7 +120,7 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
 // Used to get information about a stream in chat without authorization.
 #[get("/api/streams/{id}")]
 pub async fn get_stream_and_tags_by_id(
-    stream_orm: web::Data<StreamOrmApp>,
+    stream_db: web::Data<StreamDbApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get data from request.
@@ -133,21 +131,12 @@ pub async fn get_stream_and_tags_by_id(
         ApiError::new(416, &message) // 416
     })?;
 
-    let res_data = web::block(move || {
-        // Get 'stream' by id.
-        let res_data = stream_orm.get_stream_and_tags(id).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_data
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    // Get 'stream' by id.
+    let opt_stream_and_tags = stream_db.get_stream_and_tags(id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    let opt_stream_and_tags = res_data?;
     if let Some(stream_and_tags) = opt_stream_and_tags {
         let stream_and_tags_dto = StreamAndTagsDto::from(stream_and_tags);
         Ok(HttpResponse::Ok().json(stream_and_tags_dto)) // 200
@@ -325,8 +314,6 @@ pub async fn get_stream_and_tags_by_id(
             example = json!(ApiError::validations(
                 (SearchStreamAndTagsDto::from(SearchStreamAndTags::new(None, Some(FilterStream::Period), None, None)))
                     .validate().err().unwrap()) )),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -335,7 +322,7 @@ pub async fn get_stream_and_tags_by_id(
 #[rustfmt::skip]
 #[get("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_stream_and_tags(
-    stream_orm: web::Data<StreamOrmApp>, 
+    stream_db: web::Data<StreamDbApp>, 
     query_params: web::Query<SearchStreamAndTagsDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get search parameters.
@@ -381,23 +368,13 @@ pub async fn get_stream_and_tags(
     let limit = if limit <= SEARCH_STREAM_AND_TAGS_LIMIT_MAX { limit } else { SEARCH_STREAM_AND_TAGS_LIMIT_MAX };
     search_stream.limit = Some(limit);
 
-    let res_data = web::block(move || {
-        // A query to obtain a list of "streams" based on the specified search parameters.
-        let res_data =
-            stream_orm.filter_stream_and_tags_by_pages(search_stream).map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)
-            });
-        res_data
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+    // A query to obtain a list of "streams" based on the specified search parameters.
+    let (count, stream_and_tags) =
+        stream_db.filter_stream_and_tags_by_pages(search_stream).await.map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)
+        })?;
         
-    let (count, stream_and_tags) = res_data?;
-
     let list: Vec<StreamAndTagsDto> = stream_and_tags.into_iter().map(|v| v.into()).collect();
     let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
     let result = PageStreamAndTagsDto { list, limit, count, page, pages };
@@ -520,8 +497,6 @@ pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web:
             example = json!(ApiError::new(413, MSG_FINISH_EXCEEDS_LIMIT).add_param(Cow::Borrowed("periodTooLong"), 
             &serde_json::json!({ "actualPeriodFinish": "2030-04-01T08:00:00.000Z", "maxPeriodFinish": "2030-03-10T08:00:00.000Z" 
                 , "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS })))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -531,7 +506,7 @@ pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web:
 #[get("/api/streams_calendar", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_calendar(
     authenticated: Authenticated,
-    stream_orm: web::Data<StreamOrmApp>,
+    stream_db: web::Data<StreamDbApp>,
     query_params: web::Query<SearchStreamDateDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
@@ -570,26 +545,15 @@ pub async fn get_streams_calendar(
     let mut search_stream_date: SearchStreamDate = search_stream_date_dto.into();
     search_stream_date.user_id = user_id;
 
-    let res_data = web::block(move || {
-        // Find for an entity (stream period) by SearchStreamEvent.
-        let res_data =
-        stream_orm.filter_stream_dates(search_stream_date)
-        .map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e)    
-        });
-        res_data
-    })
-    .await
+    // Find for an entity (stream period) by SearchStreamEvent.
+    let res_data =
+    stream_db.filter_stream_dates(search_stream_date).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e)    
     })?;
 
-    let list: Vec<String> = match res_data {
-        Ok(v) => v.iter().map(|d| d.to_rfc3339_opts(Millis, true)).collect(),
-        Err(e) => return Err(e)
-    };
+    let list: Vec<String> = res_data.iter().map(|d| d.to_rfc3339_opts(Millis, true)).collect();
 
     Ok(HttpResponse::Ok().json(list)) // 200
 }
@@ -651,10 +615,24 @@ pub async fn get_streams_calendar(
 /// 
 /// Return found data on tags (`PageStreamTagDto`) with status 200.
 /// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The result is an array of popular tags.",
+            body = Vec<DateTime<Utc>>, example = json!([ "cyprus", "france", "greece", "spain", "tourism" ])),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::create(403, err::MSG_ACCESS_DENIED, &format!("{}; {}", 
+                MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, "curr_user_id: 1, user_id: 2")))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[get("/api/streams_popural_tags", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_stream_popural_tags(
-    stream_orm: web::Data<StreamOrmApp>,
+    stream_db: web::Data<StreamDbApp>,
     query_params: web::Query<SearchStreamTagDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get search parameters.
@@ -669,22 +647,12 @@ pub async fn get_stream_popural_tags(
     let limit = if limit <= SEARCH_STREAM_TAGS_LIMIT_MAX { limit } else { SEARCH_STREAM_TAGS_LIMIT_MAX };
     search_stream_tag.limit = Some(limit);
 
-    let res_data = web::block(move || {
-        // Find for an entity (stream period) by SearchStreamEvent.
-        let res_data =
-        stream_orm.get_stream_tags(search_stream_tag).map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)    
-            });
-        res_data
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    // Find for an entity (stream period) by SearchStreamEvent.
+    let (limit, page, stream_tags) =
+    stream_db.get_stream_tags(search_stream_tag).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e)    
     })?;
-
-    let (limit, page, stream_tags) = res_data?;
 
     let list: Vec<StreamTagDto> = stream_tags.into_iter().map(|v| v.into()).collect();
 
@@ -856,8 +824,6 @@ impl CreateStreamForm {
         ),
         (status = 500, description = "Error loading file.", body = ApiError, example = json!(
             ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg - File not found."))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
         (status = 510, description = "Error while converting file.", body = ApiError,
@@ -870,7 +836,7 @@ impl CreateStreamForm {
 pub async fn post_stream_and_tags(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
-    stream_orm: web::Data<StreamOrmApp>,
+    stream_db: web::Data<StreamDbApp>,
     MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
@@ -958,19 +924,12 @@ pub async fn post_stream_and_tags(
         create_stream_and_tags.logo = Some(alias_logo_file);
     }
 
-    let res_data = web::block(move || {
-        // Add a new entity (stream).
-        let res_data = stream_orm.create_stream_and_tags(create_stream_and_tags).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e)
-        });
-        res_data
-    })
-    .await
+    // Add a new entity (stream).
+    let res_data = stream_db.create_stream_and_tags(create_stream_and_tags).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e)
+    });
 
     if res_data.is_err() && path_new_logo_file.len() > 0 {
         if let Err(err) = fs::remove_file(&path_new_logo_file) {
@@ -1107,8 +1066,6 @@ impl ModifyStreamForm {
                 }).validate().err().unwrap()) )),
         (status = 500, description = "Error loading file.", body = ApiError, example = json!(
             ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg - File not found."))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
         (status = 510, description = "Error while converting file.", body = ApiError,
@@ -1123,7 +1080,7 @@ impl ModifyStreamForm {
 pub async fn put_stream_and_tags(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
-    stream_orm: web::Data<StreamOrmApp>,
+    stream_db: web::Data<StreamDbApp>,
     request: actix_web::HttpRequest,
     MultipartForm(modify_stream_form): MultipartForm<ModifyStreamForm>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -1237,22 +1194,12 @@ pub async fn put_stream_and_tags(
     let mut modify_stream_and_tags: ModifyStreamAndTags = modify_stream_and_tags_dto.into();
     modify_stream_and_tags.logo = logo.clone();
 
-    let res_stream_and_tags = web::block(move || {
-        // Modify an entity (stream).
-        let res_data = stream_orm.modify_stream_and_tags(id, curr_user_id, modify_stream_and_tags)
-        .map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e)
-        });
-        res_data
-    })
-    .await
+    // Modify an entity (stream).
+    let res_stream_and_tags = stream_db.modify_stream_and_tags(id, curr_user_id, modify_stream_and_tags).await
     .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
-    // modify_stream_and_stream_tag() time: 7.46ms
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e)
+    });
 
     let opt_stream_and_tags = res_stream_and_tags
     .map_err(|err| {
@@ -1350,8 +1297,6 @@ pub async fn put_stream_and_tags(
         (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/toggle/2a 
             -d '{\"state\": \"started\"}'`", body = ApiError,
             example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)"))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -1363,7 +1308,7 @@ pub async fn put_stream_and_tags(
 #[put("/api/streams/toggle/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_toggle_state(
     authenticated: Authenticated,
-    stream_orm: web::Data<StreamOrmApp>,
+    stream_db: web::Data<StreamDbApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<ToggleStreamStateDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -1379,24 +1324,13 @@ pub async fn put_toggle_state(
     })?;
 
     let new_state: StreamState = json_body.into_inner().state;
-    let stream_orm3 = stream_orm.clone();
-    let res_data = web::block(move || {
-        // Find a stream by ID.
-        let res_data = stream_orm3.get_stream_and_tags(id)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)
-            });
-            res_data
-    })
-    .await
-    .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
 
-    let opt_stream_and_tags = res_data?;
+    // Find a stream by ID.
+    let opt_stream_and_tags = stream_db.get_stream_and_tags(id).await
+        .map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)
+        })?;
 
     if opt_stream_and_tags.is_none() {
         // If a stream with the specified ID is not found for the current user, then return status 204.
@@ -1426,24 +1360,14 @@ pub async fn put_toggle_state(
     }
     // If the stream goes into active state, then
     if vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state) {
-        let stream_orm3 = stream_orm.clone();
-        // find any stream in active state.
-        let res_data2 = web::block(move || {
-            let res_data2 = stream_orm3
-                .get_stream_and_tags_in_live(curr_user_id, id)
-                .map_err(|e| {
-                    error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                    ApiError::create(507, err::MSG_DATABASE, &e)
-                });
-            res_data2
-        })
-        .await
-        .map_err(|e| {
-            error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-        })?;
         
-        let opt_stream2_and_tags = res_data2?;
+        // find any stream in active state.
+        let opt_stream2_and_tags = stream_db.get_stream_and_tags_in_live(curr_user_id, id)
+            .await
+            .map_err(|e| {
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)
+            })?;
 
         if let Some(stream2_and_tags) = opt_stream2_and_tags {
             let json = json!({ "id": stream2_and_tags.id, "title": &stream2_and_tags.title });
@@ -1466,23 +1390,13 @@ pub async fn put_toggle_state(
         tags: None,
     };
 
-    let res_data3 = web::block(move || {
-        // Modify an entity (stream).
-        let res_data3 = stream_orm.modify_stream_and_tags(id, curr_user_id, modify_stream_and_tags)
+    // Modify an entity (stream).
+    let opt_stream_and_tags = stream_db.modify_stream_and_tags(id, curr_user_id, modify_stream_and_tags)
+        .await
         .map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e)
-        });
-        res_data3
-    })
-    .await
-    .map_err(|e| {
-        #[rustfmt::skip]
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
-
-    let opt_stream_and_tags = res_data3?;
+        })?;
 
     if opt_stream_and_tags.is_none() {
         // If a stream with the specified ID is not found for the current user, then return status 204.
@@ -1513,8 +1427,6 @@ pub async fn put_toggle_state(
         (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/streams/2a`",
             body = ApiError, example = json!(ApiError::create(416, 
                 err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)"))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -1527,7 +1439,7 @@ pub async fn put_toggle_state(
 pub async fn delete_stream_and_tags(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
-    stream_orm: web::Data<StreamOrmApp>,
+    stream_db: web::Data<StreamDbApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
@@ -1542,21 +1454,11 @@ pub async fn delete_stream_and_tags(
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
-    let res_data = web::block(move || {
-        // Delete an entity (stream, tags).
-        let res_data = stream_orm.delete_stream_and_tags(id, curr_user_id).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_data
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    // Delete an entity (stream, tags).
+    let opt_stream_and_tags = stream_db.delete_stream_and_tags(id, curr_user_id).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
-
-    let opt_stream_and_tags = res_data?;
 
     if let Some(stream_and_tags) = opt_stream_and_tags {
         // Get the path to the "logo" file.

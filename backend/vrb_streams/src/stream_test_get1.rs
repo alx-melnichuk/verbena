@@ -11,18 +11,18 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{ADMIN, USER, USER1, USER1_ID, USER2, UserOrmTest},
+        user_db::tests::{ADMIN, USER, USER1, USER1_ID, USER2, UserDbTest},
     };
     use vrb_common::{api_error::ApiError, err};
-    use vrb_dbase::enm_stream_state::StreamState;
+    use vrb_db::enm_stream_state::StreamState;
 
     use crate::{
         stream_controller::{
             MSG_FINISH_EXCEEDS_LIMIT, MSG_FINISH_LESS_START, PERIOD_MAX_NUMBER_DAYS, get_stream_and_tags, get_stream_and_tags_by_id,
             tests as StreamCtrlTest,
         },
+        stream_db::tests::StreamDbTest,
         stream_models::{MSG_FINISHTIME_REQUIRED, MSG_STARTTIME_REQUIRED, PageStreamAndTagsDto, StreamAndTagsDto},
-        stream_orm::tests::StreamOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -37,16 +37,16 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_id_invalid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let stream_id_bad = format!("{}a", stream_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_id_bad))
@@ -66,16 +66,16 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_id_valid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let stream = streams.get(0).unwrap().clone();
         let stream_dto: StreamAndTagsDto = stream.into();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_dto.id))
@@ -95,15 +95,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_id_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_id + 1))
@@ -114,16 +114,16 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_id_another_user() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
-        let streams = StreamOrmTest::streams(&[0, 1]);
+        let data_u = UserDbTest::users(&[USER, USER]);
+        let streams = StreamDbTest::streams(&[0, 1]);
         let stream2 = streams.get(1).unwrap().clone();
         let stream2_dto: StreamAndTagsDto = stream2.into();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2_dto.id))
@@ -143,16 +143,16 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_id_another_user_by_admin() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let streams = StreamOrmTest::streams(&[USER1, USER2]);
+        let data_u = UserDbTest::users(&[ADMIN, USER]);
+        let streams = StreamDbTest::streams(&[USER1, USER2]);
         let stream2 = streams.get(1).unwrap().clone();
         let stream2_dto: StreamAndTagsDto = stream2.into();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags_by_id)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2_dto.id))
@@ -175,10 +175,10 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_user_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1 and user2.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2, USER2]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER2, USER2, USER2]);
         // Select streams with indices: 0,1.
         let streams1b = &streams.clone()[0..2];
         let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
@@ -188,8 +188,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -214,9 +214,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_page_limit_no_user_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1 and user2.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2, USER2]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER2, USER2, USER2]);
         let count: u32 = streams.len() as u32;
         // Select streams with indices: 0,1.
         let streams1b = &streams.clone()[0..2];
@@ -228,8 +228,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -256,10 +256,10 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_user_id_page2() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1 and user2.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
         // Select streams with indices: 4,5.
         let streams1b = &streams.clone()[4..6];
         let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
@@ -269,8 +269,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -297,10 +297,10 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_another_user_id_role_user() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
-        let streams = StreamOrmTest::streams(&[USER2, USER2]);
+        let streams = StreamDbTest::streams(&[USER2, USER2]);
         let streams1b_dto: Vec<StreamAndTagsDto> = streams.iter().map(|v| v.clone().into()).collect();
         let limit = 2;
         let page = 1;
@@ -308,8 +308,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -334,10 +334,10 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_another_user_id_role_admin() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
+        let data_u = UserDbTest::users(&[ADMIN, USER]);
         let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
-        let streams = StreamOrmTest::streams(&[USER2, USER2]);
+        let streams = StreamDbTest::streams(&[USER2, USER2]);
         // Select streams with indices: 2,3.
         let streams1b = &streams.clone();
         let streams1b_dto: Vec<StreamAndTagsDto> = streams1b.iter().map(|v| v.clone().into()).collect();
@@ -347,8 +347,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -376,10 +376,10 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_live() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         let live = true;
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1]);
         streams.get_mut(2).unwrap().state = StreamState::Preparing;
         streams.get_mut(3).unwrap().state = StreamState::Preparing;
         // Select streams with indices: 2,3.
@@ -391,8 +391,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -422,15 +422,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_future_no_starttime() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -451,9 +451,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_future() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let tomorrow = now + Duration::days(1);
         let yesterday = now - Duration::days(1);
@@ -474,8 +474,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -501,9 +501,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_future_sort_desc() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let tomorrow = now + Duration::days(1);
         let yesterday = now - Duration::days(1);
@@ -524,8 +524,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -554,15 +554,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_past_no_starttime() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -583,9 +583,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_past() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let tomorrow = now + Duration::days(1);
         let yesterday = now - Duration::days(1);
@@ -606,8 +606,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -633,9 +633,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_past_sort_desc() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let tomorrow = now + Duration::days(1);
         let yesterday = now - Duration::days(1);
@@ -656,8 +656,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -686,15 +686,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_period_no_starttime() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -719,17 +719,17 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_period_no_finishtime() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let starttime = now.to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -750,9 +750,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_period_startime_gr_finishtime() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let sec = Duration::seconds(1);
         let starttime = (now + sec).to_rfc3339_opts(SecondsFormat::Millis, true);
@@ -761,8 +761,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -783,9 +783,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_period_finish_too_big_start() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
         let finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
@@ -797,8 +797,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -820,9 +820,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_filter_period() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let tomorrow = now + Duration::days(1);
         let yesterday = now - Duration::days(1);
@@ -843,8 +843,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -873,10 +873,10 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_user_id_order_starttime_asc() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1]);
         let now = Utc::now();
         let one_day = Duration::days(1);
         let two_days = Duration::days(2);
@@ -892,8 +892,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -919,10 +919,10 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_user_id_order_starttime_desc() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER1, USER1]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER1, USER1]);
         let now = Utc::now();
         let one_day = Duration::days(1);
         let two_days = Duration::days(2);
@@ -938,8 +938,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -968,9 +968,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_user_id_tag_order_starttime_asc() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         // Create streams for user1.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER2, USER2]);
         let now = Utc::now();
         streams.get_mut(0).unwrap().starttime = now + Duration::days(2);
         streams.get_mut(1).unwrap().starttime = now + Duration::days(1);
@@ -986,8 +986,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -1013,9 +1013,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_and_tags_by_user_id_tag_order_starttime_desc() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         // Create streams for user1, user2.
-        let mut streams = StreamOrmTest::streams(&[USER1, USER1, USER2, USER2]);
+        let mut streams = StreamDbTest::streams(&[USER1, USER1, USER2, USER2]);
         let now = Utc::now();
         streams.get_mut(0).unwrap().starttime = now + Duration::days(2);
         streams.get_mut(1).unwrap().starttime = now + Duration::days(1);
@@ -1031,8 +1031,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()

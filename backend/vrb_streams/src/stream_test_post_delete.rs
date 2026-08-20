@@ -13,7 +13,7 @@ mod tests {
     use serde_json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{USER, USER1, USER1_ID, UserOrmTest},
+        user_db::tests::{USER, USER1, USER1_ID, UserDbTest},
     };
     use vrb_common::{api_error::ApiError, consts, err};
     use vrb_tools::{cdis::coding, png_files};
@@ -21,12 +21,12 @@ mod tests {
     use crate::{
         config_strm,
         stream_controller::{MSG_INVALID_FIELD_TAG, delete_stream_and_tags, post_stream_and_tags, tests as StreamCtrlTest},
+        stream_db::tests::StreamDbTest,
         stream_models::{
             MSG_DESCRIPT_MAX_LENGTH, MSG_DESCRIPT_MIN_LENGTH, MSG_MIN_VALID_STARTTIME, MSG_SOURCE_MAX_LENGTH, MSG_SOURCE_MIN_LENGTH,
             MSG_TAG_MAX_AMOUNT, MSG_TAG_MAX_LENGTH, MSG_TAG_MIN_AMOUNT, MSG_TAG_MIN_LENGTH, MSG_TAG_REQUIRED, MSG_TITLE_MAX_LENGTH,
             MSG_TITLE_MIN_LENGTH, MSG_TITLE_REQUIRED, StreamAndTagsDto, StreamMock,
         },
-        stream_orm::tests::StreamOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -39,14 +39,14 @@ mod tests {
     #[actix_web::test]
     async fn test_post_stream_and_tags_no_form() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -67,14 +67,14 @@ mod tests {
         let (header, body) = form_builder.build();
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -97,14 +97,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -128,14 +128,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -159,14 +159,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -191,14 +191,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -223,14 +223,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -256,14 +256,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -288,14 +288,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -319,14 +319,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -351,14 +351,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams").insert_header(StreamCtrlTest::header_auth(&token1))
@@ -382,14 +382,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -414,14 +414,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -446,14 +446,14 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -476,14 +476,14 @@ mod tests {
             .with_text("tags", "aaa")
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -513,7 +513,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         let strm_logo_max_size = 160;
         let mut config_strm = config_strm::get_test_config();
         config_strm.strm_logo_max_size = strm_logo_max_size;
@@ -521,9 +521,9 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -555,14 +555,14 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/bmp", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
+        let data_u = UserDbTest::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(StreamOrmTest::streams(&[])))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(StreamDbTest::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -600,17 +600,17 @@ mod tests {
             .with_text("tags", &tags_s)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let stream1_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -651,17 +651,17 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let stream1_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -722,17 +722,17 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
         let stream1_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -771,8 +771,8 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let user1_id = data_u.0.get(0).unwrap().id;
 
         let mut config_strm = config_strm::get_test_config();
@@ -785,9 +785,9 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
@@ -833,16 +833,16 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_stream_and_tags_invalid_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let stream_id_bad = format!("{}a", streams.get(0).unwrap().id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id_bad))
@@ -862,16 +862,16 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_stream_and_tags_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let stream1_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream1_id + 1))
@@ -882,8 +882,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_stream_and_tags_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let streams = StreamDbTest::streams(&[USER1]);
         let stream1 = streams.get(0).unwrap().clone();
         let stream1_id = stream1.id;
         let stream1_dto: StreamAndTagsDto = stream1.into();
@@ -891,9 +891,9 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream1_id))
@@ -920,8 +920,8 @@ mod tests {
         let path_name0_alias = format!("{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let mut streams = StreamDbTest::streams(&[USER1]);
         let stream1 = streams.get_mut(0).unwrap();
         stream1.logo = Some(path_name0_alias);
         let stream2 = stream1.clone();
@@ -931,9 +931,9 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2_id))
@@ -964,8 +964,8 @@ mod tests {
         let path_name0_logo = format!("/not_alias{}/{}", consts::ALIAS_LOGO_FILES_DIR, name0_file);
 
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let mut streams = StreamOrmTest::streams(&[USER1]);
+        let data_u = UserDbTest::users(&[USER]);
+        let mut streams = StreamDbTest::streams(&[USER1]);
         let stream1 = streams.get_mut(0).unwrap();
         stream1.logo = Some(path_name0_logo);
         let stream2 = stream1.clone();
@@ -975,9 +975,9 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_stream_and_tags)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(StreamOrmTest::cfg_config_strm(config_strm::get_test_config()))
-                .configure(StreamOrmTest::cfg_stream_orm(streams))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(StreamDbTest::cfg_config_strm(config_strm::get_test_config()))
+                .configure(StreamDbTest::cfg_stream_db(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2_id))

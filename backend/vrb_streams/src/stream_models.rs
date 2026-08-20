@@ -1,14 +1,14 @@
 use std::{cmp::Ordering, fmt};
 
 use chrono::{DateTime, Duration, Utc};
-use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use utoipa::ToSchema;
 use vrb_common::{
     err, serial_datetime, serial_datetime_option,
     validators::{ValidationChecks, ValidationError, Validator},
 };
-use vrb_dbase::{enm_stream_state::StreamState, schema};
+use vrb_db::{enm_stream_state::StreamState};
 
 pub const MSG_TITLE_REQUIRED: &str = "title:required";
 pub const TITLE_MIN: u8 = 2;
@@ -95,9 +95,7 @@ pub fn validate_tags(tags: &[String]) -> Result<(), ValidationError> {
 
 // ** Model: "StreamAndTags". Used to return "stream" and "tags" data. **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::streams)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct StreamAndTags {
     pub id: i32,
     pub user_id: i32,
@@ -113,11 +111,7 @@ pub struct StreamAndTags {
     pub source: String,                 // min_len=2 max_len=255 default "obs"
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    #[diesel(sql_type = diesel::sql_types::Array<diesel::sql_types::Text>)]
-    #[diesel(column_name = "tags")]
     pub tags: Vec<String>,
-    #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::Text>)]
-    #[diesel(column_name = "old_logo")]
     pub old_logo: Option<String>,
 }
 
@@ -243,9 +237,7 @@ impl StreamConfigDto {
 
 // ** Model: "CreateStreamAndTags". Used: StreamOrm::create_stream_and_tags() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset)]
-#[diesel(table_name = schema::streams)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct CreateStreamAndTags {
     pub user_id: i32,
     pub title: String,                  // min_len=2 max_len=255
@@ -257,7 +249,6 @@ pub struct CreateStreamAndTags {
     pub paused: Option<DateTime<Utc>>,  // Nullable
     pub stopped: Option<DateTime<Utc>>, // Nullable
     pub source: Option<String>,         // min_len=2 max_len=255 default "obs"
-    #[diesel(skip_update)]
     pub tags: Vec<String>,
 }
 
@@ -348,9 +339,7 @@ impl Into<CreateStreamAndTags> for CreateStreamAndTagsDto {
 
 // ** Model: "ModifyStreamAndTags". Used: StreamOrm::modify_stream_and_tags() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset)]
-#[diesel(table_name = schema::streams)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModifyStreamAndTags {
     pub title: Option<String>,            // min_len=2 max_len=255
     pub descript: Option<String>,         // min_len=2,max_len=2048 default ""
@@ -361,7 +350,6 @@ pub struct ModifyStreamAndTags {
     pub paused: Option<DateTime<Utc>>,    // Nullable
     pub stopped: Option<DateTime<Utc>>,   // Nullable
     pub source: Option<String>,           // min_len=2 max_len=255 default "obs"
-    #[diesel(skip_update)]
     pub tags: Option<Vec<String>>,
 }
 
@@ -548,11 +536,8 @@ impl SearchStreamAndTags {
 
 // ** Model: "CountStreamAndTags". Used: StreamOrm::filter_stream_and_tags_by_pages(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::streams)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct CountStreamAndTags {
-    #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = "cnt")]
     pub cnt: i32,
 }
 
@@ -688,11 +673,8 @@ pub struct SearchStreamDate {
 
 // ** Model: "StartStreamAndTags". Used: StreamOrm::filter_stream_dates(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::streams)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct StartStreamAndTags {
-    #[diesel(sql_type = diesel::sql_types::Timestamptz)]
-    #[diesel(column_name = "start")]
     pub start: DateTime<Utc>,
 }
 
@@ -757,8 +739,7 @@ pub struct SearchStreamTag {
     pub limit: Option<u32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::stream_tags)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct StreamTag {
     pub id: i32,
     pub name: String,
