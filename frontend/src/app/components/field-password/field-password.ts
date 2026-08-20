@@ -3,7 +3,7 @@ import {
     ChangeDetectionStrategy, Component, forwardRef, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation
 } from "@angular/core";
 import { ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, ControlValueAccessor, Validator, FormControl, FormGroup, AbstractControl, ValidationErrors } from "@angular/forms";
-import { MatFormFieldModule, SubscriptSizing } from "@angular/material/form-field";
+import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule, MatInput } from "@angular/material/input";
 import { TranslatePipe } from "@ngx-translate/core";
 import { ValidatorUtils } from "../../utils/validator.utils";
@@ -15,8 +15,7 @@ export const PASSWORD = "password";
     selector: "app-field-password",
     exportAs: "appFieldPassword",
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule,
-        MatInputModule, TranslatePipe],
+    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, TranslatePipe],
     templateUrl: "./field-password.html",
     styleUrl: "./field-password.scss",
     encapsulation: ViewEncapsulation.None,
