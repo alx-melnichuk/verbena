@@ -9,14 +9,14 @@ mod tests {
     use chrono::SecondsFormat;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
+        user_db::tests::{ADMIN, USER, USER1_ID, UserDbTest},
     };
     use vrb_common::{api_error::ApiError, err};
 
     use crate::{
         chat_message_controller::{delete_chat_message, tests as ChMsgCtrlTest},
+        chat_message_db::tests::ChatMessageDbTest,
         chat_message_models::{ChatMessageDto, ChatMessageMock, ModifyChatMessageDto},
-        chat_message_orm::tests::ChatMessageOrmTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -27,8 +27,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_chat_message_invald_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let last_ch_msg_id = data_cm.0.last().unwrap().id.clone();
         let ch_msg_id_bad = format!("{}a", last_ch_msg_id);
         let msg = ChatMessageMock::message_norm();
@@ -36,8 +36,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg_id_bad))
@@ -59,8 +59,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_chat_message_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let last_ch_msg_id = data_cm.0.last().unwrap().id.clone();
         let msg = ChatMessageMock::message_norm();
@@ -69,8 +69,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", id_wrong))
@@ -95,8 +95,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_chat_message_msg_another_user_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
         let msg = ChatMessageMock::message_norm();
@@ -104,8 +104,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg.id))
@@ -130,16 +130,16 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_chat_message_valid_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let ch_msg = data_cm.0.get(0).unwrap().clone();
         let msg = ChatMessageMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg.id))
@@ -167,16 +167,16 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_invald_user_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}?userId={}a", ch_msg.id, ch_msg.user_id))
@@ -197,8 +197,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[ADMIN, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id2 = data_u.0.get(1).unwrap().id;
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let id_wrong = last_msg_id + 1;
@@ -207,8 +207,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}?userId={}", id_wrong, user_id2))
@@ -233,16 +233,16 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user_valid_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}?userId={}", ch_msg.id, ch_msg.user_id))

@@ -1,13 +1,11 @@
 use std::{borrow::Cow, collections::HashMap, ops::Deref, time::Instant as tm};
 
-// use actix::{SystemService, fut};
 use actix::SystemService;
 use actix_web::{
     HttpResponse, delete, get, post, put,
     web::{self, Query},
 };
 use chrono::{DateTime, Duration, TimeZone, Utc};
-// use futures_util::FutureExt;
 use log::{Level::Info, error, info, log_enabled};
 use serde_json::json;
 use utoipa;
@@ -17,20 +15,20 @@ use vrb_common::{
     err, parser,
     validators::{Validator, msg_validation},
 };
-use vrb_dbase::enm_user_role::UserRole;
+use vrb_db::enm_user_role::UserRole;
 
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::chat_message_orm::impls::ChatMessageOrmApp;
+use crate::chat_message_db::impls::ChatMessageDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::chat_message_orm::tests::ChatMessageOrmApp;
+use crate::chat_message_db::tests::ChatMessageDbApp;
 use crate::{
     chat_message::BlockUser,
+    chat_message_db::ChatMessageDb,
     chat_message_models::{
         BlockedUser, BlockedUserDto, BlockedUserMini, BlockedUserMiniDto, ChatMessage, ChatMessageDto, CreateBlockedUser,
         CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, MESSAGE_MAX,
         ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto, SortingBlockedUsersDto,
     },
-    chat_message_orm::ChatMessageOrm,
     chat_ws_server::ChatWsServer,
 };
 
@@ -186,8 +184,6 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
-        (status = 506, description = "Blocking error.", body = ApiError,
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError,
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -197,32 +193,20 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 #[rustfmt::skip]
 #[get("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_chat_message(
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
     query_params: web::Query<SearchChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get search parameters.
     let search_chat_message = SearchChatMessage::convert(query_params.into_inner());
     
-    let chat_message_orm2 = chat_message_orm.get_ref().clone();
-
-    let res_data = web::block(move || {
-        // Find for an entity (stream event) by SearchStreamEvent.
-        let res_data =
-        chat_message_orm2.filter_chat_messages(search_chat_message)
-        .map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_data
-    })
-    .await
+    // Find for an entity (stream event) by SearchStreamEvent.
+    let chat_messages = chat_message_db.filter_chat_messages(search_chat_message).await
     .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    let chat_messages = res_data?;
     let chat_message_dto_list: Vec<ChatMessageDto> = chat_messages.iter()
         .map(|ch_msg| ChatMessageDto::from(ch_msg.clone()))
         .collect();
@@ -286,8 +270,6 @@ pub async fn get_chat_message(
             -d '{ \"streamId\": 123, \"msg\": \"\" }' -H 'Content-Type: application/json'`",
             example = json!(ApiError::validations(
                 (CreateChatMessageDto { stream_id: 123, msg: "".to_string() }).validate().err().unwrap()) )),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -298,7 +280,7 @@ pub async fn get_chat_message(
 #[post("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_chat_message(
     authenticated: Authenticated,
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
     json_body: web::Json<CreateChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -319,22 +301,13 @@ pub async fn post_chat_message(
     
     let create_chat_message = CreateChatMessage::new(stream_id, user.id, &msg);
 
-    let chat_message_orm2 = chat_message_orm.get_ref().clone();
-    let res_chat_message = web::block(move || {
-        // Add a new entity (stream).
-        let res_chat_message1 = chat_message_orm2.create_chat_message(create_chat_message).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_chat_message1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    // Add a new entity (stream).
+    let res_chat_message = chat_message_db.create_chat_message(create_chat_message).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
+    let opt_chat_message_dto = res_chat_message.map(|v| ChatMessageDto::from(v));
     
     if let Some(timer) = timer {
         info!("post_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -440,8 +413,6 @@ fn message_max() -> String {
             -d '{{\"msg\": \"{}\"}}' -H 'Content-Type: application/json'`", message_max()),
             example = json!(ApiError::validations( (ModifyChatMessageDto { msg: message_max() }).validate().err().unwrap() ) )
         ),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -453,7 +424,7 @@ fn message_max() -> String {
 #[put("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_chat_message(
     authenticated: Authenticated,
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<ModifyChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
@@ -494,24 +465,15 @@ pub async fn put_chat_message(
         }
     }
 
-    let chat_message_orm2 = chat_message_orm.get_ref().clone();
-    let res_chat_message = web::block(move || {
-        // Add a new entity (stream).
-        let res_chat_message1 = chat_message_orm2
-            .modify_chat_message(id, user_id.clone(), modify_chat_message)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e)
-            });
-        res_chat_message1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
-    })?;
+    // Add a new entity (stream).
+    let res_chat_message = chat_message_db
+        .modify_chat_message(id, user_id.clone(), modify_chat_message).await
+        .map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)
+        })?;
     
-    let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
+    let opt_chat_message_dto = res_chat_message.map(|v| ChatMessageDto::from(v));
     
     if let Some(timer) = timer {
         info!("put_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -595,8 +557,6 @@ pub async fn put_chat_message(
                     , "`userId` - invalid digit found in string (30a)"))
             )) ),
         ),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -608,7 +568,7 @@ pub async fn put_chat_message(
 #[delete("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_chat_message(
     authenticated: Authenticated,
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -636,24 +596,15 @@ pub async fn delete_chat_message(
         }
     }
 
-    let chat_message_orm2 = chat_message_orm.get_ref().clone();
-    let res_chat_message = web::block(move || {
-        // Add a new entity (stream).
-        let res_chat_message1 = chat_message_orm2
-            .delete_chat_message(id, user_id)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-        res_chat_message1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+    // Add a new entity (stream).
+    let res_chat_message = chat_message_db
+        .delete_chat_message(id, user_id).await
+        .map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
 
-    let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
+    let opt_chat_message_dto = res_chat_message.map(|v| ChatMessageDto::from(v));
 
     if let Some(timer) = timer {
         info!("delete_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -702,8 +653,6 @@ pub async fn delete_chat_message(
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -714,31 +663,21 @@ pub async fn delete_chat_message(
 #[get("/api/blocked_users/nicknames", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_blocked_users_names(
     authenticated: Authenticated,
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let user = authenticated.deref();
     let user_id = user.id;
 
-    let chat_message_orm2 = chat_message_orm.get_ref().clone();
-    let res_blocked_names = web::block(move || {
-        // Get a list of blocked users.
-        let res_chat_message1 = chat_message_orm2
-            .get_blocked_nicknames(user_id)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-        res_chat_message1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+    // Get a list of blocked users.
+    let blocked_name_vec = chat_message_db
+        .get_blocked_nicknames(user_id).await
+        .map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
 
-    let blocked_name_vec = res_blocked_names?;
     let nickname_vec: Vec<String> = blocked_name_vec.iter().map(|v| v.nickname.clone()).collect();
 
     if let Some(timer) = timer {
@@ -791,8 +730,6 @@ pub async fn get_blocked_users_names(
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -803,7 +740,7 @@ pub async fn get_blocked_users_names(
 #[get("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_blocked_users(
     authenticated: Authenticated,
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
     query_params: web::Query<SortingBlockedUsersDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -816,24 +753,14 @@ pub async fn get_blocked_users(
     let sort_column: String = sorting_blocked_users_dto.sort_column.unwrap_or("".into()); 
     let sort_desc: bool = sorting_blocked_users_dto.sort_desc.unwrap_or(false);
 
-    let chat_message_orm2 = chat_message_orm.get_ref().clone();
-    let res_blocked_users = web::block(move || {
-        // Get a list of blocked users.
-        let res_chat_message1 = chat_message_orm2
-            .get_blocked_users(user_id, sort_column, sort_desc)
-            .map_err(|e| {
-                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-                ApiError::create(507, err::MSG_DATABASE, &e) // 507
-            });
-        res_chat_message1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+    // Get a list of blocked users.
+    let blocked_user_vec = chat_message_db
+        .get_blocked_users(user_id, sort_column, sort_desc).await
+        .map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
 
-    let blocked_user_vec = res_blocked_users?;
     let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_user_vec.iter().map(|v| BlockedUserDto::from(v.clone())).collect();
 
     if let Some(timer) = timer {
@@ -912,8 +839,6 @@ pub async fn get_blocked_users(
             example = json!(ApiError::validations(
                 (CreateBlockedUserDto { blocked_id: None, blocked_nickname: None }).validate().err().unwrap() ) )
         ),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -924,7 +849,7 @@ pub async fn get_blocked_users(
 #[post("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_blocked_user(
     authenticated: Authenticated,
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
     json_body: web::Json<CreateBlockedUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -945,22 +870,14 @@ pub async fn post_blocked_user(
 
     let create_blocked_user = CreateBlockedUser::new(user_id, blocked_id, blocked_nickname);
 
-    let chat_message_orm2 = chat_message_orm.get_ref().clone();
-    let res_blocked_user = web::block(move || {
-        // Add a new entity (blocked_user).
-        let res_blocked_user1 = chat_message_orm2.create_blocked_user(create_blocked_user).map_err(|e| {
+    // Add a new entity (blocked_user).
+    let res_blocked_user = chat_message_db.create_blocked_user(create_blocked_user).await
+        .map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_blocked_user1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
-    })?;
+        })?;
 
-    let opt_blocked_user_mini_dto = res_blocked_user?.map(|v| BlockedUserMiniDto::from(v));
+    let opt_blocked_user_mini_dto = res_blocked_user.map(|v| BlockedUserMiniDto::from(v));
 
     if let Some(timer) = timer {
         info!("post_blocked_user() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -1041,8 +958,6 @@ pub async fn post_blocked_user(
             example = json!(ApiError::validations(
                 (DeleteBlockedUserDto { blocked_id: None, blocked_nickname: None }).validate().err().unwrap() ) )
         ),
-        (status = 506, description = "Blocking error.", body = ApiError, 
-            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
@@ -1053,7 +968,7 @@ pub async fn post_blocked_user(
 #[delete("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_blocked_user(
     authenticated: Authenticated,
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
     json_body: web::Json<DeleteBlockedUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -1074,22 +989,13 @@ pub async fn delete_blocked_user(
 
     let delete_blocked_user = DeleteBlockedUser::new(user_id, blocked_id, blocked_nickname);
 
-    let chat_message_orm2 = chat_message_orm.get_ref().clone();
-    let res_blocked_user = web::block(move || {
-        // Add a new entity (blocked_user).
-        let res_blocked_user1 = chat_message_orm2.delete_blocked_user(delete_blocked_user).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        });
-        res_blocked_user1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}.{}; {}", 506, err::MSG_BLOCKING, &e.to_string());
-        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    // Add a new entity (blocked_user).
+    let res_blocked_user = chat_message_db.delete_blocked_user(delete_blocked_user).await.map_err(|e| {
+        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+        ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    let opt_blocked_user_mini_dto = res_blocked_user?.map(|v| BlockedUserMiniDto::from(v));
+    let opt_blocked_user_mini_dto = res_blocked_user.map(|v| BlockedUserMiniDto::from(v));
 
     if let Some(blocked_user_dto) = opt_blocked_user_mini_dto.clone() {
         let owner_id = user.id;

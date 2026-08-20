@@ -1,8 +1,8 @@
 pub mod chat_event_ws;
 pub mod chat_message;
 pub mod chat_message_controller;
+pub mod chat_message_db;
 pub mod chat_message_models;
-pub mod chat_message_orm;
 pub mod chat_msg_blocked_test;
 pub mod chat_msg_test_delete;
 pub mod chat_msg_test_get;

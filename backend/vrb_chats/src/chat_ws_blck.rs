@@ -5,16 +5,14 @@ use log::debug;
 use serde_json::to_string;
 use vrb_common::{api_error::ApiError, err};
 
-use crate::{
-    chat_event_ws::{BlockEWS, EWSType, ErrEWS, EventWS, UnblockEWS},
-    chat_message::{BlockClient, BlockSsn},
-    chat_message_models::BlockedUserMini,
-    chat_ws_assistant::AssistantBlockUser,
-    chat_ws_async_result::{AsyncResultBlockClient, AsyncResultError},
-    chat_ws_server::ChatWsServer,
-    chat_ws_session::ChatWsSession,
-    chat_ws_tools,
-};
+use crate::chat_event_ws::{BlockEWS, EWSType, ErrEWS, EventWS, UnblockEWS};
+use crate::chat_message::{BlockClient, BlockSsn};
+use crate::chat_message_models::BlockedUserMini;
+use crate::chat_ws_assistant::AssistantBlockUser;
+use crate::chat_ws_async_result::{AsyncResultBlockClient, AsyncResultError};
+use crate::chat_ws_server::ChatWsServer;
+use crate::chat_ws_session::ChatWsSession;
+use crate::chat_ws_tools;
 
 #[derive(Debug, Clone)]
 pub struct ChatWsBlckInfo {
@@ -133,7 +131,7 @@ async fn execute_block_user(
     blocked_nickname: Option<String>,
     fn_block_user: impl AssistantBlockUser + 'static,
 ) -> Result<Option<BlockedUserMini>, ApiError> {
-    fn_block_user.execute_block_user(is_block, user_id, blocked_id, blocked_nickname)
+    fn_block_user.execute_block_user(is_block, user_id, blocked_id, blocked_nickname).await
 }
 
 // * * * * Handler for asynchronous response to the "BlockClient" event * * * *

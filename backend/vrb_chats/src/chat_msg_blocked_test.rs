@@ -12,7 +12,7 @@ mod tests {
     use serde_json::{self, json};
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{USER, USER1_ID, USER4_ID, UserOrmTest},
+        user_db::tests::{USER, USER1_ID, USER4_ID, UserDbTest},
     };
     use vrb_common::{api_error::ApiError, validators};
 
@@ -20,11 +20,11 @@ mod tests {
         chat_message_controller::{
             delete_blocked_user, get_blocked_users, get_blocked_users_names, post_blocked_user, tests as ChMsgCtrlTest,
         },
+        chat_message_db::tests::{BlockedData, ChatMessageDbTest},
         chat_message_models::{
             self, BlockedUser, BlockedUserDto, BlockedUserMiniDto, ChatMessageMock, CreateBlockedUserDto, DeleteBlockedUserDto,
             MSG_BLOCKED_NICKNAME_MAX_LENGTH, MSG_BLOCKED_NICKNAME_MIN_LENGTH, MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT,
         },
-        chat_message_orm::tests::{BlockedData, ChatMessageOrmTest},
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
@@ -35,9 +35,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_names_exist_blocked_users() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id == user1_id).map(|v| v.clone()).collect();
@@ -47,8 +47,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users_names)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users/nicknames")
@@ -68,9 +68,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_names_not_exist_blocked_users() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let mut data_cm = ChatMessageOrmTest::chat_messages(1);
+        let mut data_cm = ChatMessageDbTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id != user1_id).map(|v| v.clone()).collect();
@@ -79,8 +79,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users_names)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users/nicknames")
@@ -99,9 +99,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_exist_blocked_users() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users_vec: Vec<BlockedUserDto> = data_cm.2.iter()
             .filter(|v| v.owner_id == user1_id)
@@ -111,8 +111,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users")
@@ -141,9 +141,9 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_not_exist_blocked_users() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user1_id = data_u.0.get(0).unwrap().id;
-        let mut data_cm = ChatMessageOrmTest::chat_messages(1);
+        let mut data_cm = ChatMessageDbTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedData> = data_cm.2.iter()
             .filter(|v| v.owner_id != user1_id).map(|v| v.clone()).collect();
@@ -152,8 +152,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users")
@@ -169,11 +169,11 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_without_sorting() {
         let token4 = config_jwt::tests::get_token(USER4_ID);
-        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let mut data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user4_id = data_u.0.get(3).unwrap().id;
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
 
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
@@ -188,8 +188,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users")
@@ -207,11 +207,11 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_with_sort_by_nickname_asc() {
         let token4 = config_jwt::tests::get_token(USER4_ID);
-        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let mut data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user4_id = data_u.0.get(3).unwrap().id;
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
 
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
@@ -226,8 +226,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -246,11 +246,11 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_with_sort_by_nickname_desc() {
         let token4 = config_jwt::tests::get_token(USER4_ID);
-        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let mut data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user4_id = data_u.0.get(3).unwrap().id;
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
 
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
@@ -265,8 +265,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -285,11 +285,11 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_with_sort_by_email_asc() {
         let token4 = config_jwt::tests::get_token(USER4_ID);
-        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let mut data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user4_id = data_u.0.get(3).unwrap().id;
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
 
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
@@ -304,8 +304,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -324,11 +324,11 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_with_sort_by_email_desc() {
         let token4 = config_jwt::tests::get_token(USER4_ID);
-        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let mut data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user4_id = data_u.0.get(3).unwrap().id;
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
 
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
@@ -343,8 +343,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -363,11 +363,11 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_with_sort_by_block_date_asc() {
         let token4 = config_jwt::tests::get_token(USER4_ID);
-        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let mut data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user4_id = data_u.0.get(3).unwrap().id;
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
 
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
@@ -382,8 +382,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -402,11 +402,11 @@ mod tests {
     #[actix_web::test]
     async fn test_get_blocked_users_with_sort_by_block_date_desc() {
         let token4 = config_jwt::tests::get_token(USER4_ID);
-        let mut data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
+        let mut data_u = UserDbTest::users(&[USER, USER, USER, USER]);
         let user4_id = data_u.0.get(3).unwrap().id;
         // Add session (num_token) for user4.
         data_u.1.get_mut(3).unwrap().num_token = Some(config_jwt::tests::get_num_token(user4_id));
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
 
         #[rustfmt::skip] // Filter data only for the user.
         let mut blocked_users: Vec<BlockedData> = data_cm.2.iter()
@@ -421,8 +421,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(get_blocked_users)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
@@ -444,14 +444,14 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_no_form() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -468,14 +468,14 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_empty_json() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -499,8 +499,8 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_min_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let blocked_nickname = ChatMessageMock::blocked_nickname_min();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
@@ -508,8 +508,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -532,8 +532,8 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_max_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let blocked_nickname = ChatMessageMock::blocked_nickname_max();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
@@ -541,8 +541,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -565,15 +565,15 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let user_id = data_u.0.last().unwrap().id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -586,15 +586,15 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let nickname = format!("{}a", data_u.0.last().unwrap().nickname);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -607,8 +607,8 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let blocked_id = data_u.0.get(1).unwrap().id;
         let blocked_nickname = data_u.0.get(1).unwrap().nickname.clone();
         let blocked_last_id = data_cm.2.last().unwrap().id;
@@ -616,8 +616,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -642,8 +642,8 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let blocked_id = data_u.0.get(1).unwrap().id;
         let blocked_nickname = data_u.0.get(1).unwrap().nickname.clone();
         let blocked_last_id = data_cm.2.last().unwrap().id;
@@ -651,8 +651,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -677,8 +677,8 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
         let blocked = data_cm.2.iter().find(|v| v.owner_id == user_id).map(|v| v.clone()).unwrap();
@@ -687,8 +687,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -713,8 +713,8 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
         let blocked = data_cm.2.iter().find(|v| v.owner_id == user_id).map(|v| v.clone()).unwrap();
@@ -723,8 +723,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
@@ -752,14 +752,14 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_no_form() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -775,14 +775,14 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_empty_json() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -806,8 +806,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_min_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let blocked_nickname = ChatMessageMock::blocked_nickname_min();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
@@ -815,8 +815,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -839,8 +839,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_max_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let blocked_nickname = ChatMessageMock::blocked_nickname_max();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
@@ -848,8 +848,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -872,15 +872,15 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let user_id = data_u.0.last().unwrap().id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -893,15 +893,15 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let nickname = format!("{}a", data_u.0.last().unwrap().nickname);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -914,15 +914,15 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let user_id = data_u.0.get(1).unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -935,15 +935,15 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let nickname = data_u.0.get(1).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -956,8 +956,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
         let blocked = data_cm.2.iter().find(|v| v.owner_id == user_id).map(|v| v.clone()).unwrap();
@@ -967,8 +967,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
@@ -993,8 +993,8 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_nickname() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER, USER, USER, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(1);
+        let data_u = UserDbTest::users(&[USER, USER, USER, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(1);
         let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
         let blocked = data_cm.2.iter().find(|v| v.owner_id == user_id).map(|v| v.clone()).unwrap();
@@ -1003,8 +1003,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(delete_blocked_user)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")

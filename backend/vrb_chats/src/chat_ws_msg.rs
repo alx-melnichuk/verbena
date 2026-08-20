@@ -6,15 +6,13 @@ use log::debug;
 use serde_json::to_string;
 use vrb_common::{api_error::ApiError, err};
 
-use crate::{
-    chat_event_ws::{EWSType, ErrEWS, EventWS, MsgEWS, MsgRmvEWS},
-    chat_message::SendMessage,
-    chat_message_models::ChatMessage,
-    chat_ws_assistant::AssistantChatMsg,
-    chat_ws_async_result::AsyncResultError,
-    chat_ws_session::ChatWsSession,
-    chat_ws_tools,
-};
+use crate::chat_event_ws::{EWSType, ErrEWS, EventWS, MsgEWS, MsgRmvEWS};
+use crate::chat_message::SendMessage;
+use crate::chat_message_models::ChatMessage;
+use crate::chat_ws_assistant::AssistantChatMsg;
+use crate::chat_ws_async_result::AsyncResultError;
+use crate::chat_ws_session::ChatWsSession;
+use crate::chat_ws_tools;
 
 #[derive(Debug, Clone)]
 pub struct ChatWsMsgInfo {
@@ -261,7 +259,7 @@ async fn execute_create_chat_message(
     msg: &str,
     fn_chat_msg: impl AssistantChatMsg + 'static,
 ) -> Result<Option<ChatMessage>, ApiError> {
-    fn_chat_msg.execute_create_chat_message(stream_id, user_id, &msg)
+    fn_chat_msg.execute_create_chat_message(stream_id, user_id, &msg).await
 }
 
 async fn execute_modify_chat_message(
@@ -270,7 +268,7 @@ async fn execute_modify_chat_message(
     new_msg: &str,
     fn_chat_msg: impl AssistantChatMsg + 'static,
 ) -> Result<Option<ChatMessage>, ApiError> {
-    fn_chat_msg.execute_modify_chat_message(id, user_id, new_msg)
+    fn_chat_msg.execute_modify_chat_message(id, user_id, new_msg).await
 }
 
 async fn execute_delete_chat_message(
@@ -278,7 +276,7 @@ async fn execute_delete_chat_message(
     user_id: i32,
     fn_chat_msg: impl AssistantChatMsg + 'static,
 ) -> Result<Option<ChatMessage>, ApiError> {
-    fn_chat_msg.execute_delete_chat_message(id, user_id)
+    fn_chat_msg.execute_delete_chat_message(id, user_id).await
 }
 
 // * * * * Handler for asynchronous response to the "SendText" event * * * *

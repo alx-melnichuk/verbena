@@ -3,14 +3,14 @@ use actix_web_actors::ws;
 use utoipa;
 use vrb_authent::config_jwt;
 #[cfg(not(all(test, feature = "mockdata")))]
-use vrb_authent::user_orm::impls::UserOrmApp;
+use vrb_authent::user_db::impls::UserDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use vrb_authent::user_orm::tests::UserOrmApp;
+use vrb_authent::user_db::tests::UserDbApp;
 
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::chat_message_orm::impls::ChatMessageOrmApp;
+use crate::chat_message_db::impls::ChatMessageDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::chat_message_orm::tests::ChatMessageOrmApp;
+use crate::chat_message_db::tests::ChatMessageDbApp;
 use crate::{chat_ws_assistant::ChatWsAssistant, chat_ws_session::ChatWsSession};
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
@@ -596,17 +596,17 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 #[get("/ws")]
 pub async fn get_ws_chat(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    chat_message_orm: web::Data<ChatMessageOrmApp>,
-    user_orm: web::Data<UserOrmApp>,
+    chat_message_db: web::Data<ChatMessageDbApp>,
+    user_db: web::Data<UserDbApp>,
     request: actix_web::HttpRequest,
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
     let config_jwt = config_jwt.get_ref().clone();
-    let chat_message_orm_app = chat_message_orm.get_ref().clone();
-    let user_orm_app = user_orm.get_ref().clone();
+    let chat_message_db_app = chat_message_db.get_ref().clone();
+    let user_db_app = user_db.get_ref().clone();
     #[rustfmt::skip]
     let assistant = ChatWsAssistant::new(
-        config_jwt, chat_message_orm_app, user_orm_app);
+        config_jwt, chat_message_db_app, user_db_app);
 
     let chat_ws_session = ChatWsSession::new(
         u32::default(),    // id: u32 (client_id),

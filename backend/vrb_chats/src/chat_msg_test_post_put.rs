@@ -10,16 +10,16 @@ mod tests {
     use serde_json::json;
     use vrb_authent::{
         config_jwt,
-        user_orm::tests::{ADMIN, USER, USER1_ID, UserOrmTest},
+        user_db::tests::{ADMIN, USER, USER1_ID, UserDbTest},
     };
     use vrb_common::{api_error::ApiError, err};
 
     use crate::{
         chat_message_controller::{post_chat_message, put_chat_message, tests as ChMsgCtrlTest},
+        chat_message_db::tests::ChatMessageDbTest,
         chat_message_models::{
             ChatMessageDto, ChatMessageMock, CreateChatMessageDto, MSG_MESSAGE_MAX_LENGTH, MSG_MESSAGE_MIN_LENGTH, ModifyChatMessageDto,
         },
-        chat_message_orm::tests::ChatMessageOrmTest,
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
@@ -32,14 +32,14 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_no_form() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
@@ -57,14 +57,14 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_empty_json() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
@@ -83,15 +83,15 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_msg_min() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
@@ -111,15 +111,15 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_msg_max() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
@@ -139,16 +139,16 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let stream_id_wrong = data_cm.0.get(0).unwrap().stream_id.clone() - 1;
         let msg = ChatMessageMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
@@ -173,8 +173,8 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_valid_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let user1_name = data_u.0.get(0).unwrap().nickname.clone();
@@ -183,8 +183,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
@@ -215,15 +215,15 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_no_form() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
@@ -241,8 +241,8 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_invald_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let ch_msg_id_bad = format!("{}a", last_msg_id);
         let msg = ChatMessageMock::message_norm();
@@ -250,8 +250,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg_id_bad))
@@ -273,15 +273,15 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_empty_json() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
@@ -300,16 +300,16 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_msg_max() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let msg = ChatMessageMock::message_max();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
@@ -329,8 +329,8 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let user_id1 = data_u.0.get(0).unwrap().id;
         let msg = ChatMessageMock::message_norm();
@@ -339,8 +339,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", id_wrong))
@@ -365,8 +365,8 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_msg_another_user_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg_id = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().id.clone();
         let msg = ChatMessageMock::message_norm();
@@ -374,8 +374,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg_id))
@@ -400,16 +400,16 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_valid_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let ch_msg = data_cm.0.get(0).unwrap().clone();
         let msg = ChatMessageMock::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg.id))
@@ -442,8 +442,8 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_invald_user_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
         let msg = ChatMessageMock::message_norm();
@@ -451,8 +451,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}a", ch_msg.id, ch_msg.user_id))
@@ -474,8 +474,8 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_user_non_existent_id() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN, USER]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[ADMIN, USER]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id2 = data_u.0.get(1).unwrap().id;
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
         let id_wrong = last_msg_id + 1;
@@ -484,8 +484,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}", id_wrong, user_id2))
@@ -510,8 +510,8 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_user_valid_data() {
         let token1 = config_jwt::tests::get_token(USER1_ID);
-        let data_u = UserOrmTest::users(&[ADMIN]);
-        let data_cm = ChatMessageOrmTest::chat_messages(2);
+        let data_u = UserDbTest::users(&[ADMIN]);
+        let data_cm = ChatMessageDbTest::chat_messages(2);
         let user_id1 = data_u.0.get(0).unwrap().id;
         let ch_msg = data_cm.0.iter().find(|v| v.user_id != user_id1).unwrap().clone();
         let msg = ChatMessageMock::message_norm();
@@ -519,8 +519,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_chat_message)
                 .configure(config_jwt::tests::cfg_config_jwt(config_jwt::tests::get_config()))
-                .configure(UserOrmTest::cfg_user_orm(data_u))
-                .configure(ChatMessageOrmTest::cfg_chat_message_orm(data_cm))
+                .configure(UserDbTest::cfg_user_db(data_u))
+                .configure(ChatMessageDbTest::cfg_chat_message_db(data_cm))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}", ch_msg.id, ch_msg.user_id))

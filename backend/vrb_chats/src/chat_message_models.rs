@@ -1,12 +1,11 @@
 use chrono::{DateTime, Utc};
-use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use utoipa::ToSchema;
 use vrb_common::{
     serial_datetime, serial_datetime_option,
     validators::{ValidationChecks, ValidationError, Validator},
 };
-use vrb_dbase::schema;
 
 // ** Models: "CreateChatMessage", "ModifyChatMessage". **
 
@@ -41,15 +40,11 @@ pub fn validate_blocked_nickname(value: &str) -> Result<(), ValidationError> {
 
 // ** Model: "ChatMessage". Used to return "chat_message" data. **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::chat_messages)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct ChatMessage {
     pub id: i32,
     pub stream_id: i32,
     pub user_id: i32,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "user_name")]
     pub user_name: String,
     pub msg: Option<String>, // min_len=1 max_len=254 Nullable
     pub date_created: DateTime<Utc>,
@@ -110,9 +105,7 @@ impl From<ChatMessage> for ChatMessageDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::chat_message_logs)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct ChatMessageLog {
     pub id: i32,
     pub chat_message_id: i32,
@@ -293,19 +286,11 @@ pub struct SearchChatMessageDto {
 
 // ** Model: "ChatAccess". Used: ChatMessageOrm::get_chat_access() **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct ChatAccess {
-    #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = "stream_id")]
     pub stream_id: i32,
-    #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = "stream_owner")]
     pub stream_owner: i32,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "stream_state")]
     pub stream_state: String,
-    #[diesel(sql_type = diesel::sql_types::Bool)]
-    #[diesel(column_name = "is_blocked")]
     pub is_blocked: bool,
 }
 
@@ -320,46 +305,31 @@ impl ChatAccess {
     }
 }
 
-
 // * * * *    * * * *
 
 // * * * * Section: models for "BlockedUserOrm". * * * *
 
 // ** Model: "BlockedName". Used to return the "nickname" from "blocked_user". **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::blocked_users)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct BlockedName {
     pub id: i32,
     pub blocked_id: i32,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "nickname")]
     pub nickname: String,
 }
 
 impl BlockedName {
     pub fn new(id: i32, blocked_id: i32, nickname: String) -> BlockedName {
-        BlockedName {
-            id,
-            blocked_id,
-            nickname,
-        }
+        BlockedName { id, blocked_id, nickname }
     }
 }
 
 // ** Model: "BlockedUser". Used to return "blocked_user" data. **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::blocked_users)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct BlockedUserMini {
     pub id: i32,
-    #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = "user_id")]
     pub user_id: i32,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "nickname")]
     pub nickname: String,
     pub block_date: DateTime<Utc>,
 }
@@ -396,23 +366,13 @@ impl From<BlockedUserMini> for BlockedUserMiniDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
-#[diesel(table_name = schema::blocked_users)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct BlockedUser {
     pub id: i32,
-    #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = "user_id")]
     pub user_id: i32,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "nickname")]
     pub nickname: String,
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    #[diesel(column_name = "email")]
     pub email: String,
     pub block_date: DateTime<Utc>,
-    #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::Text>)]
-    #[diesel(column_name = "avatar")]
     pub avatar: Option<String>,
 }
 

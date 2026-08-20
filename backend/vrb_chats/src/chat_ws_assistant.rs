@@ -1,26 +1,26 @@
 use log::error;
 #[cfg(not(all(test, feature = "mockdata")))]
-use vrb_authent::user_orm::impls::UserOrmApp;
+use vrb_authent::user_db::impls::UserDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use vrb_authent::user_orm::tests::UserOrmApp;
+use vrb_authent::user_db::tests::UserDbApp;
 use vrb_authent::{
     authentication::{is_session_not_found, is_unacceptable_token_id, is_unacceptable_token_num},
     config_jwt,
+    user_db::UserDb,
     user_models::User,
-    user_orm::UserOrm,
 };
 use vrb_common::{api_error::ApiError, err};
 use vrb_tools::token_coding;
 
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::chat_message_orm::impls::ChatMessageOrmApp;
+use crate::chat_message_db::impls::ChatMessageDbApp;
 #[cfg(all(test, feature = "mockdata"))]
-use crate::chat_message_orm::tests::ChatMessageOrmApp;
+use crate::chat_message_db::tests::ChatMessageDbApp;
 use crate::{
+    chat_message_db::ChatMessageDb,
     chat_message_models::{
         BlockedUserMini, ChatAccess, ChatMessage, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage,
     },
-    chat_message_orm::ChatMessageOrm,
 };
 
 #[derive(Debug, Clone)]
@@ -34,11 +34,20 @@ pub struct ChatStream {
 
 pub trait AssistantChatMsg {
     /** Create a new user message in the chat. */
-    fn execute_create_chat_message(&self, stream_id: i32, user_id: i32, msg: &str) -> Result<Option<ChatMessage>, ApiError>;
+    #[rustfmt::skip]
+    fn execute_create_chat_message(
+        &self, stream_id: i32, user_id: i32, msg: &str,
+    ) -> impl std::future::Future<Output = Result<Option<ChatMessage>, ApiError>> + Send;
     /** Change a user's message in a chat. */
-    fn execute_modify_chat_message(&self, id: i32, user_id: i32, new_msg: &str) -> Result<Option<ChatMessage>, ApiError>;
+    #[rustfmt::skip]
+    fn execute_modify_chat_message(
+        &self, id: i32, user_id: i32, new_msg: &str,
+    ) -> impl std::future::Future<Output = Result<Option<ChatMessage>, ApiError>> + Send;
     /** Delete a user's message in a chat. */
-    fn execute_delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, ApiError>;
+    #[rustfmt::skip]
+    fn execute_delete_chat_message(
+        &self, id: i32, user_id: i32,
+    ) -> impl std::future::Future<Output = Result<Option<ChatMessage>, ApiError>> + Send;
 }
 
 // ** AssistantBlockUser **
@@ -51,7 +60,7 @@ pub trait AssistantBlockUser {
         user_id: i32,
         blocked_id: Option<i32>,
         blocked_nickname: Option<String>,
-    ) -> Result<Option<BlockedUserMini>, ApiError>;
+    ) -> impl std::future::Future<Output = Result<Option<BlockedUserMini>, ApiError>> + Send;
 }
 
 // ** ChatWsAssistant **
@@ -59,18 +68,18 @@ pub trait AssistantBlockUser {
 #[derive(Debug, Clone)]
 pub struct ChatWsAssistant {
     config_jwt: config_jwt::ConfigJwt,
-    chat_message_orm: ChatMessageOrmApp,
-    user_orm: UserOrmApp,
+    chat_message_db: ChatMessageDbApp,
+    user_db: UserDbApp,
 }
 
 // ** ChatWsAssistant implementation **
 
 impl ChatWsAssistant {
-    pub fn new(config_jwt: config_jwt::ConfigJwt, chat_message_orm: ChatMessageOrmApp, user_orm: UserOrmApp) -> Self {
+    pub fn new(config_jwt: config_jwt::ConfigJwt, chat_message_db: ChatMessageDbApp, user_db: UserDbApp) -> Self {
         ChatWsAssistant {
             config_jwt,
-            chat_message_orm,
-            user_orm,
+            chat_message_db,
+            user_db,
         }
     }
     /** Decode the token. And unpack the two parameters from the token. */
@@ -81,11 +90,9 @@ impl ChatWsAssistant {
     }
     /** Check the correctness of the numeric token and get the user data. */
     pub async fn check_num_token_and_get_user(&self, user_id: i32, num_token: i32) -> Result<User, ApiError> {
-        let user_orm: UserOrmApp = self.user_orm.clone();
-
         // Token verification:
         // 1. Search for a session by "id" from the token;
-        let opt_session = user_orm.get_session_by_id(user_id).map_err(|e| {
+        let opt_session = self.user_db.get_session_by_id(user_id).await.map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             return ApiError::create(507, err::MSG_DATABASE, &e); // 507
         })?;
@@ -96,7 +103,7 @@ impl ChatWsAssistant {
         // If session.num_token is not equal to token.num_token,return error401(c)("Unauthorized","unacceptable_token_num; user_id: {}")
         let _ = is_unacceptable_token_num(&session, num_token, user_id)?;
         // 3. If everything is correct, then search for the user by "user_id" from the token;
-        let opt_user = user_orm.get_user_by_id(user_id, false).map_err(|e| {
+        let opt_user = self.user_db.get_user_by_id(user_id, false).await.map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })?;
@@ -106,9 +113,7 @@ impl ChatWsAssistant {
     }
     /** Get chat access information. (ChatAccess) */
     pub async fn get_chat_access(&self, stream_id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatAccess>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
-
-        chat_message_orm.get_chat_access(stream_id, opt_user_id).map_err(|e| {
+        self.chat_message_db.get_chat_access(stream_id, opt_user_id).await.map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
@@ -119,26 +124,27 @@ impl ChatWsAssistant {
 
 impl AssistantBlockUser for ChatWsAssistant {
     /** Perform blocking/unblocking of a user. */
-    fn execute_block_user(
+    async fn execute_block_user(
         &self,
         is_block: bool,
         user_id: i32,
         blocked_id: Option<i32>,
         blocked_nickname: Option<String>,
     ) -> Result<Option<BlockedUserMini>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
         if is_block {
             // Add a new entry (blocked_user).
-            chat_message_orm
+            self.chat_message_db
                 .create_blocked_user(CreateBlockedUser::new(user_id, blocked_id, blocked_nickname))
+                .await
                 .map_err(|e| {
                     error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                     ApiError::create(507, err::MSG_DATABASE, &e) // 507
                 })
         } else {
             // Delete an entity (blocked_user).
-            chat_message_orm
+            self.chat_message_db
                 .delete_blocked_user(DeleteBlockedUser::new(user_id, blocked_id, blocked_nickname))
+                .await
                 .map_err(|e| {
                     error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
                     ApiError::create(507, err::MSG_DATABASE, &e) // 507
@@ -151,32 +157,32 @@ impl AssistantBlockUser for ChatWsAssistant {
 
 impl AssistantChatMsg for ChatWsAssistant {
     /** Create a new user message in the chat. */
-    fn execute_create_chat_message(&self, stream_id: i32, user_id: i32, msg: &str) -> Result<Option<ChatMessage>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+    async fn execute_create_chat_message(&self, stream_id: i32, user_id: i32, msg: &str) -> Result<Option<ChatMessage>, ApiError> {
         let create_chat_message = CreateChatMessage::new(stream_id, user_id, msg);
         // Add a new entity (stream).
-        chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
+        self.chat_message_db.create_chat_message(create_chat_message).await.map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
     }
 
     /** Change a user's message in a chat. */
-    fn execute_modify_chat_message(&self, id: i32, user_id: i32, new_msg: &str) -> Result<Option<ChatMessage>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+    async fn execute_modify_chat_message(&self, id: i32, user_id: i32, new_msg: &str) -> Result<Option<ChatMessage>, ApiError> {
         let modify_chat_message = ModifyChatMessage::new(new_msg.to_owned());
         // Modify an entity (chat_message).
-        chat_message_orm.modify_chat_message(id, user_id, modify_chat_message).map_err(|e| {
-            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-            ApiError::create(507, err::MSG_DATABASE, &e) // 507
-        })
+        self.chat_message_db
+            .modify_chat_message(id, user_id, modify_chat_message)
+            .await
+            .map_err(|e| {
+                error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            })
     }
 
     /** Delete a user's message in a chat. */
-    fn execute_delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, ApiError> {
-        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+    async fn execute_delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, ApiError> {
         // Add a new entity (stream).
-        chat_message_orm.delete_chat_message(id, user_id).map_err(|e| {
+        self.chat_message_db.delete_chat_message(id, user_id).await.map_err(|e| {
             error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         })
