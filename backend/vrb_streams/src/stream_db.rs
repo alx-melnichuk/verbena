@@ -116,30 +116,6 @@ pub mod impls {
             .await
             .map_err(|e| format!("create_stream_and_stream_tag: {}", e.to_string()))?;
 
-            /*
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            #[rustfmt::skip]
-            let query = diesel::sql_query(
-                "select * from create_stream_and_stream_tag($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11);")
-                .bind::<sql_types::Integer, _>(create_stream.user_id) // $1
-                .bind::<sql_types::Text, _>(create_stream.title) // $2
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_stream.descript) // $3
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_stream.logo) // $4
-                .bind::<sql_types::Timestamptz, _>(create_stream.starttime) // $5
-                .bind::<sql_types::Nullable<schema::sql_types::StreamState>, _>(create_stream.state) // $6
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(create_stream.started) // $7
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(create_stream.paused) // $8
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(create_stream.stopped) // $9
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_stream.source) // $10
-                .bind::<sql_types::Array<sql_types::Text>, _>(create_stream.tags); // $11
-
-            // Run a query with Diesel to create a new user and return it.
-            let opt_stream_and_tags = query
-                .get_result::<StreamAndTags>(&mut conn)
-                .optional()
-                .map_err(|e| format!("create_stream_and_stream_tag: {}", e.to_string()))?;*/
-
             if let Some(timer) = timer {
                 info!("create_stream_and_tags() time: {}", format!("{:.2?}", timer.elapsed()));
             }
@@ -175,30 +151,6 @@ pub mod impls {
             .await
             .map_err(|e| format!("modify_stream_and_stream_tag: {}", e.to_string()))?;
 
-            /*// Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            #[rustfmt::skip]
-            let query = diesel::sql_query(
-                "select * from modify_stream_and_stream_tag($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12);")
-                .bind::<sql_types::Integer, _>(id) // $1
-                .bind::<sql_types::Integer, _>(user_id) // $2
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_stream.title) // $3
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_stream.descript) // $4
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_stream.logo) // $5
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(modify_stream.starttime) // $6
-                .bind::<sql_types::Nullable<schema::sql_types::StreamState>, _>(modify_stream.state) // $7
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(modify_stream.started) // $8
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(modify_stream.paused) // $9
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(modify_stream.stopped) // $10
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_stream.source) // $11
-                .bind::<sql_types::Nullable<sql_types::Array<sql_types::Text>>, _>(modify_stream.tags); // $12
-
-            // Run a query with Diesel to create a new user and return it.
-            let opt_stream_and_tags = query
-                .get_result::<StreamAndTags>(&mut conn)
-                .optional()
-                .map_err(|e| format!("modify_stream_and_stream_tag: {}", e.to_string()))?;*/
-
             if let Some(timer) = timer {
                 info!("modify_stream_and_tags() time: {}", format!("{:.2?}", timer.elapsed()));
             }
@@ -221,20 +173,6 @@ pub mod impls {
             .await
             .map_err(|e| format!("delete_stream_and_stream_tag: {}", e.to_string()))?;
 
-            /*// Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query(
-                "select * from delete_stream_and_stream_tag($1,$2);")
-                .bind::<sql_types::Integer, _>(id) // $1
-                .bind::<sql_types::Integer, _>(user_id); // $2
-
-            // Run a query using Diesel and get the result.
-            let opt_stream_and_tags = query
-                .get_result::<StreamAndTags>(&mut conn)
-                .optional()
-                .map_err(|e| format!("delete_stream_and_tags: {}", e.to_string()))?;*/
-
             if let Some(timer) = timer {
                 info!("delete_stream_and_tags() time: {}", format!("{:.2?}", timer.elapsed()));
             }
@@ -255,19 +193,6 @@ pub mod impls {
             .fetch_optional(&self.db_pool)
             .await
             .map_err(|e| format!("get_stream_and_stream_tag: {}", e.to_string()))?;
-
-            /*// Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query(
-                "select * from get_stream_and_stream_tag($1);")
-                .bind::<sql_types::Integer, _>(id); // $1
-
-            // Run a query using Diesel and get the result.
-            let opt_stream_and_tags = query
-                .get_result::<StreamAndTags>(&mut conn)
-                .optional()
-                .map_err(|e| format!("get_stream_and_stream_tag: {}", e.to_string()))?;*/
 
             if let Some(timer) = timer {
                 info!("get_stream_and_tags() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -293,24 +218,6 @@ pub mod impls {
             .fetch_optional(&self.db_pool)
             .await
             .map_err(|e| format!("(1)filter_stream_and_stream_tag_by_pages_ids: {}", e.to_string()))?;
-
-            /*// Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query(
-                "SELECT s.*, ARRAY[]::VARCHAR[] AS tags, NULL AS old_logo \
-                 FROM streams s, \
-                 filter_stream_and_stream_tag_by_pages_ids($1,true,null,null,null,null,null,2,null) f \
-                 WHERE s.id = f.id AND s.id != $2 \
-                 LIMIT 1")
-                .bind::<sql_types::Integer, _>(user_id) // $1
-                .bind::<sql_types::Integer, _>(exclude_id); // $2
-
-            // Run a query using Diesel and get the result.
-            let opt_stream_and_tags = query
-                .get_result::<StreamAndTags>(&mut conn)
-                .optional()
-                .map_err(|e| format!("(1)filter_stream_and_stream_tag_by_pages_ids: {}", e.to_string()))?;*/
 
             if let Some(timer) = timer {
                 info!("get_stream_and_tags_in_live() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -346,25 +253,6 @@ pub mod impls {
             .await
             .map_err(|e| format!("filter_stream_and_stream_tag_by_pages_list: {}", e.to_string()))?;
 
-            /*#[rustfmt::skip]
-            let query = diesel::sql_query(
-                "SELECT * FROM filter_stream_and_stream_tag_by_pages_list($1,$2,$3,$4,$5,$6,$7,$8,$9);")
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(search_stream.user_id) // $1
-                .bind::<sql_types::Nullable<sql_types::Bool>, _>(search_stream.live) // $2
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(filter) // $3
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(search_stream.starttime) // $4
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(search_stream.finishtime) // $5
-                .bind::<sql_types::Nullable<sql_types::Bool>, _>(search_stream.sort_desc) // $6
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(search_stream.tag) // $7
-                .bind::<sql_types::Integer, _>(limit) // $8
-                .bind::<sql_types::Integer, _>(offset); // $9
-
-            // Run a query using Diesel and get the result.
-            let stream_and_tags_list: Vec<StreamAndTags> = query
-                //  .get_results::<Vec<StreamAndTags>>(&mut conn)
-                .load(&mut conn)
-                .map_err(|e| format!("filter_stream_and_stream_tag_by_pages_list: {}", e.to_string()))?;*/
-
             let count_stream_and_tags: CountStreamAndTags =
                 sqlx::query_as("SELECT * FROM filter_stream_and_stream_tag_by_pages_count($1,$2,$3,$4,$5,$6) as cnt LIMIT 1")
                     .bind(search_stream.user_id)
@@ -376,21 +264,6 @@ pub mod impls {
                     .fetch_one(&self.db_pool)
                     .await
                     .map_err(|e| format!("filter_stream_and_stream_tag_by_pages_count: {}", e.to_string()))?;
-
-            /*#[rustfmt::skip]
-            let query = diesel::sql_query(
-                "SELECT * FROM filter_stream_and_stream_tag_by_pages_count($1,$2,$3,$4,$5,$6) as cnt;")
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(search_stream2.user_id) // $1
-                .bind::<sql_types::Nullable<sql_types::Bool>, _>(search_stream2.live) // $2
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(filter2) // $3
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(search_stream2.starttime) // $4
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(search_stream2.finishtime) // $5
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(search_stream2.tag); // $6
-
-            // Run a query using Diesel and get the result.
-            let count_stream_and_tags = query
-                .get_result::<CountStreamAndTags>(&mut conn)
-                .map_err(|e| format!("filter_stream_and_stream_tag_by_pages_count: {}", e.to_string()))?;*/
 
             let count: u32 = count_stream_and_tags.cnt.try_into().unwrap();
 
@@ -417,25 +290,6 @@ pub mod impls {
             .fetch_all(&self.db_pool)
             .await
             .map_err(|e| format!("filter_stream_and_stream_tag_by_pages_ids: {}", e.to_string()))?;
-
-            /*// Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            #[rustfmt::skip]
-            let query = diesel::sql_query(
-                "SELECT s.starttime AS start \
-                 FROM streams s, \
-                   filter_stream_and_stream_tag_by_pages_ids($1,null,'period',$2,$3,null,null,null,null) f \
-                 WHERE s.id = f.id;")
-                .bind::<sql_types::Integer, _>(search_stream.user_id) // $1
-                .bind::<sql_types::Timestamptz, _>(search_stream.start) // $2
-                .bind::<sql_types::Timestamptz, _>(search_stream.finish); // $3
-
-            // Run a query using Diesel and get the result.
-            let stream_date_list: Vec<StartStreamAndTags> = query
-                //  .get_results::<Vec<StartStreamAndTags>>(&mut conn)
-                .load(&mut conn)
-                .map_err(|e| format!("(3)filter_stream_and_stream_tag_by_pages_ids: {}", e.to_string()))?;*/
 
             let list: Vec<DateTime<Utc>> = stream_date_list.into_iter().map(|v| v.start).collect();
 
@@ -468,20 +322,6 @@ pub mod impls {
             .fetch_all(&self.db_pool)
             .await
             .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?;
-
-            /*#[rustfmt::skip]
-            let query = diesel::sql_query(
-                "SELECT * FROM get_stream_tags($1,$2,$3,$4);")
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(sort_column) // $1
-                .bind::<sql_types::Nullable<sql_types::Bool>, _>(search_stream.sort_desc) // $2
-                .bind::<sql_types::Integer, _>(limit2) // $3
-                .bind::<sql_types::Integer, _>(offset2); // $4
-
-            // Run a query using Diesel and get the result.
-            let stream_tag_list: Vec<StreamTag> = query
-                //  .get_results::<Vec<StreamTag>>(&mut conn)
-                .load(&mut conn)
-                .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?;*/
 
             if let Some(timer) = timer {
                 info!("get_stream_tags() time: {}", format!("{:.2?}", timer.elapsed()));
