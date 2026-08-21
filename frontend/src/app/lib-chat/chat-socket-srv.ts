@@ -66,13 +66,13 @@ export class ChatSocketSrv {
             this.socketSrv.handlSend = this.innHandlSend;
             this.socketSrv.handlReceive = this.innHandlReceive;
 
-            this.socketSrv.connect(pathName, host)
+            this.socketSrv.connect(pathName, host);
         }
     }
     /** Disconnect from the server"s web socket. */
-    public disconnect(): void {
+    public disconnect(isFast: boolean = false): void {
         if (!!this.socketSrv) {
-            this.socketSrv.disconnect();
+            this.socketSrv.disconnect(isFast);
 
             this.hasJoined = false;
             this.hasOwner = false;

@@ -23,7 +23,7 @@ export class SocketSrv {
 
     /** Connect to the server web socket chat. */
     public connect(pathName: string, host?: string | null): void {
-        this.disconnect();
+        this.disconnect(true);
         if (!!pathName) {
             const { location } = window
             const proto = location.protocol.startsWith("https") ? "wss" : "ws";
@@ -38,10 +38,12 @@ export class SocketSrv {
         }
     }
     /** Disconnect from the server"s web socket. */
-    public disconnect(): void {
+    public disconnect(isFast: boolean = false): void {
         if (this.socket) {
             this.socket.close();
-            this.socket = null;
+            if (isFast) {
+                this.clearSocket();
+            }
         }
     }
     public hasConnect(): boolean {
@@ -69,8 +71,13 @@ export class SocketSrv {
         }
     };
     /** Processing the "close" event of the Socket. */
-    private eventClose = (): void => {
+    private eventClose = (ev: CloseEvent): void => {
+        if (!ev.wasClean) {
+            console.error(`WebSocket Closure: code: ${ev.code}, reason: ${ev.reason}`);
+        }
         !!this.handlOnClose && this.handlOnClose();
+
+        this.clearSocket();
     };
     /** Processing the "error" event of the Socket. */
     private eventError = (err: any): void => {
@@ -85,4 +92,14 @@ export class SocketSrv {
     private eventReceive = (val: string): void => {
         !!this.handlReceive && this.handlReceive(val);
     };
+    private clearSocket(): void {
+        if (!!this.socket) {
+            this.socket.onclose = null;
+            this.socket.onerror = null;
+            this.socket.onmessage = null;
+            this.socket.onopen = null;
+            // Clean up reference
+            this.socket = null;
+        }
+    }
 }
