@@ -5,7 +5,6 @@ members = [
     "vrb_chats",
     "vrb_common",
     "vrb_db",
-    "vrb_dbase",
     "vrb_profiles",
     "vrb_streams",
     "vrb_tools",
@@ -28,9 +27,6 @@ actix-web = { version = "4.14.0", features = ["openssl"] }
 actix-web-actors = "4.3.1"
 argon2 = "0.5.3"
 chrono = { version = "0.4.45", features = ["serde"] }
-diesel = { version = "2.3.11", features = ["postgres", "r2d2", "chrono"] }
-diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
-diesel_migrations = "2.3.2"
 dotenv = "0.15.0"
 email_address = "0.2.9"
 env_logger = "0.11.11"
@@ -58,7 +54,6 @@ vrb_authent = { version = "0.5", path="./vrb_authent" }
 vrb_chats = { version = "0.5", path="./vrb_chats" }
 vrb_common = { version = "0.5", path="./vrb_common" }
 vrb_db = { version = "0.5", path="./vrb_db" }
-vrb_dbase = { version = "0.5", path="./vrb_dbase" }
 vrb_profiles = { version = "0.5", path="./vrb_profiles" }
 vrb_streams = { version = "0.5", path="./vrb_streams" }
 vrb_tools = { version = "0.5", path="./vrb_tools" }
