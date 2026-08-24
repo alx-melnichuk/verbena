@@ -53,11 +53,11 @@ pub trait StreamDb {
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_stream_db_app(db_pool: DbPool2) -> impls::StreamDbApp {
+pub fn get_stream_db_app(db_pool: &DbPool2) -> impls::StreamDbApp {
     impls::StreamDbApp::new(db_pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
-pub fn get_stream_db_app(_: DbPool2) -> tests::StreamDbApp {
+pub fn get_stream_db_app(_: &DbPool2) -> tests::StreamDbApp {
     tests::StreamDbApp::new()
 }
 
@@ -85,8 +85,10 @@ pub mod impls {
     }
 
     impl StreamDbApp {
-        pub fn new(db_pool: DbPool2) -> Self {
-            StreamDbApp { db_pool }
+        pub fn new(db_pool: &DbPool2) -> Self {
+            StreamDbApp {
+                db_pool: db_pool.to_owned(),
+            }
         }
     }
 
