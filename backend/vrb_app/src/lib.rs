@@ -1,23 +1,23 @@
-use std::env;
+use std::{env, fs};
 
 use actix_cors::Cors;
 use actix_multipart::form::tempfile::TempFileConfig;
-use actix_web::{App, HttpServer, http, middleware, web};
+use actix_web::{
+    App, HttpServer, http, middleware,
+    web::{Data, ServiceConfig},
+};
 use dotenv;
 use env_logger;
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
-use vrb_authent::{
-    self, config_jwt, user_authent_controller, user_db, user_recovery_controller, user_recovery_db, user_registr_controller,
-    user_registr_db,
-};
-use vrb_chats::{chat_message_controller, chat_message_db, chat_ws_controller};
+use vrb_authent;
+use vrb_chats;
 use vrb_common::env_var;
 use vrb_db::db;
-use vrb_profiles::{config_prfl, profile_controller, profile_db};
-use vrb_streams::{config_strm, stream_controller, stream_db};
+use vrb_profiles;
+use vrb_streams;
 #[cfg(not(feature = "mockdata"))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
@@ -48,17 +48,6 @@ pub async fn server_run() -> std::io::Result<()> {
     let app_port = config_app.app_port.clone();
     let app_url = format!("{}:{}", &app_host, &app_port);
 
-    // Creating temporary directory.
-    std::fs::create_dir_all(config_app.app_dir_tmp.clone())?;
-
-    // Creating a directory for upload the logo.
-    let config_strm = config_strm::ConfigStrm::init_by_env();
-    std::fs::create_dir_all(&config_strm.strm_logo_files_dir)?;
-
-    // Creating a directory for upload the avatar.
-    let config_prfl = config_prfl::ConfigPrfl::init_by_env();
-    std::fs::create_dir_all(&config_prfl.prfl_avatar_files_dir)?;
-
     let app_domain = config_app.app_domain.clone();
     eprintln!("Starting server {}", &app_domain);
 
@@ -83,11 +72,32 @@ pub async fn server_run() -> std::io::Result<()> {
     #[rustfmt::skip]
     let mut srv = HttpServer::new(move || {
         let cors = create_cors(config_app2.clone());
-        App::new()
-            .app_data(db_pool.clone())
-            .configure(configure_server(db_pool.clone()))
-            .wrap(cors)
-            .wrap(middleware::Logger::default())
+        let mut app = App::new().wrap(cors).wrap(middleware::Logger::default());
+        app = app.app_data(db_pool.clone());
+
+        //   Addendum: ConfigApp, TempFileConfig, ConfigSmtp, MailerApp.
+        app = app.configure(configure_data_and_server());
+
+        // Adding data for the controller of "vrb_authent" library.
+        //   Addendum: ConfigJwt, UserDb, UserRegistrDb, UserRecoveryDb.
+        //   Use: ConfigApp, ConfigSmtp, mailer.
+        app = app.configure(vrb_authent::configure_data_and_server(&db_pool));
+
+        // Adding data for the controller of "vrb_profiles" library.
+        //   Addendum: ConfigPrfl, ProfileDb.
+        //   Use: UserDb, UserRegistrDb.
+        app = app.configure(vrb_profiles::configure_data_and_server(&db_pool));
+
+        // Adding data for the controller of "vrb_streams" library.
+        //   Addendum: ConfigStrm, StreamDb.
+        app = app.configure(vrb_streams::configure_data_and_server(&db_pool));
+
+        // Adding data for the controller of "vrb_chats" library.
+        //   Addendum: ConfigJwt, ChatMessageDb.
+        //   Use: ConfigJwt, UserDb.
+        app = app.configure(vrb_chats::configure_data_and_server(&db_pool));
+
+        app
     });
 
     if config_app::PROTOCOL_HTTP == app_protocol {
@@ -109,75 +119,45 @@ pub async fn server_run() -> std::io::Result<()> {
     srv.run().await
 }
 
-pub fn configure_server(db_pool: db::DbPool2) -> impl FnOnce(&mut web::ServiceConfig) {
-    move |config: &mut web::ServiceConfig| {
-        // Adding various configs.
-        let config_app0 = config_app::ConfigApp::init_by_env();
-        let temp_file_config0 = TempFileConfig::default().clone().directory(config_app0.app_dir_tmp.clone());
-        let config_app1 = config_app0.clone();
-
-        // used: user_recovery_controller, user_registr_controller, static_controller
-        let config_app = web::Data::new(config_app0);
-        // used: user_authent_controller, user_recovery_controller, user_registr_controller
-        let config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
-        // Used "actix-multipart" to upload files. TempFileConfig.from_req()
-        let temp_file_config = web::Data::new(temp_file_config0);
-        // used: stream_controller
-        let config_strm = web::Data::new(config_strm::ConfigStrm::init_by_env());
-        //
-        let config_smtp0 = config_smtp::ConfigSmtp::init_by_env();
-        // used: stream_controller, profile_controller
-        let config_smtp = web::Data::new(config_smtp0.clone());
-        // used: profile_controller
-        let config_prfl = web::Data::new(config_prfl::ConfigPrfl::init_by_env());
-
-        // Adding various entities.
-        // used: user_recovery_controller, user_registr_controller
-        let mailer = web::Data::new(MailerApp::new(config_smtp0));
-        // Create "UserDbApp".
-        let user_db = web::Data::new(user_db::get_user_db_app(db_pool.clone()));
-        // used: user_registr_controller
-        let user_registr_db = web::Data::new(user_registr_db::get_user_registr_db_app(db_pool.clone()));
-        // used: user_recovery_controller
-        let user_recovery_db = web::Data::new(user_recovery_db::get_user_recovery_db_app(db_pool.clone()));
-        // used: stream_controller, profile_controller
-        let stream_db = web::Data::new(stream_db::get_stream_db_app(db_pool.clone()));
-        // used: profile_controller
-        let profile_db = web::Data::new(profile_db::get_profile_db_app(db_pool.clone()));
-        // used: chat_message_controller, chat_ws_controller
-        let chat_message_db = web::Data::new(chat_message_db::get_chat_message_db_app(db_pool.clone()));
+pub fn configure_data_and_server() -> impl FnOnce(&mut ServiceConfig) {
+    move |config: &mut ServiceConfig| {
+        let config_app = config_app::ConfigApp::init_by_env();
+        // Creating temporary directory.
+        let dir_tmp = config_app.app_dir_tmp.clone();
+        fs::create_dir_all(&dir_tmp).expect(&format!("Error when creating the \"{}\" directory:", &dir_tmp));
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
         let openapi = swagger_docs::ApiDoc::openapi();
 
+        // Add documentation service "Redoc" and "RapiDoc".
         config
-            .app_data(web::Data::clone(&config_app))
-            .app_data(web::Data::clone(&config_jwt))
-            .app_data(web::Data::clone(&temp_file_config))
-            .app_data(web::Data::clone(&config_strm))
-            .app_data(web::Data::clone(&config_smtp))
-            .app_data(web::Data::clone(&config_prfl))
-            .app_data(web::Data::clone(&mailer))
-            .app_data(web::Data::clone(&user_db))
-            .app_data(web::Data::clone(&user_registr_db))
-            .app_data(web::Data::clone(&user_recovery_db))
-            .app_data(web::Data::clone(&stream_db))
-            .app_data(web::Data::clone(&profile_db))
-            .app_data(web::Data::clone(&chat_message_db))
-            // Add documentation service "Redoc" and "RapiDoc".
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             // Add documentation service "SwaggerUi".
-            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
-            // Add configuration of internal services.
-            .configure(user_recovery_controller::configure())
-            .configure(user_registr_controller::configure())
-            .configure(user_authent_controller::configure())
-            .configure(stream_controller::configure())
-            .configure(profile_controller::configure())
-            .configure(static_controller::configure(config_app1))
-            .configure(chat_message_controller::configure())
-            .configure(chat_ws_controller::configure());
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()));
+
+        let config_app1 = config_app.clone();
+        let app_dir_tmp = config_app.app_dir_tmp.clone();
+        // used: user_recovery_controller, user_registr_controller, static_controller
+        let config_app = Data::new(config_app);
+        config.app_data(Data::clone(&config_app));
+
+        let temp_file_config = TempFileConfig::default().clone().directory(app_dir_tmp);
+        // Used "actix-multipart" to upload files. TempFileConfig.from_req()
+        let temp_file_config = Data::new(temp_file_config);
+        config.app_data(Data::clone(&temp_file_config));
+
+        let config_smtp0 = config_smtp::ConfigSmtp::init_by_env();
+        // used: stream_controller
+        let config_smtp = Data::new(config_smtp0.clone());
+        config.app_data(Data::clone(&config_smtp));
+
+        // used: user_recovery_controller, user_registr_controller
+        let mailer = Data::new(MailerApp::new(config_smtp0));
+        config.app_data(Data::clone(&mailer));
+
+        // Add configuration of internal services.
+        config.configure(static_controller::configure(config_app1));
     }
 }
 
