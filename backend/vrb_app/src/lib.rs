@@ -13,12 +13,11 @@ use vrb_authent::{
     self, config_jwt, user_authent_controller, user_db, user_recovery_controller, user_recovery_db, user_registr_controller,
     user_registr_db,
 };
-use vrb_chats::{chat_message_controller, chat_message_orm, chat_ws_controller};
+use vrb_chats::{chat_message_controller, chat_message_db, chat_ws_controller};
 use vrb_common::env_var;
 use vrb_db::db;
-use vrb_dbase::dbase;
-use vrb_profiles::{config_prfl, profile_controller, profile_orm};
-use vrb_streams::{config_strm, stream_controller, stream_orm};
+use vrb_profiles::{config_prfl, profile_controller, profile_db};
+use vrb_streams::{config_strm, stream_controller, stream_db};
 #[cfg(not(feature = "mockdata"))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
@@ -75,18 +74,10 @@ pub async fn server_run() -> std::io::Result<()> {
         .await
         .expect("Failed to create pool_db");
 
-    eprintln!("pool_db.max_size: {}", max_conn);
-
-    // # temp
-    let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
-    let pool_max_size = env::var("DATABASE_POOL_MAX_SIZE").unwrap_or("0".to_owned()).trim().parse().unwrap();
-
-    let pool: dbase::DbPool = dbase::init_db_pool(&db_url, pool_max_size);
-    eprintln!("db_pool.max_size: {}", pool.max_size());
+    eprintln!("db_pool_db.max_conn: {}", max_conn);
 
     // Execute all unapplied migrations for a given migration source
-    dbase::run_migration(&mut pool.get().unwrap());
-    // # temp
+    let _ = db::run_migration_db(&db_pool).await;
 
     let config_app2 = config_app.clone();
     #[rustfmt::skip]
@@ -94,8 +85,7 @@ pub async fn server_run() -> std::io::Result<()> {
         let cors = create_cors(config_app2.clone());
         App::new()
             .app_data(db_pool.clone())
-            .app_data(pool.clone())
-            .configure(configure_server(db_pool.clone(), pool.clone()))
+            .configure(configure_server(db_pool.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
     });
@@ -119,7 +109,7 @@ pub async fn server_run() -> std::io::Result<()> {
     srv.run().await
 }
 
-pub fn configure_server(db_pool: db::DbPool2, pool: dbase::DbPool) -> impl FnOnce(&mut web::ServiceConfig) {
+pub fn configure_server(db_pool: db::DbPool2) -> impl FnOnce(&mut web::ServiceConfig) {
     move |config: &mut web::ServiceConfig| {
         // Adding various configs.
         let config_app0 = config_app::ConfigApp::init_by_env();
@@ -151,11 +141,11 @@ pub fn configure_server(db_pool: db::DbPool2, pool: dbase::DbPool) -> impl FnOnc
         // used: user_recovery_controller
         let user_recovery_db = web::Data::new(user_recovery_db::get_user_recovery_db_app(db_pool.clone()));
         // used: stream_controller, profile_controller
-        let stream_orm = web::Data::new(stream_orm::get_stream_orm_app(pool.clone()));
+        let stream_db = web::Data::new(stream_db::get_stream_db_app(db_pool.clone()));
         // used: profile_controller
-        let profile_orm = web::Data::new(profile_orm::get_profile_orm_app(pool.clone()));
+        let profile_db = web::Data::new(profile_db::get_profile_db_app(db_pool.clone()));
         // used: chat_message_controller, chat_ws_controller
-        let chat_message_orm = web::Data::new(chat_message_orm::get_chat_message_orm_app(pool.clone()));
+        let chat_message_db = web::Data::new(chat_message_db::get_chat_message_db_app(db_pool.clone()));
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
         let openapi = swagger_docs::ApiDoc::openapi();
@@ -171,9 +161,9 @@ pub fn configure_server(db_pool: db::DbPool2, pool: dbase::DbPool) -> impl FnOnc
             .app_data(web::Data::clone(&user_db))
             .app_data(web::Data::clone(&user_registr_db))
             .app_data(web::Data::clone(&user_recovery_db))
-            .app_data(web::Data::clone(&stream_orm))
-            .app_data(web::Data::clone(&profile_orm))
-            .app_data(web::Data::clone(&chat_message_orm))
+            .app_data(web::Data::clone(&stream_db))
+            .app_data(web::Data::clone(&profile_db))
+            .app_data(web::Data::clone(&chat_message_db))
             // Add documentation service "Redoc" and "RapiDoc".
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))

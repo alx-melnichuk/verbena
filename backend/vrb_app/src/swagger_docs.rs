@@ -8,7 +8,7 @@ use vrb_authent::{
 };
 use vrb_chats::{chat_event_ws, chat_message_controller, chat_message_models, chat_ws_controller};
 use vrb_common::api_error;
-use vrb_dbase::{enm_stream_state, enm_user_role};
+use vrb_db::{enm_stream_state, enm_user_role};
 use vrb_profiles::{profile_controller, profile_models};
 use vrb_streams::{stream_controller, stream_models};
 
@@ -61,7 +61,7 @@ use vrb_streams::{stream_controller, stream_models};
     components(
         schemas(
             api_error::ApiError,
-            // vrb_dbase
+            // vrb_db
             enm_user_role::UserRole,
             // user_authent_controller
             user_authent_models::UserUniquenessDto,         // ::users_uniqueness
