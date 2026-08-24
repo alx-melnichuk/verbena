@@ -31,7 +31,6 @@ vrb_authent = { workspace = true }
 vrb_chats = { workspace = true }
 vrb_common = { workspace = true }
 vrb_db = { workspace = true }
-vrb_dbase = { workspace = true }
 vrb_profiles = { workspace = true }
 vrb_streams = { workspace = true }
 vrb_tools = { workspace = true }

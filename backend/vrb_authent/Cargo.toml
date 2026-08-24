@@ -14,7 +14,6 @@ path = "src/lib.rs"
 [dependencies]
 actix-web = { workspace = true }
 chrono = { workspace = true }
-diesel = { workspace = true }
 futures-util = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
@@ -23,7 +22,6 @@ sqlx = { workspace = true }
 utoipa = { workspace = true }
 vrb_common = { workspace = true }
 vrb_db = { workspace = true }
-vrb_dbase = { workspace = true }
 vrb_tools = { workspace = true }
 
 [features]
