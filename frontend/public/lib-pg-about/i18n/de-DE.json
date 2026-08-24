@@ -45,7 +45,6 @@
         "log": "- Bietet eine einzige API-abstraktion für die protokollierung",
         "mime": "- Unterstützt MIME (Medientypen)",
         "openssl": "- HTTPS-verschlüsselungsbibliothek für websites",
-        "r2d2": "- Pool-datenbank",
         "rand": "- Zufallszahlengeneratoren",
         "regex": "- Eine implementierung von regulären ausdrücken",
         "serde": "- Serialisierung/Deserialisierung",

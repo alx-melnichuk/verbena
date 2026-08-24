@@ -45,7 +45,6 @@
         "log": "- Provides a single API abstraction for logging",
         "mime": "- Support MIME (Media Types)",
         "openssl": "- HTTPS encryption library for websites",
-        "r2d2": "- Pool database",
         "rand": "- Random number generators",
         "regex": "- An implementation of regular expressions",
         "serde": "- Serialization/Deserialization",
