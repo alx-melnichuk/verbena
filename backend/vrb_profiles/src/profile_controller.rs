@@ -551,7 +551,7 @@ impl ModifyUserProfileForm {
 #[put("/api/profiles", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_profile(
     authenticated: Authenticated,
-    config_prfl: web::Data<config_prfl::ConfigPrfl>,
+    config_prfl: web::Data<ConfigPrfl>,
     profile_db: web::Data<ProfileDbApp>,
     user_db: web::Data<UserDbApp>,
     user_registr_db: web::Data<UserRegistrDbApp>,
