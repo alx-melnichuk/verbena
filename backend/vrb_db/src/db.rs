@@ -1,6 +1,10 @@
 use std::time::Duration;
 
-use sqlx::{self, PgPool, migrate, postgres::PgPoolOptions};
+use sqlx::{
+    self, PgPool,
+    migrate::{MigrateError, Migrator},
+    postgres::PgPoolOptions,
+};
 
 pub type DbPool2 = PgPool;
 
@@ -34,6 +38,7 @@ pub async fn init_db_pool(
 }
 
 /** Execute all unapplied migrations for a given migration source */
-pub async fn run_migration(db_pool: &DbPool2) -> Result<(), migrate::MigrateError> {
-    sqlx::migrate!("./migrations").run(db_pool).await
+pub async fn run_migration_db(db_pool: &DbPool2) -> Result<(), MigrateError> {
+    let migration_db = Migrator::new(std::path::Path::new("./migrations")).await?;
+    migration_db.run(db_pool).await
 }
