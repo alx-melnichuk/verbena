@@ -37,11 +37,11 @@ pub trait UserDb {
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_user_db_app(db_pool: DbPool2) -> impls::UserDbApp {
+pub fn get_user_db_app(db_pool: &DbPool2) -> impls::UserDbApp {
     impls::UserDbApp::new(db_pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
-pub fn get_user_db_app(_: DbPool2) -> tests::UserDbApp {
+pub fn get_user_db_app(_: &DbPool2) -> tests::UserDbApp {
     tests::UserDbApp::new()
 }
 
@@ -64,8 +64,10 @@ pub mod impls {
     }
 
     impl UserDbApp {
-        pub fn new(db_pool: DbPool2) -> Self {
-            UserDbApp { db_pool }
+        pub fn new(db_pool: &DbPool2) -> Self {
+            UserDbApp {
+                db_pool: db_pool.to_owned(),
+            }
         }
     }
 
