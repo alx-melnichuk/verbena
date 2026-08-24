@@ -22,11 +22,11 @@ pub trait ProfileDb {
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_profile_db_app(db_pool: DbPool2) -> impls::ProfileDbApp {
+pub fn get_profile_db_app(db_pool: &DbPool2) -> impls::ProfileDbApp {
     impls::ProfileDbApp::new(db_pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
-pub fn get_profile_db_app(_: DbPool2) -> tests::ProfileDbApp {
+pub fn get_profile_db_app(_: &DbPool2) -> tests::ProfileDbApp {
     tests::ProfileDbApp::new()
 }
 
@@ -50,8 +50,10 @@ pub mod impls {
     }
 
     impl ProfileDbApp {
-        pub fn new(db_pool: DbPool2) -> Self {
-            ProfileDbApp { db_pool }
+        pub fn new(db_pool: &DbPool2) -> Self {
+            ProfileDbApp {
+                db_pool: db_pool.to_owned(),
+            }
         }
     }
 
