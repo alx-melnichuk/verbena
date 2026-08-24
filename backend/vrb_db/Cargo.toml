@@ -12,7 +12,7 @@ license.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
-# actix-web = { workspace = true }
+actix-web = { workspace = true }
 # chrono = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
