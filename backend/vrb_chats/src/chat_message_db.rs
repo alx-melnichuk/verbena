@@ -68,11 +68,11 @@ pub trait ChatMessageDb {
 }
 
 #[cfg(not(all(test, feature = "mockdata")))]
-pub fn get_chat_message_db_app(db_pool: DbPool2) -> impls::ChatMessageDbApp {
+pub fn get_chat_message_db_app(db_pool: &DbPool2) -> impls::ChatMessageDbApp {
     impls::ChatMessageDbApp::new(db_pool)
 }
 #[cfg(all(test, feature = "mockdata"))]
-pub fn get_chat_message_db_app(_: DbPool2) -> tests::ChatMessageDbApp {
+pub fn get_chat_message_db_app(_: &DbPool2) -> tests::ChatMessageDbApp {
     tests::ChatMessageDbApp::new()
 }
 
@@ -101,8 +101,10 @@ pub mod impls {
     }
 
     impl ChatMessageDbApp {
-        pub fn new(db_pool: DbPool2) -> Self {
-            ChatMessageDbApp { db_pool }
+        pub fn new(db_pool: &DbPool2) -> Self {
+            ChatMessageDbApp {
+                db_pool: db_pool.to_owned(),
+            }
         }
     }
 
