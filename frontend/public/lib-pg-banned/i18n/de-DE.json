@@ -1,0 +1,12 @@
+{
+  "panel-banned-view": {
+    "are_you_want_to_unblock_user": "Möchten Sie den Benutzer \"{{nickname}}\" wirklich entsperren?"
+  },
+  "panel-banned-users": {
+    "title": "Gesperrte Benutzer",
+    "nickname": "Benutzer-Spitzname",
+    "email": "Benutzer-E-Mail",
+    "date_blocking": "Datum der Sperrung",
+    "unblock_user": "Entsperren"
+  }
+}

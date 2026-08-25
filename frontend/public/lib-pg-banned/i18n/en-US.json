@@ -1,0 +1,12 @@
+{
+  "panel-banned-view": {
+    "are_you_want_to_unblock_user": "Are you sure you want to unblock user: \"{{nickname}}\" ?"
+  },
+  "panel-banned-users": {
+    "title": "Blocked users",
+    "nickname": "User nickname",
+    "email": "User email",
+    "date_blocking": "Date of blocking",
+    "unblock_user": "Unblock"
+  }
+}

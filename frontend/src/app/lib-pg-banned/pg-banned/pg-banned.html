@@ -1,0 +1,7 @@
+<app-panel-banned-view
+    [blockedUsers]="blockedUsers"
+    [sortDesc]="sortDesc"
+    [sortColumn]="sortColumn"
+    (sort)="doSort($event)"
+    (unblockUser)="doUnblockUser($event, blockedUsers)">
+</app-panel-banned-view>
