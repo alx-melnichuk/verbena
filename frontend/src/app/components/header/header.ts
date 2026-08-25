@@ -23,7 +23,7 @@ export const HM_LOGOUT = "logout";
 export const HM_SET_LOCALE = "setLocale";
 export const HM_SET_COLOR_SCHEME = "setColorScheme";
 
-const CN_MIN_WINDOW_WIDTH = 768; // Minimum window width for displaying the main menu.
+const CN_MIN_WINDOW_WIDTH = 850; // Minimum window width for displaying the main menu.
 const CN_ResizeEventTimeout = 150; // milliseconds
 
 @Component({
