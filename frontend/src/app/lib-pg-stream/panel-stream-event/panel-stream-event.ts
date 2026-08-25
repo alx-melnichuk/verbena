@@ -9,12 +9,12 @@ import { StreamDto } from "../../lib-stream/stream-dto";
 import { StreamSrv } from "../../lib-stream/stream-srv";
 
 @Component({
-    selector: 'app-panel-stream-event',
+    selector: "app-panel-stream-event",
     exportAs: "appPanelStreamEvent",
     standalone: true,
     imports: [CommonModule, TranslatePipe, DateTimeFormatPipe, Image],
-    templateUrl: './panel-stream-event.html',
-    styleUrl: './panel-stream-event.scss',
+    templateUrl: "./panel-stream-event.html",
+    styleUrl: "./panel-stream-event.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
