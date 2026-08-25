@@ -3,7 +3,7 @@ import {
     ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
 } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTooltipModule } from "@angular/material/tooltip";
 import { TranslatePipe, TranslateService } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
 import { Spinner } from "../../components/spinner/spinner";

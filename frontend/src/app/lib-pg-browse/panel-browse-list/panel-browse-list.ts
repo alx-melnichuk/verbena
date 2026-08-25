@@ -6,7 +6,7 @@ import { ReactiveFormsModule, FormControl, FormGroup } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { TranslatePipe } from "@ngx-translate/core";
 import { CN_TAG } from "../../common/fields-consts";
 import { Spinner } from "../../components/spinner/spinner";

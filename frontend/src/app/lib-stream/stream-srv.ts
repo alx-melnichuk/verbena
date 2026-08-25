@@ -25,7 +25,7 @@ export class StreamSrv {
      */
     public getStreamsPopularTags(search: SearchStreamTagDto): Promise<PageStreamTagDto | HttpErrorResponse> {
         const params: HttpParams = HttpParamsUtil.create(search);
-        const url = Uri.appUri('appApi://streams_popural_tags');
+        const url = Uri.appUri("appApi://streams_popural_tags");
         return lastValueFrom(this.http.get<PageStreamTagDto | HttpErrorResponse>(url, { params }));
     }
     /** Get streams calendar
@@ -41,7 +41,7 @@ export class StreamSrv {
         userId: number, start: StringDateTime, finish: StringDateTime
     ): Promise<StringDateTime[] | HttpErrorResponse | undefined> {
         const params: HttpParams = HttpParamsUtil.create({ userId, start, finish });
-        const url = Uri.appUri(`appApi://streams_calendar`);
+        const url = Uri.appUri("appApi://streams_calendar");
         return lastValueFrom(this.http.get<StringDateTime[] | HttpErrorResponse>(url, { params }));
     }
 
@@ -190,7 +190,7 @@ export class StreamSrv {
         if (!!updateStreamFileDto.logoFile) {
             formData.set("logofile", updateStreamFileDto.logoFile, updateStreamFileDto.logoFile.name);
         }
-        const url = Uri.appUri(`appApi://streams`);
+        const url = Uri.appUri("appApi://streams");
         return lastValueFrom(this.http.post<StreamDto | HttpErrorResponse>(url, formData))
             .then((response) => StreamDtoUtil.create(response as StreamDto));
     }

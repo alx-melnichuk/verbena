@@ -10,7 +10,7 @@ import {
 } from "./user-dto";
 
 @Injectable({
-    providedIn: 'root',
+    providedIn: "root",
 })
 export class UserSrv implements TokenUpdate {
     private http: HttpClient = inject(HttpClient);

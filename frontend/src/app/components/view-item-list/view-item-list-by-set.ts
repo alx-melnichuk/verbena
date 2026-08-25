@@ -1,5 +1,5 @@
-import { Directive, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { ItemView, ViewItemList } from './view-item-list';
+import { Directive, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from "@angular/core";
+import { ItemView, ViewItemList } from "./view-item-list";
 
 export interface ItemViewSet {
     list: ItemView[];

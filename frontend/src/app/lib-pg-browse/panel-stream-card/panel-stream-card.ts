@@ -1,16 +1,16 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation } from '@angular/core';
-import { DateTimeFormatPipe } from '../../common/date-time-format-pipe';
+import { CommonModule } from "@angular/common";
+import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation } from "@angular/core";
+import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
 import { Image } from "../../components/image/image";
-import { StreamDto } from '../../lib-stream/stream-dto';
+import { StreamDto } from "../../lib-stream/stream-dto";
 
 @Component({
-    selector: 'app-panel-stream-card',
+    selector: "app-panel-stream-card",
     exportAs: "appPanelStreamCard",
     standalone: true,
     imports: [CommonModule, DateTimeFormatPipe, Image],
-    templateUrl: './panel-stream-card.html',
-    styleUrl: './panel-stream-card.scss',
+    templateUrl: "./panel-stream-card.html",
+    styleUrl: "./panel-stream-card.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,21 +1,21 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule } from "@angular/common";
 import {
     ChangeDetectionStrategy, Component, EventEmitter, HostBinding, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
-} from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { TranslatePipe } from '@ngx-translate/core';
-import { DateTimeFormatPipe } from '../../common/date-time-format-pipe';
+} from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
+import { TranslatePipe } from "@ngx-translate/core";
+import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
 import { Image } from "../../components/image/image";
-import { StreamDto } from '../../lib-stream/stream-dto';
-import { StreamSrv } from '../../lib-stream/stream-srv';
+import { StreamDto } from "../../lib-stream/stream-dto";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 
 @Component({
-    selector: 'app-panel-stream-info',
+    selector: "app-panel-stream-info",
     exportAs: "appPanelStreamInfo",
     standalone: true,
     imports: [CommonModule, MatButtonModule, TranslatePipe, DateTimeFormatPipe, Image],
-    templateUrl: './panel-stream-info.html',
-    styleUrl: './panel-stream-info.scss',
+    templateUrl: "./panel-stream-info.html",
+    styleUrl: "./panel-stream-info.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

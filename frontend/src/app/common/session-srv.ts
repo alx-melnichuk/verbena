@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
+import { Injectable } from "@angular/core";
+import { environment } from "../../environments/environment";
 
 
 export interface User {
@@ -28,7 +28,7 @@ export class UserUtil {
 }
 
 @Injectable({
-    providedIn: 'root',
+    providedIn: "root",
 })
 export class SessionSrv {
     private accessToken: string | null = null;
