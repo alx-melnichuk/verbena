@@ -1,7 +1,7 @@
 import { Routes } from "@angular/router";
 import { authentCanActivateGuard } from "./common/authent-can-activate-guard";
 import { authentCanMatchGuard } from "./common/authent-can-match-guard";
-import { R_ABOUT, R_BROWSE, R_FORGOT_PASSWORD, R_LOGIN, R_PROFILE, R_SIGNUP, R_STREAM } from "./common/routes";
+import { R_ABOUT, R_BANNED, R_BROWSE, R_FORGOT_PASSWORD, R_LOGIN, R_PROFILE, R_SIGNUP, R_STREAM } from "./common/routes";
 
 export const APP_ROUTES: Routes = [
     {
@@ -34,6 +34,12 @@ export const APP_ROUTES: Routes = [
     {
         path: R_STREAM, // "ind/stream"
         loadChildren: () => import("./lib-pg-stream/pg-stream/pg-stream.routes").then(c => c.PG_STREAM_ROUTES),
+        canActivate: [authentCanActivateGuard], // Authorization is required.
+        canMatch: [authentCanMatchGuard],
+    },
+    {
+        path: R_BANNED, // "ind/banned"
+        loadChildren: () => import("./lib-pg-banned/pg-banned/pg-banned.routes").then(c => c.PG_BANNED_ROUTES),
         canActivate: [authentCanActivateGuard], // Authorization is required.
         canMatch: [authentCanMatchGuard],
     },

@@ -39,6 +39,11 @@ export const E_STREAM_CREATE = "create";
 export const R_STREAM_CREATE = R_STREAM + "/" + E_STREAM_CREATE; //  "ind/stream/create"
 export const ROUTE_STREAM_CREATE = "/" + R_STREAM_CREATE;        // "/ind/stream/create"
 
+// ** Page: Banned users **
+
+export const R_BANNED = R_ROOT + "/" + "banned"; // "ind/banned"
+export const ROUTE_BANNED = "/" + R_BANNED;      // "/ind/banned"
+
 // ** Page: Browse **
 export const R_BROWSE = R_ROOT + "/" + "browse"; // "ind/browse"
 export const ROUTE_BROWSE = "/" + R_BROWSE;      // "/ind/browse"
@@ -65,6 +70,7 @@ export const AUTHENT_REQUIRED = [
     ROUTE_PROFILE,
     ROUTE_STREAM,
     ROUTE_BROWSE_LIST,
+    ROUTE_BANNED,
 ];
 export const AUTHENT_DENIED = [
     ROUTE_LOGIN,
@@ -79,6 +85,7 @@ export const MAIN_MENU_LIST = [
     ROUTE_PROFILE,
     ROUTE_STREAM_LIST,
     ROUTE_STREAM_CREATE,
+    ROUTE_BANNED,
     ROUTE_BROWSE_LIST,
 ];
 
