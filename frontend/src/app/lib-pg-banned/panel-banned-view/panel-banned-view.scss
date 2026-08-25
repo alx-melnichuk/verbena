@@ -1,0 +1,11 @@
+/*# sourceURL=panel-banned-view.scss */
+
+app-panel-banned-view {
+    display: flex;
+    height: 100%;
+    justify-content: center;
+
+    .pbv-container {
+        width: min(1000px, 100vw);
+    }
+}

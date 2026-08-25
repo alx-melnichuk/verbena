@@ -1,0 +1,11 @@
+<div class="pbv-container">
+  <app-panel-banned-users
+    [blockedUsers]="blockedUsers"
+    [locale]="localeSrv.getLocale()"
+    [title]="title"
+    [sortDesc]="sortDesc"
+    [sortColumn]="sortColumn"
+    (sort)="doSort($event)"
+    (unblockUser)="doUnblockUser($event)">
+  </app-panel-banned-users>
+</div>
