@@ -306,7 +306,7 @@ export class PgBrowseView implements OnDestroy {
             .catch((err: HttpErrorResponse) => {
                 console.error(`ChatMessageError:`, err);
                 const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(errMsg, "pg-browse-list?.error_get_streams_by_tag");
+                this.alertSrv.showError(errMsg, "pg-browse-list.error_get_streams_by_tag");
                 throw err;
             })
             .finally(() => {

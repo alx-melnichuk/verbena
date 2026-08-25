@@ -73,7 +73,7 @@ export class PgBrowseList implements OnInit, OnDestroy {
             })
             .catch((err: HttpErrorResponse) => {
                 const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(errMsg, "pg-browse-list?.error_get_popular_tags");
+                this.alertSrv.showError(errMsg, "pg-browse-list.error_get_popular_tags");
                 throw err;
             })
             .finally(() => {
@@ -128,7 +128,7 @@ export class PgBrowseList implements OnInit, OnDestroy {
             })
             .catch((err: HttpErrorResponse) => {
                 const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
-                this.alertSrv.showError(errMsg, "pg-browse-list?.error_get_streams_by_tag");
+                this.alertSrv.showError(errMsg, "pg-browse-list.error_get_streams_by_tag");
                 throw err;
             })
             .finally(() => {

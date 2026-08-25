@@ -20,7 +20,7 @@
     "msg_discard_draft": "Відхилити чернетку ? (Ви не зможете її відновити.)"
   },
   "pg-browse-view": {
-    "error_update_stream": "Помилка оновлення стану потоку",
+    "error_update_stream": "Помилка оновлення стану трансляції",
     "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
     "chat_commands": "Команди чату",
     "user_blocked": "Користувач \"{{ username }}\" заблокований.",
@@ -28,6 +28,10 @@
     "error_socket": "Помилка сокета",
     "error_blocked": "Помилка блокування користувача",
     "error_unblocked": "Помилка розблокування користувача"
+  },
+  "pg-browse-list": {
+    "error_get_popular_tags": "Помилка отримання популярних тегів",
+    "error_get_streams_by_tag": "Помилка отримання даних тразсляцій"
   },
   "panel-browse-list": {
      "tag_value": "Значення тегу",
@@ -53,8 +57,8 @@
     "has_not_started": "Трансляція ще не розпочалася.",
     "has_paused": "Трансляцію призупинено.",
     "has_ended": "Трансляція вже закінчилася.",
-    "error_preparing_broadcast"     : "Помилка підготовки потоку",
-    "error_when_starting_the_stream": "Помилка запуску потоку",
+    "error_preparing_broadcast"     : "Помилка підготовки трансляції",
+    "error_when_starting_the_stream": "Помилка запуску трансляції",
     "error_when_stopping_the_stream": "Помилка зупинки трансляції",
     "error_while_pause_stream"      : "Помилка призупинення трансляції"
   },

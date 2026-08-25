@@ -29,6 +29,10 @@
     "error_blocked": "User blocked error",
     "error_unblocked": "User unblocked error"
   },
+  "pg-browse-list": {
+    "error_get_popular_tags": "Error getting popular tags",
+    "error_get_streams_by_tag": " Error getting data on streams"
+  },
   "panel-browse-list": {
      "tag_value": "Tag value",
      "live_streams_only": "Live streams only",
