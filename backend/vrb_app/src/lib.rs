@@ -54,8 +54,8 @@ pub async fn server_run() -> std::io::Result<()> {
     eprintln!("Configuring database.");
 
     let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
-    let max_conn: u32 = env::var("DB_POOL_MAX_SIZE").unwrap_or("0".to_owned()).trim().parse().unwrap();
-    let min_conn: u32 = env::var("DB_POOL_MIN_SIZE").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let max_conn: u32 = env::var("DB_POOL_MAX_CONN").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let min_conn: u32 = env::var("DB_POOL_MIN_CONN").unwrap_or("0".to_owned()).trim().parse().unwrap();
     let max_lifetime_sec: u64 = env::var("DB_POOL_MAX_LIFETIME").unwrap_or("0".to_owned()).trim().parse().unwrap();
     let idle_sec: u64 = env::var("DB_POOL_IDLE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
 
