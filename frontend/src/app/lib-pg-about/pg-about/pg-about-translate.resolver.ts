@@ -4,7 +4,7 @@ import { InterpolatableTranslationObject, TranslateService } from "@ngx-translat
 import { LocaleSrv } from "../../common/locale-srv";
 import { Observable } from "rxjs";
 
-export const pgAboutResolver: ResolveFn<Observable<InterpolatableTranslationObject>>
+export const pgAboutTranslateResolver: ResolveFn<Observable<InterpolatableTranslationObject>>
     = (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
         const locale = inject(LocaleSrv);
         const translate = inject(TranslateService);

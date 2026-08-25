@@ -4,7 +4,7 @@ import { provideTranslateService, TranslateLoader } from "@ngx-translate/core";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import { environment } from "../../../environments/environment";
 import { PgAbout } from "./pg-about";
-import { pgAboutResolver } from "./pg-about.resolver";
+import { pgAboutTranslateResolver } from "./pg-about-translate.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibAboutHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
@@ -28,6 +28,6 @@ export const PG_ABOUT_ROUTES: Routes = [
                 isolate: true,
             }),
         ],
-        resolve: { aboutTranslate: pgAboutResolver },
+        resolve: { loadTranslate: pgAboutTranslateResolver },
     },
 ];
