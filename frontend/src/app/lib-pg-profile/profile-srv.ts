@@ -10,7 +10,7 @@ import { ModifyProfileDto, NewPasswordProfileDto, ProfileDto } from "./profile-d
 export class ProfileSrv {
     private http: HttpClient = inject(HttpClient);
 
-    public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Promise<ProfileDto | HttpErrorResponse | undefined> {
+    public async modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Promise<ProfileDto | HttpErrorResponse | undefined> {
         const formData: FormData = new FormData();
         if (modifyProfileDto.nickname != null) {
             formData.set("nickname", modifyProfileDto.nickname);
@@ -29,6 +29,9 @@ export class ProfileSrv {
         }
         if (modifyProfileDto.locale != null) {
             formData.set("locale", modifyProfileDto.locale);
+        }
+        if (modifyProfileDto.settings != null && typeof modifyProfileDto.settings === "object") {
+            formData.set("settings", JSON.stringify(modifyProfileDto.settings));
         }
         if (file !== undefined) {
             const currFile: File = (file !== null ? file : new File([], "file"));

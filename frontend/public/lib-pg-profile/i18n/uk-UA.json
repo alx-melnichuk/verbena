@@ -56,6 +56,9 @@
   "417.field-locale:required": "Поле \"{{field-locale}}\" обов'язкове.",
   "417.field-locale:minlength": "Поле \"{{field-locale}}\" має містити принаймні {{ minlength.requiredLength }} символів.",
   "417.field-locale:maxlength": "Поле \"{{field-locale}}\" не може містити більше {{ maxlength.requiredLength }} символів.",
+  "417.field-settings:required": "Поле \"{{field-settings}}\" обов'язкове.",
+  "417.field-settings:minlength" : "Поле \"{{field-settings}}\" має містити принаймні {{ minlength.requiredLength }} символів.",
+  "417.field-settings:maxlength" : "Поле \"{{field-settings}}\" не може містити більше {{ maxlength.requiredLength }} символів.",
   "500.error_upload_file": "Помилка завантаження файлу.",
   "510.error_convert_file": "Помилка під час конвертації файлу."
 }

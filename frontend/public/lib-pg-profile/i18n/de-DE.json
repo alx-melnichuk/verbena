@@ -56,6 +56,9 @@
   "417.field-locale:required": "Das feld \"{{field-locale}}\" ist erforderlich.",
   "417.field-locale:minlength": "Das feld \"{{field-locale}}\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
   "417.field-locale:maxlength": "Das feld \"{{field-locale}}\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+  "417.field-settings:required": "Das feld \"{{field-settings}}\" ist erforderlich.",
+  "417.field-settings:minlength": "Das feld \"{{field-settings}}\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+  "417.field-settings:maxlength": "Das feld \"{{field-settings}}\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
   "500.error_upload_file": "Fehler beim hochladen der datei.",
   "510.error_convert_file": "Fehler beim konvertieren der datei."
 } 

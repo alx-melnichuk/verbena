@@ -56,6 +56,9 @@
   "417.field-locale:required": "The \"{{field-locale}}\" field is required.",
   "417.field-locale:minlength": "The \"{{field-locale}}\" field must have at least {{ minlength.requiredLength }} characters.",
   "417.field-locale:maxlength": "The \"{{field-locale}}\" field must have no more {{ maxlength.requiredLength }} characters.",
+  "417.field-settings:required": "The \"{{field-settings}}\" field is required.",
+  "417.field-settings:minlength": "The \"{{field-settings}}\" field must have at least {{ minlength.requiredLength }} characters.",
+  "417.field-settings:maxlength": "The \"{{field-settings}}\" field must have no more {{ maxlength.requiredLength }} characters.",
   "500.error_upload_file": "Error uploading file.",
   "510.error_convert_file": "Error while converting file."
 }

@@ -138,6 +138,7 @@ export interface UserShortDto {
     email: string; // max_len: 255
     role: string; // UserRole ["User","Admin"]
     avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
+    settings: Object | undefined | null;
 }
 
 export class UserShortDtoUtil {
@@ -148,6 +149,7 @@ export class UserShortDtoUtil {
             email: value["email"],
             role: value["role"],
             avatar: value["avatar"],
+            settings: value["settings"],
         };
     }
     public static create(userShortDto?: Partial<UserShortDto>): UserShortDto {
@@ -157,6 +159,7 @@ export class UserShortDtoUtil {
             email: (userShortDto?.email || ""),
             role: (userShortDto?.role || ""),
             avatar: (userShortDto?.avatar || ""),
+            settings: userShortDto?.settings,
         };
     }
 }
