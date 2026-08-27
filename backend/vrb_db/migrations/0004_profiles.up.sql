@@ -13,6 +13,7 @@ CREATE TABLE profiles (
     theme VARCHAR(32) NULL,
     /* Default locale. */
     locale VARCHAR(32) NULL,
+    settings JSONB NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (user_id)
@@ -59,6 +60,7 @@ CREATE OR REPLACE FUNCTION get_user_profile_by_id(
   OUT descript TEXT,
   OUT theme VARCHAR,
   OUT locale VARCHAR,
+  OUT settings JSONB,
   OUT created_at TIMESTAMPTZ,
   OUT updated_at TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
@@ -76,7 +78,7 @@ BEGIN
   WHERE u.id = _user_id
   INTO rec_user;
 
-  SELECT p.user_id, p.avatar, p.descript, p.theme, p.locale, p.updated_at
+  SELECT p.user_id, p.avatar, p.descript, p.theme, p.locale, p.settings p.updated_at
   FROM profiles p
   WHERE p.user_id = _user_id
   INTO rec_profile;
@@ -91,6 +93,7 @@ BEGIN
       rec_profile.descript,
       rec_profile.theme,
       rec_profile.locale,
+      rec_profile.settings,
       rec_user.created_at,
       CASE WHEN rec_user.updated_at > rec_profile.updated_at
         THEN rec_user.updated_at
@@ -113,6 +116,7 @@ CREATE OR REPLACE FUNCTION modify_user_profile(
   IN _descript TEXT,
   IN _theme VARCHAR,
   IN _locale VARCHAR,
+  IN _settings JSONB,
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
@@ -121,6 +125,7 @@ CREATE OR REPLACE FUNCTION modify_user_profile(
   OUT descript TEXT,
   OUT theme VARCHAR,
   OUT locale VARCHAR,
+  OUT settings JSONB,
   OUT created_at TIMESTAMPTZ,
   OUT updated_at TIMESTAMPTZ
 ) RETURNS SETOF record LANGUAGE plpgsql
@@ -128,11 +133,12 @@ AS $$
 DECLARE
   is_modify_user BOOLEAN;
   is_modify_profile BOOLEAN;
+  is_settings_of_null BOOLEAN;
   rec_user RECORD;
   rec_profile RECORD;
 BEGIN
   is_modify_user := _nickname IS NOT NULL OR _email IS NOT NULL OR _password IS NOT NULL _role;
-  is_modify_profile := _avatar IS NOT NULL OR _descript IS NOT NULL OR _theme IS NOT NULL OR _locale IS NOT NULL;
+  is_modify_profile := _avatar IS NOT NULL OR _descript IS NOT NULL OR _theme IS NOT NULL OR _locale IS NOT NULL OR _settings IS NOT NULL;
   IF _user_id IS NULL OR (NOT is_modify_user AND  NOT is_modify_profile) THEN
     RETURN;
   END IF;
@@ -155,18 +161,24 @@ BEGIN
   END IF;
 
   IF is_modify_profile THEN
+    is_settings_of_null := (_settings <@ '{}'::jsonb OR _settings <@ '[]'::jsonb);
+    IF is_settings_of_null THEN
+      _settings = NULL;
+    END IF;
+
     UPDATE profiles SET
       avatar = COALESCE(_avatar, profiles.avatar),
       descript = COALESCE(_descript, profiles.descript),
       theme = COALESCE(_theme, profiles.theme),
-      locale = COALESCE(_locale, profiles.locale)
+      locale = COALESCE(_locale, profiles.locale),
+      settings = COALESCE(_settings, CASE WHEN is_settings_of_null THEN NULL ELSE profiles.settings END)
     WHERE profiles.user_id = _user_id
     RETURNING
-      profiles.user_id, profiles.avatar, profiles.descript, profiles.theme, profiles.locale, profiles.updated_at
+      profiles.user_id, profiles.avatar, profiles.descript, profiles.theme, profiles.locale, profiles.settings, profiles.updated_at
     INTO rec_profile;
   ELSE
     SELECT
-      p.user_id, p.avatar, p.descript, p.theme, p.locale, p.updated_at
+      p.user_id, p.avatar, p.descript, p.theme, p.locale, p.settings, p.updated_at
     FROM profiles p
     WHERE p.user_id = _user_id
     INTO rec_profile;
@@ -174,8 +186,8 @@ BEGIN
 
   IF rec_user.id IS NOT NULL AND rec_profile.user_id IS NOT NULL THEN
     RETURN QUERY SELECT
-      rec_user.id AS user_id, rec_user.nickname, rec_user.email, rec_user."role", 
-      rec_profile.avatar, rec_profile.descript, rec_profile.theme, rec_profile.locale, 
+      rec_user.id AS user_id, rec_user.nickname, rec_user.email, rec_user."role",
+      rec_profile.avatar, rec_profile.descript, rec_profile.theme, rec_profile.locale, rec_profile.settings,
       rec_user.created_at,
       CASE WHEN rec_user.updated_at > rec_profile.updated_at
         THEN rec_user.updated_at
