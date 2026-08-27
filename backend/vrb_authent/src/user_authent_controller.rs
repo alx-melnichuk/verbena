@@ -300,6 +300,7 @@ pub async fn login(
     login_user_profile_dto.descript = profile.descript;
     login_user_profile_dto.theme = profile.theme;
     login_user_profile_dto.locale = profile.locale;
+    login_user_profile_dto.settings = profile.settings;
     login_user_profile_dto.updated_at = profile.updated_at;
 
     let token_user_response_dto = UserTokenResponseDto {

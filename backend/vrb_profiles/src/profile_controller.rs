@@ -5,7 +5,7 @@ use actix_web::{HttpResponse, delete, get, http::header, put, web};
 use chrono::{DateTime, Utc};
 use log::{Level::Info, error, info, log_enabled};
 use mime::IMAGE;
-use serde_json::json;
+use serde_json::{self, Value, from_str, json};
 use utoipa;
 use vrb_authent::{
     authentication::{Authenticated, RequireAuth},
@@ -147,12 +147,12 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF), Some(json!({"param1": 1}))))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK),
-                    Some(PROFILE_LOCALE_DEF)))
+                    Some(PROFILE_LOCALE_DEF), Some(json!({"param2": 2}))))
             )))),
         ),
         (status = 204, description = "The user with the specified ID was not found."),
@@ -193,17 +193,18 @@ pub async fn get_profile_by_id(
         ApiError::create(507, err::MSG_DATABASE, &e) // 507
     })?;
 
-    // Find profile by user id.
-    let opt_profile = profile_db.get_profile_by_id(user_id).await.map_err(|e| {
-        error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
-        ApiError::create(507, err::MSG_DATABASE, &e) // 507
-    })?;
-
     let mut opt_user_profile_dto: Option<UserProfileDto> = None;
 
     if let Some(user) = opt_user {
         let user_profile = UserProfile::from(user);
         let mut user_profile_dto = UserProfileDto::from(user_profile);
+
+        // Find profile by user id.
+        let opt_profile = profile_db.get_profile_by_id(user_id).await.map_err(|e| {
+            error!("{}.{}; {}", 507, err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
+        })?;
+
         if let Some(profile) = opt_profile {
             user_profile_dto.update_profile(profile);
         }
@@ -242,11 +243,11 @@ pub async fn get_profile_by_id(
             ("with_avatar" = (summary = "with an avatar", description = "Mini user profile with avatar.",
                 value = json!(UserProfileMiniDto::from(
                 UserProfile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151431.png"),
-                    None, None, None))
+                    None, None, None, None))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "Mini user profile without avatar.",
                 value = json!(UserProfileMiniDto::from(
-                UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, None, None))
+                UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, None, None, None))
             )))),
         ),
         (status = 204, description = "The user with the specified ID was not found."),
@@ -385,12 +386,12 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF), None))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK),
-                    Some(PROFILE_LOCALE_DEF)))
+                    Some(PROFILE_LOCALE_DEF), None))
             )))),
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
@@ -445,11 +446,16 @@ pub struct ModifyUserProfileForm {
     pub descript: Option<Text<String>>,
     pub theme: Option<Text<String>>,
     pub locale: Option<Text<String>>,
+    pub settings: Option<Text<String>>,
     pub avatarfile: Option<TempFile>,
 }
 
 impl ModifyUserProfileForm {
     pub fn convert(modify_profile_form: ModifyUserProfileForm) -> (ModifyUserProfileDto, Option<TempFile>) {
+        let settings: Value = modify_profile_form
+            .settings
+            .map(|v| from_str(&v.into_inner()).unwrap_or_default())
+            .unwrap_or_default();
         (
             ModifyUserProfileDto {
                 nickname: modify_profile_form.nickname.map(|v| v.into_inner()),
@@ -458,6 +464,7 @@ impl ModifyUserProfileForm {
                 descript: modify_profile_form.descript.map(|v| v.into_inner()),
                 theme: modify_profile_form.theme.map(|v| v.into_inner()),
                 locale: modify_profile_form.locale.map(|v| v.into_inner()),
+                settings: if settings.is_object() { Some(settings) } else { None },
             },
             modify_profile_form.avatarfile,
         )
@@ -479,6 +486,7 @@ impl ModifyUserProfileForm {
 ///   descript?: String,     // optional - user description;
 ///   theme?: String,        // optional - default color theme. ('light','dark');
 ///   locale?: String,       // optional - default locale;
+///   settings?: object,     // optional - default visual interface settings;
 ///   avatarfile?: TempFile, // optional - attached user image file (jpeg,gif,png,bmp);
 /// }
 /// ```
@@ -506,12 +514,12 @@ impl ModifyUserProfileForm {
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF), Some(json!({"param1": 1}))))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), 
-                    Some(PROFILE_LOCALE_DEF)))
+                    Some(PROFILE_LOCALE_DEF), Some(json!({"param2": 2}))))
             )))),    
         ),
         (status = 204, description = "The current user's profile was not found."),
@@ -534,8 +542,8 @@ impl ModifyUserProfileForm {
         (status = 417, description = "Validation error. `curl -X PUT http://localhost:8080/api/profiles
             -F 'descript=Description' -F 'theme=light' -F 'avatarfile=@image.png'`", body = [ApiError],
             example = json!(ApiError::validations(
-                (ModifyUserProfileDto { nickname: None, email: None, role: None,
-                    descript: Some("d".to_string()), theme: Some("light".to_string()), locale: None }).validate().err().unwrap()
+                (ModifyUserProfileDto { nickname: None, email: None, role: None, descript: Some("d".to_string()),
+                    theme: Some("light".to_string()), locale: None, settings: None }).validate().err().unwrap()
             ) )),
         (status = 500, description = "Error loading file.", body = ApiError, example = json!(
             ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg - File not found."))),
@@ -791,12 +799,12 @@ pub async fn put_profile(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF), None))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK),
-                Some(PROFILE_LOCALE_DEF)))
+                Some(PROFILE_LOCALE_DEF), None))
             )))),
         ),
         (status = 204, description = "The current user was not found."),
@@ -879,7 +887,7 @@ pub async fn put_profile_new_password(
     // Create a model to update the "password" field in the user profile.
     let modify_user_profile = ModifyUserProfile{
         nickname: None, email: None, password: Some(new_password_hashed), role: None, avatar: None, descript: None, theme: None,
-        locale: None,
+        locale: None, settings: None
     };
     // Update the password hash for the user profile.
     let opt_user_profile = profile_db.modify_user_profile(user_id, modify_user_profile).await
@@ -922,12 +930,12 @@ pub async fn put_profile_new_password(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF), None))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), 
-                    Some(PROFILE_LOCALE_DEF)))
+                    Some(PROFILE_LOCALE_DEF), None))
             )))),
         ),
         (status = 204, description = "The specified user profile was not found."),
@@ -1050,12 +1058,12 @@ pub async fn delete_profile(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF), None))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(UserProfileDto::from(
                 UserProfile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), 
-                    Some(PROFILE_LOCALE_DEF)))
+                    Some(PROFILE_LOCALE_DEF), None))
             )))),
         ),
         (status = 204, description = "The current user's profile was not found."),

@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::FromRow;
 use vrb_common::validators::{ValidationChecks, ValidationError};
 use vrb_db::enm_user_role::UserRole;
@@ -204,12 +205,20 @@ pub struct Profile {
     pub descript: Option<String>,
     pub theme: Option<String>,
     pub locale: Option<String>,
+    pub settings: Option<Value>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
 impl Profile {
-    pub fn new(user_id: i32, avatar: Option<String>, descript: Option<String>, theme: Option<String>, locale: Option<String>) -> Self {
+    pub fn new(
+        user_id: i32,
+        avatar: Option<String>,
+        descript: Option<String>,
+        theme: Option<String>,
+        locale: Option<String>,
+        settings: Option<Value>,
+    ) -> Self {
         let now = Utc::now();
         Profile {
             user_id,
@@ -217,6 +226,7 @@ impl Profile {
             descript,
             theme,
             locale,
+            settings,
             created_at: now.clone(),
             updated_at: now.clone(),
         }

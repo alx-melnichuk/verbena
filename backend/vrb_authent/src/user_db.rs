@@ -268,7 +268,7 @@ pub mod impls {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let result: Option<Profile> = sqlx::query_as(
-                "SELECT user_id, avatar, descript, theme, locale, created_at, updated_at \
+                "SELECT user_id, avatar, descript, theme, locale, settings, created_at, updated_at \
                 FROM profiles \
                 WHERE user_id = $1
                 LIMIT 1",
@@ -517,7 +517,7 @@ pub mod tests {
             let theme = if user_id % 2 == 0 { PROFILE_THEME_DARK.to_owned() } else { PROFILE_THEME_LIGHT_DEF.to_owned() };
             #[rustfmt::skip]
             let locale = if user_id % 2 == 0 { PROFILE_LOCALE_DEF.to_owned() } else { "en-US".to_owned() };
-            Profile::new(user_id, None, Some(descript), Some(theme), Some(locale))
+            Profile::new(user_id, None, Some(descript), Some(theme), Some(locale), None)
         }
     }
 }

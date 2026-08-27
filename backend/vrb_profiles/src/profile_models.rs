@@ -2,6 +2,7 @@ use std::convert::From;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::FromRow;
 use utoipa::ToSchema;
 use vrb_authent::user_models::{self, Profile, User};
@@ -36,6 +37,7 @@ pub struct UserProfile {
     pub descript: Option<String>,
     pub theme: Option<String>,
     pub locale: Option<String>,
+    pub settings: Option<Value>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -50,6 +52,7 @@ impl UserProfile {
         descript: Option<&str>,
         theme: Option<&str>,
         locale: Option<&str>,
+        settings: Option<Value>,
     ) -> Self {
         let now = Utc::now();
         UserProfile {
@@ -61,6 +64,7 @@ impl UserProfile {
             descript: descript.map(|v| v.to_owned()),
             theme: theme.map(|v| v.to_owned()),
             locale: locale.map(|v| v.to_owned()),
+            settings: settings.clone(),
             created_at: now.clone(),
             updated_at: now.clone(),
         }
@@ -78,6 +82,7 @@ impl From<User> for UserProfile {
             descript: None,
             theme: None,
             locale: None,
+            settings: None,
             created_at: user.created_at,
             updated_at: user.updated_at,
         }
@@ -96,6 +101,7 @@ pub struct ModifyUserProfile {
     pub descript: Option<String>,       // min_len=2,max_len=2048 default ""
     pub theme: Option<String>,          // min_len=2,max_len=32 default "light"
     pub locale: Option<String>,         // min_len=2,max_len=32 default "default"
+    pub settings: Option<Value>,
 }
 
 // * * * * Section: models for the "profile_get_controller". * * * *
@@ -110,13 +116,19 @@ pub struct UserProfileDto {
     pub email: String,
     pub role: UserRole,
     // Link to user avatar, optional
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
     // User description.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>, // type: Text default ""
     // Default color theme. ["light","dark"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub theme: Option<String>, // min_len=2 max_len=32 default "light"
     // Default locale.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>, // min_len=2 max_len=32 default "default"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<Value>,
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "serial_datetime")]
@@ -129,6 +141,7 @@ impl UserProfileDto {
         self.descript = profile.descript;
         self.theme = profile.theme;
         self.locale = profile.locale;
+        self.settings = profile.settings;
         self
     }
 }
@@ -144,6 +157,7 @@ impl From<UserProfile> for UserProfileDto {
             descript: profile.descript.clone(),
             theme: profile.theme.clone(),
             locale: profile.locale.clone(),
+            settings: profile.settings.clone(),
             created_at: profile.created_at.clone(),
             updated_at: profile.updated_at.clone(),
         }
@@ -160,7 +174,10 @@ pub struct UserProfileMiniDto {
     pub email: String,
     pub role: UserRole,
     // Link to user avatar, optional
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<Value>,
 }
 
 impl From<UserProfile> for UserProfileMiniDto {
@@ -171,6 +188,7 @@ impl From<UserProfile> for UserProfileMiniDto {
             email: profile.email,
             role: profile.role.clone(),
             avatar: profile.avatar.clone(),
+            settings: profile.settings.clone(),
         }
     }
 }
@@ -234,11 +252,13 @@ pub struct ModifyUserProfileDto {
     pub theme: Option<String>, // min_len=2,max_len=32 default "light"
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>, // min_len=2,max_len=32 default "default"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<Value>,
 }
 
 impl ModifyUserProfileDto {
     pub fn valid_names<'a>() -> Vec<&'a str> {
-        vec!["nickname", "email", "role", "descript", "theme", "locale"]
+        vec!["nickname", "email", "role", "descript", "theme", "locale", "settings"]
     }
 }
 
@@ -248,30 +268,36 @@ impl Validator for ModifyUserProfileDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         if let Some(value) = &self.nickname {
-            errors.push(user_models::validate_nickname(&value).err());
+            errors.push(user_models::validate_nickname(value).err());
         }
         if let Some(value) = &self.email {
-            errors.push(user_models::validate_email(&value).err());
+            errors.push(user_models::validate_email(value).err());
         }
         if let Some(value) = &self.role {
-            errors.push(user_models::validate_role(&value).err());
+            errors.push(user_models::validate_role(value).err());
         }
         if let Some(value) = &self.descript {
             if value.len() > 0 {
                 // If the string is empty, the DB will assign NULL.
-                errors.push(profile::validate_descript(&value).err());
+                errors.push(profile::validate_descript(value).err());
             }
         }
         if let Some(value) = &self.theme {
             if value.len() > 0 {
                 // If the string is empty, the DB will assign NULL.
-                errors.push(profile::validate_theme(&value).err());
+                errors.push(profile::validate_theme(value).err());
             }
         }
         if let Some(value) = &self.locale {
             if value.len() > 0 {
                 // If the string is empty, the DB will assign NULL.
-                errors.push(profile::validate_locale(&value).err());
+                errors.push(profile::validate_locale(value).err());
+            }
+        }
+        if let Some(value) = &self.settings {
+            if value.to_string().len() > 0 {
+                // If the string is empty, the DB will assign NULL.
+                errors.push(profile::validate_settings(value).err());
             }
         }
 
@@ -282,6 +308,7 @@ impl Validator for ModifyUserProfileDto {
             self.descript.is_some(),
             self.theme.is_some(),
             self.locale.is_some(),
+            self.settings.is_some(),
         ];
         let valid_names = Self::valid_names().join(",");
         #[rustfmt::skip]
@@ -309,6 +336,7 @@ impl Into<ModifyUserProfile> for ModifyUserProfileDto {
             descript: self.descript.clone(),
             theme: self.theme.clone(),
             locale: self.locale.clone(),
+            settings: self.settings.clone(),
         }
     }
 }

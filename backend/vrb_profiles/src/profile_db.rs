@@ -63,7 +63,7 @@ pub mod impls {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let result: Option<Profile> = sqlx::query_as(
-                "SELECT user_id, avatar, descript, theme, locale, created_at, updated_at \
+                "SELECT user_id, avatar, descript, theme, locale, settings, created_at, updated_at \
                 FROM profiles \
                 WHERE user_id = $1 \
                 LIMIT 1",
@@ -84,7 +84,7 @@ pub mod impls {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let result: Option<UserProfile> = sqlx::query_as(
-                "SELECT user_id, nickname, email, \"role\", avatar, descript, theme, locale, created_at, updated_at \
+                "SELECT user_id, nickname, email, \"role\", avatar, descript, theme, locale, settings, created_at, updated_at \
                 FROM get_user_profile_by_id($1) \
                 LIMIT 1",
             )
@@ -114,8 +114,8 @@ pub mod impls {
             };
 
             let result: Option<UserProfile> = sqlx::query_as(
-                "SELECT user_id, nickname, email, \"role\", avatar, descript, theme, locale, created_at, updated_at \
-                FROM modify_user_profile($1,$2,$3,$4,$5,$6,$7,$8,$9) \
+                "SELECT user_id, nickname, email, \"role\", avatar, descript, theme, locale, settings, created_at, updated_at \
+                FROM modify_user_profile($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) \
                 LIMIT 1",
             )
             .bind(user_id)
@@ -127,6 +127,7 @@ pub mod impls {
             .bind(modify_profile.descript)
             .bind(modify_profile.theme)
             .bind(modify_profile.locale)
+            .bind(modify_profile.settings)
             .fetch_optional(&self.db_pool)
             .await
             .map_err(|e| format!("modify_user_profile: {}", e.to_string()))?;
@@ -224,6 +225,7 @@ pub mod tests {
                 descript: user_profile.descript,
                 theme: user_profile.theme,
                 locale: user_profile.locale,
+                settings: user_profile.settings,
                 created_at: user_profile.created_at,
                 updated_at: user_profile.updated_at,
             });
@@ -254,6 +256,7 @@ pub mod tests {
                     descript: modify_user_profile.descript.or(profile.descript.clone()),
                     theme: modify_user_profile.theme.or(profile.theme.clone()),
                     locale: modify_user_profile.locale.or(profile.locale.clone()),
+                    settings: modify_user_profile.settings.or(profile.settings.clone()),
                     created_at: profile.created_at,
                     updated_at: Utc::now(),
                 };

@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use utoipa::ToSchema;
 
 use vrb_common::{
@@ -76,10 +77,16 @@ pub struct LoginUserProfileDto {
     pub nickname: String, // max_len: 255
     pub email: String,    // max_len: 255
     pub role: UserRole,
-    pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>, // type: Text default ""
-    pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
-    pub locale: Option<String>,   // min_len=2 max_len=32 default "default"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme: Option<String>, // min_len=2 max_len=32 default "light"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<String>, // min_len=2 max_len=32 default "default"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<Value>,
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "serial_datetime")]
@@ -97,6 +104,7 @@ impl From<User> for LoginUserProfileDto {
             descript: None,
             theme: None,
             locale: None,
+            settings: None,
             created_at: user.created_at.clone(),
             updated_at: user.updated_at.clone(),
         }

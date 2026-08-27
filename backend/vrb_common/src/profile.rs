@@ -1,3 +1,5 @@
+use serde_json::Value;
+
 use crate::validators::{ValidationChecks, ValidationError};
 
 // ** Section: "Profile.descript" **
@@ -42,5 +44,19 @@ pub const PROFILE_LOCALE_DEF: &str = "default";
 pub fn validate_locale(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, LOCALE_MIN.into(), MSG_LOCALE_MIN_LENGTH)?;
     ValidationChecks::max_length(value, LOCALE_MAX.into(), MSG_LOCALE_MAX_LENGTH)?;
+    Ok(())
+}
+
+// ** Section: "Profile.settings" **
+
+pub const SETTINGS_MIN: u8 = 2;
+pub const SETTINGS_MAX: usize = 2048; // 2KB - 2*1024
+pub const MSG_SETTINGS_MIN_LENGTH: &str = "settings:min_length";
+pub const MSG_SETTINGS_MAX_LENGTH: &str = "settings:max_length";
+
+pub fn validate_settings(value: &Value) -> Result<(), ValidationError> {
+    let value_str = value.to_string();
+    ValidationChecks::min_length(&value_str, SETTINGS_MIN.into(), MSG_SETTINGS_MIN_LENGTH)?;
+    ValidationChecks::max_length(&value_str, SETTINGS_MAX.into(), MSG_SETTINGS_MAX_LENGTH)?;
     Ok(())
 }
