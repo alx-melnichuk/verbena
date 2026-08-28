@@ -3,7 +3,6 @@ import { DateAdapter } from "@angular/material/core";
 import { InterpolatableTranslationObject, LangChangeEvent, TranslateService, TranslationChangeEvent } from "@ngx-translate/core";
 import { first, Observable } from "rxjs";
 
-import { HttpErrorUtil } from "../utils/http-error.util";
 import { environment } from "../../environments/environment";
 
 // Locale constants
