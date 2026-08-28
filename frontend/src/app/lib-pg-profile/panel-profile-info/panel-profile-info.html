@@ -1,0 +1,95 @@
+<form novalidate class="ppi-form" [formGroup]="formGroupProfile">
+
+  <div class="ppi-title">{{ 'panel-profile-info.title_profile' | translate }}</div>
+
+  <app-field-image ppi-mt-2 fi-img-h15 class="ppi-avatar"
+    formControlName="avatar"
+    [accepts]="accepts"
+    [hint]="('field-file-upload.supported_file_types' | translate : { 'validTypes': availableFileTypes })
+      + ' ' + ('field-file-upload.upload_no_more_than' | translate : { 'maxFileSize': availableMaxFileSize })"
+    label="panel-profile-info.label_avatar"
+    [maxSize]="maxSize"
+    (addFile)="updateErrMsgObjs();addAvatarFile($event);"
+    (deleteFile)="updateErrMsgObjs();deleteAvatarFile();">
+  </app-field-image>
+
+
+  <app-uniqueness-check ppi-mt-4 #uniquenessCheckNickname="appUniquenessCheck"
+    [debounceDelay]="debounceDelay"
+    [checkUniqueFn]="checkUniqueNickname">
+    <app-field-input wd100 #fieldNickname
+      type="text"
+      formControlName="nickname"
+      hint="panel-profile-info.nickname_hint"
+      [isRequired]="true"
+      kind="nickname"
+      label="panel-profile-info.nickname_label"
+      [maxLen]="cn_nickname.maxLength"
+      [minLen]="cn_nickname.minLength"
+      [pattern]="cn_nickname.pattern"
+      [errorMsg]="uniquenessCheckNickname.isUniquenessError ? '409.nickname_already_use' : undefined"
+      (input)="updateErrMsgObjs();
+        uniquenessCheckNickname.checkParameter(cntlsProfile.nickname.value);">
+    </app-field-input>
+  </app-uniqueness-check>
+
+  <app-uniqueness-check ppi-mt-4 #uniquenessCheckEmail="appUniquenessCheck"
+    [debounceDelay]="debounceDelay"
+    [checkUniqueFn]="checkUniqueEmail">
+    <app-field-input wd100 #fieldEmail
+      type="email"
+      formControlName="email"
+      [isRequired]="true"
+      kind="email"
+      label="panel-profile-info.email_label"
+      [maxLen]="cn_email.maxLength"
+      [minLen]="cn_email.minLength"
+      [errorMsg]="uniquenessCheckEmail.isUniquenessError ? '409.email_already_use' : undefined"
+      (input)="updateErrMsgObjs();
+        uniquenessCheckEmail.checkParameter(cntlsProfile.email.value);">
+    </app-field-input>
+  </app-uniqueness-check>
+
+  <div ppi-mt-4 class="ppi-theme-locale">
+    <app-field-color-theme wd100 class="ppi-theme"
+      formControlName="theme"
+      kind="theme"
+      label="panel-profile-info.color-theme_label"
+      (change)="updateErrMsgObjs();">
+    </app-field-color-theme>
+    <app-field-locale wd100 class="ppi-locale"
+      formControlName="locale"
+      kind="locale"
+      label="panel-profile-info.locale_label"
+      (change)="updateErrMsgObjs();">
+    </app-field-locale>
+  </div>
+
+  <app-field-textarea wd100 ppi-mt-4
+    formControlName="descript"
+    [isRequired]="false"
+    kind="descript"
+    label="panel-profile-info.descript"
+    [maxLen]="cn_descript.maxLength"
+    [minLen]="cn_descript.minLength"
+    [numRows]="cn_descript.numRows"
+    (input)="updateErrMsgObjs();">
+  </app-field-textarea>
+
+  <div ppi-mt-4 class="ppi-actions">
+    <button matButton="elevated" class="ppi-btn-save stl-btn-brd"
+      [disabled]="formGroupProfile.pristine || formGroupProfile.invalid || isDisabledSubmit"
+      (click)="saveProfile(formGroupProfile)">
+      <svg class="ppi-svg-diskette-bin">
+        <use href="./lib-pg-profile/panel-profile-info/diskette-bin.svg#diskette-bin"></use>
+      </svg>
+      <span>{{ 'panel-profile-info.btn_save_profile' | translate }}</span>
+    </button>
+  </div>
+</form>
+
+<div class="mat-mdc-form-field-subscript-wrapper">
+  @for (errMsgObj of errMsgObjs; track errMsgObj.msg) {
+    <mat-error>{{ errMsgObj.msg | translate: errMsgObj.obj }}</mat-error>
+  }
+</div>

@@ -1,0 +1,81 @@
+/*# sourceURL=panel-profile-info.scss */
+
+app-panel-profile-info {
+    ---ppi-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
+    ---ppi-item-wd: var(--ppi-item-wd, min(calc(0.27344 * 100vw + 420px), 100%));
+
+    background-color: var(--app-pn-bg);
+    background-image: var(--app-pn-bg-img);
+    border: 2px solid var(--app-pn-brd);
+    border-radius: var(--ppi-pn-brd-rd, var(---ppi-pd));
+    box-shadow: var(--ppi-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: calc(var(---ppi-pd) / 2) var(---ppi-pd);
+    max-width: var(---ppi-item-wd);
+
+    [ppi-mt-2] {
+        margin-top: 0.5rem;
+    }
+
+    [ppi-mt-4] {
+        margin-top: 1rem;
+    }
+
+    // ** Form **
+    .ppi-form {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: calc(var(---ppi-pd) / 2);
+    }
+
+    .ppi-title {
+        font-size: calc(100% + 6px);
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .ppi-avatar {
+        --fi-img-br-rd: 0.5rem;
+    }
+
+    .ppi-theme-locale {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+
+        &>.ppi-theme {
+            flex-basis: 48%;
+        }
+
+        &>.ppi-locale {
+            flex-basis: 48%;
+        }
+    }
+
+    // ** Actions **
+    .ppi-actions {
+        display: flex;
+        justify-content: center;
+
+        .mdc-button__label {
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    .ppi-btn-save[disabled] {
+        ---ppi-svg-save-op: 0.8;
+    }
+
+    .ppi-svg-diskette-bin {
+        color: var(--app-svg-icon-cl);
+        display: block;
+        height: 1.75rem;
+        margin-right: 0.75rem;
+        opacity: var(---ppi-svg-save-op, 1);
+        width: 1.75rem;
+    }
+
+}
