@@ -10,21 +10,25 @@
     "dialog_title_delete": "Konto löschvorgang.",
     "dialog_message_delete": "Der Vorgang zum Löschen des Kontos \"{{nickname}}\" wurde erfolgreich abgeschlossen!"
   },
-  "panel-profile": {
+  "panel-profile-info": {
     "title_profile": "Persönliche informationen",
     "label_avatar": "Avatar",
-    "descript": "Beschreibung",
-    "btn_save_profile": "Speichern",
     "nickname_label": "Spitzname",
     "nickname_hint": "Verwendet: kleinbuchstaben, großbuchstaben, zahlen und unterstriche. Mindestens 3 zeichen.",
     "email_label": "E-Mail",
     "color-theme_label": "Farbthema",
     "locale_label": "Gebietsschema",
+    "descript": "Beschreibung",
+    "btn_save_profile": "Speichern"
+  },
+  "panel-profile-password": {
     "title_change_password": "Kennwort ändern",
-    "current_password": "Aktuelles Passwort",
     "password_hint": "Verwenden sie mindestens 6 zeichen, darunter einen kleinbuchstaben, einen großbuchstaben und eine zahl.",
+    "current_password": "Aktuelles Passwort",
     "new_password": "Neues Passwort",
-    "btn_set_password": "Passwort festlegen",
+    "btn_set_password": "Passwort festlegen"
+  },
+  "panel-profile-delete": {
     "title_delete_account": "Löschen Sie Ihr Konto",
     "note_before_deleting_account": "Dabei gehen sämtliche Daten und Inhalte dieses Accounts, wie E-Mails, Dateien und Fotos verloren. Diese Daten können nicht mehr wiederhergestellt werden.",
     "dialog_title_question_account": "Löschen Sie Ihr Konto",

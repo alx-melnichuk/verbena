@@ -10,21 +10,25 @@
     "dialog_title_delete": "Операція видалення облікового запису.",
     "dialog_message_delete": "Операцію з видалення облікового запису \"{{nickname}}\" успішно завершено !"
   },
-  "panel-profile": {
+  "panel-profile-info": {
     "title_profile": "Особиста інформація",
     "label_avatar": "Аватар",
-    "descript": "Опис",
-    "btn_save_profile": "Зберегти",
     "nickname_label": "Псевдонім",
     "nickname_hint": "Використовуються: малі літери, великі літери, цифри та підкреслення. Мінімум 3 символи.",
     "email_label": "Електронна пошта",
     "color-theme_label": "Кольорова тема",
     "locale_label": "Локаль",
+    "descript": "Опис",
+    "btn_save_profile": "Зберегти"
+  },
+  "panel-profile-password": {
     "title_change_password": "Змінити пароль",
-    "current_password": "Поточний пароль",
     "password_hint": "Використовуйте принаймні 6 символів, одну малу літеру, одну велику літеру та цифру.",
+    "current_password": "Поточний пароль",
     "new_password": "Новий пароль",
-    "btn_set_password": "Встановити пароль",
+    "btn_set_password": "Встановити пароль"
+  },
+  "panel-profile-delete": {
     "title_delete_account": "Видалити обліковий запис",
     "note_before_deleting_account": "Ви втратите всі дані та вміст цього облікового запису, як-от електронні листи, файли та фотографії. Ці дані більше не можна відновити.",
     "dialog_title_question_account": "Видалити обліковий запис",

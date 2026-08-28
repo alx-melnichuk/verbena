@@ -10,21 +10,25 @@
     "dialog_title_delete": "Account deletion operation.",
     "dialog_message_delete": "The operation to delete account \"{{nickname}}\" has been successfully completed !"
   },
-  "panel-profile": {
+  "panel-profile-info": {
     "title_profile": "Personal information",
     "label_avatar": "Avatar",
-    "descript": "Description",
-    "btn_save_profile": "Save",
     "nickname_label": "Nickname",
     "nickname_hint": "Used: lowercase letters, uppercase letters, numbers and underscores. Minimum 3 characters.",
     "email_label": "Email", 
     "color-theme_label": "Color theme",
     "locale_label": "Locale",
+    "descript": "Description",
+    "btn_save_profile": "Save"
+  },
+  "panel-profile-password": {
     "title_change_password": "Change password",
-    "current_password": "Current Password",
     "password_hint": "Use at least 6 characters, with one lowercase letter, one uppercase letter and a number.",
+    "current_password": "Current Password",
     "new_password": "New password",
-    "btn_set_password": "Set password",
+    "btn_set_password": "Set password"
+  },
+  "panel-profile-delete": {
     "title_delete_account": "Delete your account",
     "note_before_deleting_account": "You will lose all data and content from this account, such as emails, files and photos. This data can no longer be restored.",
     "dialog_title_question_account": "Delete your account",
