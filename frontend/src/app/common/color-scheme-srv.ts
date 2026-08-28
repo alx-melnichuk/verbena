@@ -28,7 +28,7 @@ export const COLOR_SCHEME_LIST = [
     SCHEME_DARK + "-" + SCHEME_MAGENTA_CYAN,
 ];
 
-export const THEME = "theme";
+export const PATH_THEME = "theme";
 const COLOR_SCHEME = "color-scheme";
 
 @Injectable({
@@ -44,7 +44,7 @@ export class ColorSchemeSrv {
         if (environment.logLevel > 0) { console.info(`ColorSchemeSrv(); // 5 service`); }
     }
 
-    // ** Theme **
+    // ** Scheme **
 
     public getSchemeLight(): string | null {
         return this.schemeLight;
@@ -102,13 +102,13 @@ export class ColorSchemeSrv {
     }
 
     public getFromLocalStorage(): string | null {
-        return localStorage.getItem(THEME);
+        return localStorage.getItem(PATH_THEME);
     }
     public setIntoLocalStorage(theme: string): void {
         if (!!theme) {
-            window.localStorage.setItem(THEME, theme);
+            window.localStorage.setItem(PATH_THEME, theme);
         } else {
-            window.localStorage.removeItem(THEME);
+            window.localStorage.removeItem(PATH_THEME);
         }
     }
 }
