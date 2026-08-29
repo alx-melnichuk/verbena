@@ -20,6 +20,10 @@ app-field-locale {
         width: 7rem;
     }
 
+    mat-select-trigger {
+        display: inline-flex;
+    }
+
     .fl-readonly {
         pointer-events: none;
     }

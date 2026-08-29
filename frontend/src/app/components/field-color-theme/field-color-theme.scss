@@ -20,6 +20,10 @@ app-field-color-theme {
         width: 7rem;
     }
 
+    mat-select-trigger {
+        display: inline-flex;
+    }
+
     .fct-readonly {
         pointer-events: none;
     }

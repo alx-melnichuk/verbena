@@ -5,7 +5,7 @@ import {
 import {
     ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, AbstractControl, ControlValueAccessor, FormControl, FormGroup, ValidationErrors, Validator,
 } from "@angular/forms";
-import { MatFormFieldModule, SubscriptSizing } from "@angular/material/form-field";
+import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule, MatSelect } from "@angular/material/select";
 import { TranslatePipe } from "@ngx-translate/core";
