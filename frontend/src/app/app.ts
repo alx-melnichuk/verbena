@@ -1,10 +1,9 @@
-import { CommonModule, NgTemplateOutlet } from "@angular/common";
+import { CommonModule } from "@angular/common";
 import {
     Component, ViewEncapsulation, ChangeDetectionStrategy, ChangeDetectorRef, inject, Renderer2, signal, HostListener,
-    TemplateRef, ViewChild, ViewContainerRef,
 } from "@angular/core";
 import { RouterOutlet, Router } from "@angular/router";
-import { environment } from "../environments/environment";
+import { environment as env } from "../environments/environment";
 import { ColorSchemeSrv } from "./common/color-scheme-srv";
 import { LocaleSrv } from "./common/locale-srv";
 import { ROUTE_LOGIN, AUTHENT_DENIED } from "./common/routes";
@@ -16,7 +15,7 @@ import { UserSrv } from "./lib-user/user-srv";
 @Component({
     selector: "app-root",
     standalone: true,
-    imports: [CommonModule, NgTemplateOutlet, RouterOutlet, Header, Footer],
+    imports: [CommonModule, RouterOutlet, Header, Footer],
     templateUrl: "./app.html",
     styleUrl: "./app.scss",
     encapsulation: ViewEncapsulation.None,
@@ -30,11 +29,6 @@ export class App {
     private router: Router = inject(Router);
     public sessionSrv: SessionSrv = inject(SessionSrv);
     private userSrv: UserSrv = inject(UserSrv);
-
-    @ViewChild("outlet", { read: ViewContainerRef })
-    public outletRef!: ViewContainerRef;
-    @ViewChild("content", { read: TemplateRef })
-    public contentRef!: TemplateRef<unknown>;
 
     protected readonly title = signal("verbena");
 
@@ -57,7 +51,7 @@ export class App {
     }
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`App(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
+        if (env.logLevel & 4) { console.info(`App(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
         const user = this.sessionSrv.getUser();
         this.localeSrv.setLocale(user?.locale || this.localeSrv.getFromLocalStorage());
         this.setHtmlLangAttribute(this.localeSrv.getLocale().slice(0, 2));
@@ -76,9 +70,7 @@ export class App {
         }
     }
 
-    // ** Private API **
-
-    private doSetLocale(value: string): void {
+    public doSetLocale(value: string): void {
         this.localeSrv.setLocale(value)
             .then((response: boolean) => {
                 if (!!response) {
@@ -87,7 +79,7 @@ export class App {
             });
     }
 
-    private doLogout(): void {
+    public doLogout(): void {
         let currRoute = window.location.pathname;
         const idx = AUTHENT_DENIED.findIndex((item) => currRoute.startsWith(item));
         currRoute = (idx > -1 ? currRoute : ROUTE_LOGIN);
@@ -103,10 +95,7 @@ export class App {
             });
     }
 
-    private rerender() {
-        this.outletRef.clear();
-        this.outletRef.createEmbeddedView(this.contentRef);
-    }
+    // ** Private API **
 
     private setHtmlLangAttribute(lang: string): void {
         if (!!lang && typeof document !== "undefined") {
