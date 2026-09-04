@@ -11,10 +11,10 @@
     "go_to_login_page": "Перейдіть на сторінку входу."
   },
   "404.user_not_found": "Користувача не знайдено.",
-  "417.field-email:required": "Поле \"{{field-email}}\" обов'язкове.",
-  "417.field-email:minlength": "Поле \"{{field-email}}\" має містити принаймні {{minlength.requiredLength}} символів.",
-  "417.field-email:maxlength": "Поле \"{{field-email}}\" не може містити більше {{maxlength.requiredLength}} символів.",
-  "417.field-email:email": "Поле \"{{field-email}}\" має відповідати стандарту (your_name@example.com).",
+  "417.email:required": "Поле \"{{email}}\" обов'язкове.",
+  "417.email:minlength": "Поле \"{{email}}\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.email:maxlength": "Поле \"{{email}}\" не може містити більше {{maxlength.requiredLength}} символів.",
+  "417.email:email": "Поле \"{{email}}\" має відповідати стандарту (your_name@example.com).",
   "422.json_web_token_encode" : "Помилка кодування веб-токена.",
   "510.error_sending_email": "Помилка під час надсилання електронної пошти."
 }

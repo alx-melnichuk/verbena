@@ -80,7 +80,7 @@
     "pause_stream": "Pause",
     "stop_stream": "Stop"
   },
-  "417.field-message:required": "The \"Message\" field is required.",
-  "417.field-message:minlength": "The \"Message\" field must have at least {{minlength.requiredLength}} characters.",
-  "417.field-message:maxlength": "The \"Message\" field must have no more {{maxlength.requiredLength}} characters."
+  "417.message:required": "The \"Message\" field is required.",
+  "417.message:minlength": "The \"Message\" field must have at least {{minlength.requiredLength}} characters.",
+  "417.message:maxlength": "The \"Message\" field must have no more {{maxlength.requiredLength}} characters."
 }

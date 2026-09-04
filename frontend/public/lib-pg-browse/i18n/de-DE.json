@@ -80,7 +80,7 @@
     "pause_stream": "Pause",
     "stop_stream": "Stoppen"
   },
-  "417.field-message:required": "Das feld \"Nachricht\" ist erforderlich.",
-  "417.field-message:minlength": "Das \"Nachricht\" feld muss mindestens {{minlength.requiredLength}} zeichen haben.",
-  "417.field-message:maxlength": "Das \"Nachricht\" feld darf nicht mehr als {{maxlength.requiredLength}} zeichen haben."
+  "417.message:required": "Das feld \"Nachricht\" ist erforderlich.",
+  "417.message:minlength": "Das \"Nachricht\" feld muss mindestens {{minlength.requiredLength}} zeichen haben.",
+  "417.message:maxlength": "Das \"Nachricht\" feld darf nicht mehr als {{maxlength.requiredLength}} zeichen haben."
 } 

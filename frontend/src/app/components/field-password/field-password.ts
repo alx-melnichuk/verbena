@@ -37,7 +37,7 @@ export class FieldPassword implements OnChanges, ControlValueAccessor, Validator
     @Input()
     public isRequired: boolean | null | undefined;
     @Input()
-    public kind: string = PASSWORD;
+    public kind: string | null | undefined = PASSWORD;
     @Input()
     public label: string | null | undefined;
     @Input()
@@ -116,10 +116,13 @@ export class FieldPassword implements OnChanges, ControlValueAccessor, Validator
 
     public getErrorMsg(errors: ValidationErrors | null): string {
         const key = Object.keys(errors || {})[0];
-        return !!key ? `417.field-${this.kind || PASSWORD}:${key}` : "";
+        console.log(!!key ? `417.${!!this.kind ? this.kind + ":" : ""}${key}` : ""); // #
+        return !!key ? `417.${!!this.kind ? this.kind + ":" : ""}${key}` : "";
     }
     public getErrorObj(errors: ValidationErrors | null, value: string | null | undefined): ValidationErrors {
-        return { ...errors, ...{ [`field-${this.kind || PASSWORD}`]: value } };
+        const resObj = !!this.kind ? { [`${this.kind || ""}`]: value } : {};
+        console.log(JSON.stringify({ ...errors, ...resObj })); // #
+        return { ...errors, ...resObj };
     }
     public getFormControl(): FormControl {
         return this.formControl;

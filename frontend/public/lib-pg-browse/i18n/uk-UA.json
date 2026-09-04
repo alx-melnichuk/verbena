@@ -87,7 +87,7 @@
     "pause_stream": "Пауза",
     "stop_stream": "Зупинити"
   },
-  "417.field-message:required": "Поле \"Повідомлення\" обов'язкове.",
-  "417.field-message:minlength": "Поле \"Повідомлення\" має містити принаймні {{minlength.requiredLength}} символів.",
-  "417.field-message:maxlength": "Поле \"Повідомлення\" не може містити більше {{maxlength.requiredLength}} символів."
+  "417.message:required": "Поле \"Повідомлення\" обов'язкове.",
+  "417.message:minlength": "Поле \"Повідомлення\" має містити принаймні {{minlength.requiredLength}} символів.",
+  "417.message:maxlength": "Поле \"Повідомлення\" не може містити більше {{maxlength.requiredLength}} символів."
 }

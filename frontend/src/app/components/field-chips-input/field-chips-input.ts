@@ -39,7 +39,7 @@ export class FieldChipsInput implements OnChanges, ControlValueAccessor, Validat
     @Input()
     public isRequired: boolean | null | undefined;
     @Input()
-    public kind: string = CHIPS_INPUT;
+    public kind: string | null | undefined = CHIPS_INPUT;
     @Input()
     public label: string | null | undefined;
     @Input()
@@ -123,10 +123,11 @@ export class FieldChipsInput implements OnChanges, ControlValueAccessor, Validat
 
     public getErrorMsg(errors: ValidationErrors | null): string {
         const key = Object.keys(errors || {})[0];
-        return !!key ? `417.field-${this.kind || CHIPS_INPUT}:${key}` : "";
+        return !!key ? `417.${!!this.kind ? this.kind + ":" : ""}${key}` : "";
     }
     public getErrorObj(errors: ValidationErrors | null, value: string | null | undefined): ValidationErrors {
-        return { ...errors, ...{ [`field-${this.kind || CHIPS_INPUT}`]: value } };
+        const resObj = !!this.kind ? { [`${this.kind || ""}`]: value } : {};
+        return { ...errors, ...resObj };
     }
     public getFormControl(): FormControl {
         return this.formControl;

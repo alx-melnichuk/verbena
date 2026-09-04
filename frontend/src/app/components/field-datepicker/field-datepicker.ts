@@ -44,7 +44,7 @@ export class FieldDatepicker implements OnChanges, ControlValueAccessor, Validat
     @Input()
     public isRequired: boolean | null | undefined;
     @Input()
-    public kind: string = DATEPICKER;
+    public kind: string | null | undefined = DATEPICKER;
     @Input()
     public label: string | null | undefined;
     @Input()
@@ -129,14 +129,15 @@ export class FieldDatepicker implements OnChanges, ControlValueAccessor, Validat
     }
     public getErrorMsg(errors: ValidationErrors | null): string {
         const key = Object.keys(errors || {})[0];
-        return !!key ? `417.field-${this.kind || DATEPICKER}:${key}` : "";
+        return !!key ? `417.${!!this.kind ? this.kind + ":" : ""}${key}` : "";
     }
     public getErrorObj(errors: ValidationErrors | null, value: string | null | undefined): ValidationErrors {
         // if (!!errors) {
         //     // Add extended tags with date format for the current locale. (min_s, max_s, actual_s)
         //     this.checkKeyAndAddExtendedTags(errors);
         // }
-        return { ...errors, ...{ [`field-${this.kind || DATEPICKER}`]: value } };
+        const resObj = !!this.kind ? { [`${this.kind || ""}`]: value } : {};
+        return { ...errors, ...resObj };
     }
     public getFormControl(): FormControl {
         return this.formControl;

@@ -42,7 +42,7 @@ export class FieldMessage implements OnChanges {
     @Input()
     public isSpellcheck: boolean | null | undefined; // Whether to check for spelling and grammar errors.
     @Input()
-    public kind: string = TEXTAREA;
+    public kind: string | null | undefined = TEXTAREA;
     @Input()
     public label: string | null | undefined;
     @Input()
@@ -120,10 +120,11 @@ export class FieldMessage implements OnChanges {
 
     public getErrorMsg(errors: ValidationErrors | null): string {
         const key = Object.keys(errors || {})[0];
-        return !!key ? `417.field-${this.kind || TEXTAREA}:${key}` : "";
+        return !!key ? `417.${!!this.kind ? this.kind + ":" : ""}${key}` : "";
     }
     public getErrorObj(errors: ValidationErrors | null, value: string | null | undefined): ValidationErrors {
-        return { ...errors, ...{ [`field-${this.kind || TEXTAREA}`]: value } };
+        const resObj = !!this.kind ? { [`${this.kind || ""}`]: value } : {};
+        return { ...errors, ...resObj };
     }
     public getFormControl(): FormControl {
         return this.formControl;

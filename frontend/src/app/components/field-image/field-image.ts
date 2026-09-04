@@ -48,7 +48,7 @@ export class FieldImage implements OnChanges, ControlValueAccessor, Validator {
     @Input()
     public isRequired: boolean | null | undefined;
     @Input()
-    public kind: string = IMAGE;
+    public kind: string | null | undefined = IMAGE;
     @Input()
     public label: string | null | undefined; // "field-image-and-upload.label"
     @Input()
@@ -128,10 +128,11 @@ export class FieldImage implements OnChanges, ControlValueAccessor, Validator {
 
     public getErrorMsg(errors: ValidationErrors | null): string {
         const key = Object.keys(errors || {})[0];
-        return !!key ? `417.field-${this.kind || IMAGE}:${key}` : "";
+        return !!key ? `417.${!!this.kind ? this.kind + ":" : ""}${key}` : "";
     }
     public getErrorObj(errors: ValidationErrors | null, value: string | null | undefined): ValidationErrors {
-        return { ...errors, ...{ [`field-${this.kind || IMAGE}`]: value } };
+        const resObj = !!this.kind ? { [`${this.kind || ""}`]: value } : {};
+        return { ...errors, ...resObj };
     }
     public getFormControl(): FormControl {
         return this.formControl;
