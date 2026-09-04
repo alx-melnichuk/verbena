@@ -1,6 +1,7 @@
 import { ActivatedRouteSnapshot, CanDeactivateFn, RouterStateSnapshot } from "@angular/router";
 import { inject } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
+import { environment as env } from "../../environments/environment";
 import { DialogSrv } from "../lib-dialog/dialog-srv";
 
 export class UnsavedDeActivateUtil {
@@ -21,6 +22,9 @@ export const unsavedDeActivatePageGuard: CanDeactivateFn<HasUnsavedChanges> = (
 ) => {
     const dialogSrv: DialogSrv = inject(DialogSrv);
     if ((component as HasUnsavedChanges)?.hasUnsavedChanges()) {
+        if (env.logLevel & 4) {
+            console.info(`unsavedDeActivatePageGuard() hasUnsavedChanges(): true`);
+        }
         const confirm_text = UnsavedDeActivateUtil.getConfirmText();
         const confirm_text2 = !!confirm_text ? inject(TranslateService).instant(confirm_text) : "";
         const message = confirm_text2 || "dialog.confirm_exit_without_saving";

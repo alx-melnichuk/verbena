@@ -2,8 +2,7 @@ import { inject, Injectable } from "@angular/core";
 import { DateAdapter } from "@angular/material/core";
 import { InterpolatableTranslationObject, LangChangeEvent, TranslateService, TranslationChangeEvent } from "@ngx-translate/core";
 import { first, Observable } from "rxjs";
-
-import { environment } from "../../environments/environment";
+import { environment as env } from "../../environments/environment";
 
 // Locale constants
 export const PATH_LOCALE = "locale";
@@ -39,7 +38,7 @@ export class LocaleSrv {
     public set localeDefault(_val: string) { }
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`LocaleSrv(); // 1 service`); }
+        if (env.logLevel & 4) { console.info(`LocaleSrv(); // 1 service`); }
     }
 
     // ** Public Api **
@@ -63,7 +62,7 @@ export class LocaleSrv {
                     next: () => {
                         this.setIntoLocalStorage(this.currLocale = locale);
                         this.dateAdapter.setLocale(locale);
-                        if (environment.logLevel > 0) { console.info(`Locale.translate.use(${locale})...Ok`); }
+                        if (env.logLevel & 4) { console.info(`Locale.translate.use(${locale})...Ok`); }
                         resolve(true);
                     },
                     error: (err) => reject(err)

@@ -3,7 +3,7 @@ import { ActivatedRouteSnapshot, ResolveFn, RouterStateSnapshot } from "@angular
 import { InterpolatableTranslationObject, TranslateService } from "@ngx-translate/core";
 import { Observable } from "rxjs";
 import { LocaleSrv } from "../../common/locale-srv";
-//#import { environment } from "../../../environments/environment";
+//#import { environment as env } from "../../../environments/environment";
 
 export const pgLoginTranslateResolver: ResolveFn<Observable<InterpolatableTranslationObject>>
     = (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
@@ -19,7 +19,7 @@ export const pgLoginTranslateResolver: ResolveFn<Observable<InterpolatableTransl
         // Get translations for the current locale from the core module.
         const translationObject = locale.translationsByLang(localeLanguage);
         if (!!translationObject) {
-            // #if (environment.logLevel > 0) { console.info(`pgLoginResolver() translate.setTranslation(${localeLanguage}); obj:`, { ...translationObject }); }
+            // #if (env.logLevel & LOG_PG_PROFILE) { console.info(`pgLoginResolver() translate.setTranslation(${localeLanguage}); obj:`, { ...translationObject }); }
             // Add translations from the main module to this module.
             translate.setTranslation(localeLanguage, translationObject, true);
         }
@@ -28,7 +28,7 @@ export const pgLoginTranslateResolver: ResolveFn<Observable<InterpolatableTransl
             translate.use(localeLanguage).pipe(first())
                 .subscribe({
                     next: (data) => {
-                        if (environment.logLevel > 0) { console.info(`pgSignupResolver() translate.use((${localeLanguage})...Ok data:`, data); }
+                        if (env.logLevel  & LOG_PG_PROFILE) { console.info(`pgSignupResolver() translate.use((${localeLanguage})...Ok data:`, data); }
                         resolve();
                     },
                     error: (err) => reject(err)

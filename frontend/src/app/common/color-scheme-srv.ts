@@ -1,5 +1,5 @@
 import { DOCUMENT, inject, Injectable, Renderer2 } from "@angular/core";
-import { environment } from "../../environments/environment";
+import { environment as env } from "../../environments/environment";
 
 // Color scheme constants
 
@@ -41,7 +41,7 @@ export class ColorSchemeSrv {
     private schemeLight: string | null = null;
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`ColorSchemeSrv(); // 5 service`); }
+        if (env.logLevel & 4) { console.info(`ColorSchemeSrv(); // 7 service`); }
     }
 
     // ** Scheme **

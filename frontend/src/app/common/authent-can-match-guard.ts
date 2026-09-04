@@ -1,10 +1,10 @@
 import { inject } from "@angular/core";
 import { CanActivateFn, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from "@angular/router";
 import { Observable } from "rxjs";
+import { environment as env } from "../../environments/environment";
 import { RedirectSrv } from "./redirect-srv";
 import { ROUTE_LOGIN } from "./routes";
 import { SessionSrv } from "./session-srv";
-import { environment } from "../../environments/environment";
 
 export const authentCanMatchGuard: CanActivateFn = (
     _route: ActivatedRouteSnapshot, state: RouterStateSnapshot
@@ -13,11 +13,11 @@ export const authentCanMatchGuard: CanActivateFn = (
     const router: Router = inject(Router);
     const sessionSrv: SessionSrv = inject(SessionSrv);
 
-    if (environment.logLevel > 0) {
-        console.info(`authentCanMatchGuard() !!sessionSrv.getUser(): ${!!sessionSrv.getUser()}, user.id: ${sessionSrv.getUser()?.id}`);
-    }
     if (!!sessionSrv.getUser()) {
         return true;
+    }
+    if (env.logLevel & 4) {
+        console.info(`authentCanMatchGuard() !!sessionSrv.getUser(): ${!!sessionSrv.getUser()}, user.id: ${sessionSrv.getUser()?.id}`);
     }
     // Save the link address to navigate to after login.
     redirectSrv.setUrlAfterLogin(window.location.pathname);

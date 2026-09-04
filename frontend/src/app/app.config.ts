@@ -10,7 +10,7 @@ import { MatSnackBarModule } from "@angular/material/snack-bar";
 import { provideRouter, Router } from "@angular/router";
 import { provideTranslateService, TranslateLoader, TranslateService } from "@ngx-translate/core";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
-import { environment } from "../environments/environment";
+import { environment as env } from "../environments/environment";
 import { AppDateAdapter, APP_DATE_FORMATS } from "./app-date-adapter";
 import { APP_ROUTES } from "./app.routes";
 import { AuthorizationInterceptor } from "./common/authorization.interceptor";
@@ -24,10 +24,12 @@ import { UserSrv } from "./lib-user/user-srv";
 import { DateUtil } from "./utils/date.utils";
 import { NavigatorUtil } from "./utils/navigator.util";
 import { UserDto } from "./lib-user/user-dto";
+import { AppearanceSvr } from "./common/appearance-svr";
+import { ColorSchemeSrv } from "./common/color-scheme-srv";
 
 // AoT requires an exported function for factories
 export function translateAppHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.info(`translateAppHttpLoaderFactory()`); }
+    if (env.logLevel & 4) { console.info(`translateAppHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./i18n/", ".json");
 };
 
@@ -62,7 +64,7 @@ export const appConfig: ApplicationConfig = {
         }),
         {
             provide: HTTP_INTERCEPTORS,
-            useClass: AuthorizationInterceptor,
+            useClass: AuthorizationInterceptor, // "4-Srv"
             multi: true,
         },
         {
@@ -95,37 +97,45 @@ export const appConfig: ApplicationConfig = {
             const localeFromLocalStorage = localeSrv.getFromLocalStorage();
             const value = localeSrv.findLocale(localeSrv.localeList, localeFromLocalStorage || NavigatorUtil.getBrowserLocale() || null)
                 || null;
-            if (environment.logLevel > 0) { console.info(`provideAppInitializer(localeSrv) locale.setLocale(${value});`); }
+            if (env.logLevel & 4) { console.info(`provideAppInitializer(localeSrv) locale.setLocale(${value});`); }
             return localeSrv.setLocale(value);
         }),
-        RedirectSrv,
-        SessionSrv,
-        UserSrv,
+        SessionSrv, // "2-Srv"
+        UserSrv,  // "3-Srv"
+        RedirectSrv, // "5-Srv"
+        AppearanceSvr, // "6-Srv"
         provideAppInitializer(() => {
             const redirectSrv: RedirectSrv = inject(RedirectSrv);
             const router = inject(Router);
             const sessionSrv = inject(SessionSrv);
             const userSrv = inject(UserSrv);
+            const appearanceSvr = inject(AppearanceSvr);
 
             const currentRoute = window.location.pathname;
             const isAuthentRequired = AUTHENT_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
             const isAuthentDenied = AUTHENT_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
             const isNotAuthentDeniedAndHasAccessToken = !isAuthentDenied && !!sessionSrv.getAccessToken();
-            if (environment.logLevel > 0) {
+            if (env.logLevel & 4) {
                 const s1 = `isNotAuthentDeniedAndHasAccessToken: ${isNotAuthentDeniedAndHasAccessToken}`;
                 console.info(`provideAppInitializer(userSrv) isAuthentRequired: ${isAuthentRequired}, ${s1}`);
             }
 
             if (isAuthentRequired || isNotAuthentDeniedAndHasAccessToken) {
-                if (environment.logLevel > 0) { console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...`); }
+                if (env.logLevel & 4) { console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...`); }
                 return userSrv.getCurrentUser()
                     .then((response: UserDto | HttpErrorResponse | undefined) => {
                         const user = response as UserDto;
-                        if (environment.logLevel > 0) {
+                        if (env.logLevel & 4) {
                             console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...Ok`
                                 + ` user.id: ${user.id}, user.nickname: ${user.nickname} `);
                         }
+
+                        const settings = { ...user.settings };
+                        user.settings = undefined;
                         sessionSrv.setUser(user);
+                        sessionSrv.setSettings(settings);
+                        appearanceSvr.setSettings(settings);
+
                         return Promise.resolve();
                     })
                     .catch((err: HttpErrorResponse) => {
@@ -151,5 +161,6 @@ export const appConfig: ApplicationConfig = {
             useClass: DialogSrv,
             deps: [MatDialog],
         },
+        ColorSchemeSrv, // "7-Srv"
     ]
 };

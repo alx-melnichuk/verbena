@@ -2,8 +2,9 @@ import { CommonModule } from "@angular/common";
 import { Component, ViewEncapsulation, ChangeDetectionStrategy, inject } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
-import { environment } from "../../../environments/environment";
+import { environment as env } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
+import { LOG_PG_ABOUT } from "../../common/routes";
 import { PanelAbout } from "../panel-about/panel-about";
 
 declare var APP_ABOUT: any;
@@ -35,7 +36,7 @@ export class PgAbout {
     private langChange$ = this.locale.onLangChange.pipe(takeUntilDestroyed())
         .subscribe((event: LangChangeEvent) => {
             if (!this.loadedLangs[event.lang] && !!this.translate.translations) {
-                if (environment.logLevel > 0) {
+                if (env.logLevel & LOG_PG_ABOUT) {
                     console.info(`PgAbout().onLangChange(${event.lang}) translate.setTranslation(${event.lang}); trans:`
                         , { ...event.translations });
                 }
@@ -47,7 +48,7 @@ export class PgAbout {
         });
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`PgAbout(); locale.getLocale(): ${this.locale.getLocale()}`); }
+        if (env.logLevel & LOG_PG_ABOUT) { console.info(`PgAbout(); locale.getLocale(): ${this.locale.getLocale()}`); }
     }
 
     // ** Public API **

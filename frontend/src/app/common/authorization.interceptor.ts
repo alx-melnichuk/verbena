@@ -2,7 +2,7 @@ import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse
 import { Injectable, inject } from "@angular/core";
 import { Router } from "@angular/router";
 import { Subject, Observable, catchError, throwError, take, switchMap } from "rxjs";
-import { environment } from "../../environments/environment";
+import { environment as env } from "../../environments/environment";
 import { TokenUpdate, UserTokenResponseDto } from "../lib-user/user-dto";
 import { UserSrv } from "../lib-user/user-srv";
 import { LIST_PUBLIC_METHODS } from "./public-methods";
@@ -28,7 +28,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
     private tokenUpdateSrv: TokenUpdate = this.userSrv;
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`AuthorizationInterceptor(); // 4 service`); }
+        if (env.logLevel & 4) { console.info(`AuthorizationInterceptor(); // 4 service`); }
     }
 
     intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
@@ -92,11 +92,11 @@ export class AuthorizationInterceptor implements HttpInterceptor {
             .then((response: UserTokenResponseDto | HttpErrorResponse | undefined) => {
                 const res = response as UserTokenResponseDto;
                 this.sessionSrv.setUserTokens(res.accessToken, res.refreshToken);
-                if (environment.logLevel > 0) { console.info(`refreshAccessToken successful`); }
+                if (env.logLevel & 4) { console.info(`refreshAccessToken successful`); }
                 return Promise.resolve();
             })
             .catch((err: HttpErrorResponse) => {
-                if (environment.logLevel > 0) { console.info(`refreshAccessToken err:`, err); }
+                if (env.logLevel & 4) { console.info(`refreshAccessToken err:`, err); }
                 this.sessionSrv.removeUserTokens();
                 this.sessionSrv.removeUser();
                 return Promise.reject(err);

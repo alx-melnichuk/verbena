@@ -2,8 +2,9 @@ import { CommonModule } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestroy, OnInit, ViewEncapsulation } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
+import { environment as env } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
-import { ROUTE_STREAM_LIST, ROUTE_STREAM_EDIT } from "../../common/routes";
+import { ROUTE_STREAM_LIST, ROUTE_STREAM_EDIT, LOG_PG_STREAM } from "../../common/routes";
 import { HasUnsavedChanges, UnsavedDeActivateUtil } from "../../common/unsaved-de-activate-page-guard";
 import { Spinner } from "../../components/spinner/spinner";
 import { ErrMsgObj, HttpErrorUtil } from "../../utils/http-error.util";
@@ -36,6 +37,10 @@ export class PgStreamEdit implements OnInit, OnDestroy, HasUnsavedChanges {
     public streamConfigDto: StreamConfigDto | null = this.route.snapshot.data["streamConfigDto"] || null;
 
     private goBackToRoute: string = ROUTE_STREAM_LIST;
+
+    constructor() {
+        if (env.logLevel & LOG_PG_STREAM) { console.info(`PgStreamEdit(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
+    }
 
     ngOnInit(): void {
         const previousNav = this.router.getCurrentNavigation()?.previousNavigation?.finalUrl?.toString() || ""; // ?

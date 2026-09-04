@@ -2,9 +2,11 @@ import { CommonModule } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, ViewEncapsulation } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
+import { environment as env } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
 import { SessionSrv } from "../../common/session-srv";
 import { StringDateTime } from "../../common/string-date-time";
+import { LOG_PG_STREAM } from "../../common/routes";
 import { ItemViewPage } from "../../components/view-item-list/view-item-list-by-page";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { StreamsPeriodDto, PageStreamAndTagsDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
@@ -77,6 +79,7 @@ export class PgStreamList implements OnInit {
     private evntPages: number = 0;
 
     constructor() {
+        if (env.logLevel & LOG_PG_STREAM) { console.info(`PgStreamList(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
         const today = new Date();
         const timeZoneOffset = -1 * today.getTimezoneOffset();
         // Get the current day, only the date from 0 hours 0 minutes 0 seconds.

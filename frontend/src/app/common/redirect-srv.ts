@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { environment } from "../../environments/environment";
+import { environment as env } from "../../environments/environment";
 
 @Injectable({
     providedIn: "root",
@@ -8,7 +8,7 @@ export class RedirectSrv {
     private innUrlAfterLogin: string = "";
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`RedirectSrv(); // service`); }
+        if (env.logLevel & 4) { console.info(`RedirectSrv(); // 5 - service`); }
     }
 
     public getUrlAfterLogin(): string {

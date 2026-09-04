@@ -3,10 +3,11 @@ import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from "@
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { RouterOutlet } from "@angular/router";
 import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
-import { environment } from "../../../environments/environment";
+import { environment as env } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
+import { LOG_PG_STREAM } from "../../common/routes";
 
 @Component({
     selector: "app-pg-stream",
@@ -33,7 +34,7 @@ export class PgStream {
         .subscribe((event: LangChangeEvent) => {
             const title = `PgStream().onLangChange(${event.lang})`;
             if (!this.loadedLangs[event.lang] && !!this.translateSrv.translations) {
-                if (environment.logLevel > 0) {
+                if (env.logLevel & LOG_PG_STREAM) {
                     console.info(`${title} translate.setTranslation(${event.lang}); trans:`, { ...event.translations });
                 }
                 this.loadedLangs[event.lang] = true;
@@ -44,7 +45,7 @@ export class PgStream {
         });
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`PgStream(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
+        if (env.logLevel & LOG_PG_STREAM) { console.info(`PgStream(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
     }
 
     // ** Public API **

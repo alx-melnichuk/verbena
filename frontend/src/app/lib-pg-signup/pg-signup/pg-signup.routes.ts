@@ -2,13 +2,14 @@ import { Routes } from "@angular/router";
 import { provideHttpClient, withInterceptorsFromDi, HttpClient } from "@angular/common/http";
 import { provideTranslateService, TranslateLoader } from "@ngx-translate/core";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
-import { environment } from "../../../environments/environment";
+import { environment as env } from "../../../environments/environment";
+import { LOG_PG_SIGNUP } from "../../common/routes";
 import { PgSignup } from "./pg-signup";
 import { pgSignupTranslateResolver } from "./pg-signup-translate.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibSignupHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.info(`translateLibSignupHttpLoaderFactory()`); }
+    if (env.logLevel & LOG_PG_SIGNUP) { console.info(`translateLibSignupHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-signup/i18n/", ".json");
 };
 

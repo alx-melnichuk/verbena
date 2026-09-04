@@ -2,13 +2,14 @@ import { Routes } from "@angular/router";
 import { provideHttpClient, withInterceptorsFromDi, HttpClient } from "@angular/common/http";
 import { provideTranslateService, TranslateLoader } from "@ngx-translate/core";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
-import { environment } from "../../../environments/environment";
+import { environment as env } from "../../../environments/environment";
+import { LOG_PG_FORGOT_PASSWORD } from "../../common/routes";
 import { PgForgotPassword } from "./pg-forgot-password";
 import { pgForgotPasswordTranslateResolver } from "./pg-forgot-password-translate.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibForgotPasswordHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.info(`translateLibForgotPasswordHttpLoaderFactory()`); }
+    if (env.logLevel & LOG_PG_FORGOT_PASSWORD) { console.info(`translateLibForgotPasswordHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-forgot-password/i18n/", ".json");
 };
 

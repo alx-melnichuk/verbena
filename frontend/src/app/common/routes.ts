@@ -2,27 +2,40 @@
 export const R_ROOT = "ind";
 
 // ** Page: About **
+export const LOG_PG_ABOUT = 8;
 export const R_ABOUT = R_ROOT + "/" + "about"; // "ind/about"
 export const ROUTE_ABOUT = "/" + R_ABOUT;      // "/ind/about"
 
 // ** Page: Login **
+export const LOG_PG_LOGIN = 16;
 export const R_LOGIN = R_ROOT + "/" + "login"; // "ind/login"
 export const ROUTE_LOGIN = "/" + R_LOGIN;      // "/ind/login"
 
 // ** Page: Signup **
+export const LOG_PG_SIGNUP = 32;
 export const R_SIGNUP = R_ROOT + "/" + "signup"; // "ind/signup"
 export const ROUTE_SIGNUP = "/" + R_SIGNUP;      // "/ind/signup"
 
 // ** Page: Forgot-password **
+export const LOG_PG_FORGOT_PASSWORD = 64;
 export const R_FORGOT_PASSWORD = R_ROOT + "/" + "forgot-password"; // "ind/forgot-password"
 export const ROUTE_FORGOT_PASSWORD = "/" + R_FORGOT_PASSWORD; // "/ind/forgot-password"
 
 // ** Page: Profile **
-
+export const LOG_PG_PROFILE = 128;
 export const R_PROFILE = R_ROOT + "/" + "profile"; // "ind/profile"
 export const ROUTE_PROFILE = "/" + R_PROFILE;      // "/ind/profile"
 
+export const E_PROFILE_DETAILS = "details";
+export const R_PROFILE_DETAILS = R_PROFILE + "/" + E_PROFILE_DETAILS; //  "ind/profile/details"
+export const ROUTE_PROFILE_DETAILS = "/" + R_PROFILE_DETAILS;         // "/ind/profile/details"
+
+export const E_PROFILE_SETTINGS = "settings";
+export const R_PROFILE_SETTINGS = R_PROFILE + "/" + E_PROFILE_SETTINGS; //  "ind/profile/settings"
+export const ROUTE_PROFILE_SETTINGS = "/" + R_PROFILE_SETTINGS;         // "/ind/profile/settings"
+
 // ** Page: Stream **
+export const LOG_PG_STREAM = 256;
 export const R_STREAM = R_ROOT + "/" + "stream"; // "ind/stream"
 export const ROUTE_STREAM = "/" + R_STREAM;      // "/ind/stream"
 

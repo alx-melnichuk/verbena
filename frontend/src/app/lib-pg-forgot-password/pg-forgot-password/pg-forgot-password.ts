@@ -4,9 +4,9 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, ViewEnca
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { Router } from "@angular/router";
 import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
-import { environment } from "../../../environments/environment";
+import { environment as env } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
-import { ROUTE_LOGIN } from "../../common/routes";
+import { LOG_PG_FORGOT_PASSWORD, ROUTE_LOGIN } from "../../common/routes";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { UserSrv } from "../../lib-user/user-srv";
@@ -45,7 +45,7 @@ export class PgForgotPassword {
         .subscribe((event: LangChangeEvent) => {
             const title = `PgForgotPassword().onLangChange(${event.lang})`;
             if (!this.loadedLangs[event.lang] && !!this.translateSrv.translations) {
-                if (environment.logLevel > 0) {
+                if (env.logLevel & LOG_PG_FORGOT_PASSWORD) {
                     console.info(`${title} translate.setTranslation(${event.lang}); trans:`, { ...event.translations });
                 }
                 this.loadedLangs[event.lang] = true;
@@ -56,7 +56,9 @@ export class PgForgotPassword {
         });
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`PgForgotPassword(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
+        if (env.logLevel & LOG_PG_FORGOT_PASSWORD) {
+            console.info(`PgForgotPassword(); locale.getLocale(): ${this.localeSrv.getLocale()}`);
+        }
     }
 
     // ** Public API **
@@ -82,7 +84,7 @@ export class PgForgotPassword {
                 });
             })
             .catch((err: HttpErrorResponse) => {
-                this.errMsgObjs = HttpErrorUtil.mapErrMsgObjs(err.status, err.error);
+                this.errMsgObjs = HttpErrorUtil.mapErrMsgObjs(err.status, err.error || "error.server_api_call");
                 throw err;
             })
             .finally(() => {

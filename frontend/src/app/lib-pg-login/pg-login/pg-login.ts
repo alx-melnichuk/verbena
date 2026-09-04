@@ -4,10 +4,10 @@ import { Component, ViewEncapsulation, ChangeDetectionStrategy, inject, ChangeDe
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { Router } from "@angular/router";
 import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
-import { environment } from "../../../environments/environment";
+import { environment as env } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
 import { RedirectSrv } from "../../common/redirect-srv";
-import { REDIRECT_AFTER_LOGIN } from "../../common/routes";
+import { LOG_PG_LOGIN, REDIRECT_AFTER_LOGIN } from "../../common/routes";
 import { SessionSrv } from "../../common/session-srv";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
@@ -50,7 +50,7 @@ export class PgLogin {
         .subscribe((event: LangChangeEvent) => {
             const title = `PgLogin().onLangChange(${event.lang})`;
             if (!this.loadedLangs[event.lang] && !!this.translateSrv.translations) {
-                if (environment.logLevel > 0) {
+                if (env.logLevel & LOG_PG_LOGIN) {
                     console.info(`${title} translate.setTranslation(${event.lang}); trans:`, { ...event.translations });
                 }
                 this.loadedLangs[event.lang] = true;
@@ -59,11 +59,11 @@ export class PgLogin {
             }
             this.translateSrv.use(event.lang);
             // #.pipe(first())
-            // #.subscribe({ next: () => environment.logLevel > 0 ? console.info(`${title} translate.use(${event.lang})...Ok`) : "" });
+            // #.subscribe({ next: () => env.logLevel & LOG_PG ? console.info(`${title} translate.use(${event.lang})...Ok`) : "" });
         });
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`PgLogin(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
+        if (env.logLevel & LOG_PG_LOGIN) { console.info(`PgLogin(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
     }
 
     // ** Public API **
