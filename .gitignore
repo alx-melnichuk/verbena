@@ -26,6 +26,10 @@ backend/imgs/
 # temporary upload directory
 backend/tmp/
 
+.vscode
+
+#Directories for the project build result
+target
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
@@ -51,10 +55,6 @@ frontend/*.sublime-workspace
 
 # Visual Studio Code
 frontend/.vscode
-frontend/!.vscode/settings.json
-frontend/!.vscode/tasks.json
-frontend/!.vscode/launch.json
-frontend/!.vscode/extensions.json
 frontend/.history
 
 # Miscellaneous
@@ -70,6 +70,3 @@ frontend/typings
 frontend/.DS_Store
 frontend/Thumbs.db
 
-.vscode
-
-target
