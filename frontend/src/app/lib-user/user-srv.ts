@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
 import { lastValueFrom } from "rxjs";
-import { environment } from "../../environments/environment";
+import { environment as env } from "../../environments/environment";
 import { Uri } from "../common/uri";
 import { HttpParamsUtil } from "../utils/http-params.util";
 import {
@@ -16,7 +16,7 @@ export class UserSrv implements TokenUpdate {
     private http: HttpClient = inject(HttpClient);
 
     constructor() {
-        if (environment.logLevel > 0) { console.info(`UserSrv(); // 3 service`); }
+        if (env.logLevel & 4) { console.info(`UserSrv(); // 3 service`); }
     }
 
     // ** Public Api **
