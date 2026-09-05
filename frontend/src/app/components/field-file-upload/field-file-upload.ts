@@ -24,17 +24,17 @@ export class FieldFileUpload implements OnChanges {
     // ".doc,.docx,.xls,.xlsx"; ".bmp,.gif"; "image/png,image/jpeg"; "audio/*,video/*,image/*";
     public accepts: string | null | undefined; // Define the file types (separated by commas) available for upload.
     @Input()
-    public isDisabled: boolean = false;
+    public isDisabled: boolean | null | undefined;
     @Input()
-    public isBorder: boolean = false;
+    public isBorder: boolean | null | undefined;
     @Input()
-    public isReadonly: boolean = false;
+    public isReadonly: boolean | null | undefined;
     @Input()
-    public isMultiple = false;
+    public isMultiple: boolean | null | undefined;
     @Input()
-    public isShowMsgFileSize: boolean = false;
+    public isShowMsgFileSize: boolean | null | undefined;
     @Input()
-    public isShowMsgFileTypes: boolean = false;
+    public isShowMsgFileTypes: boolean | null | undefined;
     @Input()
     public maxFileSize: number = -1;
 
@@ -47,15 +47,15 @@ export class FieldFileUpload implements OnChanges {
 
     @HostBinding("class.is-disabled")
     public get classIsDisabledVal(): boolean {
-        return this.isDisabled;
+        return !!this.isDisabled;
     }
     @HostBinding("class.is-border")
     public get classIsBorderVal(): boolean {
-        return this.isBorder;
+        return !!this.isBorder;
     }
     @HostBinding("class.is-non-event")
     public get isNonEvent(): boolean {
-        return this.isDisabled || this.isReadonly;
+        return !!this.isDisabled || !!this.isReadonly;
     }
 
     public files: File[] = [];

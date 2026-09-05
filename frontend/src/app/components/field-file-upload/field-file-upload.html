@@ -3,9 +3,9 @@
   (fileDropped)="fileHandler($event, accepts, maxFileSize)">
   <input type="file" #fileDropRef [attr.id]="id"
     [attr.accept]="accepts || undefined"
-    [attr.multiple]="isMultiple ? ``: undefined"
-    [attr.disabled]="isDisabled || isReadonly ? ``: undefined"
-    [attr.readonly]="isReadonly ? ``: undefined"
+    [attr.multiple]="!!isMultiple ? ``: undefined"
+    [attr.disabled]="!!isDisabled || !!isReadonly ? ``: undefined"
+    [attr.readonly]="!!isReadonly ? ``: undefined"
     (change)="fileHandler(getFileList($event.target), accepts, maxFileSize)"
   />
   <label [attr.for]="id">
