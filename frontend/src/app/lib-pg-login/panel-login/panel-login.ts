@@ -30,7 +30,7 @@ export class PanelLogin implements OnChanges {
     @Input()
     public errMsgObjs: ErrMsgObj[] = [];
     @Input()
-    public isDisabledSubmit: boolean = false;
+    public isDisabled: boolean | null | undefined;
 
     @Output()
     readonly login: EventEmitter<Record<string, (string | null)>> = new EventEmitter();
@@ -63,9 +63,9 @@ export class PanelLogin implements OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes["isDisabledSubmit"]) {
-            if (this.isDisabledSubmit != this.formGroup.disabled) {
-                this.isDisabledSubmit ? this.formGroup.disable() : this.formGroup.enable();
+        if (!!changes["isDisabled"]) {
+            if (this.isDisabled != this.formGroup.disabled) {
+                this.isDisabled ? this.formGroup.disable() : this.formGroup.enable();
                 this.changeDetector.markForCheck();
             }
         }
@@ -74,7 +74,7 @@ export class PanelLogin implements OnChanges {
     // ** Public API **
 
     public doLogin(): void {
-        if (this.formGroup.invalid || this.isDisabledSubmit) {
+        if (this.formGroup.invalid || !!this.isDisabled) {
             return;
         }
         const nickname = this.controls.nickname.value;

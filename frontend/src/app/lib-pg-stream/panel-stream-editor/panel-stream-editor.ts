@@ -57,13 +57,13 @@ export class PanelStreamEditor implements OnChanges {
     @Input()
     public errMsgObjs: ErrMsgObj[] = [];
     @Input()
-    public isDisabledSubmit = false;
+    public isDisabled: boolean | null | undefined;
     @Input()
-    public locale: string | null = null;
+    public locale: string | null | undefined;
     @Input()
-    public streamDto: StreamDto | null = null;
+    public streamDto: StreamDto | null | undefined;
     @Input()
-    public streamConfigDto: StreamConfigDto | null = null;
+    public streamConfigDto: StreamConfigDto | null | undefined;
 
     @Output()
     readonly changeData: EventEmitter<boolean> = new EventEmitter();
@@ -185,7 +185,7 @@ export class PanelStreamEditor implements OnChanges {
         const cntlStartDate = formGroup.get("startDate");
         const cntlStartTime = formGroup.get("startTime");
         if (formGroup.pristine || formGroup.invalid || !cntlTitle || !cntlDescript || !cntlTags || !cntlIsStartTime
-            || !cntlStartDate || !cntlStartTime) {
+            || !cntlStartDate || !cntlStartTime || !!this.isDisabled) {
             return;
         }
 
@@ -236,7 +236,7 @@ export class PanelStreamEditor implements OnChanges {
 
     // ** Private API **
 
-    private prepareFormGroupByStreamDto(streamDto: StreamDto | null): void {
+    private prepareFormGroupByStreamDto(streamDto: StreamDto | null | undefined): void {
         const isDuplicate = streamDto?.id == -1;
         if (!streamDto) {
             streamDto = StreamDtoUtil.create();
@@ -325,7 +325,7 @@ export class PanelStreamEditor implements OnChanges {
         }
         return startDateTime;
     }*/
-    private prepareFormGroupByStreamConfigDto(streamConfigDto: StreamConfigDto | null): void {
+    private prepareFormGroupByStreamConfigDto(streamConfigDto: StreamConfigDto | null | undefined): void {
         // Set FieldImage parameters
         this.maxSize = streamConfigDto?.logoMaxSize || MAX_FILE_SIZE;
         this.accepts = (streamConfigDto?.logoValidTypes || []).join(",") || IMAGE_VALID_FILE_TYPES;

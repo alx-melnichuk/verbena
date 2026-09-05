@@ -41,7 +41,7 @@ export class PgLogin {
 
     public errMsgObjs: ErrMsgObj[] = [];
     public isLogin = true;
-    public isDisabledSubmit = false;
+    public isDisabled = false;
 
     // The current locale is loaded in the resolver.
     private loadedLangs: Record<string, boolean> = { [this.localeSrv.getLocale()]: true };
@@ -78,7 +78,7 @@ export class PgLogin {
         if (!nickname || !password) {
             return;
         }
-        this.isDisabledSubmit = true;
+        this.isDisabled = true;
         this.errMsgObjs = [];
         this.sessionSrv.removeUserTokens();
         this.sessionSrv.removeUser();
@@ -101,7 +101,7 @@ export class PgLogin {
                 throw err;
             })
             .finally(() => {
-                this.isDisabledSubmit = false;
+                this.isDisabled = false;
                 this.changeDetector.markForCheck();
             })
     }

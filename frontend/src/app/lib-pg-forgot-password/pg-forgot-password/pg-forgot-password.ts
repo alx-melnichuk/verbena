@@ -36,7 +36,7 @@ export class PgForgotPassword {
     private translateSrv: TranslateService = inject(TranslateService);
 
     public errMsgObjs: ErrMsgObj[] = [];
-    public isDisabledSubmit = false;
+    public isDisabled = false;
 
     // The current locale is loaded in the resolver.
     private loadedLangs: Record<string, boolean> = { [this.localeSrv.getLocale()]: true };
@@ -72,7 +72,7 @@ export class PgForgotPassword {
             return;
         }
 
-        this.isDisabledSubmit = true;
+        this.isDisabled = true;
         this.errMsgObjs = [];
         this.userSrv.recovery(email)
             .then(() => {
@@ -88,7 +88,7 @@ export class PgForgotPassword {
                 throw err;
             })
             .finally(() => {
-                this.isDisabledSubmit = false;
+                this.isDisabled = false;
                 this.changeDetector.markForCheck();
             });
     }

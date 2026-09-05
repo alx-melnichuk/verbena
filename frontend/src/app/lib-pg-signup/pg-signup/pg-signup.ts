@@ -37,7 +37,7 @@ export class PgSignup {
 
     public errMsgObjs: ErrMsgObj[] = [];
     public isLogin = true;
-    public isDisabledSubmit = false;
+    public isDisabled = false;
 
     // The current locale is loaded in the resolver.
     private loadedLangs: Record<string, boolean> = { [this.localeSrv.getLocale()]: true };
@@ -74,7 +74,7 @@ export class PgSignup {
             return;
         }
 
-        this.isDisabledSubmit = true;
+        this.isDisabled = true;
         this.errMsgObjs = [];
         this.userSrv.registration(nickname, email, password)
             .then(() => {
@@ -90,7 +90,7 @@ export class PgSignup {
                 this.errMsgObjs = HttpErrorUtil.mapErrMsgObjs(err.status, err.error);
             })
             .finally(() => {
-                this.isDisabledSubmit = false;
+                this.isDisabled = false;
                 this.changeDetector.markForCheck();
             });
     }

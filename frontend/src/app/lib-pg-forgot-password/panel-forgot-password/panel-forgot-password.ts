@@ -28,7 +28,7 @@ export class PanelForgotPassword implements OnChanges {
     @Input()
     public errMsgObjs: ErrMsgObj[] = [];
     @Input()
-    public isDisabledSubmit: boolean = false;
+    public isDisabled: boolean | null | undefined;
     @Output()
     readonly resend: EventEmitter<Record<string, (string | null)>> = new EventEmitter();
 
@@ -52,9 +52,9 @@ export class PanelForgotPassword implements OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes["isDisabledSubmit"]) {
-            if (this.isDisabledSubmit != this.formGroup.disabled) {
-                this.isDisabledSubmit ? this.formGroup.disable() : this.formGroup.enable();
+        if (!!changes["isDisabled"]) {
+            if (this.isDisabled != this.formGroup.disabled) {
+                this.isDisabled ? this.formGroup.disable() : this.formGroup.enable();
             }
         }
     }
@@ -62,7 +62,7 @@ export class PanelForgotPassword implements OnChanges {
     // ** Public API **
 
     public doResend(): void {
-        if (this.formGroup.invalid || this.isDisabledSubmit) {
+        if (this.formGroup.invalid || !!this.isDisabled) {
             return;
         }
         const email = this.controls.email.value;

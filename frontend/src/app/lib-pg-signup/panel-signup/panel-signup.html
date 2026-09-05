@@ -53,7 +53,7 @@
     </app-field-password>
 
     <button matButton="elevated" ps-mt-4 class="mat-primary stl-btn-brd"
-      [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
+      [disabled]="formGroup.invalid || !!isDisabled ? '' : undefined"
       (click)="doSignup()">
       {{ 'panel-signup.button_signup' | translate }}
     </button>

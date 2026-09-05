@@ -27,7 +27,7 @@
     </app-field-password>
     
     <button matButton="elevated" pl-mt-4 class="mat-primary stl-btn-brd"
-      [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
+      [disabled]="formGroup.invalid || !!isDisabled ? '' : undefined"
       (click)="doLogin()">
       {{ 'panel-login.btn_login' | translate }}
     </button>
