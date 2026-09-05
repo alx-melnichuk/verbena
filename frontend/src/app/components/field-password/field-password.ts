@@ -116,12 +116,10 @@ export class FieldPassword implements OnChanges, ControlValueAccessor, Validator
 
     public getErrorMsg(errors: ValidationErrors | null): string {
         const key = Object.keys(errors || {})[0];
-        console.log(!!key ? `417.${!!this.kind ? this.kind + ":" : ""}${key}` : ""); // #
         return !!key ? `417.${!!this.kind ? this.kind + ":" : ""}${key}` : "";
     }
     public getErrorObj(errors: ValidationErrors | null, value: string | null | undefined): ValidationErrors {
         const resObj = !!this.kind ? { [`${this.kind || ""}`]: value } : {};
-        console.log(JSON.stringify({ ...errors, ...resObj })); // #
         return { ...errors, ...resObj };
     }
     public getFormControl(): FormControl {

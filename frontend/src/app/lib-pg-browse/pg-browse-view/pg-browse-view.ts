@@ -143,6 +143,7 @@ export class PgBrowseView implements OnDestroy {
                     .catch((err: HttpErrorResponse) => {
                         const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
                         this.alertSrv.showError(errMsg, `pg-browse-view.error_${isPost ? "" : "un"}blocked`);
+                        throw err;
                     });
             }
         }
@@ -206,6 +207,7 @@ export class PgBrowseView implements OnDestroy {
                 } else {
                     const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
                     this.alertSrv.showError(errMsg, title);
+                    throw err;
                 }
             })
             .finally(() => {
@@ -304,7 +306,6 @@ export class PgBrowseView implements OnDestroy {
                 this.chatIsReset = date == undefined;
             })
             .catch((err: HttpErrorResponse) => {
-                console.error(`ChatMessageError:`, err);
                 const errMsg = HttpErrorUtil.mapErrMsgObjs(err.status, err.error)?.[0].msg || "error.server_api_call";
                 this.alertSrv.showError(errMsg, "pg-browse-list.error_get_streams_by_tag");
                 throw err;
