@@ -68,8 +68,8 @@ export class PanelSignup implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["isDisabled"]) {
-            if (this.isDisabled != this.formGroup.disabled) {
-                this.isDisabled ? this.formGroup.disable() : this.formGroup.enable();
+            if (!!this.isDisabled != this.formGroup.disabled) {
+                !!this.isDisabled ? this.formGroup.disable() : this.formGroup.enable();
                 this.changeDetector.markForCheck();
             }
         }

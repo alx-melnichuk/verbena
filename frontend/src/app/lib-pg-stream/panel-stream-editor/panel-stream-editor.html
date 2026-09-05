@@ -107,7 +107,7 @@
     <div pse-mt-2 class="pse-actions">
       <button matButton="elevated" type="button"
         class="pse-btn-save stl-btn-brd"
-        [disabled]="formGroup.pristine || formGroup.invalid || !!isDisabled"
+        [disabled]="formGroup.pristine || formGroup.invalid || !!isDisabled ? '' : undefined"
         (click)="saveStream(formGroup)">
         <span class="pse-actions-label">
           <svg class="pse-svg-diskette-bin">
