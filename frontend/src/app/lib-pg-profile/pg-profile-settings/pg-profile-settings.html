@@ -1,0 +1,14 @@
+@if (isLoadData) {
+  <app-spinner isFillParent></app-spinner>
+}
+<div class="pps-container app-pn-bg">
+
+  <app-panel-profile-settings class="pps-content"
+    [errMsgObjs]="errMsgObjs"
+    [isDisabled]="isLoadData"
+    [settingsDto]="settingsDto"
+    (changeData)="doChangeData($event)"
+    (updateSettings)="doUpdateSettings($event)">
+  </app-panel-profile-settings>
+
+</div>
