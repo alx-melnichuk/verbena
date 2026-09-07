@@ -138,7 +138,7 @@ mod tests {
         // Load the source image into memory.
         let res_image_source = image::open(file_path);
         if let Err(err) = res_image_source {
-            eprintln!("\nAttention !! The test ran successfully for 'image' ver.'0.24.9'.\n");
+            eprintln!("\nAttention !! The test ran successfully for 'image'.\n");
             return Err(format!("For {} error: {}", file_path, err.to_string()));
         }
         let image_source = res_image_source.ok().unwrap();
