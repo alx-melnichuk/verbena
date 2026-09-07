@@ -17,6 +17,7 @@
     "message_edited": "Changed:",
     "message_removed": "Removed:",
     "message_was_deleted": "This message has been removed.",
+    "editing_msg": "Editing a message",
     "msg_discard_draft": "Discard draft? (You won't be able to restore it.)"
   },
   "pg-browse-view": {

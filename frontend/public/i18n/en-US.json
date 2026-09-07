@@ -72,9 +72,6 @@
     "label": "Image file",
     "remove_image": "Remove this image"
   },
-  "field-message": {
-    "editing_msg": "Editing a message"
-  }, 
   "image": {
     "not_found": "not found",
     "missing": "missing"

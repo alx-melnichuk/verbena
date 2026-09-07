@@ -91,10 +91,10 @@
             class="pc-svg-mini" focusable="false" aria-hidden="true">
             <path d="M72,40 l12,-12 l-16,-16 l-12,12 l16,16 l-40,40 h-16 v-16 l40,-40 z" />
           </svg>
-          <span>{{ 'field-message.editing_msg' | translate }}</span>
+          <span>{{ 'panel-chat.editing_msg' | translate }}</span>
         </div>
       }
-      <app-field-message wd100 scroll-thin fm-no-pd-hint-error
+      <app-field-textarea wd100 scroll-thin fm-no-pd-hint-error
         class="pc-new-msg"
         [class.pc-editing]="!!msgEditing"
         formControlName="newMsg"
@@ -109,7 +109,7 @@
         (keydown.escape)="cleanNewMsg()"
         (focusin)="isFocusMsg=true"
         (focusout)="isFocusMsg=false">
-      </app-field-message>
+      </app-field-textarea>
     </div>
 
     <div class="pc-msg-btns">

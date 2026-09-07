@@ -17,6 +17,7 @@
     "message_edited": "Geändert:",
     "message_removed": "Entfernt:",
     "message_was_deleted": "Diese Nachricht wurde entfernt.",
+    "editing_msg": "Bearbeiten einer nachricht",
     "msg_discard_draft": "Entwurf verwerfen? (Er kann nicht wiederhergestellt werden.)"
   },
   "pg-browse-view": {

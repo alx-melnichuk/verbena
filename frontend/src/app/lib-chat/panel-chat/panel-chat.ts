@@ -12,6 +12,7 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { TranslatePipe } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
 import { StringDateTime } from "../../common/string-date-time";
+import { FieldTextarea } from "../../components/field-textarea/field-textarea";
 import { Spinner } from "../../components/spinner/spinner";
 import { ItemView, ViewItemList } from "../../components/view-item-list/view-item-list";
 import { ViewItemListBySet } from "../../components/view-item-list/view-item-list-by-set";
@@ -20,7 +21,6 @@ import { ItemViewSetMsg } from "../../lib-pg-browse/pg-browse-view/pg-browse-vie
 import { DateUtil } from "../../utils/date.utils";
 import { StringDateTimeUtil } from "../../utils/string-date-time.util";
 import { ChatMessageDto } from "../chat-message";
-import { FieldMessage } from "../field-message/field-message";
 
 interface MenuEdit {
     isEdit: boolean;
@@ -49,7 +49,7 @@ const CN_DEFAULT_LIMIT = 10;
     exportAs: "appPanelChat",
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule, MatTooltipModule,
-        DateTimeFormatPipe, FieldMessage, Spinner, TranslatePipe, ViewItemList, ViewItemListBySet],
+        DateTimeFormatPipe, FieldTextarea, Spinner, TranslatePipe, ViewItemList, ViewItemListBySet],
     templateUrl: "./panel-chat.html",
     styleUrl: "./panel-chat.scss",
     encapsulation: ViewEncapsulation.None,
@@ -107,8 +107,8 @@ export class PanelChat implements OnChanges {
     @Output()
     readonly loadSet: EventEmitter<{ isAddTop: boolean, date: StringDateTime | undefined, count: number }> = new EventEmitter();
 
-    @ViewChild(FieldMessage)
-    public fieldMessageComp!: FieldMessage;
+    @ViewChild(FieldTextarea)
+    public fieldTextareaComp!: FieldTextarea;
 
     @ViewChild(ViewItemList)
     public viewItemList!: ViewItemList;
@@ -274,7 +274,7 @@ export class PanelChat implements OnChanges {
         if (this.isEditable) {
             this.msgEditing = null;
             this.setTextareaValue(null);
-            this.fieldMessageComp.focus();
+            this.fieldTextareaComp.focus();
         }
     }
     public doSetValueForEditing(chatMsg: ChatMessageDto | null): void {
@@ -284,7 +284,7 @@ export class PanelChat implements OnChanges {
                     if (isEditing) {
                         this.msgEditing = chatMsg;
                         this.setTextareaValue(chatMsg?.msg || null);
-                        this.fieldMessageComp.focus();
+                        this.fieldTextareaComp.focus();
                     }
                 });
         }
