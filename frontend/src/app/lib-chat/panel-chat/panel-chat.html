@@ -70,7 +70,10 @@
         <label class="pc-move-to-end-count" for="btn-move-to-end_id">{{ unreadCount }}</label>  
       }
       <button class="pc-btn-move-to-end" id="btn-move-to-end_id" (click)="doMoveToEndOfList()">
-        <svg class="pc-angle"><use href="./lib-chat/panel-chat/angle-down-3-bin.svg#angle-down-3-bin"></use></svg>
+        <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"
+          class="pc-angle">
+          <path d="M28,38 l20,20 l20,-20" />
+        </svg>
       </button>
     </div>
   </div>
@@ -84,7 +87,10 @@
     <div class="pc-msg-edt">
       @if (!!msgEditing) {
         <div class="pc-nmsg-label" [attr.is-focuse-msg]="isFocusMsg ? '': null">
-          <svg class="pc-svg-mini"><use href="./lib-chat/panel-chat/pen-bin.svg#pen-bin"></use></svg>
+          <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+            class="pc-svg-mini" focusable="false" aria-hidden="true">
+            <path d="M72,40 l12,-12 l-16,-16 l-12,12 l16,16 l-40,40 h-16 v-16 l40,-40 z" />
+          </svg>
           <span>{{ 'field-message.editing_msg' | translate }}</span>
         </div>
       }
@@ -110,14 +116,19 @@
       @if (!!msgEditing) {
         <button matSuffix  mat-icon-button class="pc-msg-icon"
           (click)="doResetValueForEditing()">
-          <svg><use href="./lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use></svg>
+          <svg viewBox="0 0 96 96" fill="currentColor" focusable="false" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8,48 C8,25.9 25.9,8 48,8 s40,17.9 40,40 -17.9,40 -40,40 S8,70.09 8,48 Z m30.83,-14.83 a4,4 0 0 0 -5.66,5.66 L42.34,48 l-9.17,9.17 a4,4 0 0 0 5.66,5.66 L48,53.66 l 9.17, 9.17 a4,4 0 0 0 5.66,-5.66 L53.66,48 l9.17,-9.17 a4,4 0 0 0 -5.66,-5.66 L48,42.344 38.83,33.17 Z" clip-rule="evenodd"/>
+          </svg>
         </button>
         <div class="pc-msg-btns-sepr"></div>
       }
       <button matSuffix mat-icon-button class="pc-msg-icon"
         [disabled]="(!frmCtrlNewMsg.value?.trim() || formGroup.invalid) ? '' : null"
         (click)="doSendMessage(frmCtrlNewMsg.value)">
-        <svg><use href="./lib-chat/panel-chat/send-bin.svg#send-bin"></use></svg>
+        <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"
+          focusable="false" aria-hidden="true">
+          <path d="M78,16 l-40,39 l11,20 c3,8 9,8 11,-1 l18,-50 c4,-9 -1,-12 -8,-8 l-50,17 c-6,3 -6,6 0,11 l18,11 z" />
+        </svg>
       </button>
     </div>
 
@@ -127,8 +138,9 @@
 @if (isEditable && isBlocked) {
   <div class="pc-blocked">
     <div class="pc-blk-title">
-      <svg class="pc-svg-block">
-        <use href="./lib-chat/panel-chat/lock-closed-bin.svg#lock-closed-bin"></use>
+      <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+        class="pc-svg-block" focusable="false" aria-hidden="true">
+        <path d="M48,58 v8 M28,40 h40 c6,0.5 11.5,6 12,12 v20 c-0.5,6 -6,11.5 -12,12 h-40 c-6,-0.5 -11.5,-6 -12,-12 v-20 c0.5,-6 6,-11.5 12,-12 z v-10 c4,-24 36,-24 40,0 v10 z" />
       </svg>
       <p>{{ 'panel-chat.you_been_blocked' | translate }}</p>
     </div>
@@ -140,40 +152,51 @@
   <ng-template matMenuContent let-isEdit="isEdit" let-isCut="isCut" let-isRemove="isRemove" let-isBlock="isBlock" let-isUnblock="isUnblock">
     @if (isEdit) {
       <button mat-menu-item class="pn-menu-item" (click)="doSetValueForEditing(msgMarked)">
-        <svg class="pc-svg-box">
-          <use href="./lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
+        <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+          class="pc-svg-box" focusable="false" aria-hidden="true">
+          <path d="M72,40 l12,-12 l-16,-16 l-12,12 l16,16 l-40,40 h-16 v-16 l40,-40 z" />
         </svg>
         <span class="pc-menu-label">{{ 'panel-chat.menu.edit' | translate }}</span>
       </button>
     }
     @if (isCut) {
       <button mat-menu-item class="pn-item-menu" (click)="doCutMessage(msgMarked)">
-        <svg class="pc-svg-box">
-          <use href="./lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
+        <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+          class="pc-svg-box" focusable="false" aria-hidden="true">
+          <path d="M12,26 H84 a6,6 0,0,0 0,-12 H12 a6,6 0,0,0 0,12" />
+          <path d="M28,14 L38,1 H58 L68,14" />
+          <path d="M17,26 L22,80 a12,12 0,0,0 12,12 H62 a12,12 0,0,0 12,-12  L79,26" />
+          <path d="M36,42 l24,24 m-24,0 l24,-24" />
         </svg>
         <span class="pc-menu-label">{{ 'panel-chat.menu.cut' | translate }}</span>
       </button>
     }
     @if (isRemove) {
-        <button mat-menu-item class="pn-item-menu" (click)="doRemoveMessage(msgMarked)">
-          <svg class="pc-svg-box">
-            <use href="./lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
-          </svg>
-          <span class="pc-menu-label">{{ 'panel-chat.menu.remove' | translate }}</span>
-        </button>
+      <button mat-menu-item class="pn-item-menu" (click)="doRemoveMessage(msgMarked)">
+        <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+          class="pc-svg-box" focusable="false" aria-hidden="true">
+          <path d="M12,26 H84 a6,6 0,0,0 0,-12 H12 a6,6 0,0,0 0,12" />
+          <path d="M28,14 L38,1 H58 L68,14" />
+          <path d="M17,26 L22,80 a12,12 0,0,0 12,12 H62 a12,12 0,0,0 12,-12  L79,26" />
+          <path d="M36,42 l24,24 m-24,0 l24,-24" />
+        </svg>
+        <span class="pc-menu-label">{{ 'panel-chat.menu.remove' | translate }}</span>
+      </button>
     }
     @if (isBlock) {
       <button mat-menu-item class="pn-item-menu" (click)="doBlockUser(msgMarked?.member, blockedUsers)">
-        <svg class="pc-svg-box">
-            <use href="./lib-chat/panel-chat/lock-closed-bin.svg#lock-closed-bin"></use>
+        <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+          class="pc-svg-box" focusable="false" aria-hidden="true">
+          <path d="M48,58 v8 M28,40 h40 c6,0.5 11.5,6 12,12 v20 c-0.5,6 -6,11.5 -12,12 h-40 c-6,-0.5 -11.5,-6 -12,-12 v-20 c0.5,-6 6,-11.5 12,-12 z v-10 c4,-24 36,-24 40,0 v10 z" />
         </svg>
         <span class="pc-menu-label">{{ 'panel-chat.menu.block_user' | translate }}</span>
       </button>
     }
     @if (isUnblock) {
       <button mat-menu-item class="pn-item-menu" (click)="doUnblockUser(msgMarked?.member, blockedUsers)">
-        <svg class="pc-svg-box">
-            <use href="./lib-chat/panel-chat/lock-open-bin.svg#lock-open-bin"></use>
+        <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+          class="pc-svg-box" focusable="false" aria-hidden="true">
+          <path d="M48,58 v8 M28,40 h40 c6,0.5 11.5,6 12,12 v20 c-0.5,6 -6,11.5 -12,12 h-40 c-6,-0.5 -11.5,-6 -12,-12 v-20 c0.5,-6 6,-11.5 12,-12 z M68,40 v-10 c2,-21 -23,-32 -36,-13" />
         </svg>
         <span class="pc-menu-label">{{ 'panel-chat.menu.unblock_user' | translate }}</span>
       </button>
