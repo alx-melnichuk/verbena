@@ -11,10 +11,8 @@ app-field-textarea {
         height: 100%;
     }
 
-    &[scroll-thin] {
-        textarea.ft-textarea {
-            scrollbar-width: thin;
-        }
+    &[scroll-thin] textarea.ft-textarea {
+        scrollbar-width: thin;
     }
 
     &[ft-no-pd-hint-error] {

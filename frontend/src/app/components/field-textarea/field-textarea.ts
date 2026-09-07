@@ -7,7 +7,7 @@ import {
     ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, AbstractControl, ControlValueAccessor, FormControl, FormGroup,
     ValidationErrors, Validator,
 } from "@angular/forms";
-import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatFormFieldModule, SubscriptSizing } from "@angular/material/form-field";
 import { MatInput, MatInputModule } from "@angular/material/input";
 import { TranslatePipe } from "@ngx-translate/core";
 import { ValidatorUtils } from "../../utils/validator.utils";
@@ -31,8 +31,7 @@ export const CUSTOM_ERROR = "customError";
     selector: "app-field-textarea",
     exportAs: "appFieldTextarea",
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule,
-        MatInputModule, TranslatePipe, CdkTextareaAutosize],
+    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, TranslatePipe, CdkTextareaAutosize],
     templateUrl: "./field-textarea.html",
     styleUrl: "./field-textarea.scss",
     encapsulation: ViewEncapsulation.None,
@@ -69,6 +68,8 @@ export class FieldTextarea implements OnChanges, ControlValueAccessor, Validator
     public minRows: number | null | undefined;
     @Input()
     public numRows: number | null | undefined;
+    @Input()
+    public subscriptSizing: SubscriptSizing | null | undefined;
 
     @ViewChild(MatInput, { static: false })
     public matInput: MatInput | null = null;
