@@ -48,15 +48,6 @@ export interface UserTokenResponseDto {
     refreshToken: string;
 }
 
-/*?export interface Profile {
-    id: number;
-    nickname: string; // max_len: 255
-    email: string; // max_len: 255
-    avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
-    theme: string; // Default color theme. ["light","dark"], min_len=2 max_len=32
-    locale: string; // Default locale. ["default"], min_len=2 max_len=32
-}*/
-
 // ** User login. (Response) **
 
 export interface LoginResponseDto {
@@ -64,9 +55,17 @@ export interface LoginResponseDto {
     tokenUserResponseDto: UserTokenResponseDto;
 }
 
+// ** Appearance SettingsDto **
+
+export interface SettingsDto {
+    appearance?: string | undefined;
+    formFieldShape?: string | undefined;
+    buttonShape?: string | undefined;
+}
+
 // ** User profile. **
 
-export interface UserDto {
+export interface UserDto { // #?
     id: number;
     nickname: string; // max_len: 255
     email: string; // max_len: 255
@@ -75,6 +74,7 @@ export interface UserDto {
     descript: string;
     theme: string; // Default color theme. ["light","dark"], min_len=2 max_len=32
     locale: string; // Default locale. ["default"], min_len=2 max_len=32
+    settings: SettingsDto | null | undefined;
     createdAt: string; // DateTime<Utc> "rfc2822z"
     updatedAt: string; // DateTime<Utc> "rfc2822z"
 }
@@ -90,6 +90,7 @@ export class UserDtoUtil {
             descript: value["descript"],
             theme: value["theme"],
             locale: value["locale"],
+            settings: value["settings"],
             createdAt: typeof value.createdAt == "string" ? new Date(value["createdAt"]) : value["createdAt"],
             updatedAt: typeof value.updatedAt == "string" ? new Date(value["updatedAt"]) : value["updatedAt"],
         };
@@ -104,6 +105,7 @@ export class UserDtoUtil {
             descript: (userDto?.descript || ""),
             theme: (userDto?.theme || ""),
             locale: (userDto?.locale || ""),
+            settings: (userDto?.settings),
             createdAt: (userDto?.createdAt || ""),
             updatedAt: (userDto?.updatedAt || ""),
         };
