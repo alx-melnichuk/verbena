@@ -1,0 +1,76 @@
+<ng-container #outlet [ngTemplateOutlet]="content">
+</ng-container>
+
+<ng-template #content>
+
+  <form novalidate class="pps-form" [formGroup]="formGroup">
+
+    <div class="pps-title">{{ 'panel-profile-settings.title_settings' | translate }}</div>
+
+    <mat-form-field  pps-mt-2 class="pps-param9">
+      <mat-label>{{ 'panel-profile-settings.label_appearance' | translate }}</mat-label>
+      <mat-select formControlName="appearance"
+        panelClass="pps-select"
+        (selectionChange)="updateErrMsgObjs(); setAppearance($event.value); doChangeData('appearance', formGroup, settingsDto);">
+        <mat-select-trigger pps-inln-flex [class.pps-fn-it]="!cntls.appearance.value">
+          {{ ("appearance." + cntls.appearance.value) | translate }}
+        </mat-select-trigger>
+        @for (item of appearanceList; track item) {
+          <mat-option [class.pps-opt-fn-it]="item == ``" [value]="item">
+            {{ ("appearance." + item) | translate }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field pps-mt-4>
+      <mat-label>{{ 'panel-profile-settings.label_form-field-shape' | translate }}</mat-label>
+      <mat-select formControlName="formFieldShape"
+        panelClass="pps-select"
+        (selectionChange)="updateErrMsgObjs(); setFormFieldShape($event.value); doChangeData('formFieldShape', formGroup, settingsDto);">
+        <mat-select-trigger pps-inln-flex [class.pps-fn-it]="!cntls.formFieldShape.value">
+          {{ cntls.formFieldShape.value || ('panel-profile-settings.nothing' | translate) }}
+        </mat-select-trigger>
+        @for (item of formFieldShapeList; track item) {
+          <mat-option [class.pps-opt-fn-it]="item == ``" [value]="item">
+            {{ item || ('panel-profile-settings.nothing' | translate) }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field pps-mt-4>
+      <mat-label>{{ 'panel-profile-settings.label_button-shape' | translate }}</mat-label>
+      <mat-select formControlName="buttonShape"
+        panelClass="pps-select"
+        (selectionChange)="updateErrMsgObjs(); setButtonShape($event.value); doChangeData('buttonShape', formGroup, settingsDto);">
+        <mat-select-trigger pps-inln-flex [class.pps-fn-it]="!cntls.buttonShape.value">
+          {{ cntls.buttonShape.value || ('panel-profile-settings.nothing' | translate) }}
+        </mat-select-trigger>
+        @for (item of buttonShapeList; track item) {
+          <mat-option [class.pps-opt-fn-it]="item == ``" [value]="item">
+            {{ item || ('panel-profile-settings.nothing' | translate) }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div pps-mt-4 class="pps-actions">
+      <button matButton="elevated" class="pps-btn-save stl-btn-brd"
+        [disabled]="formGroup.pristine || formGroup.invalid || !!isDisabled ? '' : undefined"
+        (click)="saveSettings(formGroup, !!isDisabled)">
+        <svg class="pps-svg-diskette-bin">
+          <use href="./lib-pg-profile/panel-profile-settings/diskette-bin.svg#diskette-bin"></use>
+        </svg>
+        <span>{{ 'panel-profile-settings.btn_save_settings' | translate }}</span>
+      </button>
+    </div>
+  </form>
+
+  <div class="mat-mdc-form-field-subscript-wrapper">
+    @for (errMsgObj of errMsgObjs; track errMsgObj.msg) {
+      <mat-error>{{ errMsgObj.msg | translate: errMsgObj.obj }}</mat-error>
+    }
+  </div>
+
+</ng-template> 
