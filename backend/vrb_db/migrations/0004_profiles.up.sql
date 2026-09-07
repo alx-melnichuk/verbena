@@ -78,7 +78,7 @@ BEGIN
   WHERE u.id = _user_id
   INTO rec_user;
 
-  SELECT p.user_id, p.avatar, p.descript, p.theme, p.locale, p.settings p.updated_at
+  SELECT p.user_id, p.avatar, p.descript, p.theme, p.locale, p.settings, p.updated_at
   FROM profiles p
   WHERE p.user_id = _user_id
   INTO rec_profile;
