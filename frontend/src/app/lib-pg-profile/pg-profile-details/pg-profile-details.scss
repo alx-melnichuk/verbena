@@ -1,0 +1,56 @@
+/*# sourceURL=pg-profile-details.scss */
+
+app-pg-profile-details {
+    ---ppd-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
+    --app-pn-bg-h: 180; // hsl(180, 50%, 50%);
+
+    container: cnt-profile / inline-size;
+    display: block;
+    height: 100%;
+    overflow: auto;
+
+    @container cnt-profile (width <=1024px) {
+        .ppd-container {
+            ---ppd-item-wd: min(calc(0.27344 * 100vw + 420px), 100%);
+            ---ppd-container-wd: var(---ppd-item-wd);
+        }
+    }
+
+    @container cnt-profile (1024px < width) {
+        .ppd-container {
+            ---ppd-item-wd: calc(min(100vw, 1450px) / 35.114 * 16);
+            ---ppd-container-wd: calc(var(---ppd-item-wd) * 2 + var(---ppd-pd));
+            ---ppd-mx-hg: 100%;
+        }
+    }
+
+    .ppd-container {
+        --ppi-pd: var(---ppd-pd);
+        --ppp-pd: var(---ppd-pd);
+        --ppr-pd: var(---ppd-pd);
+
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        column-gap: var(---ppd-pd);
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: calc(var(---ppd-pd) / 1.3);
+        margin-bottom: calc(var(---ppd-pd) / 2);
+        max-height: var(---ppd-mx-hg);
+        row-gap: calc(var(---ppd-pd) / 1.5);
+        width: var(---ppd-container-wd);
+    }
+
+    .ppd-content {
+        background-color: var(--app-pn-bg);
+        background-image: var(--app-pn-bg-img);
+        border: 2px solid var(--app-pn-brd);
+        border-radius: var(--ppd-pn-brd-rd, var(---ppd-pd));
+        box-shadow: var(--ppd-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
+        box-sizing: border-box;
+        padding: calc(var(---ppd-pd) / 2) var(---ppd-pd);
+        width: var(---ppd-item-wd);
+    }
+
+}

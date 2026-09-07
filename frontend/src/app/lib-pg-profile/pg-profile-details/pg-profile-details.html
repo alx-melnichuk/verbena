@@ -1,0 +1,32 @@
+@if (isLoadData) {
+  <app-spinner isFillParent></app-spinner>
+}
+<div class="ppd-container app-pn-bg">
+
+  <app-panel-profile-info class="ppd-content"
+    [errMsgObjs]="errMsgObjsProfile"
+    [isDisabled]="isLoadData"
+    [profileDto]="profileDto"
+    [profileConfigDto]="profileConfigDto"
+    changeData-="isChangeDataInfo = $event"
+    (changeData)="doChangeDataInfo($event)"
+    (updateProfile)="doUpdateProfile($event)">
+  </app-panel-profile-info>
+
+  <app-panel-profile-password class="ppd-content"
+    [errMsgObjs]="errMsgObjsPassword"
+    [isDisabled]="isLoadData"
+    [isReset]="isResetAccount"
+    changeData-="isChangeDataPassword = $event"
+    (changeData)="doChangeDataPassword($event)"
+    (updatePassword)="doUpdatePassword($event)">
+  </app-panel-profile-password>
+
+  <app-panel-profile-remove class="ppd-content"
+    [errMsgObjs]="errMsgObjsAccount"
+    [isDisabled]="isLoadData"
+    [nickname]="profileDto.nickname"
+    (deleteAccount)="doDeleteAccount()">
+  </app-panel-profile-remove>
+
+</div>
