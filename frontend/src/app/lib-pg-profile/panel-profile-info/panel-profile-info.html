@@ -1,4 +1,4 @@
-<form novalidate class="ppi-form" [formGroup]="formGroupProfile">
+<form novalidate class="ppi-form" [formGroup]="formGroup" (change)="doChangeForm()">
 
   <div class="ppi-title">{{ 'panel-profile-info.title_profile' | translate }}</div>
 
@@ -9,8 +9,8 @@
       + ' ' + ('field-file-upload.upload_no_more_than' | translate : { 'maxFileSize': availableMaxFileSize })"
     label="panel-profile-info.label_avatar"
     [maxSize]="maxSize"
-    (addFile)="updateErrMsgObjs();addAvatarFile($event);"
-    (deleteFile)="updateErrMsgObjs();deleteAvatarFile();">
+    (addFile)="updateErrMsgObjs(); addAvatarFile($event); doChangeData('avatar', formGroup, profileDto);"
+    (deleteFile)="updateErrMsgObjs(); deleteAvatarFile(); doChangeData('avatar', formGroup, profileDto);">
   </app-field-image>
 
 
@@ -29,7 +29,8 @@
       [pattern]="cn_nickname.pattern"
       [errorMsg]="uniquenessCheckNickname.isUniquenessError ? '409.nickname_already_use' : undefined"
       (input)="updateErrMsgObjs();
-        uniquenessCheckNickname.checkParameter(cntlsProfile.nickname.value);">
+        uniquenessCheckNickname.checkParameter(cntls.nickname.value);
+        doChangeData('nickname', formGroup, profileDto);">
     </app-field-input>
   </app-uniqueness-check>
 
@@ -46,22 +47,23 @@
       [minLen]="cn_email.minLength"
       [errorMsg]="uniquenessCheckEmail.isUniquenessError ? '409.email_already_use' : undefined"
       (input)="updateErrMsgObjs();
-        uniquenessCheckEmail.checkParameter(cntlsProfile.email.value);">
+        uniquenessCheckEmail.checkParameter(cntls.email.value);
+        doChangeData('email', formGroup, profileDto);">
     </app-field-input>
   </app-uniqueness-check>
 
   <div ppi-mt-4 class="ppi-theme-locale">
     <app-field-color-theme wd100 class="ppi-theme"
       formControlName="theme"
-      kind="theme"
+      kind="color-theme"
       label="panel-profile-info.color-theme_label"
-      (change)="updateErrMsgObjs();">
+      (change)="updateErrMsgObjs(); doChangeData('theme', formGroup, profileDto);">
     </app-field-color-theme>
     <app-field-locale wd100 class="ppi-locale"
       formControlName="locale"
       kind="locale"
       label="panel-profile-info.locale_label"
-      (change)="updateErrMsgObjs();">
+      (change)="updateErrMsgObjs(); doChangeData('locale', formGroup, profileDto);">
     </app-field-locale>
   </div>
 
@@ -73,13 +75,13 @@
     [maxLen]="cn_descript.maxLength"
     [minLen]="cn_descript.minLength"
     [numRows]="cn_descript.numRows"
-    (input)="updateErrMsgObjs();">
+    (input)="updateErrMsgObjs(); doChangeData('descript', formGroup, profileDto);">
   </app-field-textarea>
 
   <div ppi-mt-4 class="ppi-actions">
     <button matButton="elevated" class="ppi-btn-save stl-btn-brd"
-      [disabled]="formGroupProfile.pristine || formGroupProfile.invalid || isDisabledSubmit"
-      (click)="saveProfile(formGroupProfile)">
+      [disabled]="formGroup.pristine || formGroup.invalid || !!isDisabled ? '' : undefined"
+      (click)="saveProfile(formGroup, profileDto)">
       <svg class="ppi-svg-diskette-bin">
         <use href="./lib-pg-profile/panel-profile-info/diskette-bin.svg#diskette-bin"></use>
       </svg>

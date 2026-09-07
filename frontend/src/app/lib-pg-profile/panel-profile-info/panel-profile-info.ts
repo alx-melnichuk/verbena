@@ -14,24 +14,24 @@ import { FieldInput } from "../../components/field-input/field-input";
 import { FieldLocale } from "../../components/field-locale/field-locale";
 import { FieldTextarea } from "../../components/field-textarea/field-textarea";
 import { UniquenessCheck } from "../../components/uniqueness-check/uniqueness-check";
-import { UniquenessDto } from "../../lib-user/user-dto";
+import { UniquenessDto, UserDto } from "../../lib-user/user-dto";
 import { UserSrv } from "../../lib-user/user-srv";
 import { FileSizeUtil } from "../../utils/file_size.util";
 import { ErrMsgObj } from "../../utils/http-error.util";
 import { ValidFileTypesUtil } from "../../utils/valid_file_types.util";
 import { ProfileConfigDto } from "../profile-config-dto";
-import { ProfileDto, ModifyProfileDto, ProfileDtoUtil } from "../profile-dto";
+import { ModifyProfileDto } from "../profile-dto";
 
 export const PPI_DEBOUNCE_DELAY = 900;
 
 @Component({
-    selector: 'app-panel-profile-info',
+    selector: "app-panel-profile-info",
     exportAs: "appPanelProfileInfo",
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe, UniquenessCheck,
         FieldColorTheme, FieldInput, FieldImage, FieldLocale, FieldTextarea],
-    templateUrl: './panel-profile-info.html',
-    styleUrl: './panel-profile-info.scss',
+    templateUrl: "./panel-profile-info.html",
+    styleUrl: "./panel-profile-info.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -42,11 +42,11 @@ export class PanelProfileInfo implements OnInit, OnChanges {
     @Input()
     public errMsgObjs: ErrMsgObj[] = [];
     @Input()
-    public isDisabledSubmit: boolean = false;
+    public isDisabled: boolean | null | undefined;
     @Input()
-    public profileDto: ProfileDto | null = null;
+    public profileDto: UserDto | null | undefined;
     @Input()
-    public profileConfigDto: ProfileConfigDto | null = null;
+    public profileConfigDto: ProfileConfigDto | null | undefined;
 
     @ViewChild("fieldNickname", { static: true })
     public fieldNicknameComp!: FieldInput;
@@ -54,9 +54,11 @@ export class PanelProfileInfo implements OnInit, OnChanges {
     public fieldEmailComp!: FieldInput;
 
     @Output()
+    readonly changeData: EventEmitter<boolean> = new EventEmitter();
+    @Output()
     readonly updateProfile: EventEmitter<{ modifyProfile: ModifyProfileDto, avatarFile: File | null | undefined }> = new EventEmitter();
 
-    public cntlsProfile = {
+    public cntls = {
         avatar: new FormControl("", []),
         nickname: new FormControl("", []),
         email: new FormControl("", []),
@@ -64,7 +66,7 @@ export class PanelProfileInfo implements OnInit, OnChanges {
         locale: new FormControl("", []),
         descript: new FormControl("", []),
     };
-    public formGroupProfile: FormGroup = new FormGroup(this.cntlsProfile);
+    public formGroup: FormGroup = new FormGroup(this.cntls);
 
     public cn_nickname = CN_NICKNAME;
     public cn_email = CN_EMAIL;
@@ -82,25 +84,41 @@ export class PanelProfileInfo implements OnInit, OnChanges {
     public avatarFile: File | null | undefined;
     public initIsAvatar: boolean = false; // original has an avatar.
 
-    private origProfileDto: ProfileDto = ProfileDtoUtil.create();
+    private isChangeData: boolean = false;
 
     ngOnInit(): void {
-        this.cntlsProfile.nickname.markAsTouched();
+        this.cntls.nickname.markAsTouched();
         this.fieldNicknameComp.markAsTouched();
-        this.cntlsProfile.email.markAsTouched();
+        this.cntls.email.markAsTouched();
         this.fieldEmailComp.markAsTouched();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["profileDto"]) {
-            this.prepareFormGroupByProfileDto(this.profileDto);
+            const profileInfo = {
+                avatar: this.profileDto?.avatar || "",
+                nickname: this.profileDto?.nickname || "",
+                email: this.profileDto?.email || "",
+                theme: this.profileDto?.theme || "",
+                locale: this.profileDto?.locale || "",
+                descript: this.profileDto?.descript || "",
+            };
+            this.formGroup.patchValue(profileInfo);
+            this.avatarFile = undefined;
+            this.initIsAvatar = !!profileInfo.avatar;
+            this.formGroup.markAsPristine();
         }
         if (!!changes["profileConfigDto"]) {
-            this.prepareFormGroupByProfileConfigDto(this.profileConfigDto);
+            // Set FieldImage parameters
+            this.maxSize = this.profileConfigDto?.avatarMaxSize || MAX_FILE_SIZE;
+            this.accepts = (this.profileConfigDto?.avatarValidTypes || []).join(",");
+            this.availableFileTypes = ValidFileTypesUtil.text(this.accepts).join(", ").toUpperCase();
+            this.availableMaxFileSize = FileSizeUtil.formatBytes(this.maxSize, 1);
+
         }
-        if (!!changes["isDisabledSubmit"]) {
-            if (this.isDisabledSubmit != this.formGroupProfile.disabled) {
-                this.isDisabledSubmit ? this.formGroupProfile.disable() : this.formGroupProfile.enable();
+        if (!!changes["isDisabled"]) {
+            if (!!this.isDisabled != this.formGroup.disabled) {
+                !!this.isDisabled ? this.formGroup.disable() : this.formGroup.enable();
                 this.changeDetector.markForCheck();
             }
         }
@@ -108,10 +126,29 @@ export class PanelProfileInfo implements OnInit, OnChanges {
 
     // ** Public API **
 
-    // ** Section: Update profile (formGroupProfile) **
+    public doChangeForm(): void {
+        const isDirty = this.formGroup.dirty;
+        const isValid = this.formGroup.valid;
+        console.log(`doChangeForm() isDirty: ${isDirty}, isValid: ${isValid}`); // #
+
+    }
+    public doChangeData(name: string, formGroup: FormGroup, origValues: unknown): void {
+        const origValues2 = (origValues as Record<string, string>) || {};
+        if (!name || !formGroup) {
+            return;
+        }
+        if ((formGroup.controls[name]?.value || "") == (origValues2[name] || "")) {
+            formGroup.controls[name].markAsPristine();
+        }
+        if (this.isChangeData != formGroup.dirty) {
+            this.changeData.emit(this.isChangeData = formGroup.dirty);
+        }
+    }
+
+    // ** Section: Update profile (formGroup) **
 
     public checkUniqueNickname = (nickname: string | null | undefined): Promise<boolean> => {
-        if (!nickname || this.origProfileDto.nickname.toLowerCase() == nickname.toLowerCase()) {
+        if (!nickname || this.profileDto?.nickname.toLowerCase() == nickname.toLowerCase()) {
             return Promise.resolve(true);
         }
         // #Перенести проверку на уровень выше.
@@ -119,7 +156,7 @@ export class PanelProfileInfo implements OnInit, OnChanges {
     }
 
     public checkUniqueEmail = (email: string | null | undefined): Promise<boolean> => {
-        if (!email || this.origProfileDto.email.toLowerCase() == email.toLowerCase()) {
+        if (!email || this.profileDto?.email.toLowerCase() == email.toLowerCase()) {
             return Promise.resolve(true);
         }
         // #Перенести проверку на уровень выше.
@@ -133,9 +170,9 @@ export class PanelProfileInfo implements OnInit, OnChanges {
     public deleteAvatarFile(): void {
         this.avatarFile = (!!this.initIsAvatar ? null : undefined);
         if (!!this.initIsAvatar) {
-            this.cntlsProfile.avatar.markAsDirty();
+            this.cntls.avatar.markAsDirty();
         } else {
-            this.cntlsProfile.avatar.markAsPristine();
+            this.cntls.avatar.markAsPristine();
         }
     }
 
@@ -143,7 +180,7 @@ export class PanelProfileInfo implements OnInit, OnChanges {
         this.errMsgObjs = errMsgObjs;
     }
 
-    public saveProfile(formGroup: FormGroup): void {
+    public saveProfile(formGroup: FormGroup, profileDto: UserDto | null | undefined): void {
         if (!formGroup || formGroup.pristine || formGroup.invalid) {
             return;
         }
@@ -154,11 +191,11 @@ export class PanelProfileInfo implements OnInit, OnChanges {
         const locale = formGroup.get("locale")?.value;
 
         const modifyProfile: ModifyProfileDto = {
-            nickname: (this.origProfileDto.nickname != nickname ? nickname : undefined),
-            email: (this.origProfileDto.email != email ? email : undefined),
-            descript: (this.origProfileDto.descript != descript ? descript : undefined),
-            theme: (this.origProfileDto.theme != theme ? theme : undefined),
-            locale: (this.origProfileDto.locale != locale ? locale : undefined),
+            nickname: (profileDto?.nickname != nickname ? nickname : undefined),
+            email: (profileDto?.email != email ? email : undefined),
+            descript: (profileDto?.descript != descript ? descript : undefined),
+            theme: (profileDto?.theme != theme ? theme : undefined),
+            locale: (profileDto?.locale != locale ? locale : undefined),
         };
         const is_all_empty = Object.values(modifyProfile).findIndex((value) => value !== undefined) == -1;
         if (!is_all_empty || this.avatarFile !== undefined) {
@@ -167,36 +204,4 @@ export class PanelProfileInfo implements OnInit, OnChanges {
     }
 
     // ** Private API **
-
-    private prepareFormGroupByProfileDto(profileDto: ProfileDto | null): void {
-        if (!profileDto) {
-            return;
-        }
-        this.origProfileDto = ProfileDtoUtil.create(profileDto);
-        this.origProfileDto.descript = (profileDto.descript || "");
-        this.origProfileDto.theme = (profileDto.theme || "");
-        this.origProfileDto.locale = (profileDto.locale || "");
-
-        Object.freeze(this.origProfileDto);
-
-        this.formGroupProfile.patchValue({
-            nickname: profileDto.nickname,
-            email: profileDto.email,
-            descript: (profileDto.descript || ""),
-            theme: (profileDto.theme || ""),
-            locale: (profileDto.locale || ""),
-            avatar: profileDto.avatar,
-        });
-        this.avatarFile = undefined;
-        this.initIsAvatar = !!profileDto.avatar;
-        this.formGroupProfile.markAsPristine();
-    }
-
-    private prepareFormGroupByProfileConfigDto(profileConfigDto: ProfileConfigDto | null): void {
-        // Set FieldImage parameters
-        this.maxSize = profileConfigDto?.avatarMaxSize || MAX_FILE_SIZE;
-        this.accepts = (profileConfigDto?.avatarValidTypes || []).join(",");
-        this.availableFileTypes = ValidFileTypesUtil.text(this.accepts).join(", ").toUpperCase();
-        this.availableMaxFileSize = FileSizeUtil.formatBytes(this.maxSize, 1);
-    }
 }
