@@ -12,12 +12,12 @@ import { ErrMsgObj } from "../../utils/http-error.util";
 import { NewPasswordProfileDto } from "../profile-dto";
 
 @Component({
-    selector: 'app-panel-profile-password',
+    selector: "app-panel-profile-password",
     exportAs: "appPanelProfilePassword",
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe, FieldPassword],
-    templateUrl: './panel-profile-password.html',
-    styleUrl: './panel-profile-password.scss',
+    templateUrl: "./panel-profile-password.html",
+    styleUrl: "./panel-profile-password.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -28,47 +28,66 @@ export class PanelProfilePassword implements OnChanges {
     @Input()
     public errMsgObjs: ErrMsgObj[] = [];
     @Input()
-    public isDisabledSubmit: boolean = false;
+    public isDisabled: boolean | null | undefined;
+    @Input()
+    public isReset: boolean | null | undefined;
 
+    @Output()
+    readonly changeData: EventEmitter<boolean> = new EventEmitter();
     @Output()
     readonly updatePassword: EventEmitter<NewPasswordProfileDto> = new EventEmitter();
 
     public cn_password = CN_PASSWORD;
 
-    public cntlsPassword = {
-        password: new FormControl(null, []),
+    public cntls = {
+        curr_password: new FormControl(null, []),
         new_password: new FormControl(null, []),
     };
-    public formGroupPassword: FormGroup = new FormGroup(this.cntlsPassword);
+    public formGroup: FormGroup = new FormGroup(this.cntls);
     public isRequiredPassword: boolean = false;
 
+    private isChangeData: boolean = false;
+
     constructor() {
-        this.formGroupPassword.setValidators(this.validatorsForPassword());
+        this.formGroup.setValidators(this.validatorsForPassword());
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        // # Added reset data.
-        if (!!changes["isDisabledSubmit"]) {
-            if (this.isDisabledSubmit != this.formGroupPassword.disabled) {
-                this.isDisabledSubmit ? this.formGroupPassword.disable() : this.formGroupPassword.enable();
+        if (!!changes["isDisabled"]) {
+            if (!!this.isDisabled != this.formGroup.disabled) {
+                !!this.isDisabled ? this.formGroup.disable() : this.formGroup.enable();
                 this.changeDetector.markForCheck();
             }
+        }
+        if (!!changes["isReset"] && !!this.isReset) {
+            this.formGroup.setValue({ curr_password: "", new_password: "" });
+            this.formGroup.markAsPristine();
         }
     }
 
     // ** Public API **
+
+    public doChangeData(formGroup: FormGroup): void {
+        if (!formGroup) {
+            return;
+        }
+        const isChangeData = !this.isChangeData && !formGroup.invalid;
+        if (this.isChangeData != isChangeData) {
+            this.changeData.emit(this.isChangeData = isChangeData);
+        }
+    }
 
     // ** Section: Set new password (formPassword) **
 
     public validatorsForPassword(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             const formGroup = control as FormGroup;
-            const cntlPassword = formGroup.get("password");
+            const cntlCurrPassword = formGroup.get("curr_password");
             const cntlNewPassword = formGroup.get("new_password");
-            if (cntlPassword?.pristine) {
+            if (cntlCurrPassword?.pristine) {
                 return { pristine: "password" };
             }
-            if (cntlPassword?.invalid) {
+            if (cntlCurrPassword?.invalid) {
                 return { invalid: "password" };
             }
             if (cntlNewPassword?.pristine) {
@@ -77,7 +96,7 @@ export class PanelProfilePassword implements OnChanges {
             if (cntlNewPassword?.invalid) {
                 return { invalid: "new_password" };
             }
-            const passwordValue = cntlPassword?.value || "";
+            const passwordValue = cntlCurrPassword?.value || "";
             const newPasswordValue = cntlNewPassword?.value || "";
             if (!!passwordValue && !!newPasswordValue && passwordValue == newPasswordValue) {
                 return { new_password_equal_to_old_value: true };
@@ -95,29 +114,31 @@ export class PanelProfilePassword implements OnChanges {
     public checkPassword(formGroup: FormGroup): void {
         if (formGroup.errors != null && formGroup.errors["new_password_equal_to_old_value"]) {
             const fieldName = this.translateSrv.instant("panel-profile-password.new_password");
-            this.errMsgObjs.push({ msg: "417.field-password:equal_to_old_value", obj: { "field-password": fieldName } });
+            this.errMsgObjs.push({ msg: "417.password:equal_to_old_value", obj: { "password": fieldName } });
         }
     }
 
     public setNewPassword(formGroup: FormGroup): void {
-        const cntlPassword = formGroup.get("password");
+        const cntlCurrPassword = formGroup.get("curr_password");
         const cntlNewPassword = formGroup.get("new_password");
-        if (formGroup.pristine || formGroup.invalid || !cntlPassword || !cntlNewPassword) {
+        if (formGroup.pristine || formGroup.invalid || !cntlCurrPassword || !cntlNewPassword || !!this.isDisabled) {
             return;
         }
         const newPasswordProfileDto: NewPasswordProfileDto = {
-            password: cntlPassword.value,
+            password: cntlCurrPassword.value,
             newPassword: cntlNewPassword.value
         };
         this.updatePassword.emit(newPasswordProfileDto);
     }
+
+    // ** -- **
 
     public updateErrMsgObjs(errMsgObjs: ErrMsgObj[] = []): void {
         this.errMsgObjs = errMsgObjs;
     }
 
     public getErrorObj(errors: unknown | null, value: string | null | undefined): ValidationErrors {
-        return { ...(errors as ValidationErrors), ...{ [`field-password`]: value } };
+        return { ...(errors as ValidationErrors), ...{ ["password"]: value } };
     }
 
     // ** Private API **
