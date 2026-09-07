@@ -356,7 +356,7 @@ impl Validator for NewPasswordUserProfileDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         errors.push(user_models::validate_password(&self.password).err());
-        errors.push(user_models::validate_new_password(&self.new_password).err());
+        errors.push(user_models::validate_password(&self.new_password).err());
 
         // Determine whether there are errors.
         let is_exist_error = errors.iter().any(|err| err.is_some());

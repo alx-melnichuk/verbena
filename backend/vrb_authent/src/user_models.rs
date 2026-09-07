@@ -73,26 +73,11 @@ pub fn validate_password(value: &str) -> Result<(), ValidationError> {
 
 // ** Section: "User.new_password" **
 
-pub const MSG_NEW_PASSWORD_REQUIRED: &str = "new_password:required";
-pub const MSG_NEW_PASSWORD_MIN_LENGTH: &str = "new_password:min_length";
-pub const MSG_NEW_PASSWORD_MAX_LENGTH: &str = "new_password:max_length";
-pub const MSG_NEW_PASSWORD_REGEX: &str = "new_password:regex";
-pub const MSG_NEW_PASSWORD_EQUAL_OLD_VALUE: &str = "new_password:equal_to_old_value";
-
-// MIN=6, MAX=64, REG="[a-z]+","[A-Z]+","[\\d]+" OR "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$"
-pub fn validate_new_password(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::required(value, MSG_NEW_PASSWORD_REQUIRED)?;
-    ValidationChecks::min_length(value, PASSWORD_MIN.into(), MSG_NEW_PASSWORD_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, PASSWORD_MAX.into(), MSG_NEW_PASSWORD_MAX_LENGTH)?;
-    ValidationChecks::regexp(value, PASSWORD_LOWERCASE_LETTER_REGEX, MSG_NEW_PASSWORD_REGEX)?;
-    ValidationChecks::regexp(value, PASSWORD_CAPITAL_LETTER_REGEX, MSG_NEW_PASSWORD_REGEX)?;
-    ValidationChecks::regexp(value, PASSWORD_NUMBER_REGEX, MSG_NEW_PASSWORD_REGEX)?;
-    Ok(())
-}
+pub const MSG_PASSWORD_EQUAL_OLD_VALUE: &str = "password:equal_to_old_value";
 
 pub fn validate_inequality(value1: &str, value2: &str) -> Result<(), ValidationError> {
     if value1.starts_with(value2) && value1.len() == value2.len() {
-        let err = ValidationError::new(MSG_NEW_PASSWORD_EQUAL_OLD_VALUE);
+        let err = ValidationError::new(MSG_PASSWORD_EQUAL_OLD_VALUE);
         return Err(err);
     }
     Ok(())
