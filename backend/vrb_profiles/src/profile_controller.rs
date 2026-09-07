@@ -816,7 +816,7 @@ pub async fn put_profile(
             example = json!(ApiError::create(409, err::MSG_INVALID_HASH, "Parameter is empty."))),
         (status = 417, body = [ApiError],
             description = "Validation error. `curl -i -X PUT http://localhost:8080/api/profiles_new_password \
-            -d '{\"password\": \"pas\" \"new_password\": \"word\"}'`",
+            -d '{\"password\": \"pas\", \"new_password\": \"word\"}'`",
             example = json!(ApiError::validations(
                 (NewPasswordUserProfileDto {password: "pas".to_string(), new_password: "word".to_string()}).validate().err().unwrap()) )),
         (status = 500, description = "Error while calculating the password hash.", body = ApiError, 
