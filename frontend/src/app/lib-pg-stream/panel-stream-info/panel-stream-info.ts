@@ -29,8 +29,6 @@ export class PanelStreamInfo implements OnChanges {
     @Input()
     public canDelete = false;
     @Input()
-    public isFuture = false;
-    @Input()
     public locale: string | null | undefined;
     @Input()
     public streamDto: StreamDto | null | undefined;
