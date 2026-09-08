@@ -90,10 +90,9 @@
 
   <div sidebar-layer>
     <button class="pbv-sdb-btn pbv-btn-arrow pbv-btn-rg" (click)="clearEvent($event); isSidebarRgOpen=!isSidebarRgOpen;">
-      <svg class="pbv-arrow pbv-rotate"
-        [class.pbv-0deg]="isSidebarRgOpen"
-        [class.pbv-180deg]="!isSidebarRgOpen">
-        <use href="./lib-pg-browse/panel-browse-view/angle-right-bin.svg#angle-right-bin"></use>
+      <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"
+        class="pbv-arrow pbv-rotate" [class.pbv-0deg]="isSidebarRgOpen" [class.pbv-180deg]="!isSidebarRgOpen">
+        <path d="M36,20 l28,28 l-28,28" />
       </svg>
     </button>
   </div>
