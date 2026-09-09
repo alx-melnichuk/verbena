@@ -31,10 +31,6 @@ export class SidebarHandler implements OnInit {
     private duration: number = 0;  // millisecond (10^-3)
     private count: number = 0;
 
-    // #constructor() {
-    // #    this.owner = this.elementRef.nativeElement.parentElement;
-    // #}
-
     @HostListener("click", ["$event"])
     public doResizePanel(event: Event): void {
         event.preventDefault();
