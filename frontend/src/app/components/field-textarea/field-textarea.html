@@ -6,33 +6,22 @@
   }
   <ng-content select="[ft-prefix]"></ng-content>
 
-  @if (minRows!=null || maxRows!=null) {
-    <textarea matInput class="ft-textarea global-scroll" mode2
+    <textarea matInput #textarea class="ft-textarea css-lh global-scroll" 
+      [class.ft-sizing]="!!minRows || !!maxRows"
+      [class.ft-resize-none]="!!numRows"
+      [class.ft-mn-hg]="!!minRows && minRows > 0"
+      [class.ft-mx-hg]="!!maxRows && maxRows > 0"
       formControlName="textarea"
       autocomplete="new-password"
       autocapitalize="off"
       [required]="!!isRequired"
       [attr.maxlength]="maxLen != null && maxLen > 0 ? maxLen + 1 : undefined"
       [attr.spellcheck] ="!!isSpellcheck"
-      cdkTextareaAutosize
-      [cdkAutosizeMinRows]="minRows || 1"
-      [cdkAutosizeMaxRows]="2 + (maxRows || 1)"
-      (input)="onChange(formControl.value)"
-    (blur)="onTouched()">
-  </textarea>
-  } @else {
-    <textarea matInput class="ft-textarea global-scroll" mode1
-      formControlName="textarea"
-      autocomplete="new-password"
-      autocapitalize="off"
-      [required]="!!isRequired"
-      [attr.maxlength]="maxLen != null && maxLen > 0 ? maxLen + 1 : undefined"
-      [attr.spellcheck] ="!!isSpellcheck"
-      [rows]="numRows"
-      (input)="onChange(formControl.value)"
+      [attr.rows]="numRows || (isNotFlSizing && ((minRows || maxRows) == 1) ? 1 : undefined)"
+      (input)="onChange(formControl.value);
+        doInput(!!minRows && minRows > 0 || !!maxRows && maxRows > 0, isNotFlSizing, textarea);"
       (blur)="onTouched()">
     </textarea>
-  }
 
   <ng-content select="[ft-suffix]"></ng-content>
   @if (!!hint) {

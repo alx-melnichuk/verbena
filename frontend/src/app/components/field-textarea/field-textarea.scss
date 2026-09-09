@@ -1,6 +1,7 @@
 /*# sourceURL=field-textarea.scss */
 
 app-field-textarea {
+    ---line-hg: 1lh;
     display: block;
 
     &[wd100] {
@@ -13,6 +14,26 @@ app-field-textarea {
 
     &[scroll-thin] textarea.ft-textarea {
         scrollbar-width: thin;
+    }
+
+    .mat-mdc-form-field .mat-mdc-text-field-wrapper textarea.ft-sizing {
+        field-sizing: content;
+    }
+
+    textarea.ft-mn-hg {
+        min-height: calc(var(---line-hg) * var(---mn-rows));
+    }
+
+    textarea.ft-mx-hg {
+        max-height: calc(var(---line-hg) * var(---mx-rows));
+    }
+
+    &[ft-no-resize] textarea {
+        resize: none;
+    }
+
+    &:not([ft-no-resize])textarea.ft-resize-none {
+        resize: none;
     }
 
     &[ft-no-pd-hint-error] {
@@ -28,9 +49,17 @@ app-field-textarea {
         max-width: inherit;
         width: inherit;
     }
+}
 
-    /*https://github.com/angular/components/issues/26233#issuecomment-2548168388*/
-    .mat-mdc-input-element {
-        font: inherit;
+@supports not(line-height: 1lh) {
+    app-field-textarea {
+        ---line-hg: 1.5rem;
+        --is-not-unit-lh: 1;
+    }
+}
+
+@supports not(field-sizing: content) {
+    app-field-textarea {
+        --is-not-fl-sizing: 1;
     }
 }

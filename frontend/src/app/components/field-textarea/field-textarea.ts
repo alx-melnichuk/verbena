@@ -1,7 +1,7 @@
-import { CdkTextareaAutosize } from "@angular/cdk/text-field";
 import { CommonModule } from "@angular/common";
 import {
-    ChangeDetectionStrategy, Component, forwardRef, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation
+    AfterContentInit, AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, forwardRef, inject, Input, OnChanges,
+    SimpleChanges, ViewChild, ViewEncapsulation
 } from "@angular/core";
 import {
     ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, AbstractControl, ControlValueAccessor, FormControl, FormGroup,
@@ -10,11 +10,13 @@ import {
 import { MatFormFieldModule, SubscriptSizing } from "@angular/material/form-field";
 import { MatInput, MatInputModule } from "@angular/material/input";
 import { TranslatePipe } from "@ngx-translate/core";
+import { HtmlElemUtil } from "../../utils/html-elem.util";
 import { ValidatorUtils } from "../../utils/validator.utils";
 
 export const TEXTAREA = "textarea";
 export const CUSTOM_ERROR = "customError";
-
+const MN_ROWS = "---mn-rows";
+const MX_ROWS = "---mx-rows";
 /*
   Fixed height (No automatic adjustment)
     <app-field-textarea wd100 [label]=""description1"" [maxLen]="2" [minLen]="120"
@@ -31,7 +33,7 @@ export const CUSTOM_ERROR = "customError";
     selector: "app-field-textarea",
     exportAs: "appFieldTextarea",
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, TranslatePipe, CdkTextareaAutosize],
+    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, TranslatePipe],
     templateUrl: "./field-textarea.html",
     styleUrl: "./field-textarea.scss",
     encapsulation: ViewEncapsulation.None,
@@ -41,7 +43,9 @@ export const CUSTOM_ERROR = "customError";
         { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldTextarea), multi: true },
     ],
 })
-export class FieldTextarea implements OnChanges, ControlValueAccessor, Validator {
+export class FieldTextarea implements OnChanges, AfterContentInit, AfterViewInit, ControlValueAccessor, Validator {
+    private element: ElementRef<HTMLElement> = inject<ElementRef<HTMLElement>>(ElementRef);
+
     @Input()
     public errorMsg: string | null | undefined;
     @Input()
@@ -74,8 +78,13 @@ export class FieldTextarea implements OnChanges, ControlValueAccessor, Validator
     @ViewChild(MatInput, { static: false })
     public matInput: MatInput | null = null;
 
+    @ViewChild("textarea")
+    public textarea: ElementRef<HTMLElement> | undefined;
+
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ textarea: this.formControl });
+    public isNotUnitLh: boolean = false;
+    public isNotFlSizing: boolean = false;
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["isRequired"] || !!changes["minLen"] || !!changes["maxLen"]) {
@@ -88,6 +97,22 @@ export class FieldTextarea implements OnChanges, ControlValueAccessor, Validator
             this.formControl.updateValueAndValidity();
             this.onChange(this.formControl.value);
         }
+        if (!!changes["minRows"]) {
+            HtmlElemUtil.setProperty(this.element, MN_ROWS, this.minRows?.toString());
+        }
+        if (!!changes["maxRows"]) {
+            HtmlElemUtil.setProperty(this.element, MX_ROWS, this.maxRows?.toString());
+        }
+    }
+
+    ngAfterContentInit(): void {
+        const style = getComputedStyle(this.element.nativeElement);
+        this.isNotUnitLh = style.getPropertyValue("--is-not-unit-lh").trim() == "1";
+        this.isNotFlSizing = style.getPropertyValue("--is-not-fl-sizing").trim() == "1";
+    }
+
+    ngAfterViewInit(): void {
+        this.doInput(!!this.minRows || !!this.maxRows, this.isNotFlSizing, this.textarea?.nativeElement);
     }
 
     // ** ControlValueAccessor - start **
@@ -161,6 +186,13 @@ export class FieldTextarea implements OnChanges, ControlValueAccessor, Validator
     }
     public markAsPending(opts?: { onlySelf?: boolean; emitEvent?: boolean; }): void {
         this.formControl.markAsPending(opts);
+    }
+
+    public doInput(isSizing: boolean, isNotFlSizing: boolean, elem: HTMLElement | undefined): void {
+        if (elem != null && isSizing && isNotFlSizing) {
+            elem.style.height = "auto";
+            elem.style.height = elem.scrollHeight + "px";
+        }
     }
 
     // ** Private API **
