@@ -21,7 +21,8 @@
       label="panel-stream-editor.descript"
       [maxLen]="cn_descript.maxLength"
       [minLen]="cn_descript.minLength"
-      [numRows]="cn_descript.numRows"
+      [minRows]="cn_descript.minRows"
+      [maxRows]="cn_descript.maxRows"
       (input)="updateErrMsgObjs();doChangeData();">
     </app-field-textarea>
 
