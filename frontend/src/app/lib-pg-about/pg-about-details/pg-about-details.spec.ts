@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PanelAbout } from './panel-about';
+import { PgAboutDetails } from './pg-about-details';
 
-describe('PanelAbout', () => {
-  let component: PanelAbout;
-  let fixture: ComponentFixture<PanelAbout>;
+describe('PgAboutDetails', () => {
+  let component: PgAboutDetails;
+  let fixture: ComponentFixture<PgAboutDetails>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PanelAbout]
+      imports: [PgAboutDetails]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(PanelAbout);
+    fixture = TestBed.createComponent(PgAboutDetails);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

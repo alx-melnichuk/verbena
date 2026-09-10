@@ -4,6 +4,7 @@ import { provideTranslateService, TranslateLoader } from "@ngx-translate/core";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import { environment as env } from "../../../environments/environment";
 import { LOG_PG_ABOUT } from "../../common/routes";
+import { PgAboutDetails } from "../pg-about-details/pg-about-details";
 import { PgAbout } from "./pg-about";
 import { pgAboutTranslateResolver } from "./pg-about-translate.resolver";
 
@@ -26,9 +27,17 @@ export const PG_ABOUT_ROUTES: Routes = [
                     deps: [HttpClient],
                 },
                 extend: true,
-                isolate: true,
+                isolate: false,
             }),
         ],
-        resolve: { loadTranslate: pgAboutTranslateResolver },
+        resolve: {
+            loadTranslate: pgAboutTranslateResolver
+        },
+        children: [
+            {
+                path: "", // "ind/about"
+                component: PgAboutDetails,
+            },
+        ]
     },
 ];

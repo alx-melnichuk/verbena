@@ -1,27 +1,24 @@
-import { CommonModule } from "@angular/common";
-import { Component, ViewEncapsulation, ChangeDetectionStrategy, OnChanges, Input, HostBinding, SimpleChanges } from "@angular/core";
-import { TranslatePipe } from "@ngx-translate/core";
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
-    selector: "app-panel-about",
-    exportAs: "appPanelAbout",
+    selector: 'app-panel-about-info',
+    exportAs: "appPanelAboutInfo",
     standalone: true,
     imports: [CommonModule, TranslatePipe],
-    templateUrl: "./panel-about.html",
-    styleUrl: "./panel-about.scss",
+    templateUrl: './panel-about-info.html',
+    styleUrl: './panel-about-info.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelAbout implements OnChanges {
+export class PanelAboutInfo implements OnChanges {
     @Input()
     public backendItem01: string | null | undefined;
     @Input()
     public backendItem02: string[] | null | undefined;
     @Input()
     public backendItem03: string[] | null | undefined;
-
-    @HostBinding("class.global-scroll")
-    public get isGlobalScroll(): boolean { return true; }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["backendItem01"]) {

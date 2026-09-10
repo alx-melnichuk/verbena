@@ -1,5 +1,5 @@
 {
-  "panel-about": {
+  "panel-about-info": {
     "title": "Über die {{appName}}-Website.",
     "label": "Die {{appName}}-Site ist eine Demo-Site. Sie dient keinem kommerziellen Zweck.",
     "label_swagger": "\"swagger\" visuelle schnittstelle",

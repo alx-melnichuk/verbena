@@ -1,5 +1,5 @@
 {
-  "panel-about": {
+  "panel-about-info": {
     "title": "Про веб-сайт {{appName}}.",
     "label": "Сайт {{appName}} є демонстраційним. І не має комерційних цілей.",
     "label_swagger": "\"swagger\" візуальний інтерфейс",
