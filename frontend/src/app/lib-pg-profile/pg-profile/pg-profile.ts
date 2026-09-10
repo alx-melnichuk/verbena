@@ -5,9 +5,9 @@ import { RouterOutlet } from "@angular/router";
 import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
 import { environment as env } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
+import { LOG_PG_PROFILE } from "../../common/routes";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
-import { LOG_PG_PROFILE } from "../../common/routes";
 
 @Component({
     selector: "app-pg-profile",
