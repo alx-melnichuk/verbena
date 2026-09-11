@@ -8,7 +8,6 @@
     [isDisabled]="isLoadData"
     [profileDto]="profileDto"
     [profileConfigDto]="profileConfigDto"
-    changeData-="isChangeDataInfo = $event"
     (changeData)="doChangeDataInfo($event)"
     (updateProfile)="doUpdateProfile($event)">
   </app-panel-profile-info>
@@ -17,7 +16,6 @@
     [errMsgObjs]="errMsgObjsPassword"
     [isDisabled]="isLoadData"
     [isReset]="isResetAccount"
-    changeData-="isChangeDataPassword = $event"
     (changeData)="doChangeDataPassword($event)"
     (updatePassword)="doUpdatePassword($event)">
   </app-panel-profile-password>
