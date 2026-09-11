@@ -53,11 +53,11 @@ export const R_STREAM_CREATE = R_STREAM + "/" + E_STREAM_CREATE; //  "ind/stream
 export const ROUTE_STREAM_CREATE = "/" + R_STREAM_CREATE;        // "/ind/stream/create"
 
 // ** Page: Banned users **
-
 export const R_BANNED = R_ROOT + "/" + "banned"; // "ind/banned"
 export const ROUTE_BANNED = "/" + R_BANNED;      // "/ind/banned"
 
 // ** Page: Browse **
+export const LOG_PG_BROWSE = 512;
 export const R_BROWSE = R_ROOT + "/" + "browse"; // "ind/browse"
 export const ROUTE_BROWSE = "/" + R_BROWSE;      // "/ind/browse"
 

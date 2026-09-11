@@ -2,8 +2,8 @@ import { HttpClient, provideHttpClient, withInterceptorsFromDi } from "@angular/
 import { Routes } from "@angular/router";
 import { provideTranslateService, TranslateLoader } from "@ngx-translate/core";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
-import { environment } from "../../../environments/environment";
-import { E_BROWSE_LIST, E_BROWSE_VIEW, P_BROWSE_ID } from "../../common/routes";
+import { environment as env } from "../../../environments/environment";
+import { E_BROWSE_LIST, E_BROWSE_VIEW, LOG_PG_BROWSE, P_BROWSE_ID } from "../../common/routes";
 import { PgBrowseList } from "../pg-browse-list/pg-browse-list";
 import { PgBrowseView } from "../pg-browse-view/pg-browse-view";
 import { PgBrowse } from "./pg-browse";
@@ -16,7 +16,7 @@ import { pgAccessTokenResolver } from "./pg-access-token.resolver";
 
 // AoT requires an exported function for factories
 export function translateLibBrowseHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
-    if (environment.logLevel > 0) { console.info(`translateLibBrowseHttpLoaderFactory()`); }
+    if (env.logLevel & LOG_PG_BROWSE) { console.info(`translateLibBrowseHttpLoaderFactory()`); }
     return new TranslateHttpLoader(httpClient, "./lib-pg-browse/i18n/", ".json");
 };
 
@@ -36,7 +36,9 @@ export const PG_BROWSE_ROUTES: Routes = [
                 isolate: false,
             }),
         ],
-        resolve: { loadTranslate: pgBrowseTranslateResolver },
+        resolve: {
+            loadTranslate: pgBrowseTranslateResolver
+        },
         children: [
             {
                 path: E_BROWSE_LIST, // "ind/browse/list"
