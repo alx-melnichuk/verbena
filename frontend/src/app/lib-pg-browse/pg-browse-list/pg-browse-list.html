@@ -1,15 +1,30 @@
-<app-panel-browse-list
-  [isLive]="isLive"
-  [locale]="localeSrv.getLocale()"
-  [popTagIsLoading]="popTagIsLoading"
-  [popTagList]="popTagList"
-  [strmCrdIsLoading]="strmCrdIsLoading"
-  [strmCrdIsReset]="strmCrdIsReset"
-  [strmCrdItemPage]="strmCrdItemPage"
-  [strmCrdMaxSizeRows]="strmCrdMaxSizeRows"
-  [strmCrdRowsOnPage]="strmCrdRowsOnPage"
-  [tag]="tag"
-  [deleteIds]="strmDeleteIds"
-  (loadStrmCrdPage)="doLoadStrmCrdPage($event.isLive, $event.tag, $event.page, $event.isReset)"
-  (actionView)="doActionView($event)">
-</app-panel-browse-list>
+@if (popTagIsLoading || strmCrdIsLoading) {
+    <app-spinner isFillParent></app-spinner>
+}
+<div class="pbl-container app-pn-bg">
+  
+  <app-panel-browse-search class="pbl-border"
+    [isLive]="isLive"
+    [popTagIsLoading]="popTagIsLoading"
+    [popTagList]="popTagList"
+    (loadStrmCrdPage)="doLoadStrmCrdPage($event.isLive, $event.tag, $event.page, $event.isReset)">
+  </app-panel-browse-search>
+
+  <app-view-item-list hg100 class="pbl-card-list" vil-row vil-flx-wrp
+    containerClass="global-scroll"
+    [isReset]="strmCrdIsReset"
+    [itemPage]="strmCrdItemPage"
+    [maxSizeRows]="strmCrdMaxSizeRows"
+    [rowsOnPage]="strmCrdRowsOnPage"
+    (loadPage)="doLoadStrmCrdPage(isLive, tag, $event.page, false)">
+    <ng-template let-streamDto="item">
+      <app-panel-stream-card
+        [activeTag]="tag"
+        [locale]="localeSrv.getLocale()"
+        [stream]="streamDto"
+        (actionView)="doActionView($event)">
+      </app-panel-stream-card>
+    </ng-template>
+  </app-view-item-list>
+
+</div>

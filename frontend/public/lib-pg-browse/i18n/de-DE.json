@@ -34,7 +34,7 @@
     "error_get_popular_tags": "Fehler beim Erfassen beliebter Tags",
     "error_get_streams_by_tag": "Fehler beim Beziehen von Daten auf Streams"
   },
-  "panel-browse-list": {
+  "panel-browse-search": {
      "tag_value": "Tag-Wert",
      "live_streams_only": "Nur Live-Streams",
      "search_for_streams": "Suche nach Streams"

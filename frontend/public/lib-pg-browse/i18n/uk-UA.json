@@ -34,7 +34,7 @@
     "error_get_popular_tags": "Помилка отримання популярних тегів",
     "error_get_streams_by_tag": "Помилка отримання даних тразсляцій"
   },
-  "panel-browse-list": {
+  "panel-browse-search": {
      "tag_value": "Значення тегу",
      "live_streams_only": "Тільки прямі трансляції",
      "search_for_streams": "Пошук потоків"

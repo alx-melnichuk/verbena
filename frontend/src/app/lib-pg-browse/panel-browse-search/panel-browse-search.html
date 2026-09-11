@@ -1,0 +1,38 @@
+<div class="pbs-search pbs-border">
+  <form [formGroup]="formGroup" class="pbs-srch-form" novalidate>
+
+    <mat-slide-toggle pbs-m-2 class="pbl-is-live" labelPosition="before" formControlName="isLive">
+      {{ "panel-browse-search.live_streams_only" | translate }}&ensp;
+    </mat-slide-toggle>
+
+    <mat-form-field pbs-m-2 class="pbl-srch-form-inpt" subscriptSizing="dynamic">
+      <mat-label>{{ "panel-browse-search.tag_value" | translate }}</mat-label>
+      <input matInput type="text"
+        formControlName="tag"
+        autocomplete="new-password"
+        autocapitalize="off"
+        [attr.maxlength]="cn_tag.maxLength"
+      />
+    </mat-form-field>
+
+    <button matButton="elevated" type="button" pbs-m-2
+      class="pbs-srch-btn stl-btn-brd"
+      [disabled]="!!popTagIsLoading ? '' : undefined"
+      (click)="doLoadStrmCrdPage(cntls.isLive.value, cntls.tag.value, 1, true)">
+      <span>{{ "panel-browse-search.search_for_streams" | translate }}</span>
+    </button>
+
+  </form>
+
+  <div class="pbs-pop-tag-wrap">
+    <div class="pbs-pop-tags global-scroll">
+      @for (item of popTagList; track $index) {
+        <button class="pbs-pop-tag"
+          [class.pbs-active-tag]="item.name == tag"
+          (click)="doSetTag(item.name)">
+          #{{ item.name }}&nbsp;({{ item.countLinks }})
+        </button>
+      }
+    </div>
+  </div>
+</div>

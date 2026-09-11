@@ -34,7 +34,7 @@
     "error_get_popular_tags": "Error getting popular tags",
     "error_get_streams_by_tag": " Error getting data on streams"
   },
-  "panel-browse-list": {
+  "panel-browse-search": {
      "tag_value": "Tag value",
      "live_streams_only": "Live streams only",
      "search_for_streams": "Search for streams"

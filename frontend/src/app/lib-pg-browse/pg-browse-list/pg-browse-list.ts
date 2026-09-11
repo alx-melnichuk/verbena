@@ -5,12 +5,15 @@ import { ActivatedRoute, Params, Router } from "@angular/router";
 import { Subscription } from "rxjs";
 import { LocaleSrv } from "../../common/locale-srv";
 import { G_BROWSE_LIVE, G_BROWSE_PAGE, G_BROWSE_TAG, ROUTE_BROWSE_LIST } from "../../common/routes";
-import { ItemViewPage } from "../../components/view-item-list/view-item-list-by-page";
+import { Spinner } from "../../components/spinner/spinner";
+import { ItemViewPage, ViewItemListByPage } from "../../components/view-item-list/view-item-list-by-page";
+import { ViewItemList } from "../../components/view-item-list/view-item-list";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { StreamTagDto, PageStreamAndTagsDto, StreamDtoUtil, PageStreamTagDto } from "../../lib-stream/stream-dto";
 import { StreamSrv } from "../../lib-stream/stream-srv";
+import { PanelBrowseSearch } from "../panel-browse-search/panel-browse-search";
+import { PanelStreamCard } from "../panel-stream-card/panel-stream-card";
 import { HttpErrorUtil } from "../../utils/http-error.util";
-import { PanelBrowseList } from "../panel-browse-list/panel-browse-list";
 
 const POP_TAGS_LIMIT_DEF = 20;
 const STRM_LIMIT_DEF = 16;
@@ -19,7 +22,7 @@ const STRM_LIMIT_DEF = 16;
     selector: "app-pg-browse-list",
     exportAs: "appPgBrowseList",
     standalone: true,
-    imports: [CommonModule, PanelBrowseList],
+    imports: [CommonModule, Spinner, PanelBrowseSearch, PanelStreamCard, ViewItemList, ViewItemListByPage],
     templateUrl: "./pg-browse-list.html",
     styleUrl: "./pg-browse-list.scss",
     encapsulation: ViewEncapsulation.None,
@@ -44,8 +47,6 @@ export class PgBrowseList implements OnInit, OnDestroy {
     public strmCrdMaxSizeRows: number = STRM_LIMIT_DEF * 3;
     public strmCrdRowsOnPage: number = STRM_LIMIT_DEF;
     public tag: string | null | undefined;
-
-    strmDeleteIds: number[] = [];
 
     ngOnInit(): void {
         // Get a list of popular tags.
@@ -83,7 +84,7 @@ export class PgBrowseList implements OnInit, OnDestroy {
 
     }
 
-    public doLoadStrmCrdPage(isLive: boolean | null, tag: string | null, page: number, isReset: boolean): void {
+    public doLoadStrmCrdPage(isLive: boolean | null | undefined, tag: string | null | undefined, page: number, isReset: boolean): void {
         const queryParams: Params = {};
         if (!!isLive) {
             queryParams[G_BROWSE_LIVE] = true;
