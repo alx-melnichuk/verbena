@@ -1,5 +1,5 @@
-import { Routes } from "@angular/router";
 import { provideHttpClient, withInterceptorsFromDi, HttpClient } from "@angular/common/http";
+import { Routes } from "@angular/router";
 import { provideTranslateService, TranslateLoader } from "@ngx-translate/core";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import { environment as env } from "../../../environments/environment";
