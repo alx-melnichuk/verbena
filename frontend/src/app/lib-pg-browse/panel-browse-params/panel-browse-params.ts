@@ -5,16 +5,16 @@ import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
 import { TimeTracking } from "../../components/time-tracking/time-tracking";
 
 @Component({
-    selector: "app-panel-stream-params",
-    exportAs: "appPanelStreamParams",
+    selector: 'app-panel-browse-params',
+    exportAs: "appPanelBrowseParams",
     standalone: true,
     imports: [CommonModule, DateTimeFormatPipe, TranslatePipe, TimeTracking],
-    templateUrl: "./panel-stream-params.html",
-    styleUrl: "./panel-stream-params.scss",
+    templateUrl: './panel-browse-params.html',
+    styleUrl: './panel-browse-params.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelStreamParams implements OnChanges {
+export class PanelBrowseParams implements OnChanges {
     @Input()
     public countOfViewer: number | null | undefined;
     @Input()
@@ -46,12 +46,14 @@ export class PanelStreamParams implements OnChanges {
         }
     }
 
+    // ** Public API **
+
     // ** Private API **
 
     private createLabelDays(translateSrv: TranslateService): Record<number, string> {
         const result: Record<number, string> = {};
         for (let idx = -1; idx <= 20; idx++) {
-            const key = `panel-stream-params.time-tracking.${idx}`;
+            const key = `panel-browse-params.time-tracking.${idx}`;
             if (translateSrv.instant(key) != key) {
                 result[idx] = key;
             }
