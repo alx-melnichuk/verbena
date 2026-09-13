@@ -18,12 +18,12 @@
     [rowsOnPage]="strmCrdRowsOnPage"
     (loadPage)="doLoadStrmCrdPage(isLive, tag, $event.page, false)">
     <ng-template let-streamDto="item">
-      <app-panel-stream-card
+      <app-panel-browse-record
         [activeTag]="tag"
         [locale]="localeSrv.getLocale()"
         [stream]="streamDto"
         (actionView)="doActionView($event)">
-      </app-panel-stream-card>
+      </app-panel-browse-record>
     </ng-template>
   </app-view-item-list>
 

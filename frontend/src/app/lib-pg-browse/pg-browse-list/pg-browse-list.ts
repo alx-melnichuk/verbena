@@ -3,17 +3,18 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestro
 import { HttpErrorResponse } from "@angular/common/http";
 import { ActivatedRoute, Params, Router } from "@angular/router";
 import { Subscription } from "rxjs";
+import { environment as env } from "../../../environments/environment";
 import { LocaleSrv } from "../../common/locale-srv";
-import { G_BROWSE_LIVE, G_BROWSE_PAGE, G_BROWSE_TAG, ROUTE_BROWSE_LIST } from "../../common/routes";
+import { G_BROWSE_LIVE, G_BROWSE_TAG, G_BROWSE_PAGE, ROUTE_BROWSE_LIST, LOG_PG_BROWSE } from "../../common/routes";
 import { Spinner } from "../../components/spinner/spinner";
-import { ItemViewPage, ViewItemListByPage } from "../../components/view-item-list/view-item-list-by-page";
 import { ViewItemList } from "../../components/view-item-list/view-item-list";
+import { ViewItemListByPage, ItemViewPage } from "../../components/view-item-list/view-item-list-by-page";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
-import { StreamTagDto, PageStreamAndTagsDto, StreamDtoUtil, PageStreamTagDto } from "../../lib-stream/stream-dto";
+import { StreamTagDto, PageStreamTagDto, PageStreamAndTagsDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
 import { StreamSrv } from "../../lib-stream/stream-srv";
-import { PanelBrowseSearch } from "../panel-browse-search/panel-browse-search";
-import { PanelStreamCard } from "../panel-stream-card/panel-stream-card";
 import { HttpErrorUtil } from "../../utils/http-error.util";
+import { PanelBrowseRecord } from "../panel-browse-record/panel-browse-record";
+import { PanelBrowseSearch } from "../panel-browse-search/panel-browse-search";
 
 const POP_TAGS_LIMIT_DEF = 20;
 const STRM_LIMIT_DEF = 16;
@@ -22,7 +23,7 @@ const STRM_LIMIT_DEF = 16;
     selector: "app-pg-browse-list",
     exportAs: "appPgBrowseList",
     standalone: true,
-    imports: [CommonModule, Spinner, PanelBrowseSearch, PanelStreamCard, ViewItemList, ViewItemListByPage],
+    imports: [CommonModule, Spinner, PanelBrowseSearch, PanelBrowseRecord, ViewItemList, ViewItemListByPage],
     templateUrl: "./pg-browse-list.html",
     styleUrl: "./pg-browse-list.scss",
     encapsulation: ViewEncapsulation.None,
@@ -47,6 +48,10 @@ export class PgBrowseList implements OnInit, OnDestroy {
     public strmCrdMaxSizeRows: number = STRM_LIMIT_DEF * 3;
     public strmCrdRowsOnPage: number = STRM_LIMIT_DEF;
     public tag: string | null | undefined;
+
+    constructor() {
+        if (env.logLevel & LOG_PG_BROWSE) { console.info(`PgBrowseList(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
+    }
 
     ngOnInit(): void {
         // Get a list of popular tags.

@@ -28,25 +28,25 @@ app-pg-browse-list {
 
     @container cnt-browse-list (width < 568px) {
         .pbl-container {
-            --psc-wd: 100%; // 1 columns
+            --pbr-wd: 100%; // 1 columns
         }
     }
 
     @container cnt-browse-list (568px <=width) and (width < 848px) {
         .pbl-container {
-            --psc-wd: 48.21%; // 2 columns
+            --pbr-wd: 48.21%; // 2 columns
         }
     }
 
     @container cnt-browse-list (848px <=width) and (width < 1120px) {
         .pbl-container {
-            --psc-wd: 31.76%; // 3 columns
+            --pbr-wd: 31.76%; // 3 columns
         }
     }
 
     @container cnt-browse-list (1120px <=width) and (width < 1280px) {
         .pbl-container {
-            --psc-wd: 23.23%; // 4 columns
+            --pbr-wd: 23.23%; // 4 columns
         }
     }
 
@@ -57,7 +57,7 @@ app-pg-browse-list {
     // Section: stream cards
     .pbl-card-list {
         --vil-gap: 0.5rem;
-        --psc-mx-wd: calc(var(--psc-wd) + 3%);
+        --pbr-mx-wd: calc(var(--pbr-wd) + 3%);
         overflow-y: hidden;
     }
 }
