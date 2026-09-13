@@ -1,0 +1,72 @@
+@if (isLoadStream) {
+  <app-spinner isFillParent></app-spinner>
+}
+<div class="pbd-center app-pn-bg">
+  
+  <div [class.pbd-cnt-video]="isStreamVideo"
+    [class.pbd-border]="isStreamVideo">
+    <div pbd-hg100></div>
+    <app-panel-browse-state class="pbd-stream-state"
+      [streamState]="streamDto?.state || null">
+    </app-panel-browse-state>
+  </div>
+
+  <div class="pbd-cnt-sepr"></div>
+
+  <app-panel-browse-card class="pbd-cnt-footer pbd-border"
+    [countOfViewer]="chatSocketSrv.countOfMembers"
+    [locale]="localeSrv.getLocale()"
+    [isStreamOwner]="isStreamOwner"
+    [ownerAvatar]="userShortDto?.avatar"
+    [ownerEmail]="userShortDto?.email"
+    [ownerNickname]="userShortDto?.nickname"
+    [streamDto]="streamDto"
+    [timerActive]="timerActive"
+    [timerIsShow]="timerIsShow"
+    [timerValue]="timerValue"
+    (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event, isLoadStream)">
+  </app-panel-browse-card>
+</div>
+
+<app-sidebar class="pbd-sidebar" mode="right"
+  [isOpen]="isSidebarRgOpen"
+  (click)="isSidebarRgOpen=(isSidebarRgOpen==false ? true: isSidebarRgOpen)">
+
+  <div sidebar-layer>
+    <button class="pbd-sdb-btn pbd-btn-arrow pbd-btn-rg" (click)="clearEvent($event); isSidebarRgOpen=!isSidebarRgOpen;">
+      <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"
+        class="pbd-arrow pbd-rotate" [class.pbd-0deg]="isSidebarRgOpen" [class.pbd-180deg]="!isSidebarRgOpen">
+        <path d="M36,20 l28,28 l-28,28" />
+      </svg>
+    </button>
+  </div>
+
+  <div pbd-hg100 pbd-brd-bx pbd-pl-2>
+    <app-panel-chat class="pbd-sd-chat pbd-sdb-brd pbd-brd-lf"
+      [blockedUsers]="chatBlockedUsers"
+      [deleteIds]="chatDeleteIds"
+      [isBlocked]="chatSocketSrv.isBlocked()"
+      [isEditable]="!!user?.id && chatIsEditable && chatSocketSrv.isJoined()"
+      [isLoading]="chatIsLoading"
+      [isOwner]="isStreamOwner"  
+      [isReset]="chatIsReset"
+      [itemSetMsg]="chatItemSetMsg"
+      [locale]="localeSrv.getLocale()"
+      [maxLen]="chatCnMsg.maxLength"
+      [minLen]="chatCnMsg.minLength"
+      [maxRows]="chatCnMsg.maxRows"
+      [minRows]="chatCnMsg.minRows"
+      [maxSizeRows]="chatMaxSizeRows"
+      [nickname]="user?.nickname || ''"
+      [title]="'panel-browse-view.chat_title'"
+      (blockUser)="doModifyBlockUser(isStreamOwner, true, $event)"
+      (unblockUser)="doModifyBlockUser(isStreamOwner, false, $event)"
+      (sendMsg)="doSendMessage($event)"
+      (editMsg)="doEditMessage($event)"
+      (cutMsg)="doCutMessage($event)"
+      (rmvMsg)="doRmvMessage($event)"
+      (loadSet)="doLoadSet($event.isAddTop, $event.date, $event.count)">
+    </app-panel-chat>
+
+  </div>
+</app-sidebar>
