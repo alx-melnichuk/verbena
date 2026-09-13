@@ -1,33 +1,33 @@
-/*# sourceURL=panel-stream-actions.component.scss */
+/*# sourceURL=panel-browse-actions */
 
-app-panel-stream-actions {
+app-panel-browse-actions {
     --mat-outlined-button-horizontal-padding: 0.7rem;
     --mat-button-protected-horizontal-padding: 1.15rem;
 
     display: flex;
     flex-wrap: wrap;
 
-    [psa-btn] {
+    [pba-btn] {
         flex: 0 0 auto;
         margin-right: 0.5rem;
         margin-top: 0.25rem;
     }
 
-    [psa-mr-1] {
+    [pba-mr-1] {
         margin-right: 0.25rem;
     }
 
-    .psa-ver-md {
+    .pba-ver-md {
         vertical-align: middle;
     }
 
     // ** icon **
-    .psa-svg-sz {
+    .pba-svg-sz {
         height: 1.75rem;
         width: 1.75rem;
     }
 
-    .psa-scale {
+    .pba-scale {
         scale: 1.15;
     }
 }

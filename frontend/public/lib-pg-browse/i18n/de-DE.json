@@ -20,7 +20,7 @@
     "editing_msg": "Bearbeiten einer nachricht",
     "msg_discard_draft": "Entwurf verwerfen? (Er kann nicht wiederhergestellt werden.)"
   },
-  "pg-browse-view": {
+  "pg-browse-details": {
     "error_update_stream": "Fehler beim Aktualisieren des Streamstatus",
     "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
     "chat_commands": "Chat befehle",
@@ -54,7 +54,7 @@
     "sure_you_want_delete_message": "Möchten sie die nachricht \"{{message}}\" wirklich löschen ?",
     "sure_you_want_permanently_delete_message": "Möchten sie die nachricht wirklich dauerhaft löschen?"
   },
-  "panel-stream-state": {
+  "panel-browse-state": {
     "has_not_started": "Die Übertragung hat noch nicht begonnen.",
     "has_paused": "Die Übertragung wurde pausiert.",
     "has_ended": "Die Übertragung ist bereits beendet.",
@@ -63,7 +63,7 @@
     "error_when_stopping_the_stream": "Fehler beim Stoppen des Streams",
     "error_while_pause_stream"      : "Fehler beim Anhalten des Streams"
   },
-  "panel-stream-params": {
+  "panel-browse-params": {
     "tags": "Schlagwörter:",
     "start": "Start:",
     "started": "Gestartet:",
@@ -74,7 +74,7 @@
       "1": "tag"
     }
   },
-  "panel-stream-actions": {
+  "panel-browse-actions": {
     "sure_you_want_stop_stream": "Möchten Sie den Stream \"{{title}}\" wirklich stoppen?",
     "prepare_stream": "Vorbereiten",
     "go_live_stream": "Live gehen",

@@ -20,7 +20,7 @@
     "editing_msg": "Редагування повідомлення",
     "msg_discard_draft": "Відхилити чернетку ? (Ви не зможете її відновити.)"
   },
-  "pg-browse-view": {
+  "pg-browse-details": {
     "error_update_stream": "Помилка оновлення стану трансляції",
     "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
     "chat_commands": "Команди чату",
@@ -54,7 +54,7 @@
     "sure_you_want_delete_message": "Ви впевнені, що хочете видалити повідомлення: \"{{message}}\" ?",
     "sure_you_want_permanently_delete_message": "Ви впевнені, що хочете остаточно видалити повідомлення ?"
   },
-  "panel-stream-state": {
+  "panel-browse-state": {
     "has_not_started": "Трансляція ще не розпочалася.",
     "has_paused": "Трансляцію призупинено.",
     "has_ended": "Трансляція вже закінчилася.",
@@ -63,7 +63,7 @@
     "error_when_stopping_the_stream": "Помилка зупинки трансляції",
     "error_while_pause_stream"      : "Помилка призупинення трансляції"
   },
-  "panel-stream-params": {
+  "panel-browse-params": {
     "tags": "Теги:",
     "start": "Початок:",
     "started": "Розпочато:",
@@ -81,7 +81,7 @@
       "14": "днів"
     }
   },
-  "panel-stream-actions": {
+  "panel-browse-actions": {
     "sure_you_want_stop_stream": "Ви впевнені, що хочете зупинити потік \"{{title}}\"?",
     "prepare_stream": "Підготовка",
     "go_live_stream": "Транслювати",

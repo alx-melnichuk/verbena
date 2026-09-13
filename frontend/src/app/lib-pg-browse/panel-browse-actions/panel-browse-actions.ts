@@ -6,16 +6,16 @@ import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { StreamState } from "../../lib-stream/stream-dto";
 
 @Component({
-    selector: "app-panel-stream-actions",
-    exportAs: "appPanelStreamActions",
+    selector: 'app-panel-browse-actions',
+    exportAs: "appPanelBrowseActions",
     standalone: true,
     imports: [CommonModule, MatButtonModule, TranslatePipe],
-    templateUrl: "./panel-stream-actions.html",
-    styleUrl: "./panel-stream-actions.scss",
+    templateUrl: './panel-browse-actions.html',
+    styleUrl: './panel-browse-actions.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelStreamActions {
+export class PanelBrowseActions {
     @Input()
     public state: StreamState | null | undefined;
     @Input()
@@ -54,7 +54,7 @@ export class PanelStreamActions {
     public doChangeState(newState: StreamState): void {
         if (this.state != null) {
             if (newState == StreamState.stopped) {
-                const message = this.translateSrv.instant("panel-stream-actions.sure_you_want_stop_stream", { title: this.title });
+                const message = this.translateSrv.instant("panel-browse-actions.sure_you_want_stop_stream", { title: this.title });
                 const params = { btnNameCancel: "buttons.no", btnNameAccept: "buttons.yes" };
                 this.dialogSrv.openConfirmation(message, "", params)
                     .then((response) => {
