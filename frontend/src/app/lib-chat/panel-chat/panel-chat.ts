@@ -17,7 +17,7 @@ import { Spinner } from "../../components/spinner/spinner";
 import { ItemView, ViewItemList } from "../../components/view-item-list/view-item-list";
 import { ViewItemListBySet } from "../../components/view-item-list/view-item-list-by-set";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
-import { ItemViewSetMsg } from "../../lib-pg-browse/pg-browse-view/pg-browse-view";
+import { ItemViewSetMsg } from "../../lib-pg-browse/pg-browse-details/pg-browse-details";
 import { DateUtil } from "../../utils/date.utils";
 import { StringDateTimeUtil } from "../../utils/string-date-time.util";
 import { ChatMessageDto } from "../chat-message";
