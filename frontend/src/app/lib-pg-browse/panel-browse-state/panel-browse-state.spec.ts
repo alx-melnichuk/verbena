@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PanelStreamState } from './panel-stream-state';
+import { PanelBrowseState } from './panel-browse-state';
 
-describe('PanelStreamState', () => {
-  let component: PanelStreamState;
-  let fixture: ComponentFixture<PanelStreamState>;
+describe('PanelBrowseState', () => {
+  let component: PanelBrowseState;
+  let fixture: ComponentFixture<PanelBrowseState>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PanelStreamState]
+      imports: [PanelBrowseState]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(PanelStreamState);
+    fixture = TestBed.createComponent(PanelBrowseState);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

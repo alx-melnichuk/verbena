@@ -1,21 +1,21 @@
-/*# sourceURL=panel-stream-state.scss */
+/*# sourceURL=panel-browse-state.scss */
 
-app-panel-stream-state {
+app-panel-browse-state {
 
     &[state="paused"] {
-        ---pss-bg-tr_pr: transparent;
+        ---pbs-bg-tr_pr: transparent;
     }
 
     &[state="started"] {
-        ---pss-dsp: none;
+        ---pbs-dsp: none;
     }
 
     align-content: center;
     align-items: center;
-    background-color: var(---pss-bg-tr_pr, var(--pss-panel-bg));
+    background-color: var(---pbs-bg-tr_pr, var(--pbs-panel-bg));
     container: cnt-state / inline-size;
     color: inherit;
-    display: var(---pss-dsp, flex);
+    display: var(---pbs-dsp, flex);
     flex-wrap: wrap;
     gap: 1rem;
     height: 100%;
@@ -23,25 +23,25 @@ app-panel-stream-state {
     overflow: hidden;
 
     @container cnt-state (width <=768px) {
-        .pss-text {
-            ---pss-text-fn-sz: min(2.5rem, min(11vh, 11vw)); // min(40px, 36.8px)
+        .pbs-text {
+            ---pbs-text-fn-sz: min(2.5rem, min(11vh, 11vw)); // min(40px, 36.8px)
         }
     }
 
     @container cnt-state (768px < width <=1024px) {
-        .pss-text {
-            ---pss-text-fn-sz: 3.5rem; // 56px
+        .pbs-text {
+            ---pbs-text-fn-sz: 3.5rem; // 56px
         }
     }
 
     @container cnt-state (1024px < width) {
-        .pss-text {
-            ---pss-text-fn-sz: 4rem; // 64px
+        .pbs-text {
+            ---pbs-text-fn-sz: 4rem; // 64px
         }
     }
 
-    .pss-text {
-        font-size: var(---pss-text-fn-sz);
+    .pbs-text {
+        font-size: var(---pbs-text-fn-sz);
         font-style: normal;
         font-weight: 500;
         max-width: 35rem;
@@ -51,7 +51,7 @@ app-panel-stream-state {
 
     // ** icon **
 
-    .pss-svg-sz {
+    .pbs-svg-sz {
         display: block;
         height: min(30vh, 30vw);
         max-height: 15rem;
