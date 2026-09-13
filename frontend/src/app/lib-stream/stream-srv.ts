@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from "@angular
 import { inject, Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { lastValueFrom } from "rxjs";
-import { ROUTE_BROWSE_VIEW, ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from "../common/routes";
+import { ROUTE_BROWSE_DETAILS, ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from "../common/routes";
 import { StringDateTime } from "../common/string-date-time";
 import { Uri } from "../common/uri";
 import { HttpParamsUtil } from "../utils/http-params.util";
@@ -248,7 +248,7 @@ export class StreamSrv {
         if (prefix.slice(-1) === "/") {
             prefix = prefix.slice(0, prefix.length - 1);
         }
-        return (!!streamId ? prefix + ROUTE_BROWSE_VIEW + "/" + streamId.toString() : "");
+        return (!!streamId ? prefix + ROUTE_BROWSE_DETAILS + "/" + streamId.toString() : "");
     }
 
     public redirectToStreamCreationPage(streamId: number): void {
@@ -265,7 +265,7 @@ export class StreamSrv {
 
     public redirectToStreamViewPage(streamId: number): void {
         if (!!streamId) {
-            window.setTimeout(() => this.router.navigate([ROUTE_BROWSE_VIEW, streamId]), 0);
+            window.setTimeout(() => this.router.navigate([ROUTE_BROWSE_DETAILS, streamId]), 0);
         }
     }
 
