@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { inject } from "@angular/core";
 import { ResolveFn, ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
-import { P_BROWSE_ID, E_BROWSE_VIEW } from "../../common/routes";
+import { P_BROWSE_ID, E_BROWSE_DETAILS } from "../../common/routes";
 import { SessionSrv } from "../../common/session-srv";
 import { ChatMessageSrv } from "../../lib-chat/chat-message-srv";
 import { StreamDto } from "../../lib-stream/stream-dto";
@@ -31,7 +31,7 @@ export const pgBrowseStreamResolver: ResolveFn<BrowseStream | HttpErrorResponse 
         const streamIdStr = route.paramMap.get(P_BROWSE_ID);
         const streamId = parseInt(streamIdStr || "-1", 10);
 
-        if (E_BROWSE_VIEW === url.path && streamId > -1) {
+        if (E_BROWSE_DETAILS === url.path && streamId > -1) {
             return streamSrv.getStream(streamId)
                 .then((response: StreamDto | HttpErrorResponse | undefined) => {
                     const streamDto: StreamDto = (response as StreamDto);
