@@ -3,9 +3,9 @@ import { Routes } from "@angular/router";
 import { provideTranslateService, TranslateLoader } from "@ngx-translate/core";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import { environment as env } from "../../../environments/environment";
-import { E_BROWSE_LIST, E_BROWSE_VIEW, LOG_PG_BROWSE, P_BROWSE_ID } from "../../common/routes";
+import { E_BROWSE_LIST, E_BROWSE_DETAILS, LOG_PG_BROWSE, P_BROWSE_ID } from "../../common/routes";
+import { PgBrowseDetails } from "../pg-browse-details/pg-browse-details";
 import { PgBrowseList } from "../pg-browse-list/pg-browse-list";
-import { PgBrowseView } from "../pg-browse-view/pg-browse-view";
 import { PgBrowse } from "./pg-browse";
 import { pgBrowseTranslateResolver } from "./pg-browse-translate.resolver";
 import { pgChatMessagesResolver } from "./pg-chat-messages.resolver";
@@ -45,9 +45,9 @@ export const PG_BROWSE_ROUTES: Routes = [
                 component: PgBrowseList,
             },
             {
-                path: E_BROWSE_VIEW + "/:" + P_BROWSE_ID, // "ind/browse/view/:streamId"
+                path: E_BROWSE_DETAILS + "/:" + P_BROWSE_ID, // "ind/browse/details/:streamId"
                 pathMatch: "prefix",
-                component: PgBrowseView,
+                component: PgBrowseDetails,
                 resolve: {
                     user: pgUserResolver,
                     accessToken: pgAccessTokenResolver,
