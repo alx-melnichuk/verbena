@@ -1,0 +1,63 @@
+<div class="pbc-cnt-title">
+  <span pbc-mr-2>{{ 'panel-browse-view.title' | translate }}</span>
+  <span>{{ streamDto?.title }}</span>
+</div>
+
+<div class="pbc-cnt-brd"></div>
+
+<div class="pbc-cnt-params">
+
+  <div class="pbc-cnt-nickname pbc-cnt-prm">
+    @if (!!ownerAvatar) {
+      <img pbc-mr-2 class="pbc-avatar-brd pbc-avatar-img"
+       [src]="ownerAvatar" [alt]="('panel-browse-view.not_found' | translate) + '&ensp;'"
+      />
+    } @else {
+      <div pbc-mr-2 class="pbc-avatar-brd pbc-avatar-smb">{{ ownerNameSymbols }}</div>
+    }
+    <div class="pbc-cnt-name-tags">
+      <div>{{ ownerNickname }}</div>
+      <div class="pbc-cnt-email">{{ ownerEmail }}</div>
+      <div class="pbc-cnt-tags">
+        <span pbc-mr-2>{{ 'panel-browse-view.tags' | translate }}</span>
+        @for (tag of (streamDto?.tags || []); track tag) {
+          <span pbc-mr-2>{{ tag }}</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="pbc-cnt-prm pbc-cnt-actions">
+    <span>{{ 'panel-browse-view.state' | translate }}</span>
+    <span>@if (!!streamDto) {  {{ ('panel-browse-view.' + streamDto.state) | translate }}  }</span>
+    @if (isStreamOwner && streamDto?.state != 'stopped') {
+      <app-panel-browse-actions
+        [state]="streamDto?.state"
+        [title]="streamDto?.title"
+        (changeState)="doChangeState($event)">
+      </app-panel-browse-actions>
+    }
+  </div>
+
+  <div class="pbc-cnt-prm">
+    <app-panel-browse-params
+      [countOfViewer]="countOfViewer"
+      [locale]="locale"
+      [streamStarttime]="streamDto?.starttime"
+      [streamStarted]="streamDto?.started"
+      [streamPaused]="streamDto?.paused"
+      [streamStopped]="streamDto?.stopped"
+      [timerActive]="timerActive"
+      [timerIsShow]="timerIsShow"
+      [timerValue]="timerValue">
+    </app-panel-browse-params>
+  </div>
+
+</div>
+
+<div class="pbc-cnt-brd"></div>
+
+<div class="pbc-cnt-title">
+  <span pbc-mr-2>{{ 'panel-browse-view.descript' | translate }}</span>
+  <span>{{ streamDto?.descript }}</span>
+</div>
