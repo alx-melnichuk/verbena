@@ -82,11 +82,10 @@ export class PgProfileDetails implements OnInit, OnDestroy, HasUnsavedChanges {
 
     public doChangeDataInfo(isChange: boolean): void {
         this.isChangeDataInfo = isChange;
-        console.log(`doChangeDataInfo() isChangeInfo : ${this.isChangeDataInfo}`); // #
     }
+
     public doChangeDataPassword(isChange: boolean): void {
         this.isChangeDataPassword = isChange;
-        console.log(`doChangeDataPassword() isChangePassword : ${this.isChangeDataPassword}`); // #
     }
 
     // ** Section "Udate profile" FormGroup1 **
