@@ -126,12 +126,6 @@ export class PanelProfileInfo implements OnInit, OnChanges {
 
     // ** Public API **
 
-    public doChangeForm(): void {
-        const isDirty = this.formGroup.dirty;
-        const isValid = this.formGroup.valid;
-        console.log(`doChangeForm() isDirty: ${isDirty}, isValid: ${isValid}`); // #
-
-    }
     public doChangeData(name: string, formGroup: FormGroup, origValues: unknown): void {
         const origValues2 = (origValues as Record<string, string>) || {};
         if (!name || !formGroup) {
