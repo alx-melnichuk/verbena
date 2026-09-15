@@ -81,6 +81,17 @@
     "pause_stream": "Pause",
     "stop_stream": "Stoppen"
   },
+  "pg-browse-banned": {
+    "error_get_blocked_users": "Fehler beim Erhalt einer Liste gesperrter Nutzer.",
+    "are_you_want_to_unblock_user": "Möchten Sie den Benutzer \"{{nickname}}\" wirklich entsperren?"
+  },
+  "panel-banned-users": {
+    "title": "Gesperrte Benutzer",
+    "nickname": "Benutzer-Spitzname",
+    "email": "Benutzer-E-Mail",
+    "date_blocking": "Datum der Sperrung",
+    "unblock_user": "Entsperren"
+  },
   "417.message:required": "Das feld \"Nachricht\" ist erforderlich.",
   "417.message:minlength": "Das \"Nachricht\" feld muss mindestens {{minlength.requiredLength}} zeichen haben.",
   "417.message:maxlength": "Das \"Nachricht\" feld darf nicht mehr als {{maxlength.requiredLength}} zeichen haben."

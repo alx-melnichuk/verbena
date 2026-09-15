@@ -88,6 +88,17 @@
     "pause_stream": "Пауза",
     "stop_stream": "Зупинити"
   },
+  "pg-browse-banned": {
+    "error_get_blocked_users": "Помилка при отриманні списку заблокованих користувачів.",
+    "are_you_want_to_unblock_user": "Ви впевнені, що хочете розблокувати користувача: \"{{nickname}}\" ?"
+  },
+  "panel-banned-users": {
+    "title": "Заблоковані користувачі",
+    "nickname": "Користувач",
+    "email": "Електронна пошта",
+    "date_blocking": "Дата блокування",
+    "unblock_user": "Розблокувати"
+  },
   "417.message:required": "Поле \"Повідомлення\" обов'язкове.",
   "417.message:minlength": "Поле \"Повідомлення\" має містити принаймні {{minlength.requiredLength}} символів.",
   "417.message:maxlength": "Поле \"Повідомлення\" не може містити більше {{maxlength.requiredLength}} символів."
