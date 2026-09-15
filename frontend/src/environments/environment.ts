@@ -4,7 +4,7 @@
 
 export const environment = {
     production: false,
-    logLevel: 1,
+    logLevel: 1023,
     // In case the chat server is located on a different host.
     wsChatHost: null, // default window.location.host
     wsChatPathname: null, // default "ws"
