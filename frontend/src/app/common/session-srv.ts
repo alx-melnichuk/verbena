@@ -82,6 +82,5 @@ export class SessionSrv {
             formFieldShape: value.formFieldShape,
             buttonShape: value.buttonShape,
         };
-        console.log(`SessionSrv().setSettings(${JSON.stringify(this.settings)})`); // #
     }
 }
