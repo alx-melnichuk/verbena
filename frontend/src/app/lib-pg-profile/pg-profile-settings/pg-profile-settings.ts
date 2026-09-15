@@ -55,13 +55,11 @@ export class PgProfileSettings implements OnInit, OnDestroy, HasUnsavedChanges {
     }
 
     ngOnInit(): void {
-        console.log(`PgProfileSettings.OnInit();`); // #
         // Set a confirmation string when attempting to leave a page with unsaved data.
         UnsavedDeActivateUtil.setConfirmText("pg-profile-settings.have_unsaved_you_want_to_leave");
     }
 
     ngOnDestroy() {
-        console.log(`PgProfileSettings.OnDestroy();`); // #
         // Reset a confirmation string when attempting to leave a page with unsaved data.
         UnsavedDeActivateUtil.setConfirmText("");
     }
@@ -75,7 +73,6 @@ export class PgProfileSettings implements OnInit, OnDestroy, HasUnsavedChanges {
 
     public doChangeData(isChange: boolean): void {
         this.isChangeData = isChange;
-        console.log(`doChangeData() isChange : ${this.isChangeData}`); // #
     }
 
     // ** Section "Set new Settings" **
@@ -87,7 +84,8 @@ export class PgProfileSettings implements OnInit, OnDestroy, HasUnsavedChanges {
         this.profileSrv.modifySettings(settingsDto)
             .then((response: UserDto | HttpErrorResponse | undefined) => {
                 if (response == null) {
-                    const msg = this.translateSrv.instant("pg-profile-settings.error_save_settings", { nickname: this.profileDto.nickname });
+                    const msg = this.translateSrv.instant("pg-profile-settings.error_save_settings"
+                        , { nickname: this.profileDto.nickname });
                     this.errMsgObjs = [{ msg, obj: null }];
                 } else {
                     this.profileDto = response as UserDto;
