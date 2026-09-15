@@ -1,0 +1,11 @@
+/*# sourceURL=pg-browse-banned.scss */
+
+app-pg-browse-banned {
+    display: flex;
+    height: 100%;
+    justify-content: center;
+
+    .pbb-container {
+        width: min(1000px, 100vw);
+    }
+}

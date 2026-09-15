@@ -1,0 +1,14 @@
+@if (isLoading) {
+  <app-spinner isFillParent></app-spinner>
+}
+<div class="pbb-container">
+  <app-panel-banned-users
+    [blockedUsers]="blockedUsers"
+    [locale]="localeSrv.getLocale()"
+    [title]="'panel-banned-users.title'"
+    [sortDesc]="sortDesc"
+    [sortColumn]="sortColumn"
+    (sort)="doSort($event)"
+    (unblockUser)="doUnblockUser($event, blockedUsers)">
+  </app-panel-banned-users>
+</div>
