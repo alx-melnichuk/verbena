@@ -56,7 +56,7 @@
     </mat-form-field>
 
     <div pps-mt-4 class="pps-actions">
-      <button matButton="elevated" class="pps-btn-save stl-btn-brd"
+      <button matButton="elevated" type="button" class="pps-btn-save stl-btn-brd"
         [disabled]="formGroup.pristine || formGroup.invalid || !!isDisabled ? '' : undefined"
         (click)="saveSettings(formGroup, !!isDisabled)">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"

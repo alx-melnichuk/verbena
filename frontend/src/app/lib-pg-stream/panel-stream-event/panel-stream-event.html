@@ -9,7 +9,7 @@
         {{ streamDto.starttime | dateTimeFormat:locale:formatDateTime  }}
       </div>
       @if (canEdit && isFuture(streamDto.starttime)) {
-        <button class="pse-edit-btn" (click)="doEditStream(streamDto.id)">
+        <button type="button" class="pse-edit-btn" (click)="doEditStream(streamDto.id)">
           {{ 'panel-stream-event.btn-edit' | translate }}
         </button>
       }

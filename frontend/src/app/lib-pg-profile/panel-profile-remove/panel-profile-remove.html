@@ -6,7 +6,7 @@
   </div>
 
   <div ppr-mt-4 class="ppr-actions">
-    <button matButton="elevated" class="stl-btn-brd"
+    <button matButton="elevated" type="button" class="stl-btn-brd"
       [disabled]="!!isDisabled ? '' : undefined"
       (click)="removeAccount()">
       <span>{{ 'panel-profile-remove.btn_delete_account' | translate }}</span>
