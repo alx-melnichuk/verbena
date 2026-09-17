@@ -22,7 +22,7 @@
 
     @if (!isDisabled && !isReadOnly) {
       <span class="fi-remove-wrap">
-        <button mat-icon-button class="fi-remove"
+        <button matIconButton type="button" class="fi-remove"
           (click)="deleteImage()"
           [matTooltip]="`field-image.remove_image` | translate"
           matTooltipPosition="above">

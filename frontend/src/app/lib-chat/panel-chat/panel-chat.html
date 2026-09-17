@@ -69,7 +69,7 @@
       @if (unreadCount > 0) {
         <label class="pc-move-to-end-count" for="btn-move-to-end_id">{{ unreadCount }}</label>  
       }
-      <button class="pc-btn-move-to-end" id="btn-move-to-end_id" (click)="doMoveToEndOfList()">
+      <button type="button" class="pc-btn-move-to-end" id="btn-move-to-end_id" (click)="doMoveToEndOfList()">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"
           class="pc-angle">
           <path d="M28,38 l20,20 l20,-20" />
@@ -114,7 +114,7 @@
 
     <div class="pc-msg-btns">
       @if (!!msgEditing) {
-        <button matSuffix  mat-icon-button class="pc-msg-icon"
+        <button matIconButton type="button" matSuffix class="pc-msg-icon"
           (click)="doResetValueForEditing()">
           <svg viewBox="0 0 96 96" fill="currentColor" focusable="false" aria-hidden="true">
             <path fill-rule="evenodd" d="M8,48 C8,25.9 25.9,8 48,8 s40,17.9 40,40 -17.9,40 -40,40 S8,70.09 8,48 Z m30.83,-14.83 a4,4 0 0 0 -5.66,5.66 L42.34,48 l-9.17,9.17 a4,4 0 0 0 5.66,5.66 L48,53.66 l 9.17, 9.17 a4,4 0 0 0 5.66,-5.66 L53.66,48 l9.17,-9.17 a4,4 0 0 0 -5.66,-5.66 L48,42.344 38.83,33.17 Z" clip-rule="evenodd"/>
@@ -122,7 +122,7 @@
         </button>
         <div class="pc-msg-btns-sepr"></div>
       }
-      <button matSuffix mat-icon-button class="pc-msg-icon"
+      <button matIconButton type="button" matSuffix class="pc-msg-icon"
         [disabled]="(!frmCtrlNewMsg.value?.trim() || formGroup.invalid) ? '' : null"
         (click)="doSendMessage(frmCtrlNewMsg.value)">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"
@@ -151,7 +151,7 @@
 <mat-menu #menuItem="matMenu" class="pc-menu-panel" xPosition="before" [overlapTrigger]="true">
   <ng-template matMenuContent let-isEdit="isEdit" let-isCut="isCut" let-isRemove="isRemove" let-isBlock="isBlock" let-isUnblock="isUnblock">
     @if (isEdit) {
-      <button mat-menu-item class="pn-menu-item" (click)="doSetValueForEditing(msgMarked)">
+      <button mat-menu-item type="button" class="pn-menu-item" (click)="doSetValueForEditing(msgMarked)">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
           class="pc-svg-box" focusable="false" aria-hidden="true">
           <path d="M72,40 l12,-12 l-16,-16 l-12,12 l16,16 l-40,40 h-16 v-16 l40,-40 z" />
@@ -160,7 +160,7 @@
       </button>
     }
     @if (isCut) {
-      <button mat-menu-item class="pn-item-menu" (click)="doCutMessage(msgMarked)">
+      <button mat-menu-item type="button" class="pn-item-menu" (click)="doCutMessage(msgMarked)">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
           class="pc-svg-box" focusable="false" aria-hidden="true">
           <path d="M12,26 H84 a6,6 0,0,0 0,-12 H12 a6,6 0,0,0 0,12" />
@@ -172,7 +172,7 @@
       </button>
     }
     @if (isRemove) {
-      <button mat-menu-item class="pn-item-menu" (click)="doRemoveMessage(msgMarked)">
+      <button mat-menu-item type="button" class="pn-item-menu" (click)="doRemoveMessage(msgMarked)">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
           class="pc-svg-box" focusable="false" aria-hidden="true">
           <path d="M12,26 H84 a6,6 0,0,0 0,-12 H12 a6,6 0,0,0 0,12" />
@@ -184,7 +184,7 @@
       </button>
     }
     @if (isBlock) {
-      <button mat-menu-item class="pn-item-menu" (click)="doBlockUser(msgMarked?.member, blockedUsers)">
+      <button mat-menu-item type="button" class="pn-item-menu" (click)="doBlockUser(msgMarked?.member, blockedUsers)">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
           class="pc-svg-box" focusable="false" aria-hidden="true">
           <path d="M48,58 v8 M28,40 h40 c6,0.5 11.5,6 12,12 v20 c-0.5,6 -6,11.5 -12,12 h-40 c-6,-0.5 -11.5,-6 -12,-12 v-20 c0.5,-6 6,-11.5 12,-12 z v-10 c4,-24 36,-24 40,0 v10 z" />
@@ -193,7 +193,7 @@
       </button>
     }
     @if (isUnblock) {
-      <button mat-menu-item class="pn-item-menu" (click)="doUnblockUser(msgMarked?.member, blockedUsers)">
+      <button mat-menu-item type="button" class="pn-item-menu" (click)="doUnblockUser(msgMarked?.member, blockedUsers)">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
           class="pc-svg-box" focusable="false" aria-hidden="true">
           <path d="M48,58 v8 M28,40 h40 c6,0.5 11.5,6 12,12 v20 c-0.5,6 -6,11.5 -12,12 h-40 c-6,-0.5 -11.5,-6 -12,-12 v-20 c0.5,-6 6,-11.5 12,-12 z M68,40 v-10 c2,-21 -23,-32 -36,-13" />
