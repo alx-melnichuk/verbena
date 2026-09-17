@@ -1,5 +1,5 @@
 @if (isShowBntPrepare(state)) {
-  <button matButton="elevated" pba-btn class="stl-btn-brd" (click)="doChangeState(statePreparing)">
+  <button matButton="elevated" type="button" pba-btn class="stl-btn-brd" (click)="doChangeState(statePreparing)">
     <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="5" 
       pba-mr-1 class="pba-svg-sz pba-ver-md">
       <path d="M19,15 C12,15 12,5 19,5 H78 C85,5 85,15 78,15 H19 Z" />
@@ -12,7 +12,7 @@
 }
 
 @if (isShowBntStart(state)) {
-  <button matButton="elevated" pba-btn class="stl-btn-brd" (click)="doChangeState(stateStarted)">
+  <button matButton="elevated" type="button" pba-btn class="stl-btn-brd" (click)="doChangeState(stateStarted)">
     <svg viewBox="0 0 96 96" fill="currentColor" pba-mr-1 class="pba-svg-sz pba-ver-md pba-scale">
       <path d="M24.5,28.5 a7,7 0,0,1 9,-8 l36,22.5 a9,9 0,0,1 0,10 l-36,22.5 a7,7 0,0,1 -9,-8 v-39.5 z" />
     </svg>
@@ -21,7 +21,7 @@
 }
 
 @if (isShowBntPause(state)) {
-  <button matButton="elevated" pba-btn class="stl-btn-brd" (click)="doChangeState(statePaused)">
+  <button matButton="elevated" type="button" pba-btn class="stl-btn-brd" (click)="doChangeState(statePaused)">
     <svg viewBox="0 0 96 96" fill="currentColor" pba-mr-1 class="pba-svg-sz pba-ver-md pba-scale">
       <path d="M24.5,28.6 a8,8 0,0,1 8,-8 h3 a8,8 0,0,1 8,8 v38.8 a8,8 0,0,1 -8,8 h-3 a8,8 0,0,1 -8,-8 v-38.8 z" />
       <path d="M52.5,28.6 a8,8 0,0,1 8,-8 h3 a8,8 0,0,1 8,8 v38.8 a8,8 0,0,1 -8,8 h-3 a8,8 0,0,1 -8,-8 v-38.8 z" />
@@ -31,7 +31,7 @@
 }
 
 @if (isShowBtnStop(state)) {
-  <button matButton="elevated" pba-btn class="stl-btn-brd" (click)="doChangeState(stateStopped)">
+  <button matButton="elevated" type="button" pba-btn class="stl-btn-brd" (click)="doChangeState(stateStopped)">
     <svg viewBox="0 0 96 96" fill="currentColor" stroke-linecap="round" stroke-linejoin="round"
       pba-mr-1 class="pba-svg-sz pba-ver-md pba-scale">
       <path d="M20.4,30.5 a10,10 0,0,1 10,-10 h35 a10,10 0,0,1 10,10 v35 a10,10 0,0,1 -10,10 h-35 a10,10 0,0,1 -10,-10 v-34 z" />

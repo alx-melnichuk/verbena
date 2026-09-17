@@ -15,8 +15,7 @@
       />
     </mat-form-field>
 
-    <button matButton="elevated" type="button" pbs-m-2
-      class="pbs-srch-btn stl-btn-brd"
+    <button matButton="elevated" type="button" pbs-m-2 class="pbs-srch-btn stl-btn-brd"
       [disabled]="!!popTagIsLoading ? '' : undefined"
       (click)="doLoadStrmCrdPage(cntls.isLive.value, cntls.tag.value, 1, true)">
       <span>{{ "panel-browse-search.search_for_streams" | translate }}</span>
@@ -27,8 +26,7 @@
   <div class="pbs-pop-tag-wrap">
     <div class="pbs-pop-tags global-scroll">
       @for (item of popTagList; track $index) {
-        <button class="pbs-pop-tag"
-          [class.pbs-active-tag]="item.name == tag"
+        <button type="button" class="pbs-pop-tag" [class.pbs-active-tag]="item.name == tag"
           (click)="doSetTag(item.name)">
           #{{ item.name }}&nbsp;({{ item.countLinks }})
         </button>

@@ -38,7 +38,7 @@
         <span>{{ blockedUser.blockDate | dateTimeFormat:locale:formatTime }}</span>
       </div>
       <div class="pbu-item-action pbu-cell5">
-        <button matButton="elevated" class="stl-btn-brd" (click)="doUnblockUser(blockedUser.nickname)">
+        <button matButton="elevated" type="button" class="stl-btn-brd" (click)="doUnblockUser(blockedUser.nickname)">
           {{ 'panel-banned-users.unblock_user' | translate }}
         </button>
       </div>
