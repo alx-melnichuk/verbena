@@ -2,6 +2,7 @@ import { Directive, EventEmitter, HostBinding, HostListener, Output } from "@ang
 
 @Directive({
     selector: "[appFieldDragAndDrop]",
+    exportAs: "appFieldDragAndDrop",
     standalone: true
 })
 export class FieldDragAndDrop {
