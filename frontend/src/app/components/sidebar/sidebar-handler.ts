@@ -11,12 +11,12 @@ let uniqueIdCounter = 0;
     standalone: true
 })
 export class SidebarHandler implements OnInit {
-    private elementRef: ElementRef<HTMLElement> = inject<ElementRef<HTMLElement>>(ElementRef);
+    private element: ElementRef<HTMLElement> = inject<ElementRef<HTMLElement>>(ElementRef);
 
     @Input()
     public id = `sdbr-hnd-id${uniqueIdCounter++}`;
     @Input("sidebarHandlerOwner")
-    public owner: HTMLElement | null = this.elementRef.nativeElement.parentElement;
+    public owner: HTMLElement | null = this.element.nativeElement.parentElement;
     @Input("sidebarHandlerIfScroll")
     public overIfScroll: boolean = false;
 
@@ -43,7 +43,7 @@ export class SidebarHandler implements OnInit {
     }
 
     ngOnInit(): void {
-        const style = window.getComputedStyle(this.elementRef.nativeElement);
+        const style = window.getComputedStyle(this.element.nativeElement);
         const duratStr = style.getPropertyValue("---sb-durat");
         this.duration = this.getMillisecond(duratStr); // millisecond 10^-3
         this.count = Math.ceil(this.duration / CN_INTERVAL);
