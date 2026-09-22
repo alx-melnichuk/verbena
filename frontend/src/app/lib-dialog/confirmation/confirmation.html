@@ -10,14 +10,14 @@
 </div>
 <div mat-dialog-actions class="dc-actions">
   @if (!!btnNameCancel) {
-    <button matButton="elevated" type="button" class="stl-btn-brd"
+    <button matButton type="button" class="stl-btn-brd"
       (click)="cancel()"
       cdkFocusInitial>
       {{ btnNameCancel }}
     </button>
   }
   @if (!!btnNameAccept) {
-    <button matButton="elevated" type="button" class="stl-btn-brd"
+    <button matButton type="button" class="stl-btn-brd"
       (click)="accept()">
       {{ btnNameAccept }}
     </button>

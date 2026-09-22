@@ -26,7 +26,7 @@
       (input)="updateErrMsgObjs()">
     </app-field-password>
     
-    <button matButton="elevated" type="button" pl-mt-4 class="mat-primary stl-btn-brd"
+    <button matButton type="button" pl-mt-4 class="mat-primary stl-btn-brd"
       [disabled]="formGroup.invalid || !!isDisabled ? '' : undefined"
       (click)="doLogin()">
       {{ 'panel-login.btn_login' | translate }}
