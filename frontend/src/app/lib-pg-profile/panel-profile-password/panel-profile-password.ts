@@ -7,7 +7,8 @@ import { MatButtonModule } from "@angular/material/button";
 import { MatInputModule } from "@angular/material/input";
 import { TranslatePipe, TranslateService } from "@ngx-translate/core";
 import { CN_PASSWORD } from "../../common/fields-consts";
-import { FieldPassword } from "../../components/field-password/field-password";
+import { FieldInput } from "../../components/field-input/field-input";
+import { IconBox } from "../../directives/icon-box";
 import { ErrMsgObj } from "../../utils/http-error.util";
 import { NewPasswordProfileDto } from "../profile-dto";
 
@@ -15,7 +16,7 @@ import { NewPasswordProfileDto } from "../profile-dto";
     selector: "app-panel-profile-password",
     exportAs: "appPanelProfilePassword",
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe, FieldPassword],
+    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe, FieldInput, IconBox],
     templateUrl: "./panel-profile-password.html",
     styleUrl: "./panel-profile-password.scss",
     encapsulation: ViewEncapsulation.None,
@@ -45,6 +46,8 @@ export class PanelProfilePassword implements OnChanges {
     };
     public formGroup: FormGroup = new FormGroup(this.cntls);
     public isRequiredPassword: boolean = false;
+    public isShowPassword1 = false;
+    public isShowPassword2 = false;
 
     private isChangeData: boolean = false;
 
