@@ -34,16 +34,6 @@ app-panel-profile-settings {
         display: inline-flex;
     }
 
-    .pps-params {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-
-        &>.pps-param {
-            flex-basis: 48%;
-        }
-    }
-
     // ** Actions **
     .pps-actions {
         display: flex;

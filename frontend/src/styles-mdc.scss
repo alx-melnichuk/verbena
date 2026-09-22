@@ -21,14 +21,14 @@
         }
     }
 
-    .stl-btn-brd {
-        --stl-btn-brd-cl: var(--mat-sys-inverse-primary);
+    &.stl-btn button.stl-btn-brd:not(:disabled) {
 
-        &.mat-mdc-raised-button.mat-mdc-button-disabled {
-            --stl-btn-brd-cl: var(--mat-sys-outline-variant);
+        &.mat-mdc-outlined-button {
+            --mat-button-outlined-outline-color: var(--mat-sys-inverse-primary);
         }
 
-        border: 1px solid var(--stl-btn-brd-cl);
+        &:not(.mat-mdc-outlined-button) {
+            border: thin solid var(--mat-sys-inverse-primary);
+        }
     }
-
 }

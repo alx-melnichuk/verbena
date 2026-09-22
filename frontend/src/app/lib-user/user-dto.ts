@@ -58,8 +58,10 @@ export interface LoginResponseDto {
 // ** Appearance SettingsDto **
 
 export interface SettingsDto {
-    appearance?: string | undefined;
+    formFieldAppearance?: string | undefined;
     formFieldShape?: string | undefined;
+    buttonAppearance?: string | undefined;
+    buttonBorder?: boolean | undefined;
     buttonShape?: string | undefined;
 }
 

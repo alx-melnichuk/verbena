@@ -11,12 +11,6 @@ export interface User {
     locale: string; // Default locale. ["default"], min_len=2 max_len=32
 }
 
-export interface Settings {
-    appearance?: string | undefined;
-    formFieldShape?: string | undefined;
-    buttonShape?: string | undefined;
-}
-
 export const ACCESS_TOKEN = "accessToken";
 export const REFRESH_TOKEN = "refreshToken";
 
@@ -27,7 +21,6 @@ export class SessionSrv {
     private accessToken: string | null = null;
     private refreshToken: string | null = null;
     private user: User | null = null;
-    private settings: Settings | null = null;
 
     constructor() {
         if (env.logLevel & 4) { console.info(`SessionSrv(); // 2 service`); }
@@ -39,7 +32,7 @@ export class SessionSrv {
     }
 
     public getUser(): User | null {
-        return this.user != null ? { ...this.user } : null;
+        return this.user;
     }
     public setUser(user: Partial<User>): void {
         this.user = {
@@ -50,6 +43,7 @@ export class SessionSrv {
             theme: (user?.theme || ""),
             locale: (user?.locale || ""),
         };
+        Object.freeze(this.user);
     }
     public removeUser(): void {
         this.user = null;
@@ -72,15 +66,5 @@ export class SessionSrv {
         this.refreshToken = null;
         window.localStorage.removeItem(ACCESS_TOKEN);
         window.localStorage.removeItem(REFRESH_TOKEN);
-    }
-    public getSettings(): Settings | null {
-        return this.settings != null ? { ...this.settings } : null;
-    }
-    public setSettings(value: Partial<Settings>) {
-        this.settings = {
-            appearance: value.appearance,
-            formFieldShape: value.formFieldShape,
-            buttonShape: value.buttonShape,
-        };
     }
 }

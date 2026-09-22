@@ -44,16 +44,26 @@
   },
   "panel-profile-settings": {
     "title_settings": "Customization for Appearance",
-    "label_appearance": "Appearance for 'input'",
+    "label_form-field-appearance": "Appearance for 'input'",
     "label_form-field-shape": "Rounding shape for 'input'",
+    "label_button-appearance": "Appearance for 'button'",
     "label_button-shape": "Rounding shape for 'button'",
+    "label_button-border": "Add border for 'button'",
     "nothing": "nothing",
     "btn_save_settings": "Save settings"
   },
-  "appearance": {
+  "formFieldAppearance": {
     "": "nothing",
     "outline": "outlined", 
     "fill": "filled"
+  },
+  "buttonAppearance": {
+    "": "nothing",
+    "text": "text", 
+    "filled": "filled",
+    "elevated": "elevated", 
+    "outlined": "outlined",
+    "tonal": "tonal"
   },
   "409.email_already_use": "This email is already in use or is being registered.",
   "409.nickname_already_use": "This nickname is already in use or is being registered.",

@@ -44,16 +44,26 @@
   },
   "panel-profile-settings": {
     "title_settings": "Налаштування зовнішнього вигляду",
-    "label_appearance": "Вигляд для 'вводу'",
+    "label_form-field-appearance": "Вигляд для 'вводу'",
     "label_form-field-shape": "Округлення для 'вводу'",
+    "label_button-appearance": "Вигляд для 'кнопки'",
     "label_button-shape": "Округлення для 'кнопки'",
+    "label_button-border": "Додайти рамку для 'кнопки'",
     "nothing": "нічого",
     "btn_save_settings": "Зберегти налаштування"
   },
-  "appearance": {
+  "formFieldAppearance": {
     "": "нічого",
     "outline": "окреслено", 
     "fill": "заповнено"
+  },
+  "buttonAppearance": {
+    "": "нічого",
+    "text": "текст", 
+    "filled": "заповнено",
+    "elevated": "піднято", 
+    "outlined": "окреслено",
+    "tonal": "тонально"
   },
   "409.email_already_use": "Ця електронна адреса вже використовується або знаходиться на стадії реєстрації.",
   "409.nickname_already_use": "Цей псевдонім уже використовується або на стадії реєстрації.",

@@ -7,17 +7,18 @@
 
     <div class="pps-title">{{ 'panel-profile-settings.title_settings' | translate }}</div>
 
-    <mat-form-field  pps-mt-2 class="pps-param9">
-      <mat-label>{{ 'panel-profile-settings.label_appearance' | translate }}</mat-label>
-      <mat-select formControlName="appearance"
+    <mat-form-field  pps-mt-2>
+      <mat-label>{{ 'panel-profile-settings.label_form-field-appearance' | translate }}</mat-label>
+      <mat-select formControlName="formFieldAppearance"
         panelClass="pps-select"
-        (selectionChange)="updateErrMsgObjs(); setAppearance($event.value); doChangeData('appearance', formGroup, settingsDto);">
-        <mat-select-trigger pps-inln-flex [class.pps-fn-it]="!cntls.appearance.value">
-          {{ ("appearance." + cntls.appearance.value) | translate }}
+        (selectionChange)="updateErrMsgObjs(); setFormFieldAppearance($event.value);
+            doChangeData('formFieldAppearance', formGroup, settingsDto);">
+        <mat-select-trigger pps-inln-flex [class.pps-fn-it]="!cntls.formFieldAppearance.value">
+          {{ ("formFieldAppearance." + cntls.formFieldAppearance.value) | translate }}
         </mat-select-trigger>
-        @for (item of appearanceList; track item) {
+        @for (item of formFieldAppearanceList; track item) {
           <mat-option [class.pps-opt-fn-it]="item == ``" [value]="item">
-            {{ ("appearance." + item) | translate }}
+            {{ ("formFieldAppearance." + item) | translate }}
           </mat-option>
         }
       </mat-select>
@@ -39,6 +40,31 @@
       </mat-select>
     </mat-form-field>
 
+    <mat-form-field  pps-mt-2>
+      <mat-label>{{ 'panel-profile-settings.label_button-appearance' | translate }}</mat-label>
+      <mat-select formControlName="buttonAppearance"
+        panelClass="pps-select"
+        (selectionChange)="updateErrMsgObjs(); setButtonAppearance($event.value);
+            doChangeData('buttonAppearance', formGroup, settingsDto);">
+        <mat-select-trigger pps-inln-flex [class.pps-fn-it]="!cntls.buttonAppearance.value">
+          {{ ("buttonAppearance." + cntls.buttonAppearance.value) | translate }}
+        </mat-select-trigger>
+        @for (item of buttonAppearanceList; track item) {
+          <mat-option [class.pps-opt-fn-it]="item == ``" [value]="item">
+            {{ ("buttonAppearance." + item) | translate }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <section class="example-section">
+        <mat-checkbox class="example-margin"
+            formControlName="buttonBorder"
+            (change)="updateErrMsgObjs(); setButtonBorder($event.checked); doChangeData('buttonBorder', formGroup, settingsDto);">
+            {{ 'panel-profile-settings.label_button-border' | translate }}
+        </mat-checkbox>
+    </section>
+
     <mat-form-field pps-mt-4>
       <mat-label>{{ 'panel-profile-settings.label_button-shape' | translate }}</mat-label>
       <mat-select formControlName="buttonShape"
@@ -56,7 +82,7 @@
     </mat-form-field>
 
     <div pps-mt-4 class="pps-actions">
-      <button matButton="elevated" type="button" class="pps-btn-save stl-btn-brd"
+      <button matButton type="button" class="pps-btn-save stl-btn-brd"
         [disabled]="formGroup.pristine || formGroup.invalid || !!isDisabled ? '' : undefined"
         (click)="saveSettings(formGroup, !!isDisabled)">
         <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"

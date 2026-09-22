@@ -1,8 +1,9 @@
 import { HTTP_INTERCEPTORS, HttpClient, HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
 import {
-    ApplicationConfig, importProvidersFrom, inject, InjectionToken, provideAppInitializer,
-    provideBrowserGlobalErrorListeners, provideZonelessChangeDetection
+    ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideBrowserGlobalErrorListeners,
+    provideZonelessChangeDetection
 } from "@angular/core";
+import { MAT_BUTTON_CONFIG, MatButtonConfig } from "@angular/material/button";
 import { MAT_DATE_LOCALE, DateAdapter, MAT_DATE_FORMATS } from "@angular/material/core";
 import { MatDialogModule, MatDialog } from "@angular/material/dialog";
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldDefaultOptions } from "@angular/material/form-field";
@@ -44,6 +45,16 @@ export const appFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
     // floatLabel?: FloatLabelType, 
     // Whether the form field should reserve space for one line by default.
     subscriptSizing: "fixed", // "fixed" | "dynamic"
+};
+
+// Define configuration MatButtonConfig.
+export const appButtonConfig: MatButtonConfig = {
+    // Whether disabled buttons should be interactive.
+    // disabledInteractive?: boolean;
+    // Default palette color to apply to buttons.
+    // color?: ThemePalette;
+    // Default appearance for plain buttons (not icon buttons or FABs).
+    defaultAppearance: "text", //  "text" | "filled" | "elevated" | "outlined" | "tonal"
 };
 
 export const appConfig: ApplicationConfig = {
@@ -133,7 +144,6 @@ export const appConfig: ApplicationConfig = {
                         const settings = { ...user.settings };
                         user.settings = undefined;
                         sessionSrv.setUser(user);
-                        sessionSrv.setSettings(settings);
                         appearanceSvr.setSettings(settings);
 
                         return Promise.resolve();
@@ -154,6 +164,11 @@ export const appConfig: ApplicationConfig = {
         {
             provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
             useValue: appFormFieldDefaultOptions
+        },
+        // Represents the default options for form Buttons.
+        {
+            provide: MAT_BUTTON_CONFIG,
+            useValue: appButtonConfig
         },
         importProvidersFrom(MatDialogModule, MatSnackBarModule),
         {

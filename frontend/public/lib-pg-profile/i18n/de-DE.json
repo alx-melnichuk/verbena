@@ -44,16 +44,26 @@
   },
   "panel-profile-settings": {
     "title_settings": "Anpassung für das Aussehen",
-    "label_appearance": "Aussehen für 'Input'",
+    "label_form-field-appearance": "Aussehen für 'Input'",
     "label_form-field-shape": "Runde Form für 'Input'",
+    "label_button-appearance": "Aussehen für 'Knopf'",
     "label_button-shape": "Runde Form für 'Knopf'",
+    "label_button-border": "Rand für 'Knopf' hinzufügen",
     "nothing": "nichts",
     "btn_save_settings": "Speicher-Einstellungen"
   },
-  "appearance": {
+  "formFieldAppearance": {
     "": "nichts",
     "outline": "gliederung", 
     "fill": "gefüllt"
+  },
+  "buttonAppearance": {
+    "": "nichts",
+    "text": "text", 
+    "filled": "gefüllt",
+    "elevated": "erhöht", 
+    "outlined": "gliederung",
+    "tonal": "tonal"
   },
   "409.email_already_use": "Diese e-mail wird bereits verwendet oder registriert.",
   "409.nickname_already_use": "Dieser spitzname wird bereits verwendet oder wird registriert.",

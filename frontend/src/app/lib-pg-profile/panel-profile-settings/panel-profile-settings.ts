@@ -5,11 +5,12 @@ import {
 } from "@angular/core";
 import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
+import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
 import { TranslatePipe } from "@ngx-translate/core";
-import { APPEARANCE_LIST, AppearanceSvr, BUTTON_SHAPE_LIST, FORM_FIELD_SHAPE_LIST } from "../../common/appearance-svr";
+import { FORM_FIELD_APPEARANCE_LIST, AppearanceSvr, BUTTON_SHAPE_LIST, FORM_FIELD_SHAPE_LIST, BUTTON_APPEARANCE_LIST } from "../../common/appearance-svr";
 import { SettingsDto } from "../../lib-user/user-dto";
 import { ErrMsgObj } from "../../utils/http-error.util";
 
@@ -17,7 +18,8 @@ import { ErrMsgObj } from "../../utils/http-error.util";
     selector: "app-panel-profile-settings",
     exportAs: "appPanelProfileSettings",
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe, MatFormFieldModule, MatSelectModule],
+    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatCheckboxModule, MatInputModule, TranslatePipe, MatFormFieldModule,
+        MatSelectModule],
     templateUrl: "./panel-profile-settings.html",
     styleUrl: "./panel-profile-settings.scss",
     encapsulation: ViewEncapsulation.None,
@@ -44,14 +46,17 @@ export class PanelProfileSettings implements OnChanges {
     public contentRef!: TemplateRef<unknown>;
 
     public cntls = {
-        appearance: new FormControl("", []),
+        formFieldAppearance: new FormControl("", []),
         formFieldShape: new FormControl("", []),
+        buttonAppearance: new FormControl("", []),
+        buttonBorder: new FormControl(false, []),
         buttonShape: new FormControl("", []),
     };
     public formGroup: FormGroup = new FormGroup(this.cntls);
 
-    public appearanceList = [...APPEARANCE_LIST];
+    public formFieldAppearanceList = [...FORM_FIELD_APPEARANCE_LIST];
     public formFieldShapeList = ["", ...FORM_FIELD_SHAPE_LIST];
+    public buttonAppearanceList = ["", ...BUTTON_APPEARANCE_LIST];
     public buttonShapeList = ["", ...BUTTON_SHAPE_LIST];
 
     private isChangeData: boolean = false;
@@ -59,8 +64,10 @@ export class PanelProfileSettings implements OnChanges {
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["settingsDto"]) {
             const settings = {
-                appearance: (this.settingsDto?.appearance || this.appearanceSvr.getAppearance()),
+                formFieldAppearance: (this.settingsDto?.formFieldAppearance || this.appearanceSvr.getFormFieldAppearance()),
                 formFieldShape: (this.settingsDto?.formFieldShape || ""),
+                buttonAppearance: (this.settingsDto?.buttonAppearance || this.appearanceSvr.getButtonAppearance()),
+                buttonBorder: (this.settingsDto?.buttonBorder || false),
                 buttonShape: (this.settingsDto?.buttonShape || ""),
             };
             this.formGroup.patchValue(settings);
@@ -83,20 +90,27 @@ export class PanelProfileSettings implements OnChanges {
         }
     }
 
-    // ** Appearance **
+    // ** FormField **
 
-    public setAppearance(value: string): void {
-        this.appearanceSvr.setAppearance(value);
+    public setFormFieldAppearance(value: string): void {
+        this.appearanceSvr.setFormFieldAppearance(value);
         this.rerendering();
     }
-
-    // ** FormFieldShape **
 
     public setFormFieldShape(value: string): void {
         this.appearanceSvr.setFormFieldShape(value);
     }
 
-    // ** ButtonShape **
+    // ** Button **
+
+    public setButtonAppearance(value: string): void {
+        this.appearanceSvr.setButtonAppearance(value);
+        this.rerendering();
+    }
+
+    public setButtonBorder(isAdd: boolean): void {
+        this.appearanceSvr.setButtonBorder(isAdd);
+    }
 
     public setButtonShape(value: string): void {
         this.appearanceSvr.setButtonShape(value);
@@ -113,8 +127,10 @@ export class PanelProfileSettings implements OnChanges {
             return;
         }
         const modifySettings: SettingsDto = {
-            appearance: formGroup.get("appearance")?.value,
+            formFieldAppearance: formGroup.get("formFieldAppearance")?.value,
             formFieldShape: formGroup.get("formFieldShape")?.value,
+            buttonAppearance: formGroup.get("buttonAppearance")?.value,
+            buttonBorder: formGroup.get("buttonBorder")?.value,
             buttonShape: formGroup.get("buttonShape")?.value,
         };
         const is_all_empty = Object.values(modifySettings).findIndex((value) => value !== undefined) == -1;
