@@ -1,6 +1,7 @@
 import { CommonModule } from "@angular/common";
 import {
-    ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
+    ChangeDetectionStrategy, Component, ElementRef, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges,
+    ViewChild, ViewEncapsulation
 } from "@angular/core";
 import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from "@angular/material/datepicker";
 import { APP_CALENDAR_HEADER_EVENT, CalendarHeader } from "../../components/field-datepicker/calendar-header/calendar-header";
@@ -24,6 +25,8 @@ type MarkedDatesMapTp = { [key: string]: number };
     providers: [{ provide: APP_CALENDAR_HEADER_EVENT, useExisting: PanelStreamCalendar }],
 })
 export class PanelStreamCalendar implements OnChanges {
+    private element: ElementRef<HTMLElement> = inject<ElementRef<HTMLElement>>(ElementRef);
+
     @Input()
     public locale: string | null | undefined;
     @Input()
@@ -49,19 +52,16 @@ export class PanelStreamCalendar implements OnChanges {
 
     private markedPeriodMap: MarkedDatesMapTp = {};
 
-    constructor(public hostRef: ElementRef<HTMLElement>) {
-    }
-
     public ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["locale"] && !!this.calendar) {
             // Note! This operation allows you to update the value of "periodButtonText" with the new locale.
             this.calendar.activeDate = new Date(this.calendar.activeDate);
         }
         if (!!changes["markedDates"] && !!this.markedDates && !!this.calendar) {
-            this.settingPropsByMarkedPeriodMap(this.hostRef, this.markedPeriodMap, false);
+            this.settingPropsByMarkedPeriodMap(this.element, this.markedPeriodMap, false);
             this.markedPeriodMap = this.getMarkedPeriodMap(this.markedDates);
             this.calendar.updateTodaysDate();
-            this.settingPropsByMarkedPeriodMap(this.hostRef, this.markedPeriodMap, true);
+            this.settingPropsByMarkedPeriodMap(this.element, this.markedPeriodMap, true);
         }
     }
 
