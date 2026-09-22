@@ -1,12 +1,12 @@
 import { CommonModule } from "@angular/common";
 import {
-    ChangeDetectionStrategy, Component, forwardRef, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation
+    AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, forwardRef, Input, OnChanges, QueryList, SimpleChanges, ViewChild, ViewEncapsulation
 } from "@angular/core";
 import {
     AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
     ValidationErrors, Validator,
 } from "@angular/forms";
-import { MatFormFieldModule } from "@angular/material/form-field";
+import { MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix } from "@angular/material/form-field";
 import { MatInputModule, MatInput } from "@angular/material/input";
 import { TranslatePipe } from "@ngx-translate/core";
 import { ValidatorUtils } from "../../utils/validator.utils";
@@ -18,8 +18,7 @@ export const INPUT = "input";
     selector: "app-field-input",
     exportAs: "appFieldInput",
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule,
-        MatInputModule, TranslatePipe],
+    imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, TranslatePipe],
     templateUrl: "./field-input.html",
     styleUrl: "./field-input.scss",
     encapsulation: ViewEncapsulation.None,
@@ -29,7 +28,7 @@ export const INPUT = "input";
         { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldInput), multi: true },
     ],
 })
-export class FieldInput implements OnChanges, ControlValueAccessor, Validator {
+export class FieldInput implements OnChanges, AfterContentInit, ControlValueAccessor, Validator {
     @Input()
     public errorMsg: string | null | undefined;
     @Input()
@@ -58,8 +57,15 @@ export class FieldInput implements OnChanges, ControlValueAccessor, Validator {
     @ViewChild(MatInput, { static: false })
     public matInput: MatInput | null = null;
 
+    @ContentChildren(MAT_PREFIX, { descendants: true })
+    public prefixChildren: QueryList<MatPrefix> | undefined;
+    @ContentChildren(MAT_SUFFIX, { descendants: true })
+    public suffixChildren: QueryList<MatSuffix> | undefined;
+
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ input: this.formControl });
+    public isIconPrefix: boolean = false;
+    public isIconSuffix: boolean = false;
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["isRequired"] || !!changes["minLen"] || !!changes["maxLen"] || !!changes["pattern"] || !!changes["type"]) {
@@ -73,6 +79,10 @@ export class FieldInput implements OnChanges, ControlValueAccessor, Validator {
             this.formControl.updateValueAndValidity();
             this.onChange(this.formControl.value);
         }
+    }
+
+    ngAfterContentInit(): void {
+        this.initPrefixAndSuffix();
     }
 
     // ** ControlValueAccessor - start **
@@ -167,5 +177,10 @@ export class FieldInput implements OnChanges, ControlValueAccessor, Validator {
         };
         this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
         this.formControl.updateValueAndValidity();
+    }
+
+    private initPrefixAndSuffix(): void {
+        this.isIconPrefix = !!this.prefixChildren?.find(s => !s._isText);
+        this.isIconSuffix = !!this.suffixChildren?.find(s => !s._isText);
     }
 }

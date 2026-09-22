@@ -4,8 +4,12 @@
   @if (!!label) {
     <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
   }
-  <ng-content select="[fi-prefix]"></ng-content>
-  
+  @if (isIconPrefix) {
+    <div matPrefix>
+      <ng-content select="[matPrefix], [matIconPrefix]"></ng-content>
+    </div>
+  }
+
   <input matInput class="fi-input"
     type="{{type}}"
     formControlName="input"
@@ -18,8 +22,13 @@
     (input)="onChange(formControl.value)"
     (blur)="onTouched()"
   />
-  
-  <ng-content select="[fi-suffix]"></ng-content>
+
+  @if (isIconSuffix) {
+    <div matSuffix>
+      <ng-content select="[matSuffix], [matIconSuffix]"></ng-content>
+    </div>
+  }
+
   @if (!!hint) {
     <mat-hint>{{ hint | translate }}</mat-hint>
   }
