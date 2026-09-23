@@ -28,10 +28,10 @@ export class IconBox implements OnChanges {
                 case "PasswdShow": this.buildPasswdShow(this.renderer, this.element, this.attribNames); break;
                 case "PasswdHide": this.buildPasswdHide(this.renderer, this.element, this.attribNames); break;
                 case "Diskette": this.buildDiskette(this.renderer, this.element, this.attribNames); break;
-                case "CreateDocument": this.buildCreateDocument(this.renderer, this.element, this.attribNames); break;
-                case "EditDocument": this.buildEditDocument(this.renderer, this.element, this.attribNames); break;
-                case "DuplicateDocument": this.buildDuplicateDocument(this.renderer, this.element, this.attribNames); break;
-                case "DeleteDocument": this.buildDeleteDocument(this.renderer, this.element, this.attribNames); break;
+                case "CreateFile": this.buildCreateFile(this.renderer, this.element, this.attribNames); break;
+                case "EditFile": this.buildEditFile(this.renderer, this.element, this.attribNames); break;
+                case "CopyFile": this.buildCopyFile(this.renderer, this.element, this.attribNames); break;
+                case "DeleteFile": this.buildDeleteFile(this.renderer, this.element, this.attribNames); break;
                 case "Hourglass": this.buildHourglass(this.renderer, this.element, this.attribNames); break;
                 case "Play": this.buildPlay(this.renderer, this.element, this.attribNames); break;
                 case "Pause": this.buildPause(this.renderer, this.element, this.attribNames); break;
@@ -112,7 +112,7 @@ export class IconBox implements OnChanges {
         renderer.setAttribute(path4, "d", "M16,92 v-38 h65 v38");
         renderer.appendChild(svg, path4);
     }
-    private buildCreateDocument(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+    private buildCreateFile(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");
@@ -135,7 +135,7 @@ export class IconBox implements OnChanges {
         renderer.setAttribute(path3, "d", "M60,55 v18 M51,64 h18");
         renderer.appendChild(svg, path3);
     }
-    private buildEditDocument(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+    private buildEditFile(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");
@@ -157,7 +157,7 @@ export class IconBox implements OnChanges {
         renderer.setAttribute(path3, "d", "M49,74 l3.0,-9.4 14,-14 a2,2 0,0,1 2,0 l5,5 a2,2 0,0,1 0,2 l-14,14 z M61,55.4 l7,7.2");
         renderer.appendChild(svg, path3);
     }
-    private buildDuplicateDocument(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+    private buildCopyFile(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");
@@ -175,7 +175,7 @@ export class IconBox implements OnChanges {
         renderer.setAttribute(path2, "d", "M80,17.5 h-14 m-36,60 v5 a8,8 0,0,0 8,8 h41 a8,8 0,0,0 8,-8 v-57  a8,8 0,0,0 -8,-8");
         renderer.appendChild(svg, path2);
     }
-    private buildDeleteDocument(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+    private buildDeleteFile(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");

@@ -20,7 +20,7 @@
       <button matButton type="button" class="psi-action-btn stl-btn-brd psi-actions-box"
         (click)="doActionDuplicate(streamDto.id)" psi-mr-2>
         <span class="psi-action-label">
-          <svg appIconBox mode="DuplicateDocument" psi-mr-1 class="psi-duplicate-accent"></svg>
+          <svg appIconBox mode="CopyFile" psi-mr-1 class="psi-duplicate-accent"></svg>
           <span>{{ 'panel-stream-info.btn-duplicate' | translate }}</span>
         </span>
       </button>
@@ -30,7 +30,7 @@
         <button matButton type="button" class="psi-action-btn stl-btn-brd"
           (click)="doActionEdit(streamDto.id)" psi-mr-2>
           <span class="psi-action-label">
-            <svg appIconBox mode="EditDocument" psi-mr-1 class="psi-edit-accent"></svg> 
+            <svg appIconBox mode="EditFile" psi-mr-1 class="psi-edit-accent"></svg> 
             <span>{{ 'panel-stream-info.btn-edit' | translate }}</span>
           </span>
         </button>
@@ -39,7 +39,7 @@
         <button matButton type="button" class="psi-action-btn stl-btn-brd"
           (click)="doActionDelete(streamDto)" psi-mr-2>
           <span class="psi-action-label">
-            <svg appIconBox mode="DeleteDocument" psi-mr-1 class="psi-delete-accent"></svg>
+            <svg appIconBox mode="DeleteFile" psi-mr-1 class="psi-delete-accent"></svg>
             <span>{{ 'panel-stream-info.btn-delete' | translate }}</span>
           </span>
         </button>
