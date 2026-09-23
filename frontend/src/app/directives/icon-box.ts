@@ -21,6 +21,7 @@ export class IconBox implements OnChanges {
                 case "PasswdShow": this.createPasswdShow(this.renderer, this.element); break;
                 case "PasswdHide": this.createPasswdHide(this.renderer, this.element); break;
                 case "Diskette": this.createDiskette(this.renderer, this.element); break;
+                case "DuplicateDocument": this.createDuplicateDocument(this.renderer, this.element); break;
                 case "EditDocument": this.createEditDocument(this.renderer, this.element); break;
                 case "DeleteDocument": this.createDeleteDocument(this.renderer, this.element); break;
                 default:
@@ -98,6 +99,24 @@ export class IconBox implements OnChanges {
         const path4 = renderer.createElement("path", "svg");
         renderer.setAttribute(path4, "d", "M16,92 v-38 h65 v38");
         renderer.appendChild(svg, path4);
+    }
+    private createDuplicateDocument(renderer: Renderer2, element: ElementRef<any>): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        renderer.setAttribute(svg, "fill", "none");
+        renderer.setAttribute(svg, "stroke", "currentColor");
+        renderer.setAttribute(svg, "stroke-linecap", "round");
+        renderer.setAttribute(svg, "stroke-linejoin", "round");
+        renderer.setAttribute(svg, "stroke-width", "6");
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M58,5.5 h-28 a4,4 0,0,0 -4,2 l-14,14 a4,4 0,0,0 -2,4 v44 a8,8 0,0,0 8,8 h40 a8,8 0,0,0 8,-8 v-56 a8,8 0,0,0 -8,-8 z m-48,20 h14 a6,6 0,0,0 6,-6 v-14");
+        renderer.appendChild(svg, path1);
+
+        const path2 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path2, "d", "M80,17.5 h-14 m-36,60 v5 a8,8 0,0,0 8,8 h41 a8,8 0,0,0 8,-8 v-57  a8,8 0,0,0 -8,-8");
+        renderer.appendChild(svg, path2);
     }
     private createEditDocument(renderer: Renderer2, element: ElementRef<any>): void {
         const svg = element.nativeElement;
