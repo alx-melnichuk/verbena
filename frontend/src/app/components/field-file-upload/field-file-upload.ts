@@ -4,6 +4,7 @@ import {
 } from "@angular/core";
 import { TranslatePipe, TranslateService } from "@ngx-translate/core";
 import { FieldDragAndDrop } from "../../directives/field-drag-and-drop";
+import { IconBox } from "../../directives/icon-box";
 import { FileSizeUtil } from "../../utils/file_size.util";
 import { ValidFileTypesUtil } from "../../utils/valid_file_types.util";
 
@@ -13,7 +14,7 @@ let uniqueIdCounter = 0;
     selector: "app-field-file-upload",
     exportAs: "appFieldFileUpload",
     standalone: true,
-    imports: [CommonModule, FieldDragAndDrop, TranslatePipe],
+    imports: [CommonModule, TranslatePipe, FieldDragAndDrop, IconBox],
     templateUrl: "./field-file-upload.html",
     styleUrl: "./field-file-upload.scss",
     encapsulation: ViewEncapsulation.None,
