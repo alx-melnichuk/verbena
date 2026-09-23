@@ -32,6 +32,10 @@ export class IconBox implements OnChanges {
                 case "EditDocument": this.buildEditDocument(this.renderer, this.element, this.attribNames); break;
                 case "DuplicateDocument": this.buildDuplicateDocument(this.renderer, this.element, this.attribNames); break;
                 case "DeleteDocument": this.buildDeleteDocument(this.renderer, this.element, this.attribNames); break;
+                case "Hourglass": this.buildHourglass(this.renderer, this.element, this.attribNames); break;
+                case "Play": this.buildPlay(this.renderer, this.element, this.attribNames); break;
+                case "Pause": this.buildPause(this.renderer, this.element, this.attribNames); break;
+                case "Stop": this.buildStop(this.renderer, this.element, this.attribNames); break;
                 default:
                     break;
             }
@@ -192,5 +196,65 @@ export class IconBox implements OnChanges {
         const path3 = renderer.createElement("path", "svg");
         renderer.setAttribute(path3, "d", "M52,56 l16,16 m0,-16 l-16,16");
         renderer.appendChild(svg, path3);
+    }
+    private buildHourglass(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "none"); }
+        if (excludeAttribs.indexOf("stroke") == -1) { renderer.setAttribute(svg, "stroke", "currentColor"); }
+        if (excludeAttribs.indexOf("stroke-linecap") == -1) { renderer.setAttribute(svg, "stroke-linecap", "round"); }
+        if (excludeAttribs.indexOf("stroke-linejoin") == -1) { renderer.setAttribute(svg, "stroke-linejoin", "round"); }
+        if (excludeAttribs.indexOf("stroke-width") == -1) { renderer.setAttribute(svg, "stroke-width", "6"); }
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M19,15 C12,15 12,5 19,5 H78 C85,5 85,15 78,15 H19 Z");
+        renderer.appendChild(svg, path1);
+
+        const path2 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path2, "d", "M22,15 V22 C22,25 23,40 42,46 V49 C23,55 22,71 22,73 V80");
+        renderer.appendChild(svg, path2);
+
+        const path3 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path3, "d", "M75,15 V22 C75,25 74,40 55,46 V49 C74,55 75,71 75,73 V80");
+        renderer.appendChild(svg, path3);
+
+        const path4 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path4, "d", "M19,90 C12,90 12,80 19,80 H78 C85,80 85,90 78,90 H19 Z");
+        renderer.appendChild(svg, path4);
+    }
+    private buildPlay(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "currentColor"); }
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M24.5,28.5 a7,7 0,0,1 9,-8 l36,22.5 a9,9 0,0,1 0,10 l-36,22.5 a7,7 0,0,1 -9,-8 v-39.5 z");
+        renderer.appendChild(svg, path1);
+    }
+    private buildPause(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "currentColor"); }
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M24.5,28.6 a8,8 0,0,1 8,-8 h3 a8,8 0,0,1 8,8 v38.8 a8,8 0,0,1 -8,8 h-3 a8,8 0,0,1 -8,-8 v-38.8 z");
+        renderer.appendChild(svg, path1);
+
+        const path2 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path2, "d", "M52.5,28.6 a8,8 0,0,1 8,-8 h3 a8,8 0,0,1 8,8 v38.8 a8,8 0,0,1 -8,8 h-3 a8,8 0,0,1 -8,-8 v-38.8 z");
+        renderer.appendChild(svg, path2);
+    }
+    private buildStop(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "currentColor"); }
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M20.4,30.5 a10,10 0,0,1 10,-10 h35 a10,10 0,0,1 10,10 v35 a10,10 0,0,1 -10,10 h-35 a10,10 0,0,1 -10,-10 v-34 z");
+        renderer.appendChild(svg, path1);
     }
 }
