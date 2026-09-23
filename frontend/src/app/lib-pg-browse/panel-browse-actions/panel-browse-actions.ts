@@ -2,6 +2,7 @@ import { CommonModule } from "@angular/common";
 import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, ViewEncapsulation } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { TranslatePipe, TranslateService } from "@ngx-translate/core";
+import { IconBox } from "../../directives/icon-box";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { StreamState } from "../../lib-stream/stream-dto";
 
@@ -9,7 +10,7 @@ import { StreamState } from "../../lib-stream/stream-dto";
     selector: 'app-panel-browse-actions',
     exportAs: "appPanelBrowseActions",
     standalone: true,
-    imports: [CommonModule, MatButtonModule, TranslatePipe],
+    imports: [CommonModule, MatButtonModule, TranslatePipe, IconBox],
     templateUrl: './panel-browse-actions.html',
     styleUrl: './panel-browse-actions.scss',
     encapsulation: ViewEncapsulation.None,
