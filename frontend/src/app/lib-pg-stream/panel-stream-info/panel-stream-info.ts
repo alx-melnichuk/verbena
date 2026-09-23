@@ -6,6 +6,7 @@ import { MatButtonModule } from "@angular/material/button";
 import { TranslatePipe } from "@ngx-translate/core";
 import { DateTimeFormatPipe } from "../../common/date-time-format-pipe";
 import { Image } from "../../components/image/image";
+import { IconBox } from "../../directives/icon-box";
 import { StreamDto } from "../../lib-stream/stream-dto";
 import { StreamSrv } from "../../lib-stream/stream-srv";
 
@@ -13,7 +14,7 @@ import { StreamSrv } from "../../lib-stream/stream-srv";
     selector: "app-panel-stream-info",
     exportAs: "appPanelStreamInfo",
     standalone: true,
-    imports: [CommonModule, MatButtonModule, TranslatePipe, DateTimeFormatPipe, Image],
+    imports: [CommonModule, MatButtonModule, TranslatePipe, DateTimeFormatPipe, Image, IconBox],
     templateUrl: "./panel-stream-info.html",
     styleUrl: "./panel-stream-info.scss",
     encapsulation: ViewEncapsulation.None,

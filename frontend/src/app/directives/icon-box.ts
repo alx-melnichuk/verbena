@@ -21,6 +21,7 @@ export class IconBox implements OnChanges {
                 case "PasswdShow": this.createPasswdShow(this.renderer, this.element); break;
                 case "PasswdHide": this.createPasswdHide(this.renderer, this.element); break;
                 case "Diskette": this.createDiskette(this.renderer, this.element); break;
+                case "DeleteDocument": this.createDeleteDocument(this.renderer, this.element); break;
                 default:
                     break;
             }
@@ -76,9 +77,9 @@ export class IconBox implements OnChanges {
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");
         renderer.setAttribute(svg, "fill", "none");
         renderer.setAttribute(svg, "stroke", "currentColor");
-        renderer.setAttribute(svg, "stroke-width", "6");
         renderer.setAttribute(svg, "stroke-linecap", "round");
         renderer.setAttribute(svg, "stroke-linejoin", "round");
+        renderer.setAttribute(svg, "stroke-width", "6");
 
         const path1 = renderer.createElement("path", "svg");
         renderer.setAttribute(path1, "d", "M13.2,3 h63.2 l16,15 v64.5 a10,10 0,0,1 -10,10 h-69.1 a10,10 0,0,1 -10,-10 v-69.5 a10,10 0,0,1 10,-10 z");
@@ -96,5 +97,27 @@ export class IconBox implements OnChanges {
         const path4 = renderer.createElement("path", "svg");
         renderer.setAttribute(path4, "d", "M16,92 v-38 h65 v38");
         renderer.appendChild(svg, path4);
+    }
+    private createDeleteDocument(renderer: Renderer2, element: ElementRef<any>): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        renderer.setAttribute(svg, "fill", "none");
+        renderer.setAttribute(svg, "stroke", "currentColor");
+        renderer.setAttribute(svg, "stroke-linecap", "round");
+        renderer.setAttribute(svg, "stroke-linejoin", "round");
+        renderer.setAttribute(svg, "stroke-width", "6");
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M64,12.0  h-28 a4,4 0,0,0 -4,2  l-14,14 a4,4 0,0,0 -2,4  v44 a8,8 0,0,0 8,8 h12 m36,-48 v-16 a8,8 0,0,0 -8,-8  m-48,20 h14 a6,6 0,0,0 6,-6 v-14");
+        renderer.appendChild(svg, path1);
+
+        const path2 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path2, "d", "M80,55 a22,22 0,1,1 -40,0 22,22 0,0,1 40,0 Z");
+        renderer.appendChild(svg, path2);
+
+        const path3 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path3, "d", "M52,56 l16,16 m0,-16 l-16,16");
+        renderer.appendChild(svg, path3);
     }
 }
