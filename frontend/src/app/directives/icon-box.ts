@@ -36,6 +36,7 @@ export class IconBox implements OnChanges {
                 case "Play": this.buildPlay(this.renderer, this.element, this.attribNames); break;
                 case "Pause": this.buildPause(this.renderer, this.element, this.attribNames); break;
                 case "Stop": this.buildStop(this.renderer, this.element, this.attribNames); break;
+                case "ChevronRight": this.buildChevronRight(this.renderer, this.element, this.attribNames); break;
                 default:
                     break;
             }
@@ -255,6 +256,24 @@ export class IconBox implements OnChanges {
 
         const path1 = renderer.createElement("path", "svg");
         renderer.setAttribute(path1, "d", "M20.4,30.5 a10,10 0,0,1 10,-10 h35 a10,10 0,0,1 10,10 v35 a10,10 0,0,1 -10,10 h-35 a10,10 0,0,1 -10,-10 v-34 z");
+        renderer.appendChild(svg, path1);
+    }
+    /*<svg  stroke-width="8"  
+        class="pbd-arrow pbd-rotate" [class.pbd-0deg]="isSidebarRgOpen" [class.pbd-180deg]="!isSidebarRgOpen">
+        <path d="M36,20 l28,28 l-28,28" />
+      </svg> */
+    private buildChevronRight(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "none"); }
+        if (excludeAttribs.indexOf("stroke") == -1) { renderer.setAttribute(svg, "stroke", "currentColor"); }
+        if (excludeAttribs.indexOf("stroke-linecap") == -1) { renderer.setAttribute(svg, "stroke-linecap", "round"); }
+        if (excludeAttribs.indexOf("stroke-linejoin") == -1) { renderer.setAttribute(svg, "stroke-linejoin", "round"); }
+        if (excludeAttribs.indexOf("stroke-width") == -1) { renderer.setAttribute(svg, "stroke-width", "6"); }
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M36,20 l28,28 l-28,28");
         renderer.appendChild(svg, path1);
     }
 }

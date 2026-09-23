@@ -13,6 +13,7 @@ import { StringDateTime } from "../../common/string-date-time";
 import { Sidebar } from "../../components/sidebar/sidebar";
 import { Spinner } from "../../components/spinner/spinner";
 import { ItemView } from "../../components/view-item-list/view-item-list";
+import { IconBox } from "../../directives/icon-box";
 import { ChatMessageDto, ChatMessageDtoUtil, BlockedUserDto } from "../../lib-chat/chat-message";
 import { ChatMessageSrv, CHAT_MSG_LIMIT } from "../../lib-chat/chat-message-srv";
 import { ChatSocketSrv } from "../../lib-chat/chat-socket-srv";
@@ -48,7 +49,7 @@ export interface ItemViewSetMsg {
     selector: 'app-pg-browse-details',
     exportAs: "appPgBrowseDetails",
     standalone: true,
-    imports: [CommonModule, Spinner, Sidebar, PanelBrowseState, PanelBrowseCard, PanelChat],
+    imports: [CommonModule, Spinner, Sidebar, PanelBrowseState, PanelBrowseCard, PanelChat, IconBox],
     templateUrl: './pg-browse-details.html',
     styleUrl: './pg-browse-details.scss',
     encapsulation: ViewEncapsulation.None,
