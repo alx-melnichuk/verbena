@@ -10,9 +10,9 @@ import { MatInputModule } from "@angular/material/input";
 import { RouterLink } from "@angular/router";
 import { TranslatePipe } from "@ngx-translate/core";
 import { FieldInput } from "../../components/field-input/field-input";
-import { FieldPassword } from "../../components/field-password/field-password";
 import { CN_NICKNAME, CN_EMAIL, CN_PASSWORD } from "../../common/fields-consts";
 import { ROUTE_SIGNUP, ROUTE_FORGOT_PASSWORD } from "../../common/routes";
+import { IconBox } from "../../directives/icon-box";
 import { ErrMsgObj } from "../../utils/http-error.util";
 
 @Component({
@@ -20,13 +20,15 @@ import { ErrMsgObj } from "../../utils/http-error.util";
     exportAs: "appPanelLogin",
     standalone: true,
     imports: [CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
-        FieldInput, FieldPassword,],
+        FieldInput, IconBox],
     templateUrl: "./panel-login.html",
     styleUrl: "./panel-login.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelLogin implements OnChanges {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+
     @Input()
     public errMsgObjs: ErrMsgObj[] = [];
     @Input()
@@ -35,25 +37,22 @@ export class PanelLogin implements OnChanges {
     @Output()
     readonly login: EventEmitter<Record<string, (string | null)>> = new EventEmitter();
 
-    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
-
     @HostBinding("class.global-scroll")
     public get isGlobalScroll(): boolean { return true; }
 
-    public linkSignup = ROUTE_SIGNUP;
-    public linkForgotPassword = ROUTE_FORGOT_PASSWORD;
-
+    public cn_nickname = CN_NICKNAME;
+    public cn_email = CN_EMAIL;
+    public cn_password = CN_PASSWORD;
     public controls = {
         nickname: new FormControl<string | null>(null, []),
         email: new FormControl<string | null>(null, []),
         password: new FormControl<string | null>(null, []),
     };
     public formGroup: FormGroup = new FormGroup(this.controls);
-
     public isEmail: boolean = false;
-    public cn_nickname = CN_NICKNAME;
-    public cn_email = CN_EMAIL;
-    public cn_password = CN_PASSWORD;
+    public isShowPassword = false;
+    public linkSignup = ROUTE_SIGNUP;
+    public linkForgotPassword = ROUTE_FORGOT_PASSWORD;
 
     @HostListener("document:keypress", ["$event"])
     public keyEvent(event: KeyboardEvent): void {

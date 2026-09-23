@@ -16,15 +16,21 @@
       (focusout)="nicknameFocusout()">
     </app-field-input>
   
-    <app-field-password wd100 pl-mt-4
+    <app-field-input wd100 pl-mt-4
       formControlName="password"
+      kind="password"
       [isRequired]="true"
       label="panel-login.password_label"
       [maxLen]="cn_password.maxLength"
       [minLen]="cn_password.minLength"
       [pattern]="cn_password.pattern"
+      [type]="isShowPassword ? `text` : `password`"
       (input)="updateErrMsgObjs()">
-    </app-field-password>
+      <button matSuffix type="button" class="pl-btn-passwd"
+        (click)="isShowPassword=!isShowPassword">
+        <svg appIconBox [mode]="isShowPassword ? `PasswdShow` : `PasswdHide`" class="pl-icon-passwd"></svg>
+      </button>
+    </app-field-input>
     
     <button matButton type="button" pl-mt-4 class="mat-primary stl-btn-brd"
       [disabled]="formGroup.invalid || !!isDisabled ? '' : undefined"

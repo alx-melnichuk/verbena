@@ -44,6 +44,20 @@ app-panel-login {
         text-align: center;
     }
 
+    .pl-btn-passwd {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        outline: none;
+        padding-right: 0.75rem;
+    }
+
+    .pl-icon-passwd {
+        color: var(--app-svg-icon-cl);
+        height: 1.5rem;
+        width: 1.5rem;
+    }
+
     .pl-note {
         display: flex;
         justify-content: space-between;
