@@ -1,13 +1,13 @@
 import { CommonModule } from "@angular/common";
 import {
-    AfterContentInit, AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, forwardRef, inject, Input, OnChanges,
-    SimpleChanges, ViewChild, ViewEncapsulation
+    AfterContentInit, AfterViewInit, ChangeDetectionStrategy, Component, ContentChildren, ElementRef, forwardRef, inject, Input, OnChanges,
+    QueryList, SimpleChanges, ViewChild, ViewEncapsulation
 } from "@angular/core";
 import {
     ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, AbstractControl, ControlValueAccessor, FormControl, FormGroup,
     ValidationErrors, Validator,
 } from "@angular/forms";
-import { MatFormFieldModule, SubscriptSizing } from "@angular/material/form-field";
+import { MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix, SubscriptSizing } from "@angular/material/form-field";
 import { MatInput, MatInputModule } from "@angular/material/input";
 import { TranslatePipe } from "@ngx-translate/core";
 import { HtmlElemUtil } from "../../utils/html-elem.util";
@@ -81,8 +81,15 @@ export class FieldTextarea implements OnChanges, AfterContentInit, AfterViewInit
     @ViewChild("textarea")
     public textarea: ElementRef<HTMLElement> | undefined;
 
+    @ContentChildren(MAT_PREFIX, { descendants: true })
+    public prefixChildren: QueryList<MatPrefix> | undefined;
+    @ContentChildren(MAT_SUFFIX, { descendants: true })
+    public suffixChildren: QueryList<MatSuffix> | undefined;
+
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ textarea: this.formControl });
+    public isIconPrefix: boolean = false;
+    public isIconSuffix: boolean = false;
     public isNotUnitLh: boolean = false;
     public isNotFlSizing: boolean = false;
 
@@ -106,6 +113,7 @@ export class FieldTextarea implements OnChanges, AfterContentInit, AfterViewInit
     }
 
     ngAfterContentInit(): void {
+        this.initPrefixAndSuffix();
         const style = getComputedStyle(this.element.nativeElement);
         this.isNotUnitLh = style.getPropertyValue("--is-not-unit-lh").trim() == "1";
         this.isNotFlSizing = style.getPropertyValue("--is-not-fl-sizing").trim() == "1";
@@ -210,5 +218,10 @@ export class FieldTextarea implements OnChanges, AfterContentInit, AfterViewInit
         };
         this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
         this.formControl.updateValueAndValidity();
+    }
+
+    private initPrefixAndSuffix(): void {
+        this.isIconPrefix = (this.prefixChildren?.length || 0) > 0;
+        this.isIconSuffix = (this.suffixChildren?.length || 0) > 0;
     }
 }

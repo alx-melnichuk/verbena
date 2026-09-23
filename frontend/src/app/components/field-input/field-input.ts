@@ -1,6 +1,7 @@
 import { CommonModule } from "@angular/common";
 import {
-    AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, forwardRef, Input, OnChanges, QueryList, SimpleChanges, ViewChild, ViewEncapsulation
+    AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, forwardRef, Input, OnChanges, QueryList, SimpleChanges,
+    ViewChild, ViewEncapsulation
 } from "@angular/core";
 import {
     AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
@@ -180,7 +181,7 @@ export class FieldInput implements OnChanges, AfterContentInit, ControlValueAcce
     }
 
     private initPrefixAndSuffix(): void {
-        this.isIconPrefix = !!this.prefixChildren?.find(s => !s._isText);
-        this.isIconSuffix = !!this.suffixChildren?.find(s => !s._isText);
+        this.isIconPrefix = (this.prefixChildren?.length || 0) > 0;
+        this.isIconSuffix = (this.suffixChildren?.length || 0) > 0;
     }
 }

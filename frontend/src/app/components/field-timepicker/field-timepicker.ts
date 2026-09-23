@@ -1,12 +1,13 @@
 import { CommonModule } from "@angular/common";
 import {
-    Component, ViewEncapsulation, ChangeDetectionStrategy, forwardRef, OnChanges, Input, inject, ViewChild, SimpleChanges,
+    AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, forwardRef, Input, OnChanges, QueryList, SimpleChanges,
+    ViewChild, ViewEncapsulation
 } from "@angular/core";
 import {
     ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, ControlValueAccessor, Validator, FormControl, FormGroup, AbstractControl, ValidationErrors, ValidatorFn, Validators
 } from "@angular/forms";
 // import { DateAdapter, MatDateFormats, MAT_DATE_FORMATS } from "@angular/material/core";
-import { MatFormFieldModule } from "@angular/material/form-field";
+import { MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix } from "@angular/material/form-field";
 import { MatInputModule, MatInput } from "@angular/material/input";
 import { MatTimepickerModule, MatTimepicker } from "@angular/material/timepicker";
 import { TranslatePipe } from "@ngx-translate/core";
@@ -31,7 +32,7 @@ export const FTP_TIME_REGEX = "^([01][0-9]|2[0-3]):[0-5][0-9]$";
         { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldTimepicker), multi: true },
     ],
 })
-export class FieldTimepicker implements OnChanges, ControlValueAccessor, Validator {
+export class FieldTimepicker implements OnChanges, AfterContentInit, ControlValueAccessor, Validator {
     @Input()
     public errorMsg: string | null | undefined;
     @Input()
@@ -66,8 +67,15 @@ export class FieldTimepicker implements OnChanges, ControlValueAccessor, Validat
     @ViewChild(MatTimepicker, { static: false })
     public matTimepicker: MatTimepicker<Date> | null = null;
 
+    @ContentChildren(MAT_PREFIX, { descendants: true })
+    public prefixChildren: QueryList<MatPrefix> | undefined;
+    @ContentChildren(MAT_SUFFIX, { descendants: true })
+    public suffixChildren: QueryList<MatSuffix> | undefined;
+
     public formControl: FormControl = new FormControl<Date | null>({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ time: this.formControl });
+    public isIconPrefix: boolean = false;
+    public isIconSuffix: boolean = false;
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["isRequired"]) {
@@ -86,6 +94,10 @@ export class FieldTimepicker implements OnChanges, ControlValueAccessor, Validat
             // This needs to be done to display the error in the date format for the new locale.
             this.validate(this.formControl);
         }
+    }
+
+    ngAfterContentInit(): void {
+        this.initPrefixAndSuffix();
     }
 
     // ** ControlValueAccessor - start **
@@ -195,4 +207,9 @@ export class FieldTimepicker implements OnChanges, ControlValueAccessor, Validat
         }
         return errors;
     }*/
+
+    private initPrefixAndSuffix(): void {
+        this.isIconPrefix = (this.prefixChildren?.length || 0) > 0;
+        this.isIconSuffix = (this.suffixChildren?.length || 0) > 0;
+    }
 }

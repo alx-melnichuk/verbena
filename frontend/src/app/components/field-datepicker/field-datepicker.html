@@ -4,7 +4,11 @@
   @if (!!label) {
     <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
   }
-  <ng-content select="[fdp-prefix]"></ng-content>
+  @if (isIconPrefix) {
+    <div matPrefix>
+      <ng-content select="[matPrefix], [matIconPrefix]"></ng-content>
+    </div>
+  }
 
   <input matInput class="fdp-input"
     formControlName="date"
@@ -26,7 +30,11 @@
   <mat-datepicker-toggle matSuffix [for]="datepickerItem"></mat-datepicker-toggle>
   <mat-datepicker #datepickerItem [calendarHeaderComponent]="calendarHeaderComp" panelClass="fd-calendar"></mat-datepicker>
   
-  <ng-content select="[fdp-suffix]"></ng-content>
+  @if (isIconSuffix) {
+    <div matSuffix>
+      <ng-content select="[matSuffix], [matIconSuffix]"></ng-content>
+    </div>
+  }
   @if (!!hint) {
     <mat-hint>{{ hint | translate }}</mat-hint>
   }

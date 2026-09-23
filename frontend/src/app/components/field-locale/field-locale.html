@@ -4,7 +4,11 @@
   @if (!!label) {
     <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
   }
-  <ng-content select="[fl-prefix]"></ng-content>
+  @if (isIconPrefix) {
+    <div matPrefix>
+      <ng-content select="[matPrefix], [matIconPrefix]"></ng-content>
+    </div>
+  }
 
   <mat-select
     formControlName="locale"
@@ -21,7 +25,11 @@
     }
   </mat-select>
 
-  <ng-content select="[fl-suffix]"></ng-content>
+  @if (isIconSuffix) {
+    <div matSuffix>
+      <ng-content select="[matSuffix], [matIconSuffix]"></ng-content>
+    </div>
+  }
   @if (!!hint) {
     <mat-hint>{{ hint | translate }}</mat-hint>
   }

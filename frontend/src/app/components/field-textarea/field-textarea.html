@@ -4,26 +4,34 @@
   @if (!!label) {
     <mat-label>{{ label | translate }}{{ !!isRequired ? " " : ""}}</mat-label>
   }
-  <ng-content select="[ft-prefix]"></ng-content>
+  @if (isIconPrefix) {
+    <div matPrefix>
+      <ng-content select="[matPrefix], [matIconPrefix]"></ng-content>
+    </div>
+  }
 
-    <textarea matInput #textarea class="ft-textarea css-lh global-scroll" 
-      [class.ft-sizing]="!!minRows || !!maxRows"
-      [class.ft-resize-none]="!!numRows"
-      [class.ft-mn-hg]="!!minRows && minRows > 0"
-      [class.ft-mx-hg]="!!maxRows && maxRows > 0"
-      formControlName="textarea"
-      autocomplete="new-password"
-      autocapitalize="off"
-      [required]="!!isRequired"
-      [attr.maxlength]="maxLen != null && maxLen > 0 ? maxLen + 1 : undefined"
-      [attr.spellcheck] ="!!isSpellcheck"
-      [attr.rows]="numRows || (isNotFlSizing && ((minRows || maxRows) == 1) ? 1 : undefined)"
-      (input)="onChange(formControl.value);
-        doInput(!!minRows && minRows > 0 || !!maxRows && maxRows > 0, isNotFlSizing, textarea);"
-      (blur)="onTouched()">
-    </textarea>
+  <textarea matInput #textarea class="ft-textarea css-lh global-scroll" 
+    [class.ft-sizing]="!!minRows || !!maxRows"
+    [class.ft-resize-none]="!!numRows"
+    [class.ft-mn-hg]="!!minRows && minRows > 0"
+    [class.ft-mx-hg]="!!maxRows && maxRows > 0"
+    formControlName="textarea"
+    autocomplete="new-password"
+    autocapitalize="off"
+    [required]="!!isRequired"
+    [attr.maxlength]="maxLen != null && maxLen > 0 ? maxLen + 1 : undefined"
+    [attr.spellcheck] ="!!isSpellcheck"
+    [attr.rows]="numRows || (isNotFlSizing && ((minRows || maxRows) == 1) ? 1 : undefined)"
+    (input)="onChange(formControl.value);
+      doInput(!!minRows && minRows > 0 || !!maxRows && maxRows > 0, isNotFlSizing, textarea);"
+    (blur)="onTouched()">
+  </textarea>
 
-  <ng-content select="[ft-suffix]"></ng-content>
+  @if (isIconSuffix) {
+    <div matSuffix>
+      <ng-content select="[matSuffix], [matIconSuffix]"></ng-content>
+    </div>
+  }
   @if (!!hint) {
     <mat-hint>{{ hint | translate }}</mat-hint>
   }

@@ -1,9 +1,12 @@
 import { ENTER } from "@angular/cdk/keycodes";
 import { CommonModule } from "@angular/common";
-import { ChangeDetectionStrategy, Component, EventEmitter, forwardRef, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation } from "@angular/core";
+import {
+    AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, EventEmitter, forwardRef, Input, OnChanges, Output, QueryList,
+    SimpleChanges, ViewChild, ViewEncapsulation
+} from "@angular/core";
 import { AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, ValidationErrors, Validator, ValidatorFn } from "@angular/forms";
 import { MatChipInputEvent, MatChipsModule } from "@angular/material/chips";
-import { MatFormFieldModule } from "@angular/material/form-field";
+import { MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { TranslatePipe } from "@ngx-translate/core";
 
@@ -25,7 +28,7 @@ export const CUSTOM_ERROR = "customError";
         { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldChipsInput), multi: true },
     ],
 })
-export class FieldChipsInput implements OnChanges, ControlValueAccessor, Validator {
+export class FieldChipsInput implements OnChanges, AfterContentInit, ControlValueAccessor, Validator {
     @Input()
     public errorMsg: string | null | undefined;
     @Input()
@@ -59,8 +62,15 @@ export class FieldChipsInput implements OnChanges, ControlValueAccessor, Validat
     @ViewChild("chipInput", { read: HTMLInputElement, static: false })
     public chipInputElem: HTMLInputElement | undefined;
 
+    @ContentChildren(MAT_PREFIX, { descendants: true })
+    public prefixChildren: QueryList<MatPrefix> | undefined;
+    @ContentChildren(MAT_SUFFIX, { descendants: true })
+    public suffixChildren: QueryList<MatSuffix> | undefined;
+
     public formControl: FormControl = new FormControl({ value: [], disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ form: this.formControl });
+    public isIconPrefix: boolean = false;
+    public isIconSuffix: boolean = false;
 
     readonly value: string[] = this.formControl.value.concat();
 
@@ -76,6 +86,10 @@ export class FieldChipsInput implements OnChanges, ControlValueAccessor, Validat
             this.formControl.updateValueAndValidity();
             this.onChange(this.formControl.value);
         }
+    }
+
+    ngAfterContentInit(): void {
+        this.initPrefixAndSuffix();
     }
 
     // ** ControlValueAccessor - start **
@@ -248,5 +262,10 @@ export class FieldChipsInput implements OnChanges, ControlValueAccessor, Validat
         this.formControl.setValue(value, { emitEvent: true });
         // Calling the validation method for the new value.
         this.onChange(value);
+    }
+
+    private initPrefixAndSuffix(): void {
+        this.isIconPrefix = (this.prefixChildren?.length || 0) > 0;
+        this.isIconSuffix = (this.suffixChildren?.length || 0) > 0;
     }
 }

@@ -1,11 +1,11 @@
 import { CommonModule } from "@angular/common";
 import {
-    ChangeDetectionStrategy, Component, EventEmitter, forwardRef, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
+    AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, EventEmitter, forwardRef, Input, OnChanges, Output, QueryList, SimpleChanges, ViewChild, ViewEncapsulation
 } from "@angular/core";
 import {
     ReactiveFormsModule, NG_VALUE_ACCESSOR, NG_VALIDATORS, AbstractControl, ControlValueAccessor, FormControl, FormGroup, ValidationErrors, Validator,
 } from "@angular/forms";
-import { MatFormFieldModule } from "@angular/material/form-field";
+import { MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule, MatSelect } from "@angular/material/select";
 import { TranslatePipe } from "@ngx-translate/core";
@@ -30,7 +30,7 @@ export const CUSTOM_ERROR = "customError";
         { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldLocale), multi: true },
     ],
 })
-export class FieldLocale implements OnChanges, ControlValueAccessor, Validator {
+export class FieldLocale implements OnChanges, AfterContentInit, ControlValueAccessor, Validator {
     @Input()
     public errorMsg: string | null | undefined;
     @Input()
@@ -54,9 +54,15 @@ export class FieldLocale implements OnChanges, ControlValueAccessor, Validator {
     @ViewChild(MatSelect, { static: false })
     public matSelect: MatSelect | null = null;
 
+    @ContentChildren(MAT_PREFIX, { descendants: true })
+    public prefixChildren: QueryList<MatPrefix> | undefined;
+    @ContentChildren(MAT_SUFFIX, { descendants: true })
+    public suffixChildren: QueryList<MatSuffix> | undefined;
+
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ locale: this.formControl });
-
+    public isIconPrefix: boolean = false;
+    public isIconSuffix: boolean = false;
     public localeList: string[] = ["", ...LOCALE_LIST];
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -70,6 +76,10 @@ export class FieldLocale implements OnChanges, ControlValueAccessor, Validator {
             this.formControl.updateValueAndValidity();
             this.onChange(this.formControl.value);
         }
+    }
+
+    ngAfterContentInit(): void {
+        this.initPrefixAndSuffix();
     }
 
     // ** ControlValueAccessor - start **
@@ -167,5 +177,10 @@ export class FieldLocale implements OnChanges, ControlValueAccessor, Validator {
         };
         this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
         this.formControl.updateValueAndValidity();
+    }
+
+    private initPrefixAndSuffix(): void {
+        this.isIconPrefix = (this.prefixChildren?.length || 0) > 0;
+        this.isIconSuffix = (this.suffixChildren?.length || 0) > 0;
     }
 }

@@ -4,7 +4,11 @@
   @if (!!label) {
     <mat-label>{{ label | translate }}{{ !!isRequired ? " *" : ""}}</mat-label>
   }
-  <ng-content select="[fcg-prefix]"></ng-content>
+  @if (isIconPrefix) {
+    <div matPrefix>
+      <ng-content select="[matPrefix], [matIconPrefix]"></ng-content>
+    </div>
+  }
 
   <mat-chip-grid #chipGrid [formControl]="formControl">
     @for (chip of formControl.value; track chip) {
@@ -29,7 +33,11 @@
     />
   </mat-chip-grid>
 
-  <ng-content select="[fcg-suffix]"></ng-content>
+  @if (isIconSuffix) {
+    <div matSuffix>
+      <ng-content select="[matSuffix], [matIconSuffix]"></ng-content>
+    </div>
+  }
   @if (!!hint) {
     <mat-hint>{{ hint | translate }}</mat-hint>
   }
