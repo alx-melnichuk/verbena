@@ -10,7 +10,10 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
 import { TranslatePipe } from "@ngx-translate/core";
-import { FORM_FIELD_APPEARANCE_LIST, AppearanceSvr, BUTTON_SHAPE_LIST, FORM_FIELD_SHAPE_LIST, BUTTON_APPEARANCE_LIST } from "../../common/appearance-svr";
+import {
+    FORM_FIELD_APPEARANCE_LIST, AppearanceSvr, BUTTON_SHAPE_LIST, FORM_FIELD_SHAPE_LIST, BUTTON_APPEARANCE_LIST
+} from "../../common/appearance-svr";
+import { IconBox } from "../../directives/icon-box";
 import { SettingsDto } from "../../lib-user/user-dto";
 import { ErrMsgObj } from "../../utils/http-error.util";
 
@@ -19,7 +22,7 @@ import { ErrMsgObj } from "../../utils/http-error.util";
     exportAs: "appPanelProfileSettings",
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatCheckboxModule, MatInputModule, TranslatePipe, MatFormFieldModule,
-        MatSelectModule],
+        MatSelectModule, IconBox],
     templateUrl: "./panel-profile-settings.html",
     styleUrl: "./panel-profile-settings.scss",
     encapsulation: ViewEncapsulation.None,

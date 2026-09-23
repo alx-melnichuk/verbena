@@ -19,15 +19,16 @@ import { FieldImage } from "../../components/field-image/field-image";
 import { FieldInput } from "../../components/field-input/field-input";
 import { FieldTextarea } from "../../components/field-textarea/field-textarea";
 import { FieldTimepicker } from "../../components/field-timepicker/field-timepicker";
+import { IconBox } from "../../directives/icon-box";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
+import { StreamDto, UpdateStreamFileDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
+import { StreamSrv } from "../../lib-stream/stream-srv";
 import { ClipboardUtil } from "../../utils/clipboard.util";
 import { DateUtil } from "../../utils/date.utils";
 import { FileSizeUtil } from "../../utils/file_size.util";
 import { ErrMsgObj } from "../../utils/http-error.util";
 import { ValidFileTypesUtil } from "../../utils/valid_file_types.util";
 import { StreamConfigDto } from "../stream-config-dto";
-import { StreamDto, UpdateStreamFileDto, StreamDtoUtil } from "../../lib-stream/stream-dto";
-import { StreamSrv } from "../../lib-stream/stream-srv";
 
 export const PSE_DELTA_BEFORE_START = 5; // minutes
 export const PSE_TIMEPICKER_INTERVAL = "1m";
@@ -46,8 +47,7 @@ interface StreamData {
     standalone: true,
     imports: [
         CommonModule, ReactiveFormsModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule,
-        MatTooltipModule, TranslatePipe,
-        FieldChipsInput, FieldDatepicker, FieldInput, FieldImage, FieldTextarea, FieldTimepicker,],
+        MatTooltipModule, TranslatePipe, FieldChipsInput, FieldDatepicker, FieldInput, FieldImage, FieldTextarea, FieldTimepicker, IconBox],
     templateUrl: "./panel-stream-editor.html",
     styleUrl: "./panel-stream-editor.scss",
     encapsulation: ViewEncapsulation.None,

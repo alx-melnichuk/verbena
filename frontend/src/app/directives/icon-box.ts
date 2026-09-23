@@ -20,6 +20,7 @@ export class IconBox implements OnChanges {
             switch (this.mode) {
                 case "PasswdShow": this.createPasswdShow(this.renderer, this.element); break;
                 case "PasswdHide": this.createPasswdHide(this.renderer, this.element); break;
+                case "Diskette": this.createDiskette(this.renderer, this.element); break;
                 default:
                     break;
             }
@@ -68,5 +69,32 @@ export class IconBox implements OnChanges {
         const path2 = renderer.createElement("path", "svg");
         renderer.setAttribute(path2, "d", "m23.911,11.715 c-0.128,-0.185 -2.251,-3.173 -5.820,-5.099 l2.763,-2.763 c0.195,-0.195 0.195,-0.512 0,-0.707 c-0.195,-0.195 -0.512,-0.195 -0.707,0 l-16.999,16.999 c-0.195,0.195 -0.195,0.5121 0,0.707 c0.097,0.098 0.225,0.147 0.353,0.147 c0.128,0 0.256,-0.049 0.354,-0.146 l3.135,-3.135 c1.545,0.754 3.249,1.281 5.011,1.281 c6.161,0 11.651,-6.404 11.882,-6.677 c0.145,-0.173 0.158,-0.422 0.029,-0.608 z m-11.911,4.285 c-0.923,0 -1.762,-0.327 -2.440,-0.853 l5.587,-5.587 c0.526,0.678 0.853,1.517 0.853,2.440 c0,2.206 -1.794,3.999 -3.999,3.999 z");
         renderer.appendChild(svg, path2);
+    }
+    private createDiskette(renderer: Renderer2, element: ElementRef<any>): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        renderer.setAttribute(svg, "fill", "none");
+        renderer.setAttribute(svg, "stroke", "currentColor");
+        renderer.setAttribute(svg, "stroke-width", "6");
+        renderer.setAttribute(svg, "stroke-linecap", "round");
+        renderer.setAttribute(svg, "stroke-linejoin", "round");
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M13.2,3 h63.2 l16,15 v64.5 a10,10 0,0,1 -10,10 h-69.1 a10,10 0,0,1 -10,-10 v-69.5 a10,10 0,0,1 10,-10 z");
+        renderer.appendChild(svg, path1);
+
+        const path2 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path2, "d", "M21,3 v33 h46 v-33");
+        renderer.appendChild(svg, path2);
+
+        const path3 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path3, "fill", "currentColor");
+        renderer.setAttribute(path3, "d", "M46.2,3 v23 h10 v-23 h-12 z");
+        renderer.appendChild(svg, path3);
+
+        const path4 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path4, "d", "M16,92 v-38 h65 v38");
+        renderer.appendChild(svg, path4);
     }
 }

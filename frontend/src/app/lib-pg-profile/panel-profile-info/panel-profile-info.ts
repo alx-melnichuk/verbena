@@ -14,6 +14,7 @@ import { FieldInput } from "../../components/field-input/field-input";
 import { FieldLocale } from "../../components/field-locale/field-locale";
 import { FieldTextarea } from "../../components/field-textarea/field-textarea";
 import { UniquenessCheck } from "../../components/uniqueness-check/uniqueness-check";
+import { IconBox } from "../../directives/icon-box";
 import { UniquenessDto, UserDto } from "../../lib-user/user-dto";
 import { UserSrv } from "../../lib-user/user-srv";
 import { FileSizeUtil } from "../../utils/file_size.util";
@@ -29,7 +30,7 @@ export const PPI_DEBOUNCE_DELAY = 900;
     exportAs: "appPanelProfileInfo",
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe, UniquenessCheck,
-        FieldColorTheme, FieldInput, FieldImage, FieldLocale, FieldTextarea],
+        FieldColorTheme, FieldInput, FieldImage, FieldLocale, FieldTextarea, IconBox],
     templateUrl: "./panel-profile-info.html",
     styleUrl: "./panel-profile-info.scss",
     encapsulation: ViewEncapsulation.None,
