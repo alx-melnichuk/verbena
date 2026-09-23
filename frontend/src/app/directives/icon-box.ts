@@ -1,6 +1,6 @@
 import { Directive, ElementRef, inject, Input, OnChanges, Renderer2, SimpleChanges } from "@angular/core";
 
-const ATTRIB_NAMES = ["viewBox", "fill", "stroke"];
+const ATTRIB_NAMES = ["viewBox", "fill", "stroke", "preserveAspectRatio"];
 
 @Directive({
     selector: "svg[appIconBox]",
@@ -14,16 +14,24 @@ export class IconBox implements OnChanges {
     @Input()
     public mode: string | null | undefined;
 
+    private readonly attribNames: string[] = [];
+
+    constructor() {
+        const svg = this.element.nativeElement;
+        this.attribNames = Array.from(svg.attributes).map((attr: any) => attr.name);
+    }
+
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["mode"]) {
-            this.clear(this.renderer, this.element);
+            this.clear(this.renderer, this.element, this.attribNames);
             switch (this.mode) {
-                case "PasswdShow": this.createPasswdShow(this.renderer, this.element); break;
-                case "PasswdHide": this.createPasswdHide(this.renderer, this.element); break;
-                case "Diskette": this.createDiskette(this.renderer, this.element); break;
-                case "DuplicateDocument": this.createDuplicateDocument(this.renderer, this.element); break;
-                case "EditDocument": this.createEditDocument(this.renderer, this.element); break;
-                case "DeleteDocument": this.createDeleteDocument(this.renderer, this.element); break;
+                case "PasswdShow": this.buildPasswdShow(this.renderer, this.element, this.attribNames); break;
+                case "PasswdHide": this.buildPasswdHide(this.renderer, this.element, this.attribNames); break;
+                case "Diskette": this.buildDiskette(this.renderer, this.element, this.attribNames); break;
+                case "CreateDocument": this.buildCreateDocument(this.renderer, this.element, this.attribNames); break;
+                case "EditDocument": this.buildEditDocument(this.renderer, this.element, this.attribNames); break;
+                case "DuplicateDocument": this.buildDuplicateDocument(this.renderer, this.element, this.attribNames); break;
+                case "DeleteDocument": this.buildDeleteDocument(this.renderer, this.element, this.attribNames); break;
                 default:
                     break;
             }
@@ -33,7 +41,7 @@ export class IconBox implements OnChanges {
 
     // ** Private API **
 
-    private clear(renderer: Renderer2, element: ElementRef<any>): void {
+    private clear(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const children = element.nativeElement.children;
         const elemList = Array.from(children);
         for (let idx = 0; idx < elemList.length; idx++) {
@@ -44,26 +52,26 @@ export class IconBox implements OnChanges {
         const attrNames = Array.from(elem.attributes).map((attr: any) => attr.name);
         for (let idx = 0; idx < attrNames.length; idx++) {
             const attrName = attrNames[idx];
-            if (ATTRIB_NAMES.indexOf(attrName.split("-")[0]) > -1) {
+            if (ATTRIB_NAMES.indexOf(attrName.split("-")[0]) > -1 && excludeAttribs.indexOf(attrName) == -1) {
                 renderer.removeAttribute(element.nativeElement, attrName);
             }
         }
     }
-    private createPasswdShow(renderer: Renderer2, element: ElementRef<any>): void {
+    private buildPasswdShow(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 24 24");
-        renderer.setAttribute(svg, "fill", "currentColor");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "currentColor"); }
 
         const path1 = renderer.createElement("path", "svg");
         renderer.setAttribute(path1, "d", "M23.911 11.715 C23.722 11.441 19.180 5 12.000 5 C5.840 5 0.350 11.404 0.119 11.677 C-0.0395 11.863 -0.040 12.136 0.119 12.323 C0.346 12.596 5.839 18.999 12.000 18.999 C18.161 18.999 23.651 12.596 23.882 12.322 C24.027 12.150 24.040 11.901 23.911 11.715 Z M12.000 15.999 C9.794 15.999 8.000 14.206 8.000 11.999 C8.000 9.794 9.794 7.999 12.000 7.999 C14.206 7.999 16.000 9.794 16.000 11.999 C16.000 14.206 14.206 15.999 12.000 15.999 Z");
         renderer.appendChild(svg, path1);
     }
-    private createPasswdHide(renderer: Renderer2, element: ElementRef<any>): void {
+    private buildPasswdHide(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 24 24");
-        renderer.setAttribute(svg, "fill", "currentColor");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "currentColor"); }
 
         const path1 = renderer.createElement("path", "svg");
         renderer.setAttribute(path1, "d", "m12.000,5 c-6.161,0 -11.651,6.404 -11.882,6.677 c-0.158,0.186 -0.158,0.459 0,0.646 c0.138,0.163 2.156,2.506 5.066,4.371 l3.134,-3.134 c-0.204,-0.48 -0.318,-1.007 -0.318,-1.561 c0,-2.206 1.795,-3.999 3.999,-3.999 c0.554,0 1.081,0.114 1.561,0.318 l2.577,-2.577 c-1.256,-0.449 -2.635,-0.7409 -4.138,-0.741 z");
@@ -73,15 +81,15 @@ export class IconBox implements OnChanges {
         renderer.setAttribute(path2, "d", "m23.911,11.715 c-0.128,-0.185 -2.251,-3.173 -5.820,-5.099 l2.763,-2.763 c0.195,-0.195 0.195,-0.512 0,-0.707 c-0.195,-0.195 -0.512,-0.195 -0.707,0 l-16.999,16.999 c-0.195,0.195 -0.195,0.5121 0,0.707 c0.097,0.098 0.225,0.147 0.353,0.147 c0.128,0 0.256,-0.049 0.354,-0.146 l3.135,-3.135 c1.545,0.754 3.249,1.281 5.011,1.281 c6.161,0 11.651,-6.404 11.882,-6.677 c0.145,-0.173 0.158,-0.422 0.029,-0.608 z m-11.911,4.285 c-0.923,0 -1.762,-0.327 -2.440,-0.853 l5.587,-5.587 c0.526,0.678 0.853,1.517 0.853,2.440 c0,2.206 -1.794,3.999 -3.999,3.999 z");
         renderer.appendChild(svg, path2);
     }
-    private createDiskette(renderer: Renderer2, element: ElementRef<any>): void {
+    private buildDiskette(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");
-        renderer.setAttribute(svg, "fill", "none");
-        renderer.setAttribute(svg, "stroke", "currentColor");
-        renderer.setAttribute(svg, "stroke-linecap", "round");
-        renderer.setAttribute(svg, "stroke-linejoin", "round");
-        renderer.setAttribute(svg, "stroke-width", "6");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "none"); }
+        if (excludeAttribs.indexOf("stroke") == -1) { renderer.setAttribute(svg, "stroke", "currentColor"); }
+        if (excludeAttribs.indexOf("stroke-linecap") == -1) { renderer.setAttribute(svg, "stroke-linecap", "round"); }
+        if (excludeAttribs.indexOf("stroke-linejoin") == -1) { renderer.setAttribute(svg, "stroke-linejoin", "round"); }
+        if (excludeAttribs.indexOf("stroke-width") == -1) { renderer.setAttribute(svg, "stroke-width", "6"); }
 
         const path1 = renderer.createElement("path", "svg");
         renderer.setAttribute(path1, "d", "M13.2,3 h63.2 l16,15 v64.5 a10,10 0,0,1 -10,10 h-69.1 a10,10 0,0,1 -10,-10 v-69.5 a10,10 0,0,1 10,-10 z");
@@ -100,33 +108,38 @@ export class IconBox implements OnChanges {
         renderer.setAttribute(path4, "d", "M16,92 v-38 h65 v38");
         renderer.appendChild(svg, path4);
     }
-    private createDuplicateDocument(renderer: Renderer2, element: ElementRef<any>): void {
+    private buildCreateDocument(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");
-        renderer.setAttribute(svg, "fill", "none");
-        renderer.setAttribute(svg, "stroke", "currentColor");
-        renderer.setAttribute(svg, "stroke-linecap", "round");
-        renderer.setAttribute(svg, "stroke-linejoin", "round");
-        renderer.setAttribute(svg, "stroke-width", "6");
+        if (excludeAttribs.indexOf("preserveAspectRatio") == -1) { renderer.setAttribute(svg, "preserveAspectRatio", "xMinYMin meet"); }
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "none"); }
+        if (excludeAttribs.indexOf("stroke") == -1) { renderer.setAttribute(svg, "stroke", "currentColor"); }
+        if (excludeAttribs.indexOf("stroke-linecap") == -1) { renderer.setAttribute(svg, "stroke-linecap", "round"); }
+        if (excludeAttribs.indexOf("stroke-linejoin") == -1) { renderer.setAttribute(svg, "stroke-linejoin", "round"); }
+        if (excludeAttribs.indexOf("stroke-width") == -1) { renderer.setAttribute(svg, "stroke-width", "6"); }
 
         const path1 = renderer.createElement("path", "svg");
-        renderer.setAttribute(path1, "d", "M58,5.5 h-28 a4,4 0,0,0 -4,2 l-14,14 a4,4 0,0,0 -2,4 v44 a8,8 0,0,0 8,8 h40 a8,8 0,0,0 8,-8 v-56 a8,8 0,0,0 -8,-8 z m-48,20 h14 a6,6 0,0,0 6,-6 v-14");
+        renderer.setAttribute(path1, "d", "M64,12.0  h-28 a4,4 0,0,0 -4,2  l-14,14 a4,4 0,0,0 -2,4  v44 a8,8 0,0,0 8,8 h12 m36,-48 v-16 a8,8 0,0,0 -8,-8  m-48,20 h14 a6,6 0,0,0 6,-6 v-14");
         renderer.appendChild(svg, path1);
 
         const path2 = renderer.createElement("path", "svg");
-        renderer.setAttribute(path2, "d", "M80,17.5 h-14 m-36,60 v5 a8,8 0,0,0 8,8 h41 a8,8 0,0,0 8,-8 v-57  a8,8 0,0,0 -8,-8");
+        renderer.setAttribute(path2, "d", "M80,55 a22,22 0,1,1 -40,0 22,22 0,0,1 40,0 Z");
         renderer.appendChild(svg, path2);
+
+        const path3 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path3, "d", "M60,55 v18 M51,64 h18");
+        renderer.appendChild(svg, path3);
     }
-    private createEditDocument(renderer: Renderer2, element: ElementRef<any>): void {
+    private buildEditDocument(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");
-        renderer.setAttribute(svg, "fill", "none");
-        renderer.setAttribute(svg, "stroke", "currentColor");
-        renderer.setAttribute(svg, "stroke-linecap", "round");
-        renderer.setAttribute(svg, "stroke-linejoin", "round");
-        renderer.setAttribute(svg, "stroke-width", "6");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "none"); }
+        if (excludeAttribs.indexOf("stroke") == -1) { renderer.setAttribute(svg, "stroke", "currentColor"); }
+        if (excludeAttribs.indexOf("stroke-linecap") == -1) { renderer.setAttribute(svg, "stroke-linecap", "round"); }
+        if (excludeAttribs.indexOf("stroke-linejoin") == -1) { renderer.setAttribute(svg, "stroke-linejoin", "round"); }
+        if (excludeAttribs.indexOf("stroke-width") == -1) { renderer.setAttribute(svg, "stroke-width", "6"); }
 
         const path1 = renderer.createElement("path", "svg");
         renderer.setAttribute(path1, "d", "M64,12.0  h-28 a4,4 0,0,0 -4,2  l-14,14 a4,4 0,0,0 -2,4  v44 a8,8 0,0,0 8,8 h12 m36,-48 v-16 a8,8 0,0,0 -8,-8  m-48,20 h14 a6,6 0,0,0 6,-6 v-14");
@@ -140,15 +153,33 @@ export class IconBox implements OnChanges {
         renderer.setAttribute(path3, "d", "M49,74 l3.0,-9.4 14,-14 a2,2 0,0,1 2,0 l5,5 a2,2 0,0,1 0,2 l-14,14 z M61,55.4 l7,7.2");
         renderer.appendChild(svg, path3);
     }
-    private createDeleteDocument(renderer: Renderer2, element: ElementRef<any>): void {
+    private buildDuplicateDocument(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
         const svg = element.nativeElement;
 
         renderer.setAttribute(svg, "viewBox", "0 0 96 96");
-        renderer.setAttribute(svg, "fill", "none");
-        renderer.setAttribute(svg, "stroke", "currentColor");
-        renderer.setAttribute(svg, "stroke-linecap", "round");
-        renderer.setAttribute(svg, "stroke-linejoin", "round");
-        renderer.setAttribute(svg, "stroke-width", "6");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "none"); }
+        if (excludeAttribs.indexOf("stroke") == -1) { renderer.setAttribute(svg, "stroke", "currentColor"); }
+        if (excludeAttribs.indexOf("stroke-linecap") == -1) { renderer.setAttribute(svg, "stroke-linecap", "round"); }
+        if (excludeAttribs.indexOf("stroke-linejoin") == -1) { renderer.setAttribute(svg, "stroke-linejoin", "round"); }
+        if (excludeAttribs.indexOf("stroke-width") == -1) { renderer.setAttribute(svg, "stroke-width", "6"); }
+
+        const path1 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path1, "d", "M58,5.5 h-28 a4,4 0,0,0 -4,2 l-14,14 a4,4 0,0,0 -2,4 v44 a8,8 0,0,0 8,8 h40 a8,8 0,0,0 8,-8 v-56 a8,8 0,0,0 -8,-8 z m-48,20 h14 a6,6 0,0,0 6,-6 v-14");
+        renderer.appendChild(svg, path1);
+
+        const path2 = renderer.createElement("path", "svg");
+        renderer.setAttribute(path2, "d", "M80,17.5 h-14 m-36,60 v5 a8,8 0,0,0 8,8 h41 a8,8 0,0,0 8,-8 v-57  a8,8 0,0,0 -8,-8");
+        renderer.appendChild(svg, path2);
+    }
+    private buildDeleteDocument(renderer: Renderer2, element: ElementRef<any>, excludeAttribs: string[]): void {
+        const svg = element.nativeElement;
+
+        renderer.setAttribute(svg, "viewBox", "0 0 96 96");
+        if (excludeAttribs.indexOf("fill") == -1) { renderer.setAttribute(svg, "fill", "none"); }
+        if (excludeAttribs.indexOf("stroke") == -1) { renderer.setAttribute(svg, "stroke", "currentColor"); }
+        if (excludeAttribs.indexOf("stroke-linecap") == -1) { renderer.setAttribute(svg, "stroke-linecap", "round"); }
+        if (excludeAttribs.indexOf("stroke-linejoin") == -1) { renderer.setAttribute(svg, "stroke-linejoin", "round"); }
+        if (excludeAttribs.indexOf("stroke-width") == -1) { renderer.setAttribute(svg, "stroke-width", "6"); }
 
         const path1 = renderer.createElement("path", "svg");
         renderer.setAttribute(path1, "d", "M64,12.0  h-28 a4,4 0,0,0 -4,2  l-14,14 a4,4 0,0,0 -2,4  v44 a8,8 0,0,0 8,8 h12 m36,-48 v-16 a8,8 0,0,0 -8,-8  m-48,20 h14 a6,6 0,0,0 6,-6 v-14");
