@@ -24,11 +24,11 @@
       [maxLen]="cn_password.maxLength"
       [minLen]="cn_password.minLength"
       [pattern]="cn_password.pattern"
-      [type]="isShowPassword ? `text` : `password`"
+      [type]="isShowPassword && !isDisabled ? `text` : `password`"
       (input)="updateErrMsgObjs()">
       <button matSuffix type="button" class="pl-btn-passwd"
         (click)="isShowPassword=!isShowPassword">
-        <svg appIconBox [mode]="isShowPassword ? `PasswdShow` : `PasswdHide`" class="pl-icon-passwd"></svg>
+        <svg appIconBox [mode]="isShowPassword && !isDisabled ? `PasswdShow` : `PasswdHide`" class="pl-icon-passwd"></svg>
       </button>
     </app-field-input>
     
