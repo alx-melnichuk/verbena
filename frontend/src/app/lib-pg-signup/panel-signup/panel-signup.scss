@@ -48,6 +48,20 @@ app-panel-signup {
         text-align: center;
     }
 
+    .ps-btn-passwd {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        outline: none;
+        padding-right: 0.75rem;
+    }
+
+    .ps-icon-passwd {
+        color: var(--app-svg-icon-cl);
+        height: 1.5rem;
+        width: 1.5rem;
+    }
+
     .ps-note {
         display: flex;
         justify-content: center;

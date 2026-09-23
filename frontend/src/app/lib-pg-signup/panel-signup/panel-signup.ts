@@ -9,8 +9,8 @@ import { TranslatePipe } from "@ngx-translate/core";
 import { CN_NICKNAME, CN_EMAIL, CN_PASSWORD } from "../../common/fields-consts";
 import { ROUTE_LOGIN } from "../../common/routes";
 import { FieldInput } from "../../components/field-input/field-input";
-import { FieldPassword } from "../../components/field-password/field-password";
 import { UniquenessCheck } from "../../components/uniqueness-check/uniqueness-check";
+import { IconBox } from "../../directives/icon-box";
 import { UserSrv } from "../../lib-user/user-srv";
 import { UniquenessDto } from "../../lib-user/user-dto";
 import { ErrMsgObj } from "../../utils/http-error.util";
@@ -22,13 +22,16 @@ export const SG_DEBOUNCE_DELAY = 900;
     exportAs: "appPanelSignup",
     standalone: true,
     imports: [CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
-        FieldInput, FieldPassword, UniquenessCheck],
+        FieldInput, IconBox, UniquenessCheck],
     templateUrl: "./panel-signup.html",
     styleUrl: "./panel-signup.scss",
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelSignup implements OnChanges {
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private userSrv: UserSrv = inject(UserSrv);
+
     @Input()
     public errMsgObjs: ErrMsgObj[] = [];
     @Input()
@@ -39,25 +42,21 @@ export class PanelSignup implements OnChanges {
     @Output()
     readonly signup: EventEmitter<Record<string, string>> = new EventEmitter();
 
-    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
-    private userSrv: UserSrv = inject(UserSrv);
-
     @HostBinding("class.global-scroll")
     public get isGlobalScroll(): boolean { return true; }
 
-    public linkLogin = ROUTE_LOGIN;
     public debounceDelay: number = SG_DEBOUNCE_DELAY;
-
+    public cn_nickname = CN_NICKNAME;
+    public cn_email = CN_EMAIL;
+    public cn_password = CN_PASSWORD;
     public controls = {
         nickname: new FormControl<string | null>(null, []),
         email: new FormControl<string | null>(null, []),
         password: new FormControl<string | null>(null, []),
     };
     public formGroup: FormGroup = new FormGroup(this.controls);
-
-    public cn_nickname = CN_NICKNAME;
-    public cn_email = CN_EMAIL;
-    public cn_password = CN_PASSWORD;
+    public isShowPassword = false;
+    public linkLogin = ROUTE_LOGIN;
 
     @HostListener("document:keypress", ["$event"])
     public keyEvent(event: KeyboardEvent): void {

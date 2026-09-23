@@ -41,16 +41,22 @@
       </app-field-input>
     </app-uniqueness-check>
 
-    <app-field-password wd100 ps-mt-4
+    <app-field-input wd100 ps-mt-4
       formControlName="password"
+      kind="password"
       hint="panel-signup.password_hint"
       [isRequired]="true"
       label="panel-signup.password_label"
       [maxLen]="cn_password.maxLength"
       [minLen]="cn_password.minLength"
       [pattern]="cn_password.pattern"
+      [type]="isShowPassword ? `text` : `password`"
       (input)="updateErrMsgObjs()">
-    </app-field-password>
+      <button matSuffix type="button" class="ps-btn-passwd"
+        (click)="isShowPassword=!isShowPassword">
+        <svg appIconBox [mode]="isShowPassword ? `PasswdShow` : `PasswdHide`" class="ps-icon-passwd"></svg>
+      </button>
+    </app-field-input>
 
     <button matButton type="button" ps-mt-4 class="mat-primary stl-btn-brd"
       [disabled]="formGroup.invalid || !!isDisabled ? '' : undefined"
