@@ -6,6 +6,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { environment as env } from "../../../environments/environment";
+import { AppearanceSvr } from '../../common/appearance-svr';
 import { LocaleSrv } from '../../common/locale-srv';
 import { LOG_PG_PROFILE } from '../../common/routes';
 import { HasUnsavedChanges, UnsavedDeActivateUtil } from '../../common/unsaved-de-activate-page-guard';
@@ -13,8 +14,8 @@ import { Spinner } from '../../components/spinner/spinner';
 import { DialogSrv } from '../../lib-dialog/dialog-srv';
 import { UserDto, SettingsDto } from '../../lib-user/user-dto';
 import { ErrMsgObj, HttpErrorUtil } from '../../utils/http-error.util';
-import { ProfileSrv } from '../profile-srv';
 import { PanelProfileSettings } from '../panel-profile-settings/panel-profile-settings';
+import { ProfileSrv } from '../profile-srv';
 
 @Component({
     selector: 'app-pg-profile-settings',
@@ -27,6 +28,7 @@ import { PanelProfileSettings } from '../panel-profile-settings/panel-profile-se
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PgProfileSettings implements OnInit, OnDestroy, HasUnsavedChanges {
+    private appearanceSvr: AppearanceSvr = inject(AppearanceSvr);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     private route: ActivatedRoute = inject(ActivatedRoute);
     private dialogSrv: DialogSrv = inject(DialogSrv);
@@ -91,6 +93,7 @@ export class PgProfileSettings implements OnInit, OnDestroy, HasUnsavedChanges {
                     this.profileDto = response as UserDto;
                     this.settingsDto = { ...this.profileDto.settings };
                     this.profileDto.settings = undefined;
+                    this.appearanceSvr.saveToStorage();
                     this.isChangeData = false;
 
                     this.dialogSrv.openConfirmation("pg-profile-settings.dialog_message_settings"
