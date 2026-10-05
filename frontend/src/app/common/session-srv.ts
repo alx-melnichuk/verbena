@@ -1,7 +1,6 @@
 import { Injectable } from "@angular/core";
 import { environment as env } from "../../environments/environment";
 
-
 export interface User {
     id: number;
     nickname: string; // max_len: 255
@@ -30,6 +29,8 @@ export class SessionSrv {
             this.setUserTokens(accessToken, refreshToken);
         }
     }
+
+    // ** Public API **
 
     public getUser(): User | null {
         return this.user;
@@ -67,4 +68,7 @@ export class SessionSrv {
         window.localStorage.removeItem(ACCESS_TOKEN);
         window.localStorage.removeItem(REFRESH_TOKEN);
     }
+
+    // ** Private API **
+
 }
