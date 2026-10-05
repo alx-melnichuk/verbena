@@ -21,14 +21,22 @@
         }
     }
 
-    &.stl-btn button.stl-btn-brd:not(:disabled) {
+    &.stl-btn button.stl-btn-brd {
+        &:not(:disabled) {
+            --stl-btn-br-cl: var(--mat-sys-inverse-primary);
+        }
+
+        &:disabled {
+            --stl-btn-br-cl: color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent);
+        }
 
         &.mat-mdc-outlined-button {
-            --mat-button-outlined-outline-color: var(--mat-sys-inverse-primary);
+            --mat-button-outlined-outline-color: var(--stl-btn-br-cl);
         }
 
         &:not(.mat-mdc-outlined-button) {
-            border: thin solid var(--mat-sys-inverse-primary);
+            border: thin solid var(--stl-btn-br-cl);
         }
     }
+
 }
