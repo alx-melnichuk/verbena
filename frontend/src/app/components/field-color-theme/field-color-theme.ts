@@ -10,7 +10,7 @@ import { MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix } from
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule, MatSelect } from "@angular/material/select";
 import { TranslatePipe } from "@ngx-translate/core";
-import { COLOR_SCHEME_LIST } from "../../common/color-scheme-srv";
+import { COLOR_SCHEME_LIST } from "../../common/theme-svr";
 import { ValidatorUtils } from "../../utils/validator.utils";
 
 export const COLOR_THEME = "color-theme";
