@@ -57,13 +57,13 @@
       formControlName="theme"
       kind="color-theme"
       label="panel-profile-info.color-theme_label"
-      (change)="updateErrMsgObjs(); doChangeData('theme', formGroup, profileDto);">
+      (change)="updateErrMsgObjs(); setTheme($event); doChangeData('theme', formGroup, profileDto);">
     </app-field-color-theme>
     <app-field-locale wd100 class="ppi-locale"
       formControlName="locale"
       kind="locale"
       label="panel-profile-info.locale_label"
-      (change)="updateErrMsgObjs(); doChangeData('locale', formGroup, profileDto);">
+      (change)="updateErrMsgObjs(); setLocale($event); doChangeData('locale', formGroup, profileDto);">
     </app-field-locale>
   </div>
 

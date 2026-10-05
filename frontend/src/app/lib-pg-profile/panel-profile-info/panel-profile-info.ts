@@ -8,6 +8,8 @@ import { MatInputModule } from "@angular/material/input";
 import { TranslatePipe } from "@ngx-translate/core";
 import { CN_NICKNAME, CN_EMAIL, CN_DESCRIPT } from "../../common/fields-consts";
 import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from "../../common/file-upload-consts";
+import { LocaleSrv } from "../../common/locale-srv";
+import { ThemeSvr } from "../../common/theme-svr";
 import { FieldColorTheme } from "../../components/field-color-theme/field-color-theme";
 import { FieldImage } from "../../components/field-image/field-image";
 import { FieldInput } from "../../components/field-input/field-input";
@@ -15,7 +17,7 @@ import { FieldLocale } from "../../components/field-locale/field-locale";
 import { FieldTextarea } from "../../components/field-textarea/field-textarea";
 import { UniquenessCheck } from "../../components/uniqueness-check/uniqueness-check";
 import { IconBox } from "../../directives/icon-box";
-import { UniquenessDto, UserDto } from "../../lib-user/user-dto";
+import { UserDto, UniquenessDto } from "../../lib-user/user-dto";
 import { UserSrv } from "../../lib-user/user-srv";
 import { FileSizeUtil } from "../../utils/file_size.util";
 import { ErrMsgObj } from "../../utils/http-error.util";
@@ -38,6 +40,8 @@ export const PPI_DEBOUNCE_DELAY = 900;
 })
 export class PanelProfileInfo implements OnInit, OnChanges {
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private localeSrv: LocaleSrv = inject(LocaleSrv);
+    private themeSvr: ThemeSvr = inject(ThemeSvr);
     private userSrv: UserSrv = inject(UserSrv);
 
     @Input()
@@ -138,6 +142,20 @@ export class PanelProfileInfo implements OnInit, OnChanges {
         if (this.isChangeData != formGroup.dirty) {
             this.changeData.emit(this.isChangeData = formGroup.dirty);
         }
+    }
+
+    public setTheme(theme: string): void {
+        this.themeSvr.setTheme(theme);
+        this.themeSvr.saveToStorage();
+    }
+
+    public setLocale(locale: string): void {
+        this.localeSrv.setLocale(locale)
+            .then((response: boolean) => {
+                if (!!response) {
+                    this.localeSrv.saveToStorage();
+                }
+            });
     }
 
     // ** Section: Update profile (formGroup) **
