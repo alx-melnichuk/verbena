@@ -97,26 +97,31 @@ export class PanelProfileSettings implements OnChanges {
 
     public setFormFieldAppearance(value: string): void {
         this.appearanceSvr.setFormFieldAppearance(value);
+        this.appearanceSvr.saveToStorage();
         this.rerendering();
     }
 
     public setFormFieldShape(value: string): void {
         this.appearanceSvr.setFormFieldShape(value);
+        this.appearanceSvr.saveToStorage();
     }
 
     // ** Button **
 
     public setButtonAppearance(value: string): void {
         this.appearanceSvr.setButtonAppearance(value);
+        this.appearanceSvr.saveToStorage();
         this.rerendering();
     }
 
     public setButtonBorder(isAdd: boolean): void {
         this.appearanceSvr.setButtonBorder(isAdd);
+        this.appearanceSvr.saveToStorage();
     }
 
     public setButtonShape(value: string): void {
         this.appearanceSvr.setButtonShape(value);
+        this.appearanceSvr.saveToStorage();
     }
 
     // ** -- **
