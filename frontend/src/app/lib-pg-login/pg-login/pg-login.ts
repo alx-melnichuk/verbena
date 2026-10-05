@@ -5,10 +5,12 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { Router } from "@angular/router";
 import { TranslateService, LangChangeEvent } from "@ngx-translate/core";
 import { environment as env } from "../../../environments/environment";
+import { AppearanceSvr } from "../../common/appearance-svr";
 import { LocaleSrv } from "../../common/locale-srv";
 import { RedirectSrv } from "../../common/redirect-srv";
 import { LOG_PG_LOGIN, REDIRECT_AFTER_LOGIN } from "../../common/routes";
 import { SessionSrv } from "../../common/session-srv";
+import { ThemeSvr } from "../../common/theme-svr";
 import { AlertSrv } from "../../lib-dialog/alert-srv";
 import { DialogSrv } from "../../lib-dialog/dialog-srv";
 import { LoginResponseDto } from "../../lib-user/user-dto";
@@ -31,13 +33,15 @@ import { PanelLogin } from "../panel-login/panel-login";
     ],
 })
 export class PgLogin {
+    private appearanceSvr: AppearanceSvr = inject(AppearanceSvr);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     private localeSrv: LocaleSrv = inject(LocaleSrv);
     private redirectSrv: RedirectSrv = inject(RedirectSrv);
     private router: Router = inject(Router);
     private sessionSrv: SessionSrv = inject(SessionSrv);
-    private userSrv: UserSrv = inject(UserSrv);
     private translateSrv: TranslateService = inject(TranslateService);
+    private themeSvr: ThemeSvr = inject(ThemeSvr);
+    private userSrv: UserSrv = inject(UserSrv);
 
     public errMsgObjs: ErrMsgObj[] = [];
     public isLogin = true;
@@ -86,8 +90,23 @@ export class PgLogin {
         this.userSrv.login(nickname, password)
             .then((response: LoginResponseDto | HttpErrorResponse | undefined) => {
                 let res: LoginResponseDto = response as LoginResponseDto;
-                this.sessionSrv.setUser(res.userProfileDto);
+                const user = res.userProfileDto;
+                const settings = { ...user.settings };
+                user.settings = undefined;
+                this.sessionSrv.setUser(user);
                 this.sessionSrv.setUserTokens(res.tokenUserResponseDto.accessToken, res.tokenUserResponseDto.refreshToken);
+
+                const locale = user.locale;
+                const theme = user.theme;
+
+                if (env.logLevel & 4) { console.info(`PgLogin.doLogin() localeSrv.setLocale(${locale});`); }
+                this.localeSrv.setLocale(locale);
+
+                if (env.logLevel & 4) { console.info(`PgLogin.doLogin() appearanceSvr.setSettings((${JSON.stringify(settings)});`); }
+                this.appearanceSvr.setSettings(settings);
+
+                if (env.logLevel & 4) { console.info(`PgLogin.doLogin() themeSvr.setTheme((${theme});`); }
+                this.themeSvr.setTheme(theme);
 
                 Promise.resolve().then(() => {
                     // Get the link address to navigate to after login.
