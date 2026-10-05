@@ -18,21 +18,4 @@ export class PageInfoUtil {
         result.orderDirection = (dataObj.orderDirection != null ? dataObj.orderDirection : result.orderDirection);
         return result;
     }
-
-    // public static checkNextPage(pageInfo: PageInfo): boolean {
-    //     return pageInfo != null && (pageInfo.pages < 1 || pageInfo.page < pageInfo.pages);
-    // }
-
-    // public static checkNextPageInfo(oldPageData: PageInfo, nextPageData: PageInfo): boolean {
-    //     let result = false;
-    //     if (!!oldPageData && !!nextPageData && oldPageData !== nextPageData) {
-    //         const res1 = (oldPageData.pages === -1);
-    //         const res2 = (oldPageData.page !== nextPageData.page && nextPageData.page <= oldPageData.pages);
-    //         const res3 = (oldPageData.orderColumn !== nextPageData.orderColumn);
-    //         const res4 = (oldPageData.orderDirection !== nextPageData.orderDirection);
-    //         result = (res1 || res2 || res3 || res4);
-    //     }
-    //     return result;
-    // }
-
 }
