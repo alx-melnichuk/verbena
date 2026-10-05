@@ -37,9 +37,10 @@ export interface LoginUserProfileDto {
     email: string; // max_len: 255
     role: string; // UserRole ["User","Admin"]
     avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
-    descript: string; // optional, default ""
-    theme: string; // Default color theme. ["light","dark"], min_len=2 max_len=32
-    locale: string; // Default locale. ["default"], min_len=2 max_len=32
+    descript: string | undefined; // optional, default ""
+    theme: string; // Color theme. ["light","dark"], min_len=2 max_len=32 default "light"
+    locale: string; // Locale. ["default", "uk-UA", ...], min_len=2 max_len=32 default "default"
+    settings: SettingsDto | null | undefined;
     createdAt: string; // DateTime<Utc> "rfc2822z"
     updatedAt: string; // DateTime<Utc> "rfc2822z"
 }
@@ -73,7 +74,7 @@ export interface UserDto { // #?
     email: string; // max_len: 255
     role: string; // UserRole ["User","Admin"]
     avatar: string | undefined | null; // Link to user avatar, optional, min_len=2 max_len=255
-    descript: string;
+    descript: string | undefined;
     theme: string; // Default color theme. ["light","dark"], min_len=2 max_len=32
     locale: string; // Default locale. ["default"], min_len=2 max_len=32
     settings: SettingsDto | null | undefined;
