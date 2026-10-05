@@ -1,4 +1,4 @@
-import { inject, Injectable } from "@angular/core";
+import { DOCUMENT, inject, Injectable } from "@angular/core";
 import { DateAdapter } from "@angular/material/core";
 import { InterpolatableTranslationObject, LangChangeEvent, TranslateService, TranslationChangeEvent } from "@ngx-translate/core";
 import { first, Observable } from "rxjs";
@@ -11,14 +11,16 @@ export const LOCALE_DE = "de-DE";
 export const LOCALE_UK = "uk-UA";
 export const LOCALE_LIST = [LOCALE_EN, LOCALE_DE, LOCALE_UK];
 export const LOCALE_DEFAULT = LOCALE_EN;
+const ATTR_NAME_LANG = "lang";
 
 @Injectable({
     providedIn: "root",
 })
 export class LocaleSrv {
-
+    private document: Document = inject(DOCUMENT);
     private dateAdapter: DateAdapter<Date> = inject(DateAdapter<Date>);
     private translateSrv: TranslateService = inject(TranslateService);
+
     private currLocale: string = LOCALE_DEFAULT;
 
     public get onTranslationChange(): Observable<TranslationChangeEvent> {
@@ -60,14 +62,28 @@ export class LocaleSrv {
             this.translateSrv.use(locale).pipe(first())
                 .subscribe({
                     next: () => {
-                        this.setIntoLocalStorage(this.currLocale = locale);
+                        this.currLocale = locale; // #? this.setIntoStorage(this.currLocale = locale);
                         this.dateAdapter.setLocale(locale);
-                        if (env.logLevel & 4) { console.info(`Locale.translate.use(${locale})...Ok`); }
+                        const lang = this.currLocale.slice(0, 2);
+                        const element: HTMLElement = this.document.documentElement;
+                        element.setAttribute(ATTR_NAME_LANG, lang);
+                        if (env.logLevel & 4) { console.info(`LocaleSrv() Locale.translate.use(${locale})...Ok`); }
                         resolve(true);
                     },
                     error: (err) => reject(err)
                 });
         });
+    }
+
+    public getFromStorage(): string | null {
+        return localStorage.getItem(PATH_LOCALE);
+    }
+    public saveToStorage(locale: string | undefined = this.getLocale()): void {
+        if (!!locale) {
+            window.localStorage.setItem(PATH_LOCALE, locale);
+        } else {
+            window.localStorage.removeItem(PATH_LOCALE);
+        }
     }
 
     public findLocale(localeList: string[], value: string | null): string | null {
@@ -81,16 +97,6 @@ export class LocaleSrv {
         return result;
     }
 
-    public getFromLocalStorage(): string | null {
-        return localStorage.getItem(PATH_LOCALE);
-    }
-    public setIntoLocalStorage(locale: string): void {
-        if (!!locale) {
-            window.localStorage.setItem(PATH_LOCALE, locale);
-        } else {
-            window.localStorage.removeItem(PATH_LOCALE);
-        }
-    }
 
     /** Get translation object by language. */
     public translationsByLang(lang: string): InterpolatableTranslationObject | undefined {
@@ -98,7 +104,6 @@ export class LocaleSrv {
     }
 
     // ** Private Api **
-
 
 }
 
