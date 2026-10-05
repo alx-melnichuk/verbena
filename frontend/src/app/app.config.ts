@@ -14,19 +14,19 @@ import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import { environment as env } from "../environments/environment";
 import { AppDateAdapter, APP_DATE_FORMATS } from "./app-date-adapter";
 import { APP_ROUTES } from "./app.routes";
+import { AppearanceSvr } from "./common/appearance-svr";
 import { AuthorizationInterceptor } from "./common/authorization.interceptor";
 import { APP_DATE_TIME_FORMAT_CONFIG } from "./common/date-time-format-pipe";
 import { LOCALE_DEFAULT, LocaleSrv } from "./common/locale-srv";
 import { RedirectSrv } from "./common/redirect-srv";
 import { AUTHENT_REQUIRED, ROUTE_LOGIN } from "./common/routes";
 import { SessionSrv } from "./common/session-srv";
+import { ThemeSvr } from "./common/theme-svr";
 import { DialogSrv } from "./lib-dialog/dialog-srv";
+import { UserDto } from "./lib-user/user-dto";
 import { UserSrv } from "./lib-user/user-srv";
 import { DateUtil } from "./utils/date.utils";
 import { NavigatorUtil } from "./utils/navigator.util";
-import { UserDto } from "./lib-user/user-dto";
-import { AppearanceSvr } from "./common/appearance-svr";
-import { ColorSchemeSrv } from "./common/color-scheme-srv";
 
 // AoT requires an exported function for factories
 export function translateAppHttpLoaderFactory(httpClient: HttpClient): TranslateHttpLoader {
@@ -101,50 +101,78 @@ export const appConfig: ApplicationConfig = {
             const localeSrv = inject(LocaleSrv);
             const translate = inject(TranslateService);
 
+            const params = new URLSearchParams(document.location.search);
+            const logLevel = Number(params.get("logLevel"));
+            if (!isNaN(logLevel) && logLevel > 0) {
+                env.logLevel = logLevel;
+            }
+
             // Download translations before starting the application.
             translate.addLangs(localeSrv.localeList);
             translate.setDefaultLang(localeSrv.localeDefault);
 
-            const localeFromLocalStorage = localeSrv.getFromLocalStorage();
-            const value = localeSrv.findLocale(localeSrv.localeList, localeFromLocalStorage || NavigatorUtil.getBrowserLocale() || null)
+            const localeFromStorage = localeSrv.getFromStorage();
+            const value = localeSrv.findLocale(localeSrv.localeList, localeFromStorage || NavigatorUtil.getBrowserLocale() || null)
                 || null;
-            if (env.logLevel & 4) { console.info(`provideAppInitializer(localeSrv) locale.setLocale(${value});`); }
+
+            if (env.logLevel & 4) { console.info(`AppInitializer(localeSrv) locale.setLocale(${value});`); }
             return localeSrv.setLocale(value);
         }),
         SessionSrv, // "2-Srv"
         UserSrv,  // "3-Srv"
         RedirectSrv, // "5-Srv"
         AppearanceSvr, // "6-Srv"
+        ThemeSvr, // "7-Srv"
         provideAppInitializer(() => {
+            const appearanceSvr = inject(AppearanceSvr);
+            const localeSrv = inject(LocaleSrv);
             const redirectSrv: RedirectSrv = inject(RedirectSrv);
             const router = inject(Router);
             const sessionSrv = inject(SessionSrv);
+            const themeSvr = inject(ThemeSvr);
             const userSrv = inject(UserSrv);
-            const appearanceSvr = inject(AppearanceSvr);
+
+            const locale = localeSrv.getFromStorage();
+            if (env.logLevel & 4) { console.info(`AppInitializer(2) localeSrv.setLocale(${locale});`); }
+            localeSrv.setLocale(locale);
+
+            const settings = appearanceSvr.getFromStorage();
+            if (env.logLevel & 4) { console.info(`AppInitializer(2) appearanceSvr.setSettings((${JSON.stringify(settings)});`); }
+            appearanceSvr.setSettings(settings);
+
+            const theme = themeSvr.getFromStorage();
+            if (env.logLevel & 4) { console.info(`AppInitializer(2) themeSvr.setTheme((${theme});`); }
+            themeSvr.setTheme(theme);
 
             const currentRoute = window.location.pathname;
             const isAuthentRequired = AUTHENT_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
             const isAuthentDenied = AUTHENT_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
             const isNotAuthentDeniedAndHasAccessToken = !isAuthentDenied && !!sessionSrv.getAccessToken();
             if (env.logLevel & 4) {
-                const s1 = `isNotAuthentDeniedAndHasAccessToken: ${isNotAuthentDeniedAndHasAccessToken}`;
-                console.info(`provideAppInitializer(userSrv) isAuthentRequired: ${isAuthentRequired}, ${s1}`);
+                console.info(`AppInitializer(2) isAuthentRequired: ${isAuthentRequired}, isAuthentDenied: ${isAuthentDenied}`);
+                console.info(`AppInitializer(2) isNotAuthentDeniedAndHasAccessToken: ${isNotAuthentDeniedAndHasAccessToken}`);
             }
 
             if (isAuthentRequired || isNotAuthentDeniedAndHasAccessToken) {
-                if (env.logLevel & 4) { console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...`); }
+                if (env.logLevel & 4) { console.info(`AppInitializer(3) userSrv.getCurrentUser()...`); }
                 return userSrv.getCurrentUser()
                     .then((response: UserDto | HttpErrorResponse | undefined) => {
                         const user = response as UserDto;
                         if (env.logLevel & 4) {
-                            console.info(`provideAppInitializer(userSrv) userSrv.getCurrentUser()...Ok`
-                                + ` user.id: ${user.id}, user.nickname: ${user.nickname} `);
+                            console.info(`AppInitializer(3)...Ok user.id: ${user.id}, user.nickname: ${user.nickname} `);
                         }
-
-                        const settings = { ...user.settings };
+                        const setting = { ...user.settings };
                         user.settings = undefined;
                         sessionSrv.setUser(user);
-                        appearanceSvr.setSettings(settings);
+
+                        if (env.logLevel & 4) { console.info(`AppInitializer(3) localeSrv.setLocale(${user.locale});`); }
+                        localeSrv.setLocale(user.locale);
+
+                        if (env.logLevel & 4) { console.info(`AppInitializer(3) appearanceSvr.setSettings(${JSON.stringify(setting)});`); }
+                        appearanceSvr.setSettings(setting);
+
+                        if (env.logLevel & 4) { console.info(`AppInitializer(3) themeSvr.setTheme((${user.theme});`); }
+                        themeSvr.setTheme(user.theme);
 
                         return Promise.resolve();
                     })
@@ -176,6 +204,5 @@ export const appConfig: ApplicationConfig = {
             useClass: DialogSrv,
             deps: [MatDialog],
         },
-        ColorSchemeSrv, // "7-Srv"
     ]
 };

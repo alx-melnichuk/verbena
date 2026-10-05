@@ -1,15 +1,16 @@
 import { CommonModule } from "@angular/common";
 import {
-    Component, ViewEncapsulation, ChangeDetectionStrategy, ChangeDetectorRef, inject, Renderer2, signal, HostListener,
+    Component, ViewEncapsulation, ChangeDetectionStrategy, ChangeDetectorRef, inject, signal, HostListener,
 } from "@angular/core";
 import { RouterOutlet, Router } from "@angular/router";
 import { environment as env } from "../environments/environment";
-import { ColorSchemeSrv } from "./common/color-scheme-srv";
+import { AppearanceSvr } from "./common/appearance-svr";
 import { LocaleSrv } from "./common/locale-srv";
 import { ROUTE_LOGIN, AUTHENT_DENIED } from "./common/routes";
+import { SessionSrv, ACCESS_TOKEN } from "./common/session-srv";
+import { ThemeSvr } from "./common/theme-svr";
 import { Footer } from "./components/footer/footer";
 import { Header, HM_LOGOUT, HM_SET_LOCALE, HM_SET_COLOR_SCHEME } from "./components/header/header";
-import { ACCESS_TOKEN, SessionSrv } from "./common/session-srv";
 import { UserSrv } from "./lib-user/user-srv";
 
 @Component({
@@ -22,12 +23,12 @@ import { UserSrv } from "./lib-user/user-srv";
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
+    private appearanceSvr: AppearanceSvr = inject(AppearanceSvr);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
-    public colorSchemeSrv: ColorSchemeSrv = inject(ColorSchemeSrv);
     public localeSrv: LocaleSrv = inject(LocaleSrv);
-    private renderer: Renderer2 = inject(Renderer2);
     private router: Router = inject(Router);
     public sessionSrv: SessionSrv = inject(SessionSrv);
+    public themeSvr: ThemeSvr = inject(ThemeSvr);
     private userSrv: UserSrv = inject(UserSrv);
 
     protected readonly title = signal("verbena");
@@ -52,10 +53,7 @@ export class App {
 
     constructor() {
         if (env.logLevel & 4) { console.info(`App(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
-        const user = this.sessionSrv.getUser();
-        this.localeSrv.setLocale(user?.locale || this.localeSrv.getFromLocalStorage());
-        this.setHtmlLangAttribute(this.localeSrv.getLocale().slice(0, 2));
-        this.colorSchemeSrv.setSchemeLightName(user?.theme || this.colorSchemeSrv.getFromLocalStorage(), this.renderer);
+        // #const user = this.sessionSrv.getUser();
     }
 
     // ** Public API **
@@ -66,7 +64,7 @@ export class App {
         switch (key) {
             case HM_LOGOUT: this.doLogout(); break;
             case HM_SET_LOCALE: this.doSetLocale(value); break;
-            case HM_SET_COLOR_SCHEME: this.colorSchemeSrv.setSchemeLightName(value, this.renderer); break;
+            case HM_SET_COLOR_SCHEME: this.doSetTheme(value); break;
         }
     }
 
@@ -74,9 +72,14 @@ export class App {
         this.localeSrv.setLocale(value)
             .then((response: boolean) => {
                 if (!!response) {
-                    this.setHtmlLangAttribute(this.localeSrv.getLocale().slice(0, 2));
+                    this.localeSrv.saveToStorage();
                 }
             });
+    }
+
+    public doSetTheme(value: string): void {
+        this.themeSvr.setTheme(value);
+        this.themeSvr.saveToStorage();
     }
 
     public doLogout(): void {
@@ -88,6 +91,19 @@ export class App {
             .then(() => {
                 this.sessionSrv.removeUser();
                 this.sessionSrv.removeUserTokens();
+
+                const locale = this.localeSrv.getFromStorage();
+                if (env.logLevel & 4) { console.info(`App.doLogout() localeSrv.setLocale(${locale});`); }
+                this.localeSrv.setLocale(locale);
+
+                const settings = this.appearanceSvr.getFromStorage();
+                if (env.logLevel & 4) { console.info(`App.doLogout() appearanceSvr.setSettings((${JSON.stringify(settings)});`); }
+                this.appearanceSvr.setSettings(settings);
+
+                const theme = this.themeSvr.getFromStorage();
+                if (env.logLevel & 4) { console.info(`App.doLogout() themeSvr.setTheme((${theme});`); }
+                this.themeSvr.setTheme(theme);
+
                 Promise.resolve().then(() => {
                     this.router.navigate([currRoute], { queryParams, onSameUrlNavigation: "reload" })
                         .finally(() => this.changeDetector.markForCheck());
@@ -97,9 +113,4 @@ export class App {
 
     // ** Private API **
 
-    private setHtmlLangAttribute(lang: string): void {
-        if (!!lang && typeof document !== "undefined") {
-            document.documentElement.setAttribute("lang", lang);
-        }
-    }
 }
