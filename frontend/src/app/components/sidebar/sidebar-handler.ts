@@ -32,7 +32,7 @@ export class SidebarHandler implements OnInit {
     private count: number = 0;
 
     @HostListener("click", ["$event"])
-    public doResizePanel(event: Event): void {
+    public onClick(event: Event): void {
         event.preventDefault();
         event.stopPropagation();
 
