@@ -10,7 +10,7 @@ import { MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix } from
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule, MatSelect } from "@angular/material/select";
 import { TranslatePipe } from "@ngx-translate/core";
-import { COLOR_SCHEME_LIST } from "../../common/theme-svr";
+import { THEME_LIST } from "../../common/theme-svr";
 import { ValidatorUtils } from "../../utils/validator.utils";
 
 export const COLOR_THEME = "color-theme";
@@ -64,7 +64,7 @@ export class FieldColorTheme implements OnChanges, AfterContentInit, ControlValu
     public formGroup: FormGroup = new FormGroup({ colorTheme: this.formControl });
     public isIconPrefix: boolean = false;
     public isIconSuffix: boolean = false;
-    public themeList: string[] = ["", ...COLOR_SCHEME_LIST];
+    public themeList: string[] = ["", ...THEME_LIST];
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["isRequired"]) {
