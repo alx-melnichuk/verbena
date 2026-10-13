@@ -59,7 +59,7 @@ export class PanelSignup implements OnChanges {
     public linkLogin = ROUTE_LOGIN;
 
     @HostListener("document:keypress", ["$event"])
-    public keyEvent(event: KeyboardEvent): void {
+    public keypress(event: KeyboardEvent): void {
         if (event.code === "Enter") {
             this.doSignup();
         }
