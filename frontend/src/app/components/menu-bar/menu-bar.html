@@ -1,0 +1,36 @@
+@if (!!item) {
+  <app-menu-item #menu
+    [items]="item.subItems"
+    [tmplMenuItem]="tmplMenuItem || tmplMenuItemRef"
+    (selected)="doSelected($event)">
+  </app-menu-item>
+
+  @if (item.subItems?.length) {
+    <button matButton="text" type="button" [class]="item.panelClass"
+      [matMenuTriggerFor]="menu?.childMenu || null"
+      [disabled]="item.disabled">
+      @if (!!tmplMenuBar || !!tmplMenuBarRef) {
+        <ng-container
+          [ngTemplateOutlet]="tmplMenuBar || tmplMenuBarRef"
+          [ngTemplateOutletContext]="{ item: item, isItems: !!item.subItems?.length }">
+        </ng-container>
+      } @else {
+        <span>{{ item.label }}</span>
+      }
+    </button>
+  } @else {
+    <button matButton="text" type="button" [class]="item.panelClass"
+      [routerLink]="item.route"
+      (click)="!item.route ? clickItem(item) : null"
+      [disabled]="item.disabled">
+      @if (!!tmplMenuBar || !!tmplMenuBarRef) {
+        <ng-container
+          [ngTemplateOutlet]="tmplMenuBar || tmplMenuBarRef"
+          [ngTemplateOutletContext]="{ item: item, isItems: !!item.subItems?.length }">
+        </ng-container>
+      } @else {
+        <span>{{ item.label }}</span>
+      }
+    </button>
+  }
+}

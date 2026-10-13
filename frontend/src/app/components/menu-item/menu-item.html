@@ -1,0 +1,44 @@
+@if (!!items && items.length > 0) {
+  <mat-menu #childMenu="matMenu"
+    [overlapTrigger]="false">
+    @for (child of items; track (child.code || child.label)) {
+
+      @if (child.subItems && child.subItems.length > 0) {
+        <app-menu-item #menu
+          [items]="child.subItems"
+          [tmplMenuItem]="tmplMenuItem || tmplMenuItemRef"
+          (selected)="doSelected($event)">
+        </app-menu-item>
+
+        @if (!!menu.childMenu) {
+          <button mat-menu-item type="button" class="mi-menu" [class]="child.panelClass"
+            [matMenuTriggerFor]="menu.childMenu"
+            [disabled]="child.disabled">
+            @if (!!tmplMenuItem || !!tmplMenuItemRef) {
+              <ng-container
+                [ngTemplateOutlet]="tmplMenuItem || tmplMenuItemRef"
+                [ngTemplateOutletContext]="{ subItem: child, isSubItems: !!child.subItems.length }">
+              </ng-container>
+            } @else {
+              <span>{{ child.label }}</span>
+            }
+          </button>
+        }
+      } @else {
+        <button mat-menu-item type="button" class="mi-menu" [class]="child.panelClass"
+          [routerLink]="child.route"
+          (click)="!child.route ? clickItem(child) : null"
+          [disabled]="child.disabled">
+          @if (!!tmplMenuItem || !!tmplMenuItemRef) {
+            <ng-container
+              [ngTemplateOutlet]="tmplMenuItem || tmplMenuItemRef"
+              [ngTemplateOutletContext]="{ subItem: child, isSubItems: !!child.subItems?.length }">
+            </ng-container>
+          } @else {
+            <span>{{ child.label }}</span>
+          }
+        </button>
+      }
+    }
+  </mat-menu>
+}
