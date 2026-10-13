@@ -55,7 +55,7 @@ export class PanelLogin implements OnChanges {
     public linkForgotPassword = ROUTE_FORGOT_PASSWORD;
 
     @HostListener("document:keypress", ["$event"])
-    public keyEvent(event: KeyboardEvent): void {
+    public keypress(event: KeyboardEvent): void {
         if (event.code === "Enter") {
             this.doLogin();
         }
