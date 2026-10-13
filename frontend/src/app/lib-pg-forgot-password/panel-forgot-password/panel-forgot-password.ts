@@ -45,7 +45,7 @@ export class PanelForgotPassword implements OnChanges {
     public cn_email = CN_EMAIL;
 
     @HostListener("document:keypress", ["$event"])
-    public keyEvent(event: KeyboardEvent): void {
+    public keypress(event: KeyboardEvent): void {
         if (event.code === "Enter") {
             this.doResend();
         }
