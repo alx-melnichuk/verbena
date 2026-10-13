@@ -69,7 +69,6 @@ export class AppearanceSvr {
     public saveToStorage(settings: SettingsDto | null | undefined = this.getSettings()): void {
         const settingsStr = !!settings ? JSON.stringify(settings) : "";
         if (!!settingsStr && settingsStr != "{}") {
-            console.log(`#AppearanceSvr.saveToStorage(${settingsStr})`); // #
             window.localStorage.setItem(PATH_SETTINGS, settingsStr);
         } else {
             window.localStorage.removeItem(PATH_SETTINGS);

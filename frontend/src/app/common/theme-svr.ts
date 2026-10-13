@@ -2,28 +2,28 @@ import { DOCUMENT, inject, Injectable } from '@angular/core';
 import { environment as env } from "../../environments/environment";
 
 // Color scheme
-export const SCHEME_LIGHT = "light";
-export const SCHEME_DARK = "dark";
+export const THEME_LIGHT = "light";
+export const THEME_DARK = "dark";
 // Theme
-export const SCHEME_AZURE_ORANGE = "azure-orange";
-export const SCHEME_CYAN_ORANGE = "cyan-orange";
-export const SCHEME_VIOLET_CHARTREUSE = "violet-chartreuse";
-export const SCHEME_ORANGE_MAGENTA = "orange-magenta";
-export const SCHEME_MAGENTA_CYAN = "magenta-cyan";
+export const THEME_AZURE_ORANGE = "azure-orange";
+export const THEME_CYAN_ORANGE = "cyan-orange";
+export const THEME_VIOLET_CHARTREUSE = "violet-chartreuse";
+export const THEME_ORANGE_MAGENTA = "orange-magenta";
+export const THEME_MAGENTA_CYAN = "magenta-cyan";
 
-export const COLOR_SCHEME_LIST = [
+export const THEME_LIST = [
     // `light-*`
-    SCHEME_LIGHT + "-" + SCHEME_AZURE_ORANGE,
-    SCHEME_LIGHT + "-" + SCHEME_CYAN_ORANGE,
-    SCHEME_LIGHT + "-" + SCHEME_VIOLET_CHARTREUSE,
-    SCHEME_LIGHT + "-" + SCHEME_ORANGE_MAGENTA,
-    SCHEME_LIGHT + "-" + SCHEME_MAGENTA_CYAN,
+    THEME_LIGHT + "-" + THEME_AZURE_ORANGE,
+    THEME_LIGHT + "-" + THEME_CYAN_ORANGE,
+    THEME_LIGHT + "-" + THEME_VIOLET_CHARTREUSE,
+    THEME_LIGHT + "-" + THEME_ORANGE_MAGENTA,
+    THEME_LIGHT + "-" + THEME_MAGENTA_CYAN,
     // `dark-*`
-    SCHEME_DARK + "-" + SCHEME_AZURE_ORANGE,
-    SCHEME_DARK + "-" + SCHEME_CYAN_ORANGE,
-    SCHEME_DARK + "-" + SCHEME_VIOLET_CHARTREUSE,
-    SCHEME_DARK + "-" + SCHEME_ORANGE_MAGENTA,
-    SCHEME_DARK + "-" + SCHEME_MAGENTA_CYAN,
+    THEME_DARK + "-" + THEME_AZURE_ORANGE,
+    THEME_DARK + "-" + THEME_CYAN_ORANGE,
+    THEME_DARK + "-" + THEME_VIOLET_CHARTREUSE,
+    THEME_DARK + "-" + THEME_ORANGE_MAGENTA,
+    THEME_DARK + "-" + THEME_MAGENTA_CYAN,
 ];
 
 export const PATH_THEME = "theme";
@@ -37,10 +37,10 @@ export class ThemeSvr {
 
     private currTheme: string = "";
 
-    public get themeList(): string[] { return COLOR_SCHEME_LIST; }
+    public get themeList(): string[] { return THEME_LIST; }
     public set themeList(_val: string[]) { }
 
-    public get themeDefault(): string { return COLOR_SCHEME_LIST[0]; }
+    public get themeDefault(): string { return THEME_LIST[0]; }
     public set themeDefault(_val: string) { }
 
     constructor() {
