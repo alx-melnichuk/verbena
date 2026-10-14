@@ -14,14 +14,18 @@
     "login": "Anmelden",
     "signup": "Registrieren",
     "profile": "Profil",
-    "stream_list": "Meine streams",
+    "profile_details": "Profildetails",
+    "profile_settings": "Einstellungen",
+    "stream": "Meine streams",
+    "stream_list": "Liste der sendungen",
     "stream_create": "Stream erstellen",
-    "banned": "Gesperrte",
-    "browse_list": "Stöbern",
+    "browse": "Durchstöbern",
+    "browse_list": "Liste der Durchblätter",
+    "browse_banned": "Gesperrte Nutzer",
     "my_follows_": "Meine follower",
     "theme": "Thema",
     "locale": "Gebietsschema",
-    "log_out": "Abmelden"
+    "logout": "Abmelden"
   },
   "dialog": {
     "confirmation": "Bestätigung",

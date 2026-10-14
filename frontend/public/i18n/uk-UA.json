@@ -14,14 +14,18 @@
     "login": "Увійти",
     "signup": "Реєстрація",
     "profile": "Профіль",
-    "stream_list": "Мої потоки",
-    "stream_create": "Створити потік",
-    "banned": "Заблоковані",
+    "profile_details": "Деталі профілю",
+    "profile_settings": "Налаштування",
+    "stream": "Мої трансляції",
+    "stream_list": "Список трансляцій",
+    "stream_create": "Створити трансляцію",
+    "browse": "Перегляд",
+    "browse_list": "Список переглядів",
+    "browse_banned": "Заблоковані користувачі",
     "my_follows_": "Мої підписники",
-    "browse_list": "Огляд",
     "theme": "Тема",
     "locale": "Локаль",
-    "log_out": "Вийти"
+    "logout": "Вийти"
   },
   "dialog": {
     "confirmation": "Підтвердження",

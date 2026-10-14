@@ -14,14 +14,18 @@
     "login": "Log in",
     "signup": "Sign up",
     "profile": "Profile",
-    "stream_list": "My streams",
+    "profile_details": "Profile details",
+    "profile_settings": "Settings",
+    "stream": "My streams",
+    "stream_list": "List of streams",
     "stream_create": "Create stream",
-    "banned": "Banned",
-    "browse_list": "Browse",
+    "browse": "Browse",
+    "browse_list": "List of Browses",
+    "browse_banned": "Banned users",
     "my_follows_": "My follows",
     "theme": "Theme",
     "locale": "Locale",
-    "log_out": "Log Out"
+    "logout": "Log Out"
   },
   "dialog": {
     "confirmation": "Confirmation",
