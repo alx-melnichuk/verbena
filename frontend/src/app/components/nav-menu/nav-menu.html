@@ -1,8 +1,0 @@
-@for (item of items; track (item.code || item.label)) {
-  <app-menu-bar class="nm-menu"
-    [item]="item"
-    [tmplMenuBar]="tmplMenuBar || tmplMenuBarRef"
-    [tmplMenuItem]="tmplMenuItem || tmplMenuItemRef"
-    (selected)="doSelected($event)">
-  </app-menu-bar>
-}
