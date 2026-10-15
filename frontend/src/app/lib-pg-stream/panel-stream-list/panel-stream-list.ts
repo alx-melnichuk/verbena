@@ -1,6 +1,6 @@
 import { CommonModule } from "@angular/common";
 import {
-    ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, Component, EventEmitter, HostBinding, inject, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
 } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { MatTooltipModule } from "@angular/material/tooltip";
@@ -108,6 +108,9 @@ export class PanelStreamList implements OnChanges {
     public calendarMonth: Date = new Date();
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: "long" };
+
+    @HostBinding("class.global-scroll")
+    public get isGlobalScroll(): boolean { return true; }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes["clndDaySelected"] && !!this.clndDaySelected) {

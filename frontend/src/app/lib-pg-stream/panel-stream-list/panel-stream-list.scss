@@ -10,6 +10,7 @@ app-panel-stream-list {
     container: cnt-stream-list / inline-size;
     display: block;
     height: 100%;
+    overflow-y: auto;
 
     [psl-mb-1] {
         margin-bottom: 0.25rem;
@@ -19,7 +20,6 @@ app-panel-stream-list {
 
         // width < 600px
         .psl-container {
-            ---psl-cont-fl-dr: column;
             ---psl-my-clndr-wd: 100%;
             ---psl-my-strms-wd: 100%;
             ---psl-evnt-ls-hg: 22rem;
@@ -30,7 +30,6 @@ app-panel-stream-list {
 
         // width < 896px
         .psl-container {
-            ---psl-cont-fl-dr: column;
             ---psl-my-clndr-wd: 100%;
             ---psl-my-strms-wd: 100%;
             ---psl-my-clndr-fl-dr: row;
@@ -45,8 +44,10 @@ app-panel-stream-list {
 
         // 896px <= width
         .psl-container {
+            ---psl-cont-fl-dr: row;
             ---psl-my-clndr-wd: calc(0.3333 * min(100vw, 1280px) - 67.965px); // 1050px: 283.50px; 1080px: 291.59px;
             ---psl-my-strms-wd: calc(100vw - max(var(---psl-my-clndr-wd), var(---psl-clnd-mn-wd)) - 3 * var(---psl-pd));
+            height: 100%;
         }
 
         .psl-my-calendar {
@@ -55,10 +56,10 @@ app-panel-stream-list {
     }
 
     .psl-container {
+        align-items: center;
         box-sizing: border-box;
         display: flex;
-        flex-direction: var(---psl-cont-fl-dr, row);
-        height: 100%;
+        flex-direction: var(---psl-cont-fl-dr, column);
         justify-content: center;
         margin-left: auto;
         margin-right: auto;
@@ -153,29 +154,22 @@ app-panel-stream-list {
         --psi-logo-hg: calc(var(---psl-pd) * 3);
     }
 
-    .psl-lbl-future {
+    .psl-strm-label {
         display: flex;
         justify-content: space-between;
-    }
-
-    .psl-reset-data {
         align-items: center;
-        display: flex;
-        width: 40%;
     }
 
     .psl-reset-btn {
         --mat-button-protected-label-text-color: var(--mat-sys-on-background);
         --mat-button-protected-container-color: var(--mat-sys-surface-container);
+        margin-right: 10rem;
     }
 
-    .psl-stream-future {
+    .psl-strm-items {
         --vhl-brd-rd: 0 0 0.5rem 1rem;
         height: calc(100% - 3rem);
-    }
-
-    .psl-stream-past {
-        --vhl-brd-rd: 0 0 0.5rem 1rem;
-        height: calc(100% - 3rem);
+        max-height: 33rem;
+        overflow: hidden;
     }
 }

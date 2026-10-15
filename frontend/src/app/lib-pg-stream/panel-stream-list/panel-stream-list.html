@@ -53,19 +53,17 @@
   <div class="psl-my-streams">
 
     <div class="psl-stream-box psl-border">
-      <div class="psl-lbl-future">
+      <div class="psl-strm-label">
         <span class="psl-title">{{ 'panel-stream-list.my_future_streams' | translate }}</span>
-        <div class="psl-reset-data">
-          <button matButton type="button" class="psl-reset-btn stl-btn-brd"
-            #tooltip="matTooltip"
-            [matTooltip]="'panel-stream-list.reset-data_tooltip' | translate"
-            matTooltipPosition="above"
-            (click)="doResetInfo()">
-              <span>{{ 'panel-stream-list.reset-data' | translate }}</span>
-          </button>
-        </div>
+        <button matButton type="button" class="psl-reset-btn stl-btn-brd"
+          #tooltip="matTooltip"
+          [matTooltip]="'panel-stream-list.reset-data_tooltip' | translate"
+          matTooltipPosition="above"
+          (click)="doResetInfo()">
+            <span>{{ 'panel-stream-list.reset-data' | translate }}</span>
+        </button>
       </div>
-      <app-view-item-list hg100 class="psl-stream-future psl-logo" vil-col-rev
+      <app-view-item-list hg100 class="psl-strm-items psl-logo" vil-col-rev
         containerClass="global-scroll"
         [deleteIds]="strmFtrDeleteIds"
         [isReset]="strmFtrIsReset"
@@ -91,10 +89,10 @@
     <div class="psl-indent"></div>
 
     <div class="psl-stream-box psl-border">
-      <div>
+      <div class="psl-strm-label">
         <span class="psl-title">{{ 'panel-stream-list.my_past_streams' | translate }}</span>
       </div>
-      <app-view-item-list hg100 class="psl-stream-past psl-logo" vil-col
+      <app-view-item-list hg100 class="psl-strm-items psl-logo" vil-col
         containerClass="global-scroll"
         [deleteIds]="strmPstDeleteIds"
         [isReset]="strmPstIsReset"
