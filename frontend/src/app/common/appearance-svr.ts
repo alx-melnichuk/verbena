@@ -25,6 +25,9 @@ const MAT_BUTTON_OUTLINED_CONTAINER_SHAPE = "--mat-button-outlined-container-sha
 const MAT_BUTTON_FILLED_CONTAINER_SHAPE = "--mat-button-filled-container-shape";
 const MAT_BUTTON_TONAL_CONTAINER_SHAPE = "--mat-button-tonal-container-shape";
 
+const FORMFIELD_APPEARANCE_DEFAULT = "outline";
+const BUTTON_APPEARANCE_DEFAULT = "tonal";
+
 @Injectable({
     providedIn: "root",
 })
@@ -84,7 +87,7 @@ export class AppearanceSvr {
         return result;
     }
     public setFormFieldAppearance(value: string | null | undefined): void {
-        const val = this.checkFormFieldAppearance(value) || "outline";
+        const val = this.checkFormFieldAppearance(value) || FORMFIELD_APPEARANCE_DEFAULT;
         if (val != this.appFormFieldDefaultOptions.appearance) {
             this.appFormFieldDefaultOptions.appearance = val;
             this.settings = { ...this.settings, ...{ formFieldAppearance: val } };
@@ -125,7 +128,7 @@ export class AppearanceSvr {
         return result;
     }
     public setButtonAppearance(value: string | null | undefined): void {
-        const val = this.checkButtonAppearance(value) || "outlined";
+        const val = this.checkButtonAppearance(value) || BUTTON_APPEARANCE_DEFAULT;
         if (val != this.settings.buttonAppearance) {
             this.appButtonConfig.defaultAppearance = val;
             this.settings = { ...this.settings, ...{ buttonAppearance: val } };

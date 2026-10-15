@@ -54,7 +54,7 @@ export const appButtonConfig: MatButtonConfig = {
     // Default palette color to apply to buttons.
     // color?: ThemePalette;
     // Default appearance for plain buttons (not icon buttons or FABs).
-    defaultAppearance: "text", //  "text" | "filled" | "elevated" | "outlined" | "tonal"
+    defaultAppearance: "tonal", //  "text" | "filled" | "elevated" | "outlined" | "tonal"
 };
 
 export const appConfig: ApplicationConfig = {
