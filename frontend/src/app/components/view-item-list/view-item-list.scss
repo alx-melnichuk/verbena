@@ -64,6 +64,10 @@ app-view-item-list {
         gap: var(--vil-gap);
         height: 100%;
         justify-content: var(--vil-jst-cnt, normal);
+        min-height: inherit;
+        min-width: inherit;
+        max-height: inherit;
+        max-width: inherit;
         overflow-x: auto;
         overflow-y: auto;
         padding: var(--vil-pd);
