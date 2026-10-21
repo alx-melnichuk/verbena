@@ -56,10 +56,11 @@ pub async fn server_run() -> std::io::Result<()> {
     let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
     let max_conn: u32 = env::var("DB_POOL_MAX_CONN").unwrap_or("0".to_owned()).trim().parse().unwrap();
     let min_conn: u32 = env::var("DB_POOL_MIN_CONN").unwrap_or("0".to_owned()).trim().parse().unwrap();
-    let max_lifetime_sec: u64 = env::var("DB_POOL_MAX_LIFETIME").unwrap_or("0".to_owned()).trim().parse().unwrap();
-    let idle_sec: u64 = env::var("DB_POOL_IDLE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let acquire_timeout: u64 = env::var("DB_POOL_ACQUIRE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let idle_timeout: u64 = env::var("DB_POOL_IDLE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let max_lifetime: u64 = env::var("DB_POOL_MAX_LIFETIME").unwrap_or("0".to_owned()).trim().parse().unwrap();
 
-    let db_pool = db::init_db_pool(&db_url, max_conn, min_conn, max_lifetime_sec, idle_sec)
+    let db_pool = db::init_db_pool(&db_url, max_conn, min_conn, acquire_timeout, idle_timeout, max_lifetime)
         .await
         .expect("Failed to create pool_db");
 
@@ -73,7 +74,7 @@ pub async fn server_run() -> std::io::Result<()> {
     let mut srv = HttpServer::new(move || {
         let cors = create_cors(config_app2.clone());
         let mut app = App::new().wrap(cors).wrap(middleware::Logger::default());
-        app = app.app_data(db_pool.clone());
+        app = app.app_data(Data::new(db_pool.clone()));
 
         //   Addendum: ConfigApp, TempFileConfig, ConfigSmtp, MailerApp.
         app = app.configure(configure_data_and_server());

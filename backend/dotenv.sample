@@ -58,13 +58,17 @@ RUST_LOG=warn,actix_web=info,verbena=warn,${LOG01},${LOG02}
 # 
 DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
 # Set the maximum number of connections that this pool should maintain.
+# If there are slow requests, then 1 connection per core. (num_cpus::get())
+# If fast requests (and high throughput), then 2.3 connections per core. (num_cpus::get() * 2)
 # DB_POOL_MAX_CONN=
 # Set the minimum number of connections to maintain at all times.
 # DB_POOL_MIN_CONN=
-# Set the maximum lifetime of individual connections. (Seconds) 1800 sec = 30 min
-# DB_POOL_MAX_LIFETIME=
-# Set a maximum idle duration for individual connections. (Seconds) 600 sec = 10 min
+# Set the maximum amount of time to spend waiting for a connection. (Seconds) Default: 30 sec.
+# DB_POOL_ACQUIRE_TIMEOUT=
+# Set a maximum idle duration for individual connections. (Seconds) Default: 10 * 60 sec (10 min).
 # DB_POOL_IDLE_TIMEOUT=
+# Set the maximum lifetime of individual connections. (Seconds) Default: 30 * 60 sec (30 min).
+# DB_POOL_MAX_LIFETIME=
 
 # -----------------------------------------------------------------------------
 # JSON Web Token Credentials
