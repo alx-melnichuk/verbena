@@ -1303,7 +1303,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_REQUIRED]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_min() {
@@ -1335,7 +1335,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_MIN_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_max() {
@@ -1367,7 +1367,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_MAX_LENGTH]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_wrong() {
@@ -1399,7 +1399,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_REGEX]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_equal_old_value() {
@@ -1431,7 +1431,7 @@ pub mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_NEW_PASSWORD_EQUAL_OLD_VALUE]);
+        check_app_err(app_err_vec, StatusCode::EXPECTATION_FAILED.as_u16(), &[user_models::MSG_PASSWORD_EQUAL_OLD_VALUE]);
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_hash_password() {
