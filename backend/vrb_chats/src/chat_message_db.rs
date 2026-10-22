@@ -363,7 +363,7 @@ pub mod tests {
 
     use std::{cmp::Ordering, collections::HashMap};
 
-    use actix_web::web;
+    use actix_web::web::{Data, ServiceConfig};
     use chrono::{DateTime, Duration, SubsecRound, Timelike, Utc};
     use vrb_authent::user_db::tests::{USER1_ID, USER1_NAME, USER2_ID, USER2_NAME, USER3_ID, USER3_NAME, USER4_ID, USER4_NAME};
     use vrb_common::validators::Validator;
@@ -954,10 +954,10 @@ pub mod tests {
         }
         pub fn cfg_chat_message_db(
             data_cm: (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedData>, Vec<UserMini>),
-        ) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_chat_message_db = web::Data::new(ChatMessageDbApp::create(&data_cm.0, &data_cm.1, &data_cm.2, &data_cm.3));
-                config.app_data(web::Data::clone(&data_chat_message_db));
+        ) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
+                let chat_message_db = ChatMessageDbApp::create(&data_cm.0, &data_cm.1, &data_cm.2, &data_cm.3);
+                config.app_data(Data::new(chat_message_db));
             }
         }
     }
