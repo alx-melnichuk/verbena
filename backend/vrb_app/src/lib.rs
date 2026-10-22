@@ -137,28 +137,25 @@ pub fn configure_data_and_server() -> impl FnOnce(&mut ServiceConfig) {
             // Add documentation service "SwaggerUi".
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()));
 
-        let config_app1 = config_app.clone();
         let app_dir_tmp = config_app.app_dir_tmp.clone();
+
         // used: user_recovery_controller, user_registr_controller, static_controller
-        let config_app = Data::new(config_app);
-        config.app_data(Data::clone(&config_app));
+        config.app_data(Data::new(config_app.clone()));
 
         let temp_file_config = TempFileConfig::default().clone().directory(app_dir_tmp);
         // Used "actix-multipart" to upload files. TempFileConfig.from_req()
-        let temp_file_config = Data::new(temp_file_config);
-        config.app_data(Data::clone(&temp_file_config));
+        config.app_data(Data::new(temp_file_config));
 
-        let config_smtp0 = config_smtp::ConfigSmtp::init_by_env();
+        let config_smtp = config_smtp::ConfigSmtp::init_by_env();
         // used: stream_controller
-        let config_smtp = Data::new(config_smtp0.clone());
-        config.app_data(Data::clone(&config_smtp));
+        config.app_data(Data::new(config_smtp.clone()));
 
         // used: user_recovery_controller, user_registr_controller
-        let mailer = Data::new(MailerApp::new(config_smtp0));
-        config.app_data(Data::clone(&mailer));
+        let mailer = MailerApp::new(config_smtp);
+        config.app_data(Data::new(mailer));
 
         // Add configuration of internal services.
-        config.configure(static_controller::configure(config_app1));
+        config.configure(static_controller::configure(config_app));
     }
 }
 
