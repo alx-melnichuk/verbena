@@ -163,14 +163,15 @@ export class AppearanceSvr {
     // ** ButtonBorder **
 
     public setButtonBorder(isAdd: boolean | null | undefined): void {
-        if (isAdd !== !!this.settings.buttonBorder) {
+        const isAdd2 = isAdd ?? true;
+        if (isAdd2 !== !!this.settings.buttonBorder) {
             const element: HTMLElement = this.document.body;
-            if (!!isAdd) {
+            if (!!isAdd2) {
                 element.classList.add("stl-btn");
             } else {
                 element.classList.remove("stl-btn");
             }
-            this.settings = { ...this.settings, ...{ buttonBorder: !!isAdd } };
+            this.settings = { ...this.settings, ...{ buttonBorder: !!isAdd2 } };
             Object.freeze(this.settings);
         }
     }
