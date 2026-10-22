@@ -339,7 +339,7 @@ pub mod impls {
 pub mod tests {
     use std::cmp::Ordering;
 
-    use actix_web::web;
+    use actix_web::web::{Data, ServiceConfig};
     use chrono::{DateTime, Utc};
     use vrb_authent::user_db::tests::{USER_IDS, USER1_ID};
     use vrb_db::enm_stream_state::StreamState;
@@ -642,16 +642,15 @@ pub mod tests {
             }
             stream_info_vec
         }
-        pub fn cfg_config_strm(config_strm: config_strm::ConfigStrm) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_config_strm = web::Data::new(config_strm);
-                config.app_data(web::Data::clone(&data_config_strm));
+        pub fn cfg_config_strm(config_strm: config_strm::ConfigStrm) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
+                config.app_data(Data::new(config_strm));
             }
         }
-        pub fn cfg_stream_db(data_s: Vec<StreamAndTags>) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_stream_db = web::Data::new(StreamDbApp::create(&data_s));
-                config.app_data(web::Data::clone(&data_stream_db));
+        pub fn cfg_stream_db(data_s: Vec<StreamAndTags>) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
+                let stream_db = StreamDbApp::create(&data_s);
+                config.app_data(Data::new(stream_db));
             }
         }
     }

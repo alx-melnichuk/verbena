@@ -25,12 +25,12 @@ pub fn configure_data_and_server(db_pool: &DbPool2) -> impl FnOnce(&mut ServiceC
         fs::create_dir_all(&logo_files_dir).expect(&format!("Error when creating the \"{}\" directory:", &logo_files_dir));
 
         // used: stream_controller
-        let config_strm = Data::new(config_strm::ConfigStrm::init_by_env());
-        config.app_data(Data::clone(&config_strm));
+        let config_strm = config_strm::ConfigStrm::init_by_env();
+        config.app_data(Data::new(config_strm));
 
         // used: stream_controller
-        let stream_db = Data::new(stream_db::get_stream_db_app(db_pool));
-        config.app_data(Data::clone(&stream_db));
+        let stream_db = stream_db::get_stream_db_app(db_pool);
+        config.app_data(Data::new(stream_db));
 
         // Add configuration of internal services.
         config.configure(stream_controller::configure());
