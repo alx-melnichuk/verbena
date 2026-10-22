@@ -32,8 +32,8 @@ pub mod chat_ws_tools;
 pub fn configure_data_and_server(db_pool: &DbPool2) -> impl FnOnce(&mut ServiceConfig) {
     move |config: &mut ServiceConfig| {
         // used: chat_message_controller, chat_ws_controller
-        let chat_message_db = Data::new(chat_message_db::get_chat_message_db_app(db_pool));
-        config.app_data(Data::clone(&chat_message_db));
+        let chat_message_db = chat_message_db::get_chat_message_db_app(db_pool);
+        config.app_data(Data::new(chat_message_db));
 
         // Add configuration of internal services.
         config
