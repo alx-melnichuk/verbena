@@ -25,12 +25,11 @@ pub fn configure_data_and_server(db_pool: &DbPool2) -> impl FnOnce(&mut ServiceC
         fs::create_dir_all(&avatar_files_dir).expect(&format!("Error when creating the \"{}\" directory:", &avatar_files_dir));
 
         // used: profile_controller
-        let config_prfl = Data::new(config_prfl);
-        config.app_data(Data::clone(&config_prfl));
+        config.app_data(Data::new(config_prfl));
 
         // used: profile_controller
-        let profile_db = Data::new(profile_db::get_profile_db_app(db_pool));
-        config.app_data(Data::clone(&profile_db));
+        let profile_db = profile_db::get_profile_db_app(db_pool);
+        config.app_data(Data::new(profile_db));
 
         // Add configuration of internal services.
         config.configure(profile_controller::configure());

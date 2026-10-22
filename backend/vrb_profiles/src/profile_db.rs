@@ -167,7 +167,7 @@ pub mod impls {
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use actix_web::web;
+    use actix_web::web::{Data, ServiceConfig};
     use chrono::Utc;
     use vrb_authent::{
         config_jwt,
@@ -285,23 +285,21 @@ pub mod tests {
             let profile_vec: Vec<UserProfile> = users.iter().map(|u| UserProfile::from(u.clone())).collect();
             profile_vec
         }
-        pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_config_jwt = web::Data::new(config_jwt);
-                config.app_data(web::Data::clone(&data_config_jwt));
+        pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
+                config.app_data(Data::new(config_jwt));
             }
         }
-        pub fn cfg_config_prfl(config_prfl: config_prfl::ConfigPrfl) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_config_prfl = web::Data::new(config_prfl);
-                config.app_data(web::Data::clone(&data_config_prfl));
+        pub fn cfg_config_prfl(config_prfl: config_prfl::ConfigPrfl) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
+                config.app_data(Data::new(config_prfl));
             }
         }
-        pub fn cfg_profile_db(data_p: Vec<UserProfile>) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_user_profile_db = web::Data::new(ProfileDbApp::create(&data_p));
+        pub fn cfg_profile_db(data_p: Vec<UserProfile>) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
+                let user_profile_db = ProfileDbApp::create(&data_p);
 
-                config.app_data(web::Data::clone(&data_user_profile_db));
+                config.app_data(Data::new(user_profile_db));
             }
         }
     }

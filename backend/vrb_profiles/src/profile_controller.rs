@@ -1158,7 +1158,10 @@ pub async fn delete_profile_current(
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use actix_web::{http, web};
+    use actix_web::{
+        http,
+        web::{Data, ServiceConfig},
+    };
     use vrb_common::api_error::ApiError;
     use vrb_tools::{config_app, token_data::BEARER};
 
@@ -1167,10 +1170,9 @@ pub mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
 
-    pub fn cfg_config_app(config_app: config_app::ConfigApp) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_app = web::Data::new(config_app);
-            config.app_data(web::Data::clone(&data_config_app));
+    pub fn cfg_config_app(config_app: config_app::ConfigApp) -> impl FnOnce(&mut ServiceConfig) {
+        move |config: &mut ServiceConfig| {
+            config.app_data(Data::new(config_app));
         }
     }
 
