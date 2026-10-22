@@ -137,11 +137,11 @@ export const appConfig: ApplicationConfig = {
             localeSrv.setLocale(locale);
 
             const settings = appearanceSvr.getFromStorage();
-            if (env.logLevel & 4) { console.info(`AppInitializer(2) appearanceSvr.setSettings((${JSON.stringify(settings)});`); }
+            if (env.logLevel & 4) { console.info(`AppInitializer(2) appearanceSvr.setSettings(${JSON.stringify(settings)});`); }
             appearanceSvr.setSettings(settings);
 
             const theme = themeSvr.getFromStorage();
-            if (env.logLevel & 4) { console.info(`AppInitializer(2) themeSvr.setTheme((${theme});`); }
+            if (env.logLevel & 4) { console.info(`AppInitializer(2) themeSvr.setTheme(${theme});`); }
             themeSvr.setTheme(theme);
 
             const currentRoute = window.location.pathname;
@@ -171,7 +171,7 @@ export const appConfig: ApplicationConfig = {
                         if (env.logLevel & 4) { console.info(`AppInitializer(3) appearanceSvr.setSettings(${JSON.stringify(setting)});`); }
                         appearanceSvr.setSettings(setting);
 
-                        if (env.logLevel & 4) { console.info(`AppInitializer(3) themeSvr.setTheme((${user.theme});`); }
+                        if (env.logLevel & 4) { console.info(`AppInitializer(3) themeSvr.setTheme(${user.theme});`); }
                         themeSvr.setTheme(user.theme);
 
                         return Promise.resolve();
