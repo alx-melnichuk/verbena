@@ -213,7 +213,7 @@ pub mod impls {
 
 #[cfg(any(test, feature = "mockdata"))]
 pub mod tests {
-    use actix_web::web;
+    use actix_web::web::{Data, ServiceConfig};
     use chrono::{DateTime, Duration, Utc};
 
     use crate::user_recovery_db::{DURATION_IN_DAYS, UserRecoveryDb};
@@ -346,10 +346,10 @@ pub mod tests {
             };
             user_recovery_vec
         }
-        pub fn cfg_recovery_db(recovery: Vec<UserRecovery>) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_user_recovery_db = web::Data::new(UserRecoveryDbApp::create(&recovery));
-                config.app_data(web::Data::clone(&data_user_recovery_db));
+        pub fn cfg_recovery_db(recovery: Vec<UserRecovery>) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
+                let user_recovery_db = UserRecoveryDbApp::create(&recovery);
+                config.app_data(Data::new(user_recovery_db));
             }
         }
     }

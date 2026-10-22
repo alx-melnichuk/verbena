@@ -288,7 +288,7 @@ pub mod impls {
 
 #[cfg(any(test, feature = "mockdata"))]
 pub mod tests {
-    use actix_web::web;
+    use actix_web::web::{Data, ServiceConfig};
     use chrono::Utc;
     use vrb_common::profile::{PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF};
     use vrb_db::enm_user_role::UserRole;
@@ -501,14 +501,13 @@ pub mod tests {
             }
             (user_vec, session_vec)
         }
-        pub fn cfg_user_db(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
+        pub fn cfg_user_db(data_p: (Vec<User>, Vec<Session>)) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
                 let mut user_db_app = UserDbApp::new();
                 user_db_app.user_vec.extend(data_p.0);
                 user_db_app.session_vec.extend(data_p.1);
 
-                let data_user_db = web::Data::new(user_db_app);
-                config.app_data(web::Data::clone(&data_user_db));
+                config.app_data(Data::new(user_db_app));
             }
         }
         pub fn profile(user_id: i32) -> Profile {

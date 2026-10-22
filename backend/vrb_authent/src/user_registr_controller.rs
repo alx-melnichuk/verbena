@@ -392,7 +392,10 @@ pub async fn registration_clear_for_expired(
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use actix_web::{http, web};
+    use actix_web::{
+        http,
+        web::{Data, ServiceConfig},
+    };
     use vrb_common::api_error::ApiError;
     use vrb_tools::{
         config_app,
@@ -405,20 +408,18 @@ pub mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
 
-    pub fn cfg_config_app(config_app: config_app::ConfigApp) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_app = web::Data::new(config_app);
-            config.app_data(web::Data::clone(&data_config_app));
+    pub fn cfg_config_app(config_app: config_app::ConfigApp) -> impl FnOnce(&mut ServiceConfig) {
+        move |config: &mut ServiceConfig| {
+            config.app_data(Data::new(config_app));
         }
     }
 
-    pub fn cfg_mailer(config_smtp: config_smtp::ConfigSmtp) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_smtp = web::Data::new(config_smtp.clone());
-            config.app_data(web::Data::clone(&data_config_smtp));
+    pub fn cfg_mailer(config_smtp: config_smtp::ConfigSmtp) -> impl FnOnce(&mut ServiceConfig) {
+        move |config: &mut ServiceConfig| {
+            config.app_data(Data::new(config_smtp.clone()));
 
-            let data_mailer = web::Data::new(MailerApp::new(config_smtp));
-            config.app_data(web::Data::clone(&data_mailer));
+            let mailer = MailerApp::new(config_smtp);
+            config.app_data(Data::new(mailer));
         }
     }
 

@@ -239,7 +239,7 @@ pub mod impls {
 
 #[cfg(any(test, feature = "mockdata"))]
 pub mod tests {
-    use actix_web::web;
+    use actix_web::web::{Data, ServiceConfig};
     use chrono::{DateTime, Duration, Utc};
 
     use crate::user_registr_db::{DURATION_IN_DAYS, UserRegistrDb};
@@ -392,10 +392,10 @@ pub mod tests {
             };
             user_registr_vec
         }
-        pub fn cfg_registr_db(registr: Vec<UserRegistr>) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_user_registr_db = web::Data::new(UserRegistrDbApp::create(&registr));
-                config.app_data(web::Data::clone(&data_user_registr_db));
+        pub fn cfg_registr_db(registr: Vec<UserRegistr>) -> impl FnOnce(&mut ServiceConfig) {
+            move |config: &mut ServiceConfig| {
+                let user_registr_db = UserRegistrDbApp::create(&registr);
+                config.app_data(Data::new(user_registr_db));
             }
         }
     }
