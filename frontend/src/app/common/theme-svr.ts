@@ -59,7 +59,8 @@ export class ThemeSvr {
         return { colorScheme, theme };
     }
     public setTheme(value: string | null | undefined): void {
-        const newTheme = !!value && this.themeList.includes(value || "") ? value : null;
+        const newValue = !!value && this.themeList.includes(value || "") ? value : null;
+        const newTheme = !newValue && !this.currTheme ? this.themeDefault : newValue;
         if (!newTheme || newTheme == this.currTheme) {
             return;
         }
