@@ -28,6 +28,47 @@ const MAT_BUTTON_TONAL_CONTAINER_SHAPE = "--mat-button-tonal-container-shape";
 const FORMFIELD_APPEARANCE_DEFAULT = "outline";
 const BUTTON_APPEARANCE_DEFAULT = "tonal";
 
+export class SettingsUtil {
+    public static create(data: Partial<SettingsDto> | null | undefined): SettingsDto {
+        const dataObj = data || {};
+        const result: SettingsDto = {
+            formFieldAppearance: this.checkFormFieldAppearance(dataObj.formFieldAppearance),
+            formFieldShape: this.checkFormFieldShape(dataObj.formFieldShape),
+            buttonAppearance: this.checkButtonAppearance(dataObj.buttonAppearance),
+            buttonBorder: this.checkButtonBorder(dataObj.buttonBorder),
+            buttonShape: this.checkButtonShape(dataObj.buttonShape),
+        };
+        return result;
+    }
+    public static checkFormFieldAppearance(value: string | null | undefined): MatFormFieldAppearance {
+        const result: MatFormFieldAppearance | undefined =
+            value == "fill" ? "fill" :
+                value == "outline" ? "outline" : undefined;
+        return result || FORMFIELD_APPEARANCE_DEFAULT;
+    }
+
+    public static checkFormFieldShape(value: string | null | undefined): string | undefined {
+        const val = value?.toLowerCase();
+        return !!val && FORM_FIELD_SHAPE_LIST.includes(val) ? val : undefined;
+    }
+    public static checkButtonAppearance(value: string | null | undefined): MatButtonAppearance {
+        const result: MatButtonAppearance | undefined =
+            value == "text" ? "text" :
+                value == "filled" ? "filled" :
+                    value == "elevated" ? "elevated" :
+                        value == "outlined" ? "outlined" :
+                            value == "tonal" ? "tonal" : undefined;
+        return result || BUTTON_APPEARANCE_DEFAULT;
+    }
+    public static checkButtonBorder(value: boolean | null | undefined): boolean {
+        return value ?? true;
+    }
+    public static checkButtonShape(value: string | null | undefined): string | undefined {
+        const val = value?.toLowerCase();
+        return !!val && BUTTON_SHAPE_LIST.indexOf(val) > -1 ? val : undefined;
+    }
+}
+
 @Injectable({
     providedIn: "root",
 })
@@ -80,14 +121,8 @@ export class AppearanceSvr {
 
     // ** FormFieldAppearance **
 
-    public checkFormFieldAppearance(value: string | null | undefined): MatFormFieldAppearance | undefined {
-        const result: MatFormFieldAppearance | undefined =
-            value == "fill" ? "fill" :
-                value == "outline" ? "outline" : undefined;
-        return result;
-    }
     public setFormFieldAppearance(value: string | null | undefined): void {
-        const val = this.checkFormFieldAppearance(value) || FORMFIELD_APPEARANCE_DEFAULT;
+        const val = SettingsUtil.checkFormFieldAppearance(value);
         if (val != this.appFormFieldDefaultOptions.appearance) {
             this.appFormFieldDefaultOptions.appearance = val;
             this.settings = { ...this.settings, ...{ formFieldAppearance: val } };
@@ -102,14 +137,13 @@ export class AppearanceSvr {
     // ** FormFieldShape **
 
     public setFormFieldShape(value: string | null | undefined): void {
-        const val = value?.toLowerCase();
-        const val1 = (!!val && FORM_FIELD_SHAPE_LIST.includes(val) ? val : null);
+        const val = SettingsUtil.checkFormFieldShape(value);
         if (val != this.settings.formFieldShape) {
-            this.settings = { ...this.settings, ...{ formFieldShape: (val1 || undefined) } };
+            this.settings = { ...this.settings, ...{ formFieldShape: val } };
             Object.freeze(this.settings);
             const element: HTMLElement = this.document.body;
-            element.style.setProperty(MAT_FORM_FIELD_OUTLINED_CONTAINER_SHAPE, val1);
-            element.style.setProperty(MAT_FORM_FIELD_FILLED_CONTAINER_SHAPE, val1);
+            element.style.setProperty(MAT_FORM_FIELD_OUTLINED_CONTAINER_SHAPE, val || null);
+            element.style.setProperty(MAT_FORM_FIELD_FILLED_CONTAINER_SHAPE, val || null);
         }
     }
     public getFormFieldShape(): string {
@@ -118,17 +152,8 @@ export class AppearanceSvr {
 
     // ** ButtonAppearance **
 
-    public checkButtonAppearance(value: string | null | undefined): MatButtonAppearance | undefined {
-        const result: MatButtonAppearance | undefined =
-            value == "text" ? "text" :
-                value == "filled" ? "filled" :
-                    value == "elevated" ? "elevated" :
-                        value == "outlined" ? "outlined" :
-                            value == "tonal" ? "tonal" : undefined;
-        return result;
-    }
     public setButtonAppearance(value: string | null | undefined): void {
-        const val = this.checkButtonAppearance(value) || BUTTON_APPEARANCE_DEFAULT;
+        const val = SettingsUtil.checkButtonAppearance(value);
         if (val != this.settings.buttonAppearance) {
             this.appButtonConfig.defaultAppearance = val;
             this.settings = { ...this.settings, ...{ buttonAppearance: val } };
@@ -140,30 +165,10 @@ export class AppearanceSvr {
         return this.settings.buttonAppearance || "";
     }
 
-    // ** ButtonShape **
-
-    public setButtonShape(value: string | null | undefined): void {
-        const val = value?.toLowerCase();
-        const val1 = (!!val && BUTTON_SHAPE_LIST.indexOf(val) > -1 ? val : null);
-        if (val1 != this.settings.buttonShape) {
-            const element: HTMLElement = this.document.body;
-            element.style.setProperty(MAT_BUTTON_TEXT_CONTAINER_SHAPE, val1);
-            element.style.setProperty(MAT_BUTTON_PROTECTED_CONTAINER_SHAPE, val1);
-            element.style.setProperty(MAT_BUTTON_OUTLINED_CONTAINER_SHAPE, val1);
-            element.style.setProperty(MAT_BUTTON_FILLED_CONTAINER_SHAPE, val1);
-            element.style.setProperty(MAT_BUTTON_TONAL_CONTAINER_SHAPE, val1);
-            this.settings = { ...this.settings, ...{ buttonShape: (val1 || undefined) } };
-            Object.freeze(this.settings);
-        }
-    }
-    public getButtonShape(): string {
-        return this.settings.buttonShape || "";
-    }
-
     // ** ButtonBorder **
 
     public setButtonBorder(isAdd: boolean | null | undefined): void {
-        const isAdd2 = isAdd ?? true;
+        const isAdd2 = SettingsUtil.checkButtonBorder(isAdd);
         if (isAdd2 !== !!this.settings.buttonBorder) {
             const element: HTMLElement = this.document.body;
             if (!!isAdd2) {
@@ -177,6 +182,25 @@ export class AppearanceSvr {
     }
     public getButtonBorder(): boolean {
         return !!this.settings.buttonBorder;
+    }
+
+    // ** ButtonShape **
+
+    public setButtonShape(value: string | null | undefined): void {
+        const val = SettingsUtil.checkButtonShape(value);
+        if (val != this.settings.buttonShape) {
+            const element: HTMLElement = this.document.body;
+            element.style.setProperty(MAT_BUTTON_TEXT_CONTAINER_SHAPE, val || null);
+            element.style.setProperty(MAT_BUTTON_PROTECTED_CONTAINER_SHAPE, val || null);
+            element.style.setProperty(MAT_BUTTON_OUTLINED_CONTAINER_SHAPE, val || null);
+            element.style.setProperty(MAT_BUTTON_FILLED_CONTAINER_SHAPE, val || null);
+            element.style.setProperty(MAT_BUTTON_TONAL_CONTAINER_SHAPE, val || null);
+            this.settings = { ...this.settings, ...{ buttonShape: val } };
+            Object.freeze(this.settings);
+        }
+    }
+    public getButtonShape(): string {
+        return this.settings.buttonShape || "";
     }
 
     // ** Private API **
