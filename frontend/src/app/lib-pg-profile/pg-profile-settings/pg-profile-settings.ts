@@ -6,7 +6,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { environment as env } from "../../../environments/environment";
-import { AppearanceSvr } from '../../common/appearance-svr';
+import { AppearanceSvr, SettingsUtil } from '../../common/appearance-svr';
 import { LocaleSrv } from '../../common/locale-srv';
 import { LOG_PG_PROFILE } from '../../common/routes';
 import { HasUnsavedChanges, UnsavedDeActivateUtil } from '../../common/unsaved-de-activate-page-guard';
@@ -37,7 +37,6 @@ export class PgProfileSettings implements OnInit, OnDestroy, HasUnsavedChanges {
     private translateSrv: TranslateService = inject(TranslateService);
 
     public errMsgObjs: ErrMsgObj[] = [];
-    private changeObj: Record<string, boolean> = {};
     private isChangeData: boolean = false;
     public isLoadData = false;
     public profileDto: UserDto;
@@ -52,7 +51,7 @@ export class PgProfileSettings implements OnInit, OnDestroy, HasUnsavedChanges {
         if (env.logLevel & LOG_PG_PROFILE) { console.info(`PgProfileSettings(); locale.getLocale(): ${this.localeSrv.getLocale()}`); }
 
         this.profileDto = this.route.snapshot.data["profileDto"];
-        this.settingsDto = { ...this.profileDto.settings };
+        this.settingsDto = SettingsUtil.create(this.profileDto.settings);
         this.profileDto.settings = undefined;
     }
 
