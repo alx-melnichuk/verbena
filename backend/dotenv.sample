@@ -50,13 +50,7 @@ RUST_LOG=warn,actix_web=info,verbena=warn,${LOG01},${LOG02}
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
 # -----------------------------------------------------------------------------
-# DB_USER=
-# DB_PASSWORD=
-# DB_HOST=
-# DB_PORT=
-# DB_DATABASE=
-# 
-DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+# DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
 # Set the maximum number of connections that this pool should maintain.
 # If there are slow requests, then 1 connection per core. (num_cpus::get())
 # If fast requests (and high throughput), then 2.3 connections per core. (num_cpus::get() * 2)
