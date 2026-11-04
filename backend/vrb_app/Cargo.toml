@@ -12,6 +12,16 @@ license.workspace = true
 name = "verbena"
 path = "src/main.rs"
 
+# Target for `render` $ cargo build --release --bin verbena-render --features render
+[[bin]]
+name = "verbena-render"
+path = "src/main-render.rs"
+test = false
+# test = true
+bench = false
+doc = false
+required-features = ["render"]
+
 [lib]
 path = "src/lib.rs"
 
@@ -39,4 +49,5 @@ vrb_tools = { workspace = true }
 # default = ["test", "mockdata"]
 test=[]
 mockdata = []
+render = []
 
