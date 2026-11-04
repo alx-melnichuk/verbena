@@ -8,6 +8,7 @@ use actix_web::{
 };
 use dotenv;
 use env_logger;
+use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
@@ -28,7 +29,7 @@ use vrb_tools::{config_app, send_email::config_smtp};
 pub(crate) mod static_controller;
 pub mod swagger_docs;
 
-pub async fn server_run() -> std::io::Result<()> {
+pub async fn server_run(pg_pool_opt: Option<PgPool>) -> std::io::Result<()> {
     #[cfg(feature = "mockdata")]
     #[rustfmt::skip]
     assert!(false, "Launch in \"mockdata\" mode! Disable \"default=[test, mockdata]\" in Cargo.toml.");
@@ -53,18 +54,23 @@ pub async fn server_run() -> std::io::Result<()> {
 
     eprintln!("Configuring database.");
 
-    let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
-    let max_conn: u32 = env::var("DB_POOL_MAX_CONN").unwrap_or("0".to_owned()).trim().parse().unwrap();
-    let min_conn: u32 = env::var("DB_POOL_MIN_CONN").unwrap_or("0".to_owned()).trim().parse().unwrap();
-    let acquire_timeout: u64 = env::var("DB_POOL_ACQUIRE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
-    let idle_timeout: u64 = env::var("DB_POOL_IDLE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
-    let max_lifetime: u64 = env::var("DB_POOL_MAX_LIFETIME").unwrap_or("0".to_owned()).trim().parse().unwrap();
+    let db_pool = match pg_pool_opt {
+        Some(pg_pool) => pg_pool,
+        None => {
+            let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
+            let max_conn: u32 = env::var("DB_POOL_MAX_CONN").unwrap_or("0".to_owned()).trim().parse().unwrap();
+            let min_conn: u32 = env::var("DB_POOL_MIN_CONN").unwrap_or("0".to_owned()).trim().parse().unwrap();
+            let acquire_timeout: u64 = env::var("DB_POOL_ACQUIRE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
+            let idle_timeout: u64 = env::var("DB_POOL_IDLE_TIMEOUT").unwrap_or("0".to_owned()).trim().parse().unwrap();
+            let max_lifetime: u64 = env::var("DB_POOL_MAX_LIFETIME").unwrap_or("0".to_owned()).trim().parse().unwrap();
 
-    let db_pool = db::init_db_pool(&db_url, max_conn, min_conn, acquire_timeout, idle_timeout, max_lifetime)
-        .await
-        .expect("Failed to create pool_db");
-
-    eprintln!("db_pool_db.max_conn: {}", max_conn);
+            db::init_db_pool(&db_url, max_conn, min_conn, acquire_timeout, idle_timeout, max_lifetime)
+                .await
+                .expect("Failed to create pool_db")
+        }
+    };
+    let pool_options = db_pool.options();
+    eprintln!("db_pool_db.max_conn: {}", pool_options.get_max_connections());
 
     // Execute all unapplied migrations for a given migration source
     let _ = db::run_migration_db(&db_pool).await;

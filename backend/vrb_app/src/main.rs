@@ -4,5 +4,5 @@ use vrb_app::server_run;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Starting the web server.
-    server_run().await
+    server_run(None).await
 }
