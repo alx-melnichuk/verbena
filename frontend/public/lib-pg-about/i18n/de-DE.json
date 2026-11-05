@@ -37,7 +37,6 @@
         "email_address": "- E-Mail-verifizierung",
         "env_logger": "- Eine protokollierungsimplementierung für `log`",
         "futures-util": "- Allgemeine dienstprogramme und erweiterungsmerkmale für die bibliothek futures-rs",
-        "getrandom": "- Bibliothek zum abrufen zufälliger daten aus quellen (betriebssystemen)",
         "handlebars": "- Vorlagengerät",
         "image": "- Eine bildverarbeitungsbibliothek",
         "jsonwebtoken": "- Erstellen und analysieren Sie JWT (JSON Web Tokens)",
