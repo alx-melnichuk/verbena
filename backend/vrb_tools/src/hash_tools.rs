@@ -1,8 +1,7 @@
 use argon2::{
     Argon2,
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, Salt, SaltString},
+    password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 };
-use getrandom;
 
 pub const MAX_PARAM_LENGTH: usize = 64;
 pub const ERR_PARAM_EMPTY: &str = "Parameter is empty.";
@@ -21,12 +20,12 @@ pub fn encode_hash(param: impl Into<String>) -> Result<String, String> {
         return Err(format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH));
     }
 
-    let mut bytes = [0u8; Salt::RECOMMENDED_LENGTH];
-    let _ = getrandom::fill(&mut bytes);
-    let salt = SaltString::encode_b64(&bytes).unwrap();
+    // Argon2 with default params (Argon2id v19), generating a random salt
+    let argon2 = Argon2::default();
 
-    let param_hash = Argon2::default()
-        .hash_password(param.as_bytes(), &salt)
+    // Hash password to PHC string ($argon2id$v=19$...)
+    let param_hash = argon2
+        .hash_password(param.as_bytes())
         .map_err(|e| format!("{}{}", ERR_HASHING_ERR, e.to_string()))?
         .to_string();
 
@@ -43,8 +42,9 @@ pub fn compare_hash(param: impl Into<String>, hashed_param: &str) -> Result<bool
     if param.len() > MAX_PARAM_LENGTH {
         return Err(format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH));
     }
-
-    let parsed_hash = PasswordHash::new(hashed_param).map_err(|e| format!("{}{}", ERR_INVALID_HASH_FORMAT, e.to_string()))?;
+    #[rustfmt::skip]
+    let parsed_hash = PasswordHash::new(hashed_param)
+        .map_err(|e| format!("{}{}", ERR_INVALID_HASH_FORMAT, e.to_string()))?;
 
     let compare_res = Argon2::default().verify_password(param.as_bytes(), &parsed_hash);
 
