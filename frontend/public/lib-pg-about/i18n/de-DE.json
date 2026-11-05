@@ -52,7 +52,8 @@
         "utoipa": "- Automatisch generierte OpenAPI-dokumentation",
         "utoipa-swagger-ui": "- Implementierung von Swagger über einen webserver",
         "utoipa-redoc": "- Implementierung von Redoc über einen webserver",
-        "utoipa-rapidoc": "- Implementierung von Rapidoc über einen webserver"
+        "utoipa-rapidoc": "- Implementierung von Rapidoc über einen webserver",
+        "actix-multipart-test": "Mehrteilige/Formular-Daten-Testhilfe für activix-web"
     }
   }
 } 

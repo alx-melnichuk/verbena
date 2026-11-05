@@ -52,7 +52,8 @@
         "utoipa": "- Автоматичне створення OpenAPI документації",
         "utoipa-swagger-ui": "- Автоматична реалізація Swagger через веб-сервер",
         "utoipa-redoc": "- Автоматична реалізація Redoc через веб-сервер",
-        "utoipa-rapidoc": "- Автоматична реалізація Rapidoc через веб-сервер"
+        "utoipa-rapidoc": "- Автоматична реалізація Rapidoc через веб-сервер",
+        "actix-multipart-test": "Помічник для тестування Multipart/form-data для activix-web"
     }
   }
 }
