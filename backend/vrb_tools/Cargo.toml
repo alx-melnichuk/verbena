@@ -15,7 +15,6 @@ path = "src/lib.rs"
 actix-web = { workspace = true }
 argon2 = { workspace = true }
 chrono = { workspace = true }
-getrandom = { workspace = true }
 handlebars = { workspace = true }
 image = { workspace = true }
 jsonwebtoken = { workspace = true }

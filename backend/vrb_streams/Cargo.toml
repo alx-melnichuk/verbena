@@ -33,5 +33,5 @@ mockdata = []
 
 [dev-dependencies]
 # To test a web form with data and a file.
-actix-multipart-test = "0.0.3"
+actix-multipart-test = { workspace = true }
 vrb_authent = { version = "0.5", path="../vrb_authent", features = ["mockdata"] }
